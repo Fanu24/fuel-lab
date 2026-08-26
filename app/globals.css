@@ -1,64 +1,84 @@
 @import "tailwindcss";
 
 /* =========================================================================
-   FUEL LAB — sistema visivo "Palestra Bianca"
-   Bianco clinico, nero pieno, un solo colpo di lime.
+   FUEL LAB — sistema visivo su fondo CHIARO
+   Cambia il terreno, non l'identita: Anton per i display, Martian Mono per
+   ogni numero, shape lock 26/18, lime #DFFF3E come accento unico.
 
-   REGOLA DELL'ACCENTO (la piu importante di tutte):
-   il lime #DFFF3E su bianco ha un contrasto di 1.13:1, cioe' e' invisibile.
-   Quindi il lime NON e' mai testo su chiaro. Esiste solo come SUPERFICIE:
-   blocchi pieni con testo nero sopra, evidenziatori dietro le parole,
-   riempimento delle barre, oppure cifra dentro un blocco nero.
-   Ogni volta che serve un colore "acceso" per del testo, la risposta e' nero.
+   REGOLA DELL'ACCENTO (la piu importante di tutte).
+   Il lime non e MAI testo su chiaro. Misurato, non stimato:
+     lime su paper #F4F1E8 = 1.00 : 1   (stessa luminanza: indistinguibile)
+     lime su card  #FFFFFF = 1.13 : 1
+     lime su tray  #E9E4D6 = 1.12 : 1
+   Il lime esiste solo come SUPERFICIE: blocchi pieni con testo scuro sopra,
+   evidenziatori dietro le parole, riempimento delle barre, cifre dentro un
+   blocco scuro. Come testo e legale in un posto solo, sopra l'inchiostro
+   (12.61:1). Dove prima serviva "lime acceso" per un testo, ora la risposta
+   e il verde bosco.
 
-   Contrasti verificati (WCAG AA su tutto, testo normale >= 4.5:1):
-     ink   #0A0C0B su paper #F5F6F4 = 18.10:1   su card #FFFFFF = 19.62:1
-     ink   #0A0C0B su lime  #DFFF3E = 17.29:1   su tray  #ECEEEA = 16.80:1
-     muted #5A5F5C su paper #F5F6F4 =  6.00:1   su card #FFFFFF =  6.51:1
-     mink  #A9AFAB su ink   #0A0C0B =  8.79:1
-     lime  #DFFF3E su ink   #0A0C0B = 17.29:1
+   CONTRASTI MISURATI (formula WCAG 2.x, script eseguito, non stime):
+     ink    su paper  = 12.66 : 1        ink    su card   = 14.30 : 1
+     ink    su lime   = 12.61 : 1        ink    su tray   = 11.26 : 1
+     ink    su cell   = 12.00 : 1        white  su ink    = 14.30 : 1
+     muted  su paper  =  5.01 : 1        muted  su card   =  5.66 : 1
+     muted  su cell   =  4.75 : 1        mink   su ink    =  6.74 : 1
+     lime   su ink    = 12.61 : 1        lime   su paper  =  1.00 : 1
 
-   SISTEMA RAGGI, uno solo: pannelli 20px, nuclei 12px, chip e caselle 10px,
-   interattivi a pillola 999px, barre di misura 3px.
+   DUE CONFINI DA NON SUPERARE, anche questi misurati:
+     muted su tray  = 4.45 : 1 -> sotto AA. Il testo secondario non va MAI sul
+       guscio: sta su paper, su card o su cell. Sul guscio si usa ink.
+     mink  su paper = 1.88 : 1 -> mink vive solo dentro i blocchi scuri.
 
-   Il tema e' bloccato in CHIARO. Non c'e' dark mode: il fondo chiaro e' una
-   richiesta esplicita del cliente, non una preferenza dell'utente.
+   SHAPE LOCK, una scala sola, ogni gradino -8px (che e il padding):
+     guscio 26px -> nucleo 18px -> chip e caselle 10px.
+     Interattivi e barre di misura: pillola. Le curve restano concentriche.
+
+   Il tema e bloccato in CHIARO. Non c'e dark mode: il fondo chiaro e una
+   richiesta esplicita del committente, non una preferenza dell'utente.
    ========================================================================= */
 
 @theme {
-  --color-ink: #0a0c0b;        /* nero pieno: tutto il testo, i blocchi scuri */
-  --color-paper: #f5f6f4;      /* fondo pagina */
-  --color-card: #ffffff;       /* superfici sollevate */
-  --color-tray: #eceeea;       /* guscio esterno della doppia scocca */
-  --color-cell: #eff1ed;       /* caselle vuote della griglia settimanale */
-  --color-lime: #dfff3e;       /* accento unico, SOLO come superficie */
-  --color-muted: #5a5f5c;      /* testo secondario su chiaro */
-  --color-mink: #a9afab;       /* testo secondario dentro i blocchi neri */
-  --color-mlime: #2a2e2c;      /* testo secondario dentro i blocchi lime */
+  --color-ink: #12301f;        /* verde bosco: tutto il testo */
+  --color-paper: #f4f1e8;      /* fondo pagina, carta calda */
+  --color-card: #ffffff;
+  --color-tray: #e9e4d6;       /* guscio esterno della doppia scocca */
+  --color-cell: #efebdf;       /* caselle vuote della griglia */
+  --color-lime: #dfff3e;       /* accento unico, SOLO superficie */
+  --color-lime-deep: #c2e81c;
+  --color-muted: #5b6b5f;
+  --color-mink: #a9b5ac;       /* testo secondario dentro i blocchi scuri */
 
-  --font-ui: var(--f-ui), "Segoe UI", system-ui, sans-serif;
-  --font-mono: var(--f-mono), ui-monospace, SFMono-Regular, Consolas, monospace;
+  --font-disp: var(--f-disp), "Oswald", Impact, sans-serif;
+  --font-ui: var(--f-ui), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--f-mono), ui-monospace, SFMono-Regular, monospace;
 }
 
 :root {
-  --hair: rgba(10, 12, 11, 0.12);
+  --hair: rgba(18, 48, 31, 0.14);
+  --hair-soft: rgba(18, 48, 31, 0.1);
   --hair-ink: rgba(255, 255, 255, 0.16);
 
-  --r-panel: 20px;
-  --r-core: 12px;
-  --r-chip: 10px;
-  --r-bar: 3px;
+  /* SHAPE LOCK: identico a prima, non toccarlo */
+  --shell: 26px;
+  --pad: 8px;
+  --core-r: 18px;
+  /* stesso passo di 8px un gradino piu dentro: 18 - 8 */
+  --chip-r: 10px;
+  /* le barre di misura sono pillole, come gli interattivi */
+  --bar-r: 999px;
 
-  /* Ombre ambientali diffusissime: su fondo chiaro le card devono galleggiare,
-     non essere incorniciate. Mai un bordo grigio 1px generico. */
-  --sh-1: 0 2px 6px rgba(10, 12, 11, 0.04), 0 18px 40px -24px rgba(10, 12, 11, 0.2);
-  --sh-2: 0 4px 10px rgba(10, 12, 11, 0.05), 0 44px 84px -38px rgba(10, 12, 11, 0.32);
-  --sh-nav: 0 1px 2px rgba(10, 12, 11, 0.06), 0 22px 46px -30px rgba(10, 12, 11, 0.36);
+  --e-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --e-over: cubic-bezier(0.2, 1.3, 0.34, 1);
+  --e-mech: cubic-bezier(0.65, 0, 0.35, 1);
+  /* La terza easing della direzione originale: peso che parte lento e arriva
+     secco. La cercano il pannello macro, la tenda del titolo e le scansioni. */
+  --e-mass: cubic-bezier(0.62, 0.04, 0.16, 1);
 
-  /* Due easing, due caratteri: snap per le entrate, mech per i contatori e le
-     barre, che devono scattare come un metronomo e non fluttuare. */
-  --snap: cubic-bezier(0.22, 1, 0.36, 1);
-  --mech: cubic-bezier(0.65, 0, 0.35, 1);
+  /* Ombre ambientali diffusissime: su fondo chiaro le superfici devono
+     galleggiare, non essere incorniciate. Mai un bordo grigio 1px generico. */
+  --sh-1: 0 2px 6px rgba(18, 48, 31, 0.05), 0 18px 40px -24px rgba(18, 48, 31, 0.22);
+  --sh-2: 0 4px 10px rgba(18, 48, 31, 0.06), 0 44px 84px -38px rgba(18, 48, 31, 0.34);
+  --sh-nav: 0 1px 2px rgba(18, 48, 31, 0.06), 0 22px 46px -30px rgba(18, 48, 31, 0.36);
 
   --wrap: 1200px;
   --gut: 40px;
@@ -84,6 +104,9 @@ body {
   font-family: var(--font-ui);
   font-size: 16px;
   line-height: 1.5;
+  /* Archivo e variabile anche in larghezza: fissare l'asse evita che il
+     browser scelga un'istanza diversa da quella su cui e tarato il layout. */
+  font-variation-settings: "wdth" 100;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -100,6 +123,8 @@ h3,
 h4 {
   margin: 0;
 }
+/* Attenzione: i display sono le CLASSI .h1/.h2/.h3, mai i tag omonimi. In
+   pagina esistono <h2 class="eyebrow">, che con Anton diventerebbero titoli. */
 a {
   color: inherit;
   text-decoration: none;
@@ -116,10 +141,6 @@ button {
   outline: 3px solid var(--color-ink);
   outline-offset: 3px;
   border-radius: 2px;
-}
-/* Dentro i blocchi scuri il focus nero sparirebbe. */
-.on-ink :focus-visible {
-  outline-color: var(--color-lime);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -139,6 +160,7 @@ button {
   .wrap {
     width: min(var(--wrap), 100% - (var(--gut) * 2));
     margin-inline: auto;
+    position: relative;
   }
   @media (max-width: 640px) {
     .wrap {
@@ -146,31 +168,79 @@ button {
     }
   }
 
+  /* Martian Mono e largo di suo: senza stringere l'asse wdth le etichette
+     italiane in maiuscoletto sfondano le colonne su cui sono tarate. */
   .mono {
     font-family: var(--font-mono);
+    font-variation-settings: "wdth" 84;
     font-variant-numeric: tabular-nums;
     font-feature-settings: "tnum" 1;
   }
 
-  /* ---------- tipografia ------------------------------------------------- */
-  .display {
-    font-weight: 900;
+  /* ---------- occhiello --------------------------------------------------- */
+  /* Nella direzione scura era una pillola lime su vetro. Su chiaro il lime
+     sparirebbe: resta la pillola, il testo passa a inchiostro e il rombo con
+     lui. Dentro un blocco scuro (.on-ink) torna lime, dove si legge. */
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 11px;
+    padding: 9px 18px 8px;
+    border-radius: 999px;
+    background: var(--color-card);
+    box-shadow: inset 0 0 0 1px var(--hair);
+    color: var(--color-ink);
+    font-family: var(--font-ui);
+    font-size: 10.5px;
+    font-weight: 600;
+    font-variation-settings: "wdth" 116;
+    letter-spacing: 0.26em;
     text-transform: uppercase;
-    line-height: 0.86;
-    letter-spacing: -0.045em;
+    line-height: 1;
+  }
+  .eyebrow b {
+    width: 6px;
+    height: 6px;
+    background: var(--color-ink);
+    transform: rotate(45deg);
+    flex: 0 0 auto;
+  }
+  /* Stessa ragione della regola sui bottoni: un occhiello che non va a capo
+     diventa una larghezza minima e fa sfondare la griglia a 390px. */
+  @media (max-width: 639px) {
+    .eyebrow {
+      line-height: 1.4;
+      padding: 8px 15px;
+      letter-spacing: 0.19em;
+      align-items: flex-start;
+    }
+    .eyebrow b {
+      margin-top: 0.34em;
+    }
+  }
+
+  /* ---------- tipografia -------------------------------------------------- */
+  .h1,
+  .h2,
+  .h3 {
+    font-family: var(--font-disp);
+    font-weight: 400;
+    text-transform: uppercase;
+    color: var(--color-ink);
   }
   .h1 {
-    font-size: clamp(46px, 6vw, 82px);
+    font-size: min(102px, 8vw);
+    line-height: 0.86;
+    letter-spacing: -0.012em;
   }
   .h2 {
-    font-size: clamp(34px, 4.2vw, 56px);
+    font-size: min(72px, 5.7vw);
+    line-height: 0.88;
+    letter-spacing: -0.01em;
   }
   .h3 {
-    font-size: clamp(24px, 2.6vw, 31px);
-    letter-spacing: -0.032em;
-    line-height: 1;
-    font-weight: 800;
-    text-transform: uppercase;
+    font-size: min(38px, 4.6vw);
+    line-height: 0.98;
   }
   .lead {
     font-size: 19px;
@@ -180,6 +250,7 @@ button {
   }
   .label {
     font-family: var(--font-mono);
+    font-variation-settings: "wdth" 84;
     font-size: 10px;
     font-weight: 500;
     letter-spacing: 0.18em;
@@ -187,8 +258,8 @@ button {
     color: var(--color-muted);
   }
 
-  /* Evidenziatore lime: e' l'unico modo in cui il lime tocca del testo,
-     perche' il testo resta nero e il lime sta dietro. */
+  /* Evidenziatore lime: e l'unico modo in cui il lime tocca del testo,
+     perche il testo resta inchiostro e il lime sta dietro. */
   .hl {
     position: relative;
     display: inline-block;
@@ -203,7 +274,7 @@ button {
     background: var(--color-lime);
     transform: scaleX(0);
     transform-origin: left;
-    transition: transform 0.62s var(--snap) 0.28s;
+    transition: transform 0.62s var(--e-out) 0.28s;
   }
   .js .in .hl-bar,
   .hl-on .hl-bar {
@@ -213,7 +284,7 @@ button {
     position: relative;
   }
 
-  /* ---------- bottoni ---------------------------------------------------- */
+  /* ---------- bottoni ----------------------------------------------------- */
   .btn {
     display: inline-flex;
     align-items: center;
@@ -225,8 +296,8 @@ button {
     font-weight: 700;
     letter-spacing: -0.005em;
     white-space: nowrap;
-    transition: transform 0.32s var(--mech), background-color 0.32s var(--mech),
-      color 0.32s var(--mech), box-shadow 0.32s var(--mech), opacity 0.25s var(--mech);
+    transition: transform 0.32s var(--e-mech), background-color 0.32s var(--e-mech),
+      color 0.32s var(--e-mech), box-shadow 0.32s var(--e-mech), opacity 0.25s var(--e-mech);
   }
   .btn .dot {
     display: grid;
@@ -237,12 +308,16 @@ button {
     flex: 0 0 auto;
     font-size: 15px;
     line-height: 1;
-    transition: transform 0.38s var(--snap), background-color 0.32s var(--mech);
+    transition: transform 0.38s var(--e-over), background-color 0.32s var(--e-mech),
+      color 0.32s var(--e-mech);
   }
   .btn:disabled {
     opacity: 0.38;
     cursor: not-allowed;
   }
+  /* Il primario e inchiostro pieno, non lime: come superficie il lime
+     funzionerebbe, ma toglierebbe forza all'accento dove serve davvero.
+     Il lime entra al passaggio del mouse, e solo sul pallino. */
   .btn-p {
     background: var(--color-ink);
     color: #fff;
@@ -267,7 +342,7 @@ button {
     box-shadow: inset 0 0 0 1.5px var(--color-ink);
   }
   .btn-s .dot {
-    background: rgba(10, 12, 11, 0.08);
+    background: rgba(18, 48, 31, 0.08);
   }
   .btn-s:hover:not(:disabled) {
     transform: translateY(-2px);
@@ -276,7 +351,7 @@ button {
   }
   .btn-s:hover:not(:disabled) .dot {
     transform: translateX(3px);
-    background: rgba(10, 12, 11, 0.14);
+    background: rgba(18, 48, 31, 0.14);
   }
   .btn:active:not(:disabled) {
     transform: translateY(0) scale(0.985);
@@ -305,35 +380,33 @@ button {
     }
   }
 
-  /* ---------- doppia scocca --------------------------------------------- */
-  .tray {
+  /* ---------- doppia scocca ----------------------------------------------- */
+  /* Guscio 26 + padding 8 = nucleo 18. Le due curve sono concentriche: e la
+     differenza fra un contenitore disegnato e due rettangoli sovrapposti. */
+  .shell {
+    padding: var(--pad);
+    border-radius: var(--shell);
     background: var(--color-tray);
-    padding: 10px;
-    border-radius: var(--r-panel);
-    box-shadow: var(--sh-2);
+    box-shadow: 0 2px 6px rgba(18, 48, 31, 0.04), 0 40px 80px -46px rgba(18, 48, 31, 0.28);
   }
-  .tray-core {
-    background: var(--color-card);
-    border-radius: var(--r-core);
+  .core {
+    border-radius: var(--core-r);
     overflow: hidden;
-  }
-  .panel {
     background: var(--color-card);
-    border-radius: var(--r-panel);
-    box-shadow: var(--sh-2);
   }
 
-  /* ---------- chip ------------------------------------------------------- */
+  /* ---------- chip -------------------------------------------------------- */
   .chip {
     display: inline-flex;
     align-items: center;
     gap: 6px;
     font-family: var(--font-mono);
+    font-variation-settings: "wdth" 85;
     font-size: 11px;
     font-weight: 500;
     letter-spacing: 0.02em;
     padding: 6px 11px;
-    border-radius: var(--r-chip);
+    border-radius: var(--chip-r);
     background: var(--color-tray);
     color: var(--color-ink);
     white-space: nowrap;
@@ -346,7 +419,7 @@ button {
     color: var(--color-lime);
   }
 
-  /* ---------- prezzo "a partire da" -------------------------------------
+  /* ---------- prezzo "a partire da" ---------------------------------------
      Il prezzo esatto non si mostra: si mostra la soglia di ingresso e si
      manda la conversazione su WhatsApp. */
   .price {
@@ -357,6 +430,7 @@ button {
   }
   .price-da {
     font-family: var(--font-mono);
+    font-variation-settings: "wdth" 84;
     font-size: 10px;
     font-weight: 500;
     letter-spacing: 0.16em;
@@ -365,6 +439,7 @@ button {
   }
   .price-n {
     font-family: var(--font-mono);
+    font-variation-settings: "wdth" 84;
     font-size: 25px;
     font-weight: 700;
     letter-spacing: -0.02em;
@@ -374,10 +449,10 @@ button {
     color: var(--color-muted);
   }
 
-  /* ---------- barre macro ------------------------------------------------
+  /* ---------- barre macro --------------------------------------------------
      La tacca del target resta il pezzo importante: senza, una barra all'88%
      e una al 99% sembrano entrambe "piena" e il pannello smette di raccontare
-     lo scarto dal piano. Qui il riempimento e' lime su binario chiaro. */
+     lo scarto dal piano. Qui il riempimento e lime su binario chiaro. */
   .bar-l {
     font-size: 12px;
     font-weight: 700;
@@ -386,6 +461,7 @@ button {
   }
   .bar-v {
     font-family: var(--font-mono);
+    font-variation-settings: "wdth" 84;
     font-size: 12.5px;
     font-weight: 500;
     color: var(--color-muted);
@@ -398,21 +474,21 @@ button {
   .bar-track {
     position: relative;
     height: 10px;
-    border-radius: var(--r-bar);
+    border-radius: var(--bar-r);
     overflow: hidden;
     background: var(--color-tray);
   }
   .bar-track > i {
     display: block;
     height: 100%;
-    border-radius: var(--r-bar);
+    border-radius: var(--bar-r);
     background: var(--color-lime);
     transform: scaleX(var(--fx, 0));
     transform-origin: left;
-    transition: transform 0.95s var(--mech);
+    transition: transform 0.95s var(--e-mech);
     transition-delay: var(--bd, 0ms);
   }
-  /* oltre il target il riempimento passa al nero: si vede senza leggere */
+  /* oltre il target il riempimento passa a inchiostro: si vede senza leggere */
   .bar-track.over > i {
     background: var(--color-ink);
   }
@@ -422,16 +498,9 @@ button {
     bottom: -2px;
     width: 2px;
     background: var(--color-ink);
-    opacity: 0.42;
+    opacity: 0.45;
     border-radius: 2px;
     pointer-events: none;
-  }
-  .on-ink .bar-track {
-    background: rgba(255, 255, 255, 0.14);
-  }
-  .on-ink .bar-tick {
-    background: #fff;
-    opacity: 0.5;
   }
 
   /* barra proporzionale P/C/G del singolo piatto */
@@ -446,7 +515,7 @@ button {
     display: block;
     height: 100%;
     border-radius: 999px;
-    transition: flex 0.7s var(--mech);
+    transition: flex 0.7s var(--e-mech);
   }
   .macrobar > i:nth-child(1) {
     background: var(--color-ink);
@@ -458,7 +527,7 @@ button {
     background: var(--color-tray);
   }
 
-  /* ---------- blocco di lettura (le cifre dentro il nero) ---------------- */
+  /* ---------- blocco di lettura (le cifre dentro lo scuro) ----------------- */
   .readout {
     background: var(--color-ink);
     display: grid;
@@ -471,11 +540,13 @@ button {
     letter-spacing: -0.03em;
     line-height: 1.06;
     font-family: var(--font-mono);
+    font-variation-settings: "wdth" 84;
   }
   .ro-l {
     display: block;
     margin-top: 6px;
     font-family: var(--font-mono);
+    font-variation-settings: "wdth" 84;
     font-size: 9.5px;
     font-weight: 500;
     letter-spacing: 0.16em;
@@ -483,14 +554,15 @@ button {
     color: var(--color-mink);
   }
 
-  /* ---------- numero di servizio ---------------------------------------- */
+  /* ---------- numero di servizio ------------------------------------------ */
   .num {
     display: grid;
     place-items: center;
     width: 44px;
     height: 44px;
-    border-radius: var(--r-chip);
+    border-radius: var(--chip-r);
     font-family: var(--font-mono);
+    font-variation-settings: "wdth" 84;
     font-size: 14px;
     font-weight: 700;
   }
@@ -503,9 +575,10 @@ button {
     color: var(--color-lime);
   }
 
-  /* ---------- griglia settimanale --------------------------------------- */
+  /* ---------- griglia settimanale ----------------------------------------- */
   .dayhead {
     font-family: var(--font-mono);
+    font-variation-settings: "wdth" 84;
     font-size: 10.5px;
     font-weight: 500;
     letter-spacing: 0.14em;
@@ -516,6 +589,7 @@ button {
   }
   .rowlab {
     font-family: var(--font-mono);
+    font-variation-settings: "wdth" 84;
     font-size: 10px;
     font-weight: 500;
     letter-spacing: 0.16em;
@@ -529,12 +603,12 @@ button {
     flex-direction: column;
     min-height: 84px;
     padding: 11px 12px;
-    border-radius: var(--r-chip);
+    border-radius: var(--chip-r);
     background: var(--color-cell);
     text-align: left;
     width: 100%;
-    transition: background-color 0.28s var(--mech), transform 0.28s var(--snap),
-      box-shadow 0.28s var(--mech);
+    transition: background-color 0.28s var(--e-mech), transform 0.28s var(--e-out),
+      box-shadow 0.28s var(--e-mech);
   }
   .cell:hover {
     transform: translateY(-2px);
@@ -564,6 +638,7 @@ button {
   .cell-k {
     margin-top: auto;
     font-family: var(--font-mono);
+    font-variation-settings: "wdth" 84;
     font-size: 10.5px;
     font-weight: 500;
     color: var(--color-muted);
@@ -571,7 +646,7 @@ button {
   }
   .total {
     background: var(--color-ink);
-    border-radius: var(--r-core);
+    border-radius: var(--core-r);
     display: grid;
     overflow: hidden;
   }
@@ -589,6 +664,7 @@ button {
   }
   .total-n {
     font-family: var(--font-mono);
+    font-variation-settings: "wdth" 84;
     font-size: 24px;
     font-weight: 700;
     color: var(--color-lime);
@@ -596,7 +672,7 @@ button {
     line-height: 1.05;
   }
 
-  /* ---------- ticker ----------------------------------------------------- */
+  /* ---------- ticker ------------------------------------------------------ */
   .ticker {
     background: var(--color-lime);
     overflow: hidden;
@@ -606,6 +682,7 @@ button {
   }
   .tk-w {
     font-family: var(--font-mono);
+    font-variation-settings: "wdth" 84;
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.16em;
@@ -622,18 +699,19 @@ button {
     flex: 0 0 auto;
   }
 
-  /* ---------- campi ------------------------------------------------------ */
+  /* ---------- campi ------------------------------------------------------- */
   .field {
     width: 100%;
     height: 52px;
     padding: 0 18px;
-    border-radius: var(--r-chip);
+    border-radius: var(--chip-r);
     background: var(--color-card);
     box-shadow: inset 0 0 0 1.5px var(--hair);
     color: var(--color-ink);
     font-family: var(--font-mono);
+    font-variation-settings: "wdth" 84;
     font-size: 13.5px;
-    transition: box-shadow 0.28s var(--mech);
+    transition: box-shadow 0.28s var(--e-mech);
   }
   textarea.field {
     height: auto;
@@ -647,21 +725,96 @@ button {
     outline: none;
     box-shadow: inset 0 0 0 2px var(--color-ink);
   }
+  /* #C02626 su card = 5.92:1 e su paper = 5.24:1: passa AA anche come testo,
+     non solo come anello. L'errore non va mai affidato al solo colore. */
   .field-err {
     box-shadow: inset 0 0 0 2px #c02626;
   }
 
   .note {
     font-family: var(--font-mono);
+    font-variation-settings: "wdth" 84;
     font-size: 10.5px;
     font-weight: 500;
     letter-spacing: 0.14em;
     text-transform: uppercase;
     color: var(--color-muted);
   }
+
+  /* ---------- maschera per le righe che salgono --------------------------- */
+  /* fuel-rise porta la riga da +105% a 0: senza il taglio di .ln la riga si
+     vedrebbe arrivare da sotto invece di scoprirsi. */
+  .ln {
+    display: block;
+    overflow: hidden;
+  }
+  .ln > i {
+    display: block;
+    font-style: inherit;
+  }
+
+  /* ---------- regioni scure ------------------------------------------------
+     .on-ink marca una zona scura (il fondo lo mettono .readout, .total o una
+     utility bg-ink). Non impone il fondo: ribalta solo cio che su scuro
+     sparirebbe. Qui, e solo qui, il lime torna testo legittimo: 12.61:1. */
+  .on-ink {
+    color: #fff;
+    --hair: var(--hair-ink);
+    --hair-soft: rgba(255, 255, 255, 0.1);
+  }
+  .on-ink .h1,
+  .on-ink .h2,
+  .on-ink .h3 {
+    color: #fff;
+  }
+  .on-ink .lead,
+  .on-ink .label,
+  .on-ink .note,
+  .on-ink .bar-v,
+  .on-ink .dayhead,
+  .on-ink .rowlab,
+  .on-ink .cell-k,
+  .on-ink .price-da,
+  .on-ink .price-u {
+    color: var(--color-mink);
+  }
+  .on-ink .bar-v b {
+    color: #fff;
+  }
+  .on-ink .eyebrow {
+    background: transparent;
+    box-shadow: inset 0 0 0 1px var(--hair-ink);
+    color: var(--color-lime);
+  }
+  .on-ink .eyebrow b {
+    background: var(--color-lime);
+  }
+  /* sopra la barra lime dell'evidenziatore il testo torna scuro */
+  .on-ink .hl-tx {
+    color: var(--color-ink);
+  }
+  .on-ink .bar-track {
+    background: rgba(255, 255, 255, 0.14);
+  }
+  .on-ink .bar-tick {
+    background: #fff;
+    opacity: 0.5;
+  }
+  /* Dentro i blocchi scuri il focus a inchiostro sparirebbe. */
+  .on-ink :focus-visible {
+    outline-color: var(--color-lime);
+  }
 }
 
-/* ---------- rivelazione in scroll ---------------------------------------
+/* ---------- grana ---------------------------------------------------------
+   Su fondo scuro la grana si sommava in schiarita. Su chiaro deve sottrarre:
+   in screen o in normal sporcherebbe di grigio invece di dare texture. */
+.grain {
+  mix-blend-mode: multiply;
+  opacity: 0.04;
+}
+
+/* ---------- rivelazione in scroll ----------------------------------------
    Lo stato di partenza vale SOLO con il JS vivo (html.js): senza questa
    guardia, con JavaScript disattivato la pagina resterebbe invisibile.      */
 .js .reveal {
@@ -671,7 +824,7 @@ button {
 .js .reveal.in {
   opacity: 1;
   transform: none;
-  transition: opacity 0.7s var(--snap), transform 0.7s var(--snap);
+  transition: opacity 0.7s var(--e-out), transform 0.7s var(--e-out);
   transition-delay: var(--d, 0ms);
 }
 
@@ -697,5 +850,10 @@ button {
   }
   100% {
     transform: translateY(400%);
+  }
+}
+@keyframes fuel-spin {
+  to {
+    transform: rotate(360deg);
   }
 }
