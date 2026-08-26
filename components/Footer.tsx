@@ -32,7 +32,7 @@ export default function Footer() {
                 <Link
                   key={v.href}
                   href={v.href}
-                  className="text-[12px] tracking-[.13em] uppercase transition-colors duration-400 hover:text-lime"
+                  className="text-[12px] tracking-[.13em] uppercase transition-colors duration-400 hover:text-ink"
                   style={{ fontVariationSettings: '"wdth" 108, "wght" 600' }}
                 >
                   {v.label}

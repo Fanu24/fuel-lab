@@ -249,7 +249,7 @@ function Campo({
         aria-describedby={descritto || undefined}
       />
       {aiuto ? (
-        <p id={idAiuto} className="mt-[9px] text-[12.5px] leading-relaxed text-mist-dim">
+        <p id={idAiuto} className="mt-[9px] text-[12.5px] leading-relaxed text-muted">
           {aiuto}
         </p>
       ) : null}
@@ -365,9 +365,9 @@ function RigaConto({
 }) {
   return (
     <div className="mb-[10px] flex items-baseline justify-between gap-4 last:mb-0">
-      <span className="text-[13px] text-mist-dim">{etichetta}</span>
+      <span className="text-[13px] text-muted">{etichetta}</span>
       <span
-        className={`font-mono text-[13px] whitespace-nowrap ${accento ? "text-lime" : "text-white"}`}
+        className={`font-mono text-[13px] whitespace-nowrap ${accento ? "text-ink" : "text-ink"}`}
         style={{ fontVariationSettings: '"wdth" 84' }}
       >
         {valore}
@@ -403,7 +403,7 @@ function Riepilogo({
         <ul className="mt-[22px] flex flex-col gap-[14px]">
           {righe.map(({ dish, qta }) => (
             <li key={dish.id} className="flex items-center gap-[13px]">
-              <figure className="h-[46px] w-[46px] flex-none overflow-hidden rounded-[14px] bg-ink-2">
+              <figure className="h-[46px] w-[46px] flex-none overflow-hidden rounded-[14px] bg-tray">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={dishImg(dish, 120)}
@@ -413,13 +413,13 @@ function Riepilogo({
                 />
               </figure>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-[13.5px] leading-tight text-white">{dish.nome}</p>
+                <p className="truncate text-[13.5px] leading-tight text-ink">{dish.nome}</p>
                 <p className="note mt-[6px]" style={{ fontSize: 10 }}>
                   {dish.giorno === "lunedi" ? "cotto lun" : "cotto gio"} / {dish.kcal} kcal
                 </p>
               </div>
               <span
-                className="font-mono text-[12.5px] text-lime"
+                className="font-mono text-[12.5px] text-ink"
                 style={{ fontVariationSettings: '"wdth" 84' }}
               >
                 &times;{qta}
@@ -455,7 +455,7 @@ function Riepilogo({
         >
           <span className="bar-l">Totale</span>
           <span
-            className="font-mono text-[23px] leading-none text-white"
+            className="font-mono text-[23px] leading-none text-ink"
             style={{ fontVariationSettings: '"wdth" 84' }}
           >
             {euro(conto.totale)}
@@ -468,7 +468,7 @@ function Riepilogo({
           </p>
         ) : null}
 
-        <p className="mt-[15px] text-[12.5px] leading-relaxed text-mist-dim">
+        <p className="mt-[15px] text-[12.5px] leading-relaxed text-muted">
           {formula === "abbonamento"
             ? "Abbonamento: il box si rinnova ogni settimana allo stesso prezzo, con il menu aggiornato. Si disdice quando vuoi dal riepilogo che ti arriva per mail, senza vincoli e senza penali."
             : "Ordine singolo: paghi questo box e basta, nessun rinnovo automatico."}
@@ -527,7 +527,7 @@ function Vuoto() {
             <div className="core grid md:grid-cols-2">
               <div className="p-[32px] md:p-[42px]">
                 <h2 className="h2">Il box e vuoto.</h2>
-                <p className="mt-5 text-[15px] leading-relaxed text-mist-dim">
+                <p className="mt-5 text-[15px] leading-relaxed text-muted">
                   {"Non c'e niente da consegnare: prima scegli le schiscette, poi torniamo qui a prenderti l'indirizzo. Ci vogliono due minuti."}
                 </p>
                 <div className="mt-9 flex flex-wrap gap-3">
@@ -546,7 +546,7 @@ function Vuoto() {
                 </div>
               </div>
               {FOTO_VUOTO ? (
-                <figure className="min-h-[240px] bg-ink-2 max-md:order-first">
+                <figure className="min-h-[240px] bg-tray max-md:order-first">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={dishImg(FOTO_VUOTO, 800)}
@@ -576,7 +576,7 @@ function Successo({ ordine }: { ordine: Ordine }) {
                   <div>
                     <p className="note">{"Numero d'ordine"}</p>
                     <p
-                      className="mt-[11px] font-mono text-[27px] leading-none text-lime md:text-[32px]"
+                      className="mt-[11px] font-mono text-[27px] leading-none text-ink md:text-[32px]"
                       style={{ fontVariationSettings: '"wdth" 84' }}
                     >
                       {ordine.numero}
@@ -584,11 +584,11 @@ function Successo({ ordine }: { ordine: Ordine }) {
                   </div>
                   <div className="sm:text-right">
                     <p className="note">Consegna</p>
-                    <p className="mt-[9px] font-disp text-[27px] leading-none text-white uppercase">
+                    <p className="mt-[9px] font-disp text-[27px] leading-none text-ink uppercase">
                       {ETICHETTA_GIORNO[ordine.slot.giorno]}
                     </p>
                     <p
-                      className="mt-[6px] font-mono text-[13px] text-mist-dim"
+                      className="mt-[6px] font-mono text-[13px] text-muted"
                       style={{ fontVariationSettings: '"wdth" 84' }}
                     >
                       {ordine.slot.fascia}
@@ -603,19 +603,19 @@ function Successo({ ordine }: { ordine: Ordine }) {
                 <div className="core grid gap-7 p-[28px] sm:grid-cols-2 md:p-[32px]">
                   <div>
                     <p className="note">Consegniamo a</p>
-                    <p className="mt-[10px] text-[15px] leading-tight text-white">
+                    <p className="mt-[10px] text-[15px] leading-tight text-ink">
                       {ordine.consegnatario}
                     </p>
-                    <p className="mt-[5px] text-[14px] leading-relaxed text-mist-dim">
+                    <p className="mt-[5px] text-[14px] leading-relaxed text-muted">
                       {ordine.indirizzo}
                     </p>
                   </div>
                   <div>
                     <p className="note">Riepilogo via mail</p>
-                    <p className="mt-[10px] text-[15px] leading-tight break-all text-white">
+                    <p className="mt-[10px] text-[15px] leading-tight break-all text-ink">
                       {ordine.email}
                     </p>
-                    <p className="mt-[5px] text-[13px] leading-relaxed text-mist-dim">
+                    <p className="mt-[5px] text-[13px] leading-relaxed text-muted">
                       Nella demo non parte nessuna mail: non esiste un server a cui mandarla.
                     </p>
                   </div>
@@ -624,7 +624,7 @@ function Successo({ ordine }: { ordine: Ordine }) {
                   {ordine.note ? (
                     <div className="sm:col-span-2">
                       <p className="note">Note per chi consegna</p>
-                      <p className="mt-[10px] text-[14px] leading-relaxed text-mist">
+                      <p className="mt-[10px] text-[14px] leading-relaxed text-ink">
                         {ordine.note}
                       </p>
                     </div>
@@ -868,7 +868,7 @@ export default function CheckoutClient() {
             <span className="note" style={{ color: "var(--color-lime)" }}>
               Demo
             </span>
-            <p className="max-w-[780px] text-[13.5px] leading-relaxed text-mist">
+            <p className="max-w-[780px] text-[13.5px] leading-relaxed text-ink">
               {"Questo checkout e una dimostrazione: non viene chiesto nessun pagamento, non viene registrato nessun ordine e i dati che scrivi restano nel tuo browser."}
             </p>
           </div>
@@ -991,7 +991,7 @@ export default function CheckoutClient() {
                         <h3 className="h3" style={{ fontSize: 23 }}>
                           Qui non arriviamo. Ancora.
                         </h3>
-                        <p className="mt-3 text-[14px] leading-relaxed text-mist">
+                        <p className="mt-3 text-[14px] leading-relaxed text-ink">
                           {`Il furgone copre Pescara e provincia, e il ${modulo.cap} resta fuori dal giro del lunedi e del giovedi. Non e un errore tuo: e un limite nostro, e stiamo allargando il raggio una zona alla volta.`}
                         </p>
 
@@ -1014,7 +1014,7 @@ export default function CheckoutClient() {
                               </span>
                             </button>
                             {!emailBuona ? (
-                              <p className="mt-[11px] text-[12.5px] leading-relaxed text-mist-dim">
+                              <p className="mt-[11px] text-[12.5px] leading-relaxed text-muted">
                                 Scrivi prima la tua mail qui sopra: la usiamo solo per avvisarti
                                 quando Fuel arriva dalle tue parti.
                               </p>
@@ -1051,7 +1051,7 @@ export default function CheckoutClient() {
                       <b aria-hidden="true" />
                       Slot di consegna
                     </h2>
-                    <p className="mb-[24px] max-w-[560px] text-[14px] leading-relaxed text-mist-dim">
+                    <p className="mb-[24px] max-w-[560px] text-[14px] leading-relaxed text-muted">
                       {"Matteo cucina il lunedi e il giovedi mattina, e il furgone parte nel pomeriggio dello stesso giorno. Gli slot sono due sere a settimana per questo motivo: fra la padella e il tuo frigo passano meno di dodici ore."}
                     </p>
 
@@ -1092,7 +1092,7 @@ export default function CheckoutClient() {
                   id="stato-modulo"
                   role="status"
                   aria-live="polite"
-                  className="mt-[14px] text-[12.5px] leading-relaxed text-mist-dim"
+                  className="mt-[14px] text-[12.5px] leading-relaxed text-muted"
                 >
                   {valido
                     ? "Tutto a posto. Alla conferma non paghi niente: vedi solo il riepilogo della demo."

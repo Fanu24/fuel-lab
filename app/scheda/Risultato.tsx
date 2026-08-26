@@ -100,7 +100,7 @@ export default function Risultato({
       <div className="shell">
         <div className="core p-10">
           <h2 className="h3">Nessun piatto disponibile</h2>
-          <p className="mt-4 max-w-[52ch] text-[15px] text-mist-dim">
+          <p className="mt-4 max-w-[52ch] text-[15px] text-muted">
             Con i vincoli che hai scelto il catalogo resta vuoto. Riapri i valori e togli
             un&apos;esclusione.
           </p>
@@ -120,7 +120,7 @@ export default function Risultato({
       <div className="grid gap-11 lg:grid-cols-[1fr_396px]">
         {/* ================= verdetto + azioni ================= */}
         <div>
-          <p className="note text-lime">Passo 4 / 4</p>
+          <p className="note text-ink">Passo 4 / 4</p>
           <h2 className="h2 mt-4 !text-[clamp(32px,4.8vw,52px)]">Il tuo box.</h2>
 
           {composizione.aCentro ? (
@@ -139,7 +139,7 @@ export default function Risultato({
           ) : (
             <div className="mt-8 shell" role="status">
               <div className="core px-7 py-8">
-                <p className="font-disp text-[clamp(26px,3.4vw,36px)] leading-[.96] text-white uppercase">
+                <p className="font-disp text-[clamp(26px,3.4vw,36px)] leading-[.96] text-ink uppercase">
                   Ci siamo quasi: {fuori.length === 1 ? "un macro" : fuori.length + " macro"} fuori
                   tiro
                 </p>
@@ -152,11 +152,11 @@ export default function Risultato({
                     >
                       <span className="bar-l">{ETICHETTE[k]}</span>
                       <span
-                        className="font-mono text-[14px] text-lime"
+                        className="font-mono text-[14px] text-ink"
                         style={{ fontVariationSettings: '"wdth" 84' }}
                       >
                         {conSegno(composizione.scarti[k], "%")}
-                        <em className="ml-2 not-italic text-mist-dim">
+                        <em className="ml-2 not-italic text-muted">
                           ({conSegno(composizione.totali[k] - composizione.bersaglio[k], " " + UNITA[k])}{" "}
                           sul bersaglio)
                         </em>
@@ -164,7 +164,7 @@ export default function Risultato({
                     </li>
                   ))}
                 </ul>
-                <p className="mt-6 max-w-[52ch] text-[14px] leading-relaxed text-mist-dim">
+                <p className="mt-6 max-w-[52ch] text-[14px] leading-relaxed text-muted">
                   I piatti sono interi e il catalogo ne ha {DISHES.length}: piu vicino di cosi, con questi
                   vincoli, non si arriva. Rigenera per un&apos;altra combinazione oppure allarga i
                   valori.
@@ -190,7 +190,7 @@ export default function Risultato({
             <button
               type="button"
               onClick={onModifica}
-              className="text-[14px] text-mist-dim underline decoration-lime decoration-2 underline-offset-[6px] transition-colors duration-400 ease-[var(--e-out)] hover:text-white"
+              className="text-[14px] text-muted underline decoration-ink decoration-2 underline-offset-[6px] transition-colors duration-400 ease-[var(--e-out)] hover:text-ink"
             >
               Modifica i valori
             </button>
@@ -241,11 +241,11 @@ export default function Risultato({
             >
               <span className="bar-l">Calorie</span>
               <p
-                className="font-mono text-[38px] leading-none text-white"
+                className="font-mono text-[38px] leading-none text-ink"
                 style={{ fontVariationSettings: '"wdth" 82' }}
               >
                 {numero(composizione.totali.kcal)}
-                <span className="ml-2 text-[13px] text-mist-dim">
+                <span className="ml-2 text-[13px] text-muted">
                   / {numero(composizione.bersaglio.kcal)} kcal
                 </span>
               </p>
@@ -259,9 +259,9 @@ export default function Risultato({
               className="mt-7 flex flex-wrap items-center justify-between gap-3 rounded-[14px] px-5 py-4"
               style={{ background: "rgba(223,255,62,.06)", border: "1px solid var(--hair)" }}
             >
-              <span className="note text-lime">Prezzo indicativo</span>
+              <span className="note text-ink">Prezzo indicativo</span>
               <span
-                className="font-mono text-[15px] text-white"
+                className="font-mono text-[15px] text-ink"
                 style={{ fontVariationSettings: '"wdth" 84' }}
               >
                 {euro(conto.totale)}

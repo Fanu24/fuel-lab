@@ -274,7 +274,7 @@ export default function ComeFunziona() {
                   buono ne il cattivo. Non e&apos; cibo appena cotto, e&apos; cibo messo in pausa.
                 </p>
                 <p className="lead mt-5">
-                  Le nostre schiscette durano <b className="text-white">quattro giorni in frigo</b>.
+                  Le nostre schiscette durano <b className="text-ink">quattro giorni in frigo</b>.
                   Non e&apos; un limite del servizio da nascondere in fondo alla pagina: e&apos; la
                   prova che dentro c&apos;e&apos; roba viva, cotta lunedi mattina e non lo scorso
                   marzo.
@@ -457,7 +457,7 @@ export default function ComeFunziona() {
                 {/* h4 e non p: sono i due titoli che dividono la scheda, e da tastiera
                     o da screen reader si salta per intestazioni, non per paragrafi */}
                 <h4
-                  className="mt-9 mb-4 text-[11.5px] font-normal tracking-[.24em] text-lime uppercase"
+                  className="mt-9 mb-4 text-[11.5px] font-normal tracking-[.24em] text-ink uppercase"
                   style={{ fontVariationSettings: '"wdth" 112, "wght" 700' }}
                 >
                   Dove vince
@@ -575,7 +575,7 @@ export default function ComeFunziona() {
           <Reveal delay={80}>
             <p className="lead mt-16 max-w-[64ch] md:mt-24">
               Se abiti fuori dall&apos;Abruzzo, o se vuoi riempire il congelatore e non pensarci per
-              un mese, <b className="text-white">il surgelato e&apos; la scelta giusta</b> e non
+              un mese, <b className="text-ink">il surgelato e&apos; la scelta giusta</b> e non
               proveremo a convincerti del contrario. Fuel ha senso se vivi qui, se mangi per
               allenarti, e se ti sei stufato di piatti che tornano tutti allo stesso sapore.
             </p>

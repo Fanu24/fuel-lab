@@ -172,11 +172,11 @@ function Caricamento({
         />
 
         <div className="relative z-1 w-full">
-          <p className="note text-lime">Passo 1 / 4</p>
+          <p className="note text-ink">Passo 1 / 4</p>
           <h2 className="h3 mt-4 max-w-[380px] !text-[clamp(26px,4.4vw,36px)]">
             Trascina qui la scheda del tuo nutrizionista
           </h2>
-          <p className="mt-4 max-w-[430px] text-[15px] leading-relaxed text-mist">
+          <p className="mt-4 max-w-[430px] text-[15px] leading-relaxed text-ink">
             PDF, foto, screenshot: quello che hai. Il file resta sul tuo computer, non lo
             carichiamo da nessuna parte.
           </p>
@@ -202,7 +202,7 @@ function Caricamento({
                 React: l'anello resta visibile anche se l'idratazione tarda. */}
             <label
               htmlFor="scheda-file"
-              className="btn btn-p cursor-pointer peer-focus-visible:outline-2 peer-focus-visible:outline-offset-[3px] peer-focus-visible:outline-lime"
+              className="btn btn-p cursor-pointer peer-focus-visible:outline-2 peer-focus-visible:outline-offset-[3px] peer-focus-visible:outline-ink"
             >
               Scegli il file
               <span className="dot" aria-hidden="true">
@@ -224,7 +224,7 @@ function Caricamento({
             {errore !== null ? (
               <p
                 role="alert"
-                className="inline-block max-w-full rounded-full px-4 py-[7px] font-mono text-[12px] text-lime"
+                className="inline-block max-w-full rounded-full px-4 py-[7px] font-mono text-[12px] text-ink"
                 style={{
                   fontVariationSettings: '"wdth" 84',
                   border: "1px solid rgba(223,255,62,.42)",
@@ -239,7 +239,7 @@ function Caricamento({
             <button
               type="button"
               onClick={onMano}
-              className="text-[14px] text-mist underline decoration-lime decoration-2 underline-offset-[6px] transition-colors duration-400 ease-[var(--e-out)] hover:text-white"
+              className="text-[14px] text-ink underline decoration-ink decoration-2 underline-offset-[6px] transition-colors duration-400 ease-[var(--e-out)] hover:text-ink"
             >
               Non ho una scheda, inserisco i valori a mano
             </button>
@@ -259,8 +259,8 @@ function Caricamento({
               className="aspect-[4/3] w-full object-cover"
             />
             <figcaption className="p-6">
-              <p className="note text-lime">Il box della settimana</p>
-              <p className="mt-3 text-[14px] leading-relaxed text-mist">
+              <p className="note text-ink">Il box della settimana</p>
+              <p className="mt-3 text-[14px] leading-relaxed text-ink">
                 Da qui escono schiscette porzionate al grammo, non consigli generici.
               </p>
             </figcaption>
@@ -279,7 +279,7 @@ function Caricamento({
                 aria-hidden="true"
                 style={{ opacity: 1 - i * 0.24 }}
               />
-              <span className="text-[14px] text-mist-dim">{v}</span>
+              <span className="text-[14px] text-muted">{v}</span>
             </li>
           ))}
         </ul>
@@ -338,12 +338,12 @@ function Scansione({ nomeFile, onFine }: { nomeFile: string | null; onFine: () =
             }}
           />
           <p
-            className="font-mono text-[10.5px] tracking-[.2em] text-lime uppercase"
+            className="font-mono text-[10.5px] tracking-[.2em] text-ink uppercase"
             style={{ fontVariationSettings: '"wdth" 84' }}
           >
             Scheda
           </p>
-          <p className="mt-2 overflow-hidden text-[15px] text-ellipsis whitespace-nowrap text-white">
+          <p className="mt-2 overflow-hidden text-[15px] text-ellipsis whitespace-nowrap text-ink">
             {nomeFile ?? "valori inseriti a mano"}
           </p>
           <div className="mt-6 grid gap-[10px]">
@@ -363,7 +363,7 @@ function Scansione({ nomeFile, onFine }: { nomeFile: string | null; onFine: () =
 
       {/* ---------- telemetria ---------- */}
       <div>
-        <p className="note text-lime">Passo 2 / 4</p>
+        <p className="note text-ink">Passo 2 / 4</p>
         <h2 className="h2 mt-4 !text-[clamp(34px,5.2vw,56px)]">Un attimo.</h2>
 
         <ol className="mt-9 grid gap-[14px]" aria-label="Avanzamento della lettura" aria-live="polite">
@@ -390,7 +390,7 @@ function Scansione({ nomeFile, onFine }: { nomeFile: string | null; onFine: () =
                   }}
                 />
                 <span
-                  className="font-mono text-[12.5px] tracking-[.06em] text-mist"
+                  className="font-mono text-[12.5px] tracking-[.06em] text-ink"
                   style={{ fontVariationSettings: '"wdth" 84' }}
                 >
                   {p}
@@ -630,14 +630,14 @@ export default function SchedaClient() {
                     <article className={"shell " + b.sposta}>
                       <div className="core flex flex-col gap-2 p-7 sm:flex-row sm:gap-7">
                         <p
-                          className="font-mono text-[13px] text-lime"
+                          className="font-mono text-[13px] text-ink"
                           style={{ fontVariationSettings: '"wdth" 84' }}
                         >
                           {b.n}
                         </p>
                         <div>
                           <h3 className="h3 !text-[23px]">{b.t}</h3>
-                          <p className="mt-3 max-w-[54ch] text-[14.5px] leading-relaxed text-mist-dim">
+                          <p className="mt-3 max-w-[54ch] text-[14.5px] leading-relaxed text-muted">
                             {b.d}
                           </p>
                         </div>
@@ -676,7 +676,7 @@ export default function SchedaClient() {
                   <h2 className="h2 !text-[clamp(30px,4.4vw,46px)]">
                     Vuoi prima vedere cosa si mangia?
                   </h2>
-                  <p className="mt-4 max-w-[46ch] text-[15px] text-mist-dim">
+                  <p className="mt-4 max-w-[46ch] text-[15px] text-muted">
                     Le {DISHES.length} schiscette della settimana, con i macro di ognuna.
                   </p>
                 </div>

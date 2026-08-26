@@ -265,7 +265,7 @@ function CardFormula({
           <label htmlFor={id} className={`h3 block cursor-pointer !text-[30px] ${ESTESA}`}>
             {titolo}
           </label>
-          <p id={`${id}-d`} className="mt-3 text-[14.5px] leading-relaxed text-mist-dim">
+          <p id={`${id}-d`} className="mt-3 text-[14.5px] leading-relaxed text-muted">
             {testo}
           </p>
 
@@ -308,12 +308,12 @@ function Stepper({ dish, qta }: { dish: Dish; qta: number }) {
         type="button"
         onClick={() => imposta(dish.id, qta - 1)}
         aria-label={`Togli una porzione di ${dish.nome}`}
-        className="grid h-7 w-7 place-items-center rounded-full text-lime transition-colors duration-300 ease-[var(--e-out)] hover:bg-lime hover:text-ink"
+        className="grid h-7 w-7 place-items-center rounded-full text-ink transition-colors duration-300 ease-[var(--e-out)] hover:bg-lime hover:text-ink"
       >
         −
       </button>
       <span
-        className="min-w-6 text-center font-mono text-[13px] text-white"
+        className="min-w-6 text-center font-mono text-[13px] text-ink"
         aria-live="polite"
         style={{ fontVariationSettings: '"wdth" 84' }}
       >
@@ -326,7 +326,7 @@ function Stepper({ dish, qta }: { dish: Dish; qta: number }) {
         onClick={() => aggiungi(dish.id)}
         disabled={qta >= 20}
         aria-label={`Aggiungi una porzione di ${dish.nome}`}
-        className="grid h-7 w-7 place-items-center rounded-full text-lime transition-colors duration-300 ease-[var(--e-out)] hover:bg-lime hover:text-ink disabled:opacity-35 disabled:hover:bg-transparent disabled:hover:text-lime"
+        className="grid h-7 w-7 place-items-center rounded-full text-ink transition-colors duration-300 ease-[var(--e-out)] hover:bg-lime hover:text-ink disabled:opacity-35 disabled:hover:bg-transparent disabled:hover:text-ink"
       >
         +
       </button>
@@ -341,7 +341,7 @@ function RigaPiatto({ dish, qta }: { dish: Dish; qta: number }) {
       className="grid grid-cols-[62px_minmax(0,1fr)] items-center gap-x-4 gap-y-4 border-t px-5 py-[18px] first:border-t-0 sm:grid-cols-[74px_minmax(0,1fr)_auto] sm:gap-x-6 sm:px-7 sm:py-5"
       style={{ borderColor: "var(--hair-soft)" }}
     >
-      <figure className="aspect-square overflow-hidden rounded-[14px] bg-ink-2">
+      <figure className="aspect-square overflow-hidden rounded-[14px] bg-tray">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={dishImg(dish, 220)}
@@ -354,13 +354,13 @@ function RigaPiatto({ dish, qta }: { dish: Dish; qta: number }) {
 
       <div className="min-w-0">
         <h3
-          className="text-[15px] leading-snug text-white"
+          className="text-[15px] leading-snug text-ink"
           style={{ fontVariationSettings: '"wdth" 104, "wght" 600' }}
         >
           {dish.nome}
         </h3>
         <p
-          className="mt-[6px] font-mono text-[11.5px] text-mist-dim"
+          className="mt-[6px] font-mono text-[11.5px] text-muted"
           style={{ fontVariationSettings: '"wdth" 84' }}
         >
           {dish.kcal} kcal · P {dish.proteine} / C {dish.carboidrati} / G {dish.grassi}
@@ -379,7 +379,7 @@ function RigaPiatto({ dish, qta }: { dish: Dish; qta: number }) {
           type="button"
           onClick={() => togli(dish.id)}
           aria-label={`Togli ${dish.nome} dal box`}
-          className="grid h-[34px] w-[34px] place-items-center rounded-full border text-[15px] text-mist-dim transition-colors duration-400 ease-[var(--e-out)] hover:border-white hover:text-white"
+          className="grid h-[34px] w-[34px] place-items-center rounded-full border text-[15px] text-muted transition-colors duration-400 ease-[var(--e-out)] hover:border-white hover:text-ink"
           style={{ borderColor: "var(--hair-soft)" }}
         >
           <span aria-hidden="true">×</span>
@@ -399,7 +399,7 @@ function StatoVuoto() {
             <br />
             vuoto.
           </h3>
-          <p className="mt-4 max-w-[440px] text-[15px] leading-relaxed text-mist-dim">
+          <p className="mt-4 max-w-[440px] text-[15px] leading-relaxed text-muted">
             {
               "Due strade, stessa destinazione: scegli i piatti a mano dal menu della settimana, oppure parti dalla scheda del tuo nutrizionista e lascia che sia il matcher a comporre il box sui tuoi macro."
             }
@@ -419,7 +419,7 @@ function StatoVuoto() {
             </Link>
           </div>
         </div>
-        <figure className="relative min-h-[210px] bg-ink-2">
+        <figure className="relative min-h-[210px] bg-tray">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={foto("photo-1498837167922-ddd27525d352", 760)}
@@ -449,9 +449,9 @@ function VoceConto({
 }) {
   return (
     <div className="flex items-baseline justify-between gap-4">
-      <dt className="text-[13.5px] text-mist-dim">{voce}</dt>
+      <dt className="text-[13.5px] text-muted">{voce}</dt>
       <dd
-        className={`font-mono text-[13px] ${accento ? "text-lime" : "text-white"}`}
+        className={`font-mono text-[13px] ${accento ? "text-ink" : "text-ink"}`}
         style={{ fontVariationSettings: '"wdth" 84' }}
       >
         {valore}
@@ -515,10 +515,10 @@ function Riepilogo() {
           style={{ borderColor: "var(--hair-soft)" }}
         >
           <span className="bar-l pb-[6px]">kcal medie</span>
-          <p className="font-disp text-[50px] leading-[.78] text-lime">
+          <p className="font-disp text-[50px] leading-[.78] text-ink">
             {Math.round(medio(macro.kcal))}
             <span
-              className="ml-2 font-mono text-[11px] tracking-[.24em] text-mist-dim"
+              className="ml-2 font-mono text-[11px] tracking-[.24em] text-muted"
               style={{ fontVariationSettings: '"wdth" 84' }}
             >
               kcal
@@ -557,7 +557,7 @@ function Riepilogo() {
         >
           <span className="bar-l pb-[7px]">Totale</span>
           <p
-            className={`font-disp text-[42px] leading-[.8] ${vuoto ? "text-mist-dim" : "text-lime"}`}
+            className={`font-disp text-[42px] leading-[.8] ${vuoto ? "text-muted" : "text-ink"}`}
           >
             {vuoto ? (
               <>
@@ -589,7 +589,7 @@ function Riepilogo() {
                 →
               </span>
             </button>
-            <p id="perche-bloccato" className="mt-3 text-[13px] leading-relaxed text-mist-dim">
+            <p id="perche-bloccato" className="mt-3 text-[13px] leading-relaxed text-muted">
               {
                 "Il box e vuoto: aggiungi almeno un pasto e il bottone si sblocca. Il minimo per una consegna e un pasto, il prezzo migliore parte da 10."
               }
@@ -736,7 +736,7 @@ export default function BoxClient() {
                 {pronto ? (
                   <>
                     <div className="min-w-0">
-                      <p className="text-[17px] leading-snug text-white">
+                      <p className="text-[17px] leading-snug text-ink">
                         {mancano > 0
                           ? `Ti ${mancano === 1 ? "manca" : "mancano"} ${pastiLabel(mancano)} per la taglia da ${obiettivo}.`
                           : mancano < 0
@@ -814,7 +814,7 @@ export default function BoxClient() {
                     pronto && pasti > 0 ? (
                       <>
                         <span
-                          className="font-mono text-[15px] text-white"
+                          className="font-mono text-[15px] text-ink"
                           style={{ fontVariationSettings: '"wdth" 84' }}
                         >
                           {euro(contoSingolo.totale)}
@@ -845,7 +845,7 @@ export default function BoxClient() {
                     pronto && pasti > 0 ? (
                       <>
                         <span
-                          className="font-mono text-[15px] text-lime"
+                          className="font-mono text-[15px] text-ink"
                           style={{ fontVariationSettings: '"wdth" 84' }}
                         >
                           {euro(contoAbbonamento.totale)}
@@ -891,7 +891,7 @@ export default function BoxClient() {
                     }}
                     /* I margini negativi allargano l'area toccabile a ~40px senza
                        spostare di un pixel la riga: 11px di testo non sono un bersaglio. */
-                    className="note -mx-4 -my-3 rounded-full px-4 py-3 transition-colors duration-400 ease-[var(--e-out)] hover:text-lime"
+                    className="note -mx-4 -my-3 rounded-full px-4 py-3 transition-colors duration-400 ease-[var(--e-out)] hover:text-ink"
                     style={{ color: confermaSvuota ? "var(--color-lime)" : undefined }}
                   >
                     {confermaSvuota ? "sicuro? tocca di nuovo" : "svuota il box"}
@@ -971,7 +971,7 @@ export default function BoxClient() {
           <Reveal>
             <div className="shell">
               <div className="core grid md:grid-cols-[268px_minmax(0,1fr)]">
-                <figure className="relative min-h-[190px] bg-ink-2">
+                <figure className="relative min-h-[190px] bg-tray">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={foto("photo-1466637574441-749b8f19452f", 700)}
@@ -983,7 +983,7 @@ export default function BoxClient() {
                 </figure>
                 <div className="flex flex-col justify-center p-8 sm:p-11">
                   <h2 className="h3">Non sai cosa scegliere?</h2>
-                  <p className="mt-4 max-w-[520px] text-[15px] leading-relaxed text-mist-dim">
+                  <p className="mt-4 max-w-[520px] text-[15px] leading-relaxed text-muted">
                     Carica la scheda del tuo nutrizionista: il matcher legge i tuoi
                     target e compone il box al posto tuo, piatto per piatto, restando
                     dentro il 10% su ogni macro. Poi lo correggi come vuoi.

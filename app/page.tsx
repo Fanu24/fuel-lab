@@ -265,13 +265,13 @@ export default function Home() {
                     <div className="shell h-full">
                       <div className="core h-full p-6 sm:p-7">
                         <p
-                          className="font-mono text-[42px] leading-none text-lime"
+                          className="font-mono text-[42px] leading-none text-ink"
                           style={{ fontVariationSettings: '"wdth" 84' }}
                         >
                           {p.n}
                         </p>
                         <h3 className="h3 mt-6 !text-[25px]">{p.titolo}</h3>
-                        <p className="mt-3.5 text-[14.5px] leading-relaxed text-mist-dim">
+                        <p className="mt-3.5 text-[14.5px] leading-relaxed text-muted">
                           {p.testo}
                         </p>
                       </div>
@@ -404,7 +404,7 @@ export default function Home() {
                     <h3 className="h3 max-w-[348px] !text-[26px] sm:!text-[34px]">
                       Trascina qui la scheda del tuo nutrizionista
                     </h3>
-                    <p className="note mt-3.5 text-lime">PDF, JPG o foto</p>
+                    <p className="note mt-3.5 text-ink">PDF, JPG o foto</p>
                     <span className="btn btn-p mt-8">
                       Carica la scheda
                       <span className="dot" aria-hidden="true">

@@ -64,7 +64,7 @@ export default function PannelloMacro() {
           style={{ borderColor: "var(--hair-soft)" }}
         >
           <span className="bar-l pb-1">Totale scheda</span>
-          <p className="font-disp text-[clamp(46px,11vw,62px)] leading-[.8] text-lime">
+          <p className="font-disp text-[clamp(46px,11vw,62px)] leading-[.8] text-ink">
             <Contatore a={TARGET_DEFAULT.kcal} separatore />
             <span className="note ml-[9px] align-baseline">kcal</span>
           </p>

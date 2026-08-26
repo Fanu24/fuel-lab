@@ -33,7 +33,7 @@ function numero(testo: string): number {
 }
 
 const FUOCO =
-  "has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-lime has-[:focus-visible]:outline-offset-[3px]";
+  "has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-ink has-[:focus-visible]:outline-offset-[3px]";
 
 export default function Valori({
   target,
@@ -127,12 +127,12 @@ export default function Valori({
         {/* ---------- testata del pannello ---------- */}
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div>
-            <p className="note text-lime">Passo 3 / 4</p>
+            <p className="note text-ink">Passo 3 / 4</p>
             <h2 className="h2 mt-4 !text-[clamp(32px,4.8vw,52px)]">Controlla i numeri.</h2>
           </div>
           {nomeFile !== null ? (
             <p
-              className="max-w-full overflow-hidden rounded-full px-4 py-[7px] font-mono text-[11.5px] text-ellipsis whitespace-nowrap text-lime"
+              className="max-w-full overflow-hidden rounded-full px-4 py-[7px] font-mono text-[11.5px] text-ellipsis whitespace-nowrap text-ink"
               style={{
                 fontVariationSettings: '"wdth" 84',
                 border: "1px solid var(--hair)",
@@ -153,8 +153,8 @@ export default function Valori({
             className="mt-[7px] block h-[7px] w-[7px] flex-none rotate-45 bg-lime"
             aria-hidden="true"
           />
-          <span className="text-[14px] leading-relaxed text-mist">
-            Questi valori <b className="text-white">non arrivano dal tuo file</b>: sono una scheda
+          <span className="text-[14px] leading-relaxed text-ink">
+            Questi valori <b className="text-ink">non arrivano dal tuo file</b>: sono una scheda
             tipo. La demo non legge i PDF. Sostituiscili con i tuoi, ci vogliono dieci secondi.
           </span>
         </p>
@@ -205,7 +205,7 @@ export default function Valori({
             {/* Niente role="status" qui: cambierebbe a ogni tasto e il lettore
                 di schermo diventerebbe una radiolina. */}
             {incoerente ? (
-              <p className="note mt-6 px-1 text-lime">
+              <p className="note mt-6 px-1 text-ink">
                 Attenzione: i macro fanno {Math.round(kcalDaMacro)} kcal, la scheda ne dichiara{" "}
                 {Math.round(bozza.kcal)}
               </p>
@@ -345,7 +345,7 @@ export default function Valori({
             >
               <p className="bar-l">Il box che stai chiedendo</p>
               <p
-                className="mt-4 font-mono text-[54px] leading-none text-white"
+                className="mt-4 font-mono text-[54px] leading-none text-ink"
                 style={{ fontVariationSettings: '"wdth" 82' }}
               >
                 {pastiTotali}
@@ -384,9 +384,9 @@ export default function Valori({
                     className="flex items-baseline justify-between gap-3 border-b pb-2 last:border-0"
                     style={{ borderColor: "var(--hair-soft)" }}
                   >
-                    <span className="text-[13.5px] text-mist-dim">{r.l}</span>
+                    <span className="text-[13.5px] text-muted">{r.l}</span>
                     <span
-                      className="font-mono text-[14px] text-white"
+                      className="font-mono text-[14px] text-ink"
                       style={{ fontVariationSettings: '"wdth" 84' }}
                     >
                       {numeriOk ? r.v : "—"} <em className="not-italic opacity-45">{r.u}</em>
@@ -412,7 +412,7 @@ export default function Valori({
           <button
             type="button"
             onClick={onRicomincia}
-            className="text-[14px] text-mist-dim underline decoration-lime decoration-2 underline-offset-[6px] transition-colors duration-400 ease-[var(--e-out)] hover:text-white"
+            className="text-[14px] text-muted underline decoration-ink decoration-2 underline-offset-[6px] transition-colors duration-400 ease-[var(--e-out)] hover:text-ink"
           >
             Ricomincia dal caricamento
           </button>

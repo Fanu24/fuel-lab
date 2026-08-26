@@ -30,12 +30,12 @@ function Stepper({ dish }: { dish: Dish }) {
         type="button"
         onClick={() => imposta(dish.id, q - 1)}
         aria-label={`Togli una porzione di ${dish.nome}`}
-        className="grid h-7 w-7 place-items-center rounded-full text-lime transition-colors duration-300 hover:bg-lime hover:text-ink"
+        className="grid h-7 w-7 place-items-center rounded-full text-ink transition-colors duration-300 hover:bg-lime hover:text-ink"
       >
         −
       </button>
       <span
-        className="min-w-6 text-center font-mono text-[13px] text-white"
+        className="min-w-6 text-center font-mono text-[13px] text-ink"
         aria-live="polite"
         style={{ fontVariationSettings: '"wdth" 84' }}
       >
@@ -45,7 +45,7 @@ function Stepper({ dish }: { dish: Dish }) {
         type="button"
         onClick={() => aggiungi(dish.id)}
         aria-label={`Aggiungi una porzione di ${dish.nome}`}
-        className="grid h-7 w-7 place-items-center rounded-full text-lime transition-colors duration-300 hover:bg-lime hover:text-ink"
+        className="grid h-7 w-7 place-items-center rounded-full text-ink transition-colors duration-300 hover:bg-lime hover:text-ink"
       >
         +
       </button>
@@ -66,7 +66,7 @@ export default function DishCard({
   return (
     <article className="shell group h-full transition-[transform,box-shadow] duration-700 hover:-translate-y-2.5" style={{ transitionTimingFunction: "var(--e-over)" }}>
       <div className={`core h-full ${riga ? "grid grid-cols-[132px_1fr] sm:grid-cols-[172px_1fr]" : "flex flex-col"}`}>
-        <figure className={`relative overflow-hidden bg-ink-2 ${riga ? "h-full" : vetrina ? "aspect-[16/8.2]" : "aspect-[16/10]"}`}>
+        <figure className={`relative overflow-hidden bg-tray ${riga ? "h-full" : vetrina ? "aspect-[16/8.2]" : "aspect-[16/10]"}`}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={dishImg(dish, vetrina ? 1000 : riga ? 420 : 720)}
@@ -80,7 +80,7 @@ export default function DishCard({
         <div className={`flex flex-1 flex-col ${riga ? "p-6" : vetrina ? "p-[30px]" : "p-6"}`}>
           <h3 className={`h3 ${vetrina ? "" : riga ? "!text-[25px]" : "!text-[27px]"}`}>{dish.nome}</h3>
 
-          {!riga && <p className="mt-3 text-[14px] leading-relaxed text-mist-dim">{dish.descrizione}</p>}
+          {!riga && <p className="mt-3 text-[14px] leading-relaxed text-muted">{dish.descrizione}</p>}
 
           <div className="mt-4 flex flex-wrap items-center gap-2.5">
             <Chip>{dish.grammi} g</Chip>
@@ -100,11 +100,11 @@ export default function DishCard({
               style={{ borderColor: "var(--hair-soft)" }}
             >
               <p
-                className="font-mono text-[12.5px] tracking-[.05em] text-white"
+                className="font-mono text-[12.5px] tracking-[.05em] text-ink"
                 style={{ fontVariationSettings: '"wdth" 82' }}
               >
-                P {dish.proteine} <em className="not-italic text-mist-dim">/</em> C {dish.carboidrati}{" "}
-                <em className="not-italic text-mist-dim">/</em> G {dish.grassi}
+                P {dish.proteine} <em className="not-italic text-muted">/</em> C {dish.carboidrati}{" "}
+                <em className="not-italic text-muted">/</em> G {dish.grassi}
               </p>
               <Stepper dish={dish} />
             </div>

@@ -79,7 +79,7 @@ function Pill({
       aria-pressed={attivo}
       data-on={attivo ? "true" : "false"}
       style={{ fontVariationSettings: '"wdth" 110, "wght" 700' }}
-      className="group inline-flex shrink-0 items-center gap-2 rounded-full border border-[color:var(--hair-soft)] bg-[rgba(201,224,205,.045)] px-[15px] py-[7px] text-[11px] tracking-[.1em] whitespace-nowrap text-mist uppercase transition-[color,background-color,border-color,transform] duration-400 ease-[var(--e-out)] hover:border-[color:var(--hair)] hover:bg-[rgba(223,255,62,.11)] hover:text-white active:scale-[.96] data-[on=true]:border-transparent data-[on=true]:bg-lime data-[on=true]:text-ink data-[on=true]:hover:bg-white data-[on=true]:hover:text-ink"
+      className="group inline-flex shrink-0 items-center gap-2 rounded-full border border-[color:var(--hair-soft)] bg-[rgba(201,224,205,.045)] px-[15px] py-[7px] text-[11px] tracking-[.1em] whitespace-nowrap text-ink uppercase transition-[color,background-color,border-color,transform] duration-400 ease-[var(--e-out)] hover:border-[color:var(--hair)] hover:bg-[rgba(223,255,62,.11)] hover:text-ink active:scale-[.96] data-[on=true]:border-transparent data-[on=true]:bg-lime data-[on=true]:text-ink data-[on=true]:hover:bg-white data-[on=true]:hover:text-ink"
     >
       {/* Il rombo ha una transizione PROPRIA: transition-timing-function non si eredita,
           quindi senza questa easing esplicita il quadratino tornava alla curva di default
@@ -118,9 +118,9 @@ function Contatore({ n, className = "" }: { n: number; className?: string }) {
     <p
       aria-live="polite"
       style={{ fontVariationSettings: '"wdth" 84' }}
-      className={`font-mono text-[10.5px] tracking-[.14em] whitespace-nowrap text-mist-dim uppercase ${className}`}
+      className={`font-mono text-[10.5px] tracking-[.14em] whitespace-nowrap text-muted uppercase ${className}`}
     >
-      <b className="text-[15px] font-normal text-lime">{n}</b> piatti su {DISHES.length}
+      <b className="text-[15px] font-normal text-ink">{n}</b> piatti su {DISHES.length}
     </p>
   );
 }
@@ -209,7 +209,7 @@ export default function MenuClient() {
                 className="shell transition-transform duration-700 md:rotate-[-2.4deg] md:hover:rotate-0"
                 style={{ transitionTimingFunction: "var(--e-over)" }}
               >
-                <figure className="core aspect-[4/5] bg-ink-2">
+                <figure className="core aspect-[4/5] bg-tray">
                   {COPERTINA ? (
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img
@@ -265,7 +265,7 @@ export default function MenuClient() {
                   {attivi > 0 ? (
                     <span
                       style={{ fontVariationSettings: '"wdth" 84' }}
-                      className="font-mono text-[11px] text-lime"
+                      className="font-mono text-[11px] text-ink"
                     >
                       {attivi}
                     </span>
@@ -335,17 +335,17 @@ export default function MenuClient() {
                           if (scelto) setOrdine(scelto.id);
                         }}
                         style={{ fontVariationSettings: '"wdth" 84' }}
-                        className="appearance-none rounded-full border border-[color:var(--hair-soft)] bg-[rgba(201,224,205,.045)] py-[7px] pr-9 pl-[15px] font-mono text-[10.5px] tracking-[.06em] text-white uppercase transition-colors duration-400 ease-[var(--e-out)] hover:border-[color:var(--hair)]"
+                        className="appearance-none rounded-full border border-[color:var(--hair-soft)] bg-[rgba(201,224,205,.045)] py-[7px] pr-9 pl-[15px] font-mono text-[10.5px] tracking-[.06em] text-ink uppercase transition-colors duration-400 ease-[var(--e-out)] hover:border-[color:var(--hair)]"
                       >
                         {ORDINI.map((o) => (
-                          <option key={o.id} value={o.id} className="bg-ink-2 text-white">
+                          <option key={o.id} value={o.id} className="bg-tray text-ink">
                             {o.label}
                           </option>
                         ))}
                       </select>
                       <span
                         aria-hidden="true"
-                        className="pointer-events-none absolute top-1/2 right-3.5 -translate-y-1/2 text-[9px] text-lime"
+                        className="pointer-events-none absolute top-1/2 right-3.5 -translate-y-1/2 text-[9px] text-ink"
                       >
                         &#9660;
                       </span>
@@ -403,7 +403,7 @@ export default function MenuClient() {
                 <div className="core relative overflow-hidden px-8 py-14 text-center sm:px-14 sm:py-16">
                   <span
                     aria-hidden="true"
-                    className="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 font-mono text-[190px] leading-none text-lime opacity-[.05]"
+                    className="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 font-mono text-[190px] leading-none text-ink opacity-[.05]"
                   >
                     0
                   </span>
@@ -463,15 +463,15 @@ export default function MenuClient() {
               <p
                 aria-live="polite"
                 style={{ fontVariationSettings: '"wdth" 84' }}
-                className="font-mono text-[10.5px] tracking-[.12em] whitespace-nowrap text-mist uppercase"
+                className="font-mono text-[10.5px] tracking-[.12em] whitespace-nowrap text-ink uppercase"
               >
-                <b className="text-[15px] font-normal text-white">{pasti}</b> pasti
+                <b className="text-[15px] font-normal text-ink">{pasti}</b> pasti
                 <span className="hidden sm:inline"> nel box</span>
               </p>
               <span aria-hidden="true" className="block h-5 w-px bg-[var(--hair)]" />
               <p
                 style={{ fontVariationSettings: '"wdth" 84' }}
-                className="font-mono text-[12.5px] whitespace-nowrap text-lime"
+                className="font-mono text-[12.5px] whitespace-nowrap text-ink"
               >
                 {euro(conto.totale)}
               </p>

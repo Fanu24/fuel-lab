@@ -37,7 +37,7 @@ function Blocco({
     <div className={className}>
       <div className="mb-5 flex items-center gap-3">
         <span
-          className="font-mono text-[11px] tracking-[.06em] text-lime"
+          className="font-mono text-[11px] tracking-[.06em] text-ink"
           style={{ fontVariationSettings: '"wdth" 84' }}
         >
           {indice}
@@ -49,7 +49,7 @@ function Blocco({
         />
         <span className="note">{occhiello}</span>
       </div>
-      <p className="max-w-[56ch] text-[17px] leading-[1.74] text-mist">{children}</p>
+      <p className="max-w-[56ch] text-[17px] leading-[1.74] text-ink">{children}</p>
     </div>
   );
 }
@@ -137,7 +137,7 @@ function Nega({ children }: { children: ReactNode }) {
   return (
     <li className="flex items-start gap-[14px]">
       <i className="mt-[9px] block h-[7px] w-[7px] flex-none rotate-45 bg-lime" aria-hidden="true" />
-      <span className="max-w-[52ch] text-[16px] leading-[1.62] text-mist">{children}</span>
+      <span className="max-w-[52ch] text-[16px] leading-[1.62] text-ink">{children}</span>
     </li>
   );
 }
