@@ -118,11 +118,14 @@ let letto = false;
 const ascoltatori = new Set<() => void>();
 
 /**
- * Ricostruisce una casella dal JSON salvato tenendo solo cio' che il catalogo
+ * Ricostruisce una casella da dati non fidati tenendo solo cio' che il catalogo
  * riconosce ancora, e solo nello slot giusto: un id di secondo finito nel campo
  * `primo` viene scartato, altrimenti il conto delle proteine mentirebbe.
+ *
+ * Esportata perche' e' la funzione con piu' casi limite del file ed e' pura: si
+ * prova senza montare React e senza un DOM finto.
  */
-function leggiCasella(v: unknown): Casella | undefined {
+export function leggiCasella(v: unknown): Casella | undefined {
   if (!v || typeof v !== "object") return undefined;
   const o = v as Record<string, unknown>;
   const c: Casella = { extra: [] };
@@ -140,26 +143,48 @@ function leggiCasella(v: unknown): Casella | undefined {
   return casellaVuota(c) ? undefined : c;
 }
 
-function leggi(): Piano | null {
-  try {
-    const raw = localStorage.getItem(CHIAVE);
-    if (!raw) return null;
-    const p = JSON.parse(raw) as unknown;
-    if (!p || typeof p !== "object") return null;
-    const out: Piano = {};
-    for (const g of GIORNI) {
-      const riga = (p as Record<string, unknown>)[g];
-      if (!riga || typeof riga !== "object") continue;
-      for (const m of PASTI) {
-        // Scarto le caselle svuotate dalla potatura: il menu cambia ogni settimana
-        // e un piano salvato invecchia.
-        const c = leggiCasella((riga as Record<string, unknown>)[m]);
-        if (c) out[g] = { ...out[g], [m]: c };
-      }
+/**
+ * L'unico cancello per far entrare un piano nello store, da qualunque parte arrivi:
+ * il JSON di localStorage o il link condivisibile, che e' una query string e quindi
+ * per definizione modificabile a mano. Scarta le caselle che puntano a id spariti dal
+ * catalogo — il menu cambia ogni settimana e un piano salvato invecchia — e le chiavi
+ * di giorno o di pasto che non riconosce.
+ */
+export function potaPiano(v: unknown): Piano {
+  if (!v || typeof v !== "object") return {};
+  const o = v as Record<string, unknown>;
+  const out: Piano = {};
+  for (const g of GIORNI) {
+    const riga = o[g];
+    if (!riga || typeof riga !== "object") continue;
+    for (const m of PASTI) {
+      const c = leggiCasella((riga as Record<string, unknown>)[m]);
+      if (c) out[g] = { ...out[g], [m]: c };
     }
-    return out;
+  }
+  return out;
+}
+
+/**
+ * `null` significa una cosa sola: lo storage non e' stato leggibile (negato, o in
+ * errore). La chiave assente e il JSON illeggibile tornano `{}`, che vuol dire "letto,
+ * e non c'era niente di valido". La distinzione conta perche' assicuraLettura scrive
+ * quello che riceve: confondere i due casi farebbe azzerare il piano di questa scheda
+ * al primo storage negato, o al contrario lo terrebbe stantio dopo che un'altra scheda
+ * ha svuotato la settimana.
+ */
+function leggi(): Piano | null {
+  let raw: string | null;
+  try {
+    raw = localStorage.getItem(CHIAVE);
   } catch {
-    return null;
+    return null; // storage negato: non ho letto, quindi non ho niente da dire
+  }
+  if (!raw) return {}; // chiave assente: letto, e la settimana e' vuota davvero
+  try {
+    return potaPiano(JSON.parse(raw) as unknown);
+  } catch {
+    return {}; // JSON rotto: letto, e non c'era niente di valido da tenere
   }
 }
 
@@ -167,7 +192,9 @@ function assicuraLettura() {
   if (letto) return;
   letto = true;
   const salvato = leggi();
-  if (salvato) piano = salvato;
+  // `??` e non `if (salvato)`: un piano vuoto e' un risultato, non un fallimento.
+  // Con `if` l'utente che svuota la settimana in una scheda se la rivedeva nell'altra.
+  piano = salvato ?? piano;
 }
 
 function scrivi(prossimo: Piano) {
@@ -221,6 +248,7 @@ export interface CtxPiano {
   svuotaCasella: (g: GiornoSettimana, m: Pasto) => void;
   /** prima casella in cui QUELLA categoria e' libera, non la prima casella vuota */
   primaLibera: (categoria: Categoria) => { g: GiornoSettimana; m: Pasto } | null;
+  /** il piano in ingresso viene potato: puo' arrivare da un link condiviso */
   sostituisciPiano: (p: Piano) => void;
   svuota: () => void;
 }
@@ -260,7 +288,12 @@ export function PianoProvider({ children }: { children: React.ReactNode }) {
     scrivi(conCasella(piano, g, m, undefined));
   }, []);
 
-  const sostituisciPiano = useCallback((p: Piano) => scrivi(p), []);
+  // Passa da potaPiano come la lettura da localStorage: al Task 6 il piano arriva
+  // dalla query string di un link condiviso, che chiunque puo' riscrivere a mano.
+  // Senza questo, dati malformati resterebbero in memoria E su localStorage per tutta
+  // la sessione: assicuraLettura non ripota nulla finche' `letto` e' true, e l'evento
+  // `storage` non torna indietro alla scheda che ha scritto.
+  const sostituisciPiano = useCallback((p: Piano) => scrivi(potaPiano(p)), []);
   const svuota = useCallback(() => scrivi({}), []);
 
   const valore = useMemo<CtxPiano>(() => {
