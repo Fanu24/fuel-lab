@@ -72,8 +72,10 @@ il lime `#DFFF3E` come accento unico, la griglia deliberatamente rotta.
 
 **Tre conseguenze obbligate, non scelte:**
 
-1. **Il lime non può più essere testo.** Su chiaro ha un contrasto di **1.13:1**, cioè è
-   invisibile. Diventa esclusivamente *superficie*: blocchi pieni con testo scuro sopra,
+1. **Il lime non può più essere testo.** Sulla carta `#F4F1E8` il contrasto è **1.00:1** — la
+   luminanza è identica, quindi non è "poco leggibile": è letteralmente invisibile. Sulla card
+   bianca è 1.13:1. (Misurato in fase di implementazione: la spec citava 1.13 anche per la carta,
+   ed era sbagliato.) Diventa esclusivamente *superficie*: blocchi pieni con testo scuro sopra,
    evidenziatori dietro le parole, riempimento delle barre, cifre dentro un blocco scuro.
    Dove prima serviva "lime acceso" per un testo, ora la risposta è il verde bosco.
 2. **La nav a vetro si inverte**: da scura translucida a chiara translucida.
@@ -82,6 +84,10 @@ il lime `#DFFF3E` come accento unico, la griglia deliberatamente rotta.
 
 Tutti i testi devono rispettare WCAG AA (4.5:1 normale, 3:1 grande). I rapporti vanno
 documentati in testa a `app/globals.css` e verificati, non stimati.
+
+**Due confini emersi dalla misura, che nessuna bozza aveva previsto:** `muted #5B6B5F` sul guscio
+`tray #E9E4D6` fa 4.45:1, sotto AA — il testo secondario non va mai sul guscio della doppia
+scocca. E `mink #A9B5AC` vive solo dentro i blocchi scuri.
 
 **Nota di stato:** durante una partenza anticipata `globals.css` e `layout.tsx` sono già stati
 riscritti sostituendo anche i font (Archivo, JetBrains Mono) e il sistema dei raggi. Questo

@@ -15,8 +15,9 @@
 - **Marchio:** ovunque "FUEL LAB", mai "FUEL" da solo. Nel navbar è testo, mai il PNG rimpicciolito.
 - **Font:** Anton per i display, Archivo per il corpo, **Martian Mono per ogni numero**. Non sostituirli.
 - **Shape lock:** interattivi a pillola (999px); contenitori guscio `26px` + nucleo `18px`; barre di misura a pillola. Le curve restano concentriche: la differenza è il padding di 8px.
-- **Regola dell'accento:** il lime `#DFFF3E` su fondo chiaro ha contrasto **1.13:1**. Non è **mai** testo su chiaro. Solo superficie: blocchi pieni con testo scuro sopra, evidenziatori, riempimento barre, cifre dentro un blocco scuro.
+- **Regola dell'accento:** il lime `#DFFF3E` su fondo chiaro e indistinguibile — **1.00:1** sulla carta `#F4F1E8` (luminanza identica) e **1.13:1** sulla card bianca. Non è **mai** testo su chiaro. Solo superficie: blocchi pieni con testo scuro sopra, evidenziatori, riempimento barre, cifre dentro un blocco scuro.
 - **Contrasto:** ogni testo ≥ 4.5:1 (≥ 3:1 se grande). Calcolato, non stimato.
+- **Due confini misurati, da non superare:** `muted #5B6B5F` sul guscio `tray #E9E4D6` fa **4.45:1**, sotto AA — il testo secondario sta su `paper`, `card` o `cell`, mai sul guscio, dove si usa `ink`. E `mink #A9B5AC` vive **solo dentro i blocchi scuri** (su carta fa 1.88:1).
 - **Invariante catalogo:** per ogni elemento ed extra, `kcal === proteine*4 + carboidrati*4 + grassi*9`. Nessun arrotondamento di comodo.
 - **Prezzi:** soglia unica "a partire da 8,90 € a pasto". Mai un totale, mai un listino, mai un prezzo per elemento. Home cooking: "su preventivo".
 - **Commenti e testi:** italiano. Nei commenti niente accenti (`perche`, non `perché`): è la convenzione già in uso nel repo.
@@ -144,7 +145,7 @@ EOF
 node /tmp/contrasto.mjs
 ```
 
-Attesa: tutte le coppie ≥ 4.5 **tranne** `lime su paper`, che deve risultare circa `1.13` — è la prova del vincolo, e il motivo per cui il lime non può essere testo.
+Attesa: tutte le coppie ≥ 4.5 **tranne** `lime su paper`, che deve risultare **1.00** — luminanza identica alla carta, quindi il lime come testo li non e poco leggibile: e invisibile. E la prova del vincolo.
 
 - [ ] **Step 2: Riscrivere `app/globals.css`**
 
@@ -281,7 +282,7 @@ git commit -m "feat: sistema visivo chiaro con Anton, Martian Mono e shape lock 
 **Contesto.** Dopo il Task 1 il progetto contiene circa 148 usi di classi che non funzionano più. Due categorie, con conseguenze diverse:
 
 - `text-mist` (12), `text-mist-dim` (34), `bg-ink-2` (8) → i token non esistono più: Tailwind non genera nulla e l'elemento eredita il colore del genitore. Silenzioso.
-- `text-lime` (37) → il token esiste ancora, quindi la classe **funziona**: produce testo lime su fondo chiaro, contrasto 1.13:1. Invisibile ma presente. È il difetto più insidioso perché passa ogni controllo automatico.
+- `text-lime` (37) → il token esiste ancora, quindi la classe **funziona**: produce testo lime su fondo chiaro, contrasto 1.00:1 sulla carta. Invisibile ma presente. È il difetto più insidioso perché passa ogni controllo automatico.
 
 - [ ] **Step 1: Contare la situazione di partenza**
 
