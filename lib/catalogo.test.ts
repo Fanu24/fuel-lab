@@ -92,4 +92,71 @@ describe("catalogo", () => {
       for (const k of ["proteine", "carboidrati", "grassi"] as const)
         expect(e[k], `${e.id}.${k}`).toBeGreaterThanOrEqual(0);
   });
+
+  // Le grammature dei 27 piatti originali. Stessa ragione della tabella dei macro:
+  // la somma di primo e secondo deve tornare al peso della schiscetta storica,
+  // altrimenti chi ritocca a mano una porzione sposta il peso del box e nessuno
+  // se ne accorge finche' non lo pesa un cliente.
+  const GRAMMI_ORIGINALI: Record<string, number> = {
+    "pollo-basmati-broccoli": 480,
+    "salmone-quinoa-verdure": 450,
+    "ragu-manzo-patate-dolci": 500,
+    "tacchino-farro-zucchine": 470,
+    "merluzzo-patate-fagiolini": 460,
+    "pollo-venere-peperoni": 480,
+    "albumi-avocado-integrale": 380,
+    "orata-couscous-broccoletti": 450,
+    "tofu-integrale-verdure": 470,
+    "ceci-bulgur-melanzane": 480,
+    "straccetti-manzo-rucola": 480,
+    "tonno-patate-viola-asparagi": 440,
+    "pollo-curry-jasmine-piselli": 490,
+    "maiale-sedano-rapa-cavolo": 450,
+    "gamberi-basmati-zucchine": 450,
+    "uova-patate-spinaci": 420,
+    "vitello-polenta-funghi": 470,
+    "salmone-integrale-cavolo-nero": 470,
+    "pollo-pasta-integrale-pomodorini": 500,
+    "seitan-quinoa-broccoli": 450,
+    "sgombro-patate-dolci-cime": 450,
+    "tacchino-basmati-carote": 490,
+    "lenticchie-riso-verdure": 500,
+    "manzo-couscous-zucca": 490,
+    "tempeh-quinoa-edamame": 470,
+    "albumi-ricotta-patate-asparagi": 450,
+    "burger-lenticchie-tofu": 480,
+  };
+
+  it("ripartisce i grammi dei 27 piatti senza perderne per strada", () => {
+    expect(Object.keys(GRAMMI_ORIGINALI).length).toBe(27);
+    for (const a of ABBINAMENTI) {
+      const p = getElemento(a.primo);
+      const s = getElemento(a.secondo);
+      expect(p, `primo mancante per ${a.nome}`).toBeDefined();
+      expect(s, `secondo mancante per ${a.nome}`).toBeDefined();
+      if (!p || !s) continue;
+      expect(
+        `${a.nome}:${p.grammi + s.grammi}`,
+        `${a.nome} non torna al peso del piatto originale`,
+      ).toBe(`${a.nome}:${GRAMMI_ORIGINALI[a.nome]}`);
+    }
+  });
+
+  it("usa grammature a multipli di 10", () => {
+    for (const e of tutti) expect(`${e.id}:${e.grammi % 10}`).toBe(`${e.id}:0`);
+  });
+
+  // I 14 allergeni del Reg. UE 1169/2011. Il vincolo non e' formale: un allergene
+  // scritto storto ("frutta-a-guscio" al posto di "frutta a guscio") non verrebbe
+  // intercettato da nessun filtro, sparirebbe dalla scheda e resterebbe nel piatto.
+  const ALLERGENI_UE = [
+    "glutine", "crostacei", "uova", "pesce", "arachidi", "soia", "latte",
+    "frutta a guscio", "sedano", "senape", "sesamo", "solfiti", "lupini", "molluschi",
+  ];
+
+  it("dichiara solo allergeni previsti dal Reg. UE 1169/2011", () => {
+    for (const e of [...tutti, ...EXTRA])
+      for (const a of e.allergeni)
+        expect(ALLERGENI_UE, `${e.id}: allergene fuori elenco "${a}"`).toContain(a);
+  });
 });

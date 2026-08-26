@@ -160,7 +160,7 @@ export const PRIMI: Elemento[] = [
     descrizione: "Pure di sedano rapa e cavolo cappuccio saltato.",
     categoria: "primo", grammi: 270,
     kcal: 192, proteine: 6, carboidrati: 33, grassi: 4,
-    tag: ["veg", "senza-glutine"], allergeni: ["latte"],
+    tag: ["veg", "senza-glutine"], allergeni: ["latte", "sedano"],
     img: "photo-1432139555190-58524dae6a55", giorno: "giovedi",
   },
   {
@@ -291,7 +291,7 @@ export const SECONDI: Elemento[] = [
     descrizione: "Ragu di scottona cotto lento, senza soffritto pesante.",
     categoria: "secondo", grammi: 200,
     kcal: 311, proteine: 42, carboidrati: 2, grassi: 15,
-    tag: ["carne", "senza-glutine"], allergeni: [],
+    tag: ["carne", "senza-glutine"], allergeni: ["sedano"],
     img: "photo-1529042410759-befb1204b468", giorno: "lunedi",
   },
   {
