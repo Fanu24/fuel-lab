@@ -372,6 +372,8 @@ git commit -m "fix: rimossi i token morti e i testi lime invisibili su fondo chi
   export const SECONDI: Elemento[];
   export const EXTRA: Extra[];
   export const ABBINAMENTI: { nome: string; primo: string; secondo: string }[];
+  // `nome` e l'id del piatto originale in lib/dishes.ts (es. "pollo-basmati-broccoli"),
+  // perche e la chiave con cui il test lo confronta con i valori storici.
   export function getElemento(id: string): Elemento | undefined;
   export function getExtra(id: string): Extra | undefined;
   export function elementoImg(e: Elemento, w?: number): string;
@@ -440,23 +442,56 @@ describe("catalogo", () => {
     for (const s of SECONDI) expect(s.categoria).toBe("secondo");
   });
 
-  // Il test che protegge la decomposizione: ogni piatto storico deve tornare
-  // esattamente sommando il suo primo e il suo secondo.
-  it("ricompone i 27 abbinamenti storici ai valori originali", () => {
+  // Il test che protegge la decomposizione. NON basta verificare che la somma
+  // soddisfi kcal = P*4+C*4+G*9: e automaticamente vero se entrambe le parti gia
+  // la soddisfano, quindi non proverebbe nulla. Va confrontata con i valori
+  // esatti dei 27 piatti originali, che sono la tabella qui sotto.
+  const ORIGINALI: Record<string, [number, number, number, number]> = {
+    // nome abbinamento: [kcal, proteine, carboidrati, grassi]
+    "pollo-basmati-broccoli": [588, 52, 68, 12],
+    "salmone-quinoa-verdure": [636, 44, 52, 28],
+    "ragu-manzo-patate-dolci": [607, 48, 61, 19],
+    "tacchino-farro-zucchine": [555, 50, 64, 11],
+    "merluzzo-patate-fagiolini": [469, 42, 55, 9],
+    "pollo-venere-peperoni": [597, 54, 66, 13],
+    "albumi-avocado-integrale": [518, 38, 42, 22],
+    "orata-couscous-broccoletti": [522, 41, 58, 14],
+    "tofu-integrale-verdure": [552, 30, 72, 16],
+    "ceci-bulgur-melanzane": [551, 26, 78, 15],
+    "straccetti-manzo-rucola": [608, 51, 65, 16],
+    "tonno-patate-viola-asparagi": [537, 46, 50, 17],
+    "pollo-curry-jasmine-piselli": [602, 49, 70, 14],
+    "maiale-sedano-rapa-cavolo": [486, 47, 34, 18],
+    "gamberi-basmati-zucchine": [502, 40, 63, 10],
+    "uova-patate-spinaci": [509, 32, 48, 21],
+    "vitello-polenta-funghi": [557, 45, 56, 17],
+    "salmone-integrale-cavolo-nero": [646, 43, 60, 26],
+    "pollo-pasta-integrale-pomodorini": [648, 53, 82, 12],
+    "seitan-quinoa-broccoli": [476, 34, 58, 12],
+    "sgombro-patate-dolci-cime": [580, 39, 52, 24],
+    "tacchino-basmati-carote": [586, 52, 72, 10],
+    "lenticchie-riso-verdure": [565, 28, 84, 13],
+    "manzo-couscous-zucca": [607, 50, 68, 15],
+    "tempeh-quinoa-edamame": [594, 52, 56, 18],
+    "albumi-ricotta-patate-asparagi": [518, 50, 48, 14],
+    "burger-lenticchie-tofu": [567, 44, 64, 15],
+  };
+
+  it("ricompone i 27 abbinamenti storici ai valori originali esatti", () => {
     expect(ABBINAMENTI.length).toBe(27);
+    expect(Object.keys(ORIGINALI).length).toBe(27);
     for (const a of ABBINAMENTI) {
+      const atteso = ORIGINALI[a.nome];
+      expect(atteso, `abbinamento non previsto: ${a.nome}`).toBeDefined();
       const p = getElemento(a.primo);
       const s = getElemento(a.secondo);
       expect(p, `primo mancante per ${a.nome}`).toBeDefined();
       expect(s, `secondo mancante per ${a.nome}`).toBeDefined();
-      if (!p || !s) continue;
-      const somma = {
-        kcal: p.kcal + s.kcal,
-        proteine: p.proteine + s.proteine,
-        carboidrati: p.carboidrati + s.carboidrati,
-        grassi: p.grassi + s.grassi,
-      };
-      expect(somma.kcal).toBe(kcalDa(somma.proteine, somma.carboidrati, somma.grassi));
+      if (!p || !s || !atteso) continue;
+      expect(
+        [p.kcal + s.kcal, p.proteine + s.proteine, p.carboidrati + s.carboidrati, p.grassi + s.grassi],
+        `${a.nome} non torna ai valori del piatto originale`,
+      ).toEqual(atteso);
     }
   });
 
@@ -853,8 +888,12 @@ describe("condivisione", () => {
     expect(decodificaPiano(codificaPiano(pieno))).toEqual(pieno);
   });
 
-  it("gestisce il piano vuoto", () => {
-    expect(decodificaPiano(codificaPiano({}))).toEqual({});
+  // Il piano vuoto ha bisogno di un sentinella: se codificasse nella stringa
+  // vuota entrerebbe in conflitto con il test sulla stringa malformata qui sotto,
+  // che pretende null. "-" significa "vuoto ma valido".
+  it("gestisce il piano vuoto con il sentinella", () => {
+    expect(codificaPiano({})).toBe("-");
+    expect(decodificaPiano("-")).toEqual({});
   });
 
   it("restituisce null su stringa malformata invece di lanciare", () => {
@@ -1143,8 +1182,9 @@ git commit -m "feat: griglia settimanale con vista mobile, selettore e condivisi
 **Livello modello: medio.**
 
 **Files:**
-- Create: `lib/servizi.ts`, `app/servizi/page.tsx`
-- Modify: `app/page.tsx` (solo la sezione servizi)
+- Create: `lib/servizi.ts`, `app/servizi/page.tsx`, `components/servizi/SezioneServizi.tsx`
+- **Non toccare `app/page.tsx`**: appartiene al Task 12, che importera `SezioneServizi`.
+  (Ruling della scansione pre-volo: due task che scrivono lo stesso file si pestano i piedi.)
 
 **Interfaces:**
 - Produces:
@@ -1163,9 +1203,10 @@ git commit -m "feat: griglia settimanale con vista mobile, selettore e condivisi
 
 Tre servizi come da spec §12. I primi due con `{ tipo: "soglia", valore: 8.9, unita: "a pasto" }`, il terzo `{ tipo: "preventivo" }`.
 
-- [ ] **Step 2: La sezione in home**
+- [ ] **Step 2: Il componente `SezioneServizi`**
 
-**Non tre card identiche in fila.** Il secondo servizio e un blocco lime pieno con testo scuro; gli altri due sono card bianche di dimensioni diverse. Numeri `01/02/03` in `.num`.
+Esportato da `components/servizi/SezioneServizi.tsx`, usato sia dalla pagina `/servizi` sia
+dalla home (che lo importera nel Task 12). **Non tre card identiche in fila.** Il secondo servizio e un blocco lime pieno con testo scuro; gli altri due sono card bianche di dimensioni diverse. Numeri `01/02/03` in `.num`.
 
 - [ ] **Step 3: Il prezzo**
 
@@ -1179,7 +1220,7 @@ Ogni servizio chiude con "Scrivici su WhatsApp" usando `messaggioServizio(serviz
 
 ```bash
 npx tsc --noEmit && npx next build 2>&1 | tail -5
-git add lib/servizi.ts app/servizi app/page.tsx
+git add lib/servizi.ts app/servizi components/servizi
 git commit -m "feat: sezione e pagina servizi con home cooking e prezzi a soglia"
 ```
 
@@ -1196,6 +1237,7 @@ git commit -m "feat: sezione e pagina servizi con home cooking e prezzi a soglia
 
 - [ ] **Step 1: Home**
 
+Importare `SezioneServizi` da `components/servizi/SezioneServizi` (creato nel Task 11).
 Hero con `MANGIA COME TI ALLENI.` e l'evidenziatore lime che si apre da sinistra, ticker, sezione servizi (Task 11), anteprima della settimana, come funziona, chiusura. **Nessun prezzo oltre la soglia.**
 
 - [ ] **Step 2: `/scheda`**
