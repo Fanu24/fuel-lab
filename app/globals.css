@@ -1,0 +1,701 @@
+@import "tailwindcss";
+
+/* =========================================================================
+   FUEL LAB — sistema visivo "Palestra Bianca"
+   Bianco clinico, nero pieno, un solo colpo di lime.
+
+   REGOLA DELL'ACCENTO (la piu importante di tutte):
+   il lime #DFFF3E su bianco ha un contrasto di 1.13:1, cioe' e' invisibile.
+   Quindi il lime NON e' mai testo su chiaro. Esiste solo come SUPERFICIE:
+   blocchi pieni con testo nero sopra, evidenziatori dietro le parole,
+   riempimento delle barre, oppure cifra dentro un blocco nero.
+   Ogni volta che serve un colore "acceso" per del testo, la risposta e' nero.
+
+   Contrasti verificati (WCAG AA su tutto, testo normale >= 4.5:1):
+     ink   #0A0C0B su paper #F5F6F4 = 18.10:1   su card #FFFFFF = 19.62:1
+     ink   #0A0C0B su lime  #DFFF3E = 17.29:1   su tray  #ECEEEA = 16.80:1
+     muted #5A5F5C su paper #F5F6F4 =  6.00:1   su card #FFFFFF =  6.51:1
+     mink  #A9AFAB su ink   #0A0C0B =  8.79:1
+     lime  #DFFF3E su ink   #0A0C0B = 17.29:1
+
+   SISTEMA RAGGI, uno solo: pannelli 20px, nuclei 12px, chip e caselle 10px,
+   interattivi a pillola 999px, barre di misura 3px.
+
+   Il tema e' bloccato in CHIARO. Non c'e' dark mode: il fondo chiaro e' una
+   richiesta esplicita del cliente, non una preferenza dell'utente.
+   ========================================================================= */
+
+@theme {
+  --color-ink: #0a0c0b;        /* nero pieno: tutto il testo, i blocchi scuri */
+  --color-paper: #f5f6f4;      /* fondo pagina */
+  --color-card: #ffffff;       /* superfici sollevate */
+  --color-tray: #eceeea;       /* guscio esterno della doppia scocca */
+  --color-cell: #eff1ed;       /* caselle vuote della griglia settimanale */
+  --color-lime: #dfff3e;       /* accento unico, SOLO come superficie */
+  --color-muted: #5a5f5c;      /* testo secondario su chiaro */
+  --color-mink: #a9afab;       /* testo secondario dentro i blocchi neri */
+  --color-mlime: #2a2e2c;      /* testo secondario dentro i blocchi lime */
+
+  --font-ui: var(--f-ui), "Segoe UI", system-ui, sans-serif;
+  --font-mono: var(--f-mono), ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+:root {
+  --hair: rgba(10, 12, 11, 0.12);
+  --hair-ink: rgba(255, 255, 255, 0.16);
+
+  --r-panel: 20px;
+  --r-core: 12px;
+  --r-chip: 10px;
+  --r-bar: 3px;
+
+  /* Ombre ambientali diffusissime: su fondo chiaro le card devono galleggiare,
+     non essere incorniciate. Mai un bordo grigio 1px generico. */
+  --sh-1: 0 2px 6px rgba(10, 12, 11, 0.04), 0 18px 40px -24px rgba(10, 12, 11, 0.2);
+  --sh-2: 0 4px 10px rgba(10, 12, 11, 0.05), 0 44px 84px -38px rgba(10, 12, 11, 0.32);
+  --sh-nav: 0 1px 2px rgba(10, 12, 11, 0.06), 0 22px 46px -30px rgba(10, 12, 11, 0.36);
+
+  /* Due easing, due caratteri: snap per le entrate, mech per i contatori e le
+     barre, che devono scattare come un metronomo e non fluttuare. */
+  --snap: cubic-bezier(0.22, 1, 0.36, 1);
+  --mech: cubic-bezier(0.65, 0, 0.35, 1);
+
+  --wrap: 1200px;
+  --gut: 40px;
+  --nav-h: 64px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  overflow-x: hidden;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-ui);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+figure,
+p,
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+}
+a {
+  color: inherit;
+  text-decoration: none;
+}
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  margin: 0;
+  cursor: pointer;
+}
+:focus-visible {
+  outline: 3px solid var(--color-ink);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+/* Dentro i blocchi scuri il focus nero sparirebbe. */
+.on-ink :focus-visible {
+  outline-color: var(--color-lime);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@layer components {
+  .wrap {
+    width: min(var(--wrap), 100% - (var(--gut) * 2));
+    margin-inline: auto;
+  }
+  @media (max-width: 640px) {
+    .wrap {
+      --gut: 20px;
+    }
+  }
+
+  .mono {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+  }
+
+  /* ---------- tipografia ------------------------------------------------- */
+  .display {
+    font-weight: 900;
+    text-transform: uppercase;
+    line-height: 0.86;
+    letter-spacing: -0.045em;
+  }
+  .h1 {
+    font-size: clamp(46px, 6vw, 82px);
+  }
+  .h2 {
+    font-size: clamp(34px, 4.2vw, 56px);
+  }
+  .h3 {
+    font-size: clamp(24px, 2.6vw, 31px);
+    letter-spacing: -0.032em;
+    line-height: 1;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+  .lead {
+    font-size: 19px;
+    line-height: 1.52;
+    color: var(--color-muted);
+    max-width: 44ch;
+  }
+  .label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+  }
+
+  /* Evidenziatore lime: e' l'unico modo in cui il lime tocca del testo,
+     perche' il testo resta nero e il lime sta dietro. */
+  .hl {
+    position: relative;
+    display: inline-block;
+    padding: 0 0.06em;
+  }
+  .hl-bar {
+    position: absolute;
+    left: -0.04em;
+    right: -0.04em;
+    top: 0.17em;
+    bottom: 0.1em;
+    background: var(--color-lime);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.62s var(--snap) 0.28s;
+  }
+  .js .in .hl-bar,
+  .hl-on .hl-bar {
+    transform: scaleX(1);
+  }
+  .hl-tx {
+    position: relative;
+  }
+
+  /* ---------- bottoni ---------------------------------------------------- */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    height: 54px;
+    padding: 0 8px 0 22px;
+    border-radius: 999px;
+    font-size: 14.5px;
+    font-weight: 700;
+    letter-spacing: -0.005em;
+    white-space: nowrap;
+    transition: transform 0.32s var(--mech), background-color 0.32s var(--mech),
+      color 0.32s var(--mech), box-shadow 0.32s var(--mech), opacity 0.25s var(--mech);
+  }
+  .btn .dot {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 999px;
+    flex: 0 0 auto;
+    font-size: 15px;
+    line-height: 1;
+    transition: transform 0.38s var(--snap), background-color 0.32s var(--mech);
+  }
+  .btn:disabled {
+    opacity: 0.38;
+    cursor: not-allowed;
+  }
+  .btn-p {
+    background: var(--color-ink);
+    color: #fff;
+    box-shadow: var(--sh-1);
+  }
+  .btn-p .dot {
+    background: rgba(255, 255, 255, 0.14);
+    color: #fff;
+  }
+  .btn-p:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: var(--sh-2);
+  }
+  .btn-p:hover:not(:disabled) .dot {
+    transform: translateX(3px);
+    background: var(--color-lime);
+    color: var(--color-ink);
+  }
+  .btn-s {
+    background: var(--color-card);
+    color: var(--color-ink);
+    box-shadow: inset 0 0 0 1.5px var(--color-ink);
+  }
+  .btn-s .dot {
+    background: rgba(10, 12, 11, 0.08);
+  }
+  .btn-s:hover:not(:disabled) {
+    transform: translateY(-2px);
+    background: var(--color-lime);
+    box-shadow: inset 0 0 0 1.5px var(--color-ink);
+  }
+  .btn-s:hover:not(:disabled) .dot {
+    transform: translateX(3px);
+    background: rgba(10, 12, 11, 0.14);
+  }
+  .btn:active:not(:disabled) {
+    transform: translateY(0) scale(0.985);
+  }
+  .btn-sm {
+    height: 46px;
+    font-size: 13.5px;
+    padding: 0 6px 0 18px;
+    gap: 10px;
+  }
+  .btn-sm .dot {
+    width: 34px;
+    height: 34px;
+    font-size: 13px;
+  }
+  /* Le etichette italiane sono lunghe: sotto i 640px un pill che non va a capo
+     diventa una larghezza MINIMA che fa sfondare la griglia. */
+  @media (max-width: 639px) {
+    .btn {
+      white-space: normal;
+      height: auto;
+      min-height: 54px;
+      padding: 10px 8px 10px 20px;
+      line-height: 1.25;
+      text-align: left;
+    }
+  }
+
+  /* ---------- doppia scocca --------------------------------------------- */
+  .tray {
+    background: var(--color-tray);
+    padding: 10px;
+    border-radius: var(--r-panel);
+    box-shadow: var(--sh-2);
+  }
+  .tray-core {
+    background: var(--color-card);
+    border-radius: var(--r-core);
+    overflow: hidden;
+  }
+  .panel {
+    background: var(--color-card);
+    border-radius: var(--r-panel);
+    box-shadow: var(--sh-2);
+  }
+
+  /* ---------- chip ------------------------------------------------------- */
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    padding: 6px 11px;
+    border-radius: var(--r-chip);
+    background: var(--color-tray);
+    color: var(--color-ink);
+    white-space: nowrap;
+  }
+  .chip-k {
+    background: var(--color-lime);
+  }
+  .chip-ink {
+    background: var(--color-ink);
+    color: var(--color-lime);
+  }
+
+  /* ---------- prezzo "a partire da" -------------------------------------
+     Il prezzo esatto non si mostra: si mostra la soglia di ingresso e si
+     manda la conversazione su WhatsApp. */
+  .price {
+    display: flex;
+    align-items: baseline;
+    gap: 9px;
+    flex-wrap: wrap;
+  }
+  .price-da {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+  }
+  .price-n {
+    font-family: var(--font-mono);
+    font-size: 25px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  .price-u {
+    font-size: 13px;
+    color: var(--color-muted);
+  }
+
+  /* ---------- barre macro ------------------------------------------------
+     La tacca del target resta il pezzo importante: senza, una barra all'88%
+     e una al 99% sembrano entrambe "piena" e il pannello smette di raccontare
+     lo scarto dal piano. Qui il riempimento e' lime su binario chiaro. */
+  .bar-l {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+  .bar-v {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--color-muted);
+    white-space: nowrap;
+  }
+  .bar-v b {
+    color: var(--color-ink);
+    font-weight: 700;
+  }
+  .bar-track {
+    position: relative;
+    height: 10px;
+    border-radius: var(--r-bar);
+    overflow: hidden;
+    background: var(--color-tray);
+  }
+  .bar-track > i {
+    display: block;
+    height: 100%;
+    border-radius: var(--r-bar);
+    background: var(--color-lime);
+    transform: scaleX(var(--fx, 0));
+    transform-origin: left;
+    transition: transform 0.95s var(--mech);
+    transition-delay: var(--bd, 0ms);
+  }
+  /* oltre il target il riempimento passa al nero: si vede senza leggere */
+  .bar-track.over > i {
+    background: var(--color-ink);
+  }
+  .bar-tick {
+    position: absolute;
+    top: -2px;
+    bottom: -2px;
+    width: 2px;
+    background: var(--color-ink);
+    opacity: 0.42;
+    border-radius: 2px;
+    pointer-events: none;
+  }
+  .on-ink .bar-track {
+    background: rgba(255, 255, 255, 0.14);
+  }
+  .on-ink .bar-tick {
+    background: #fff;
+    opacity: 0.5;
+  }
+
+  /* barra proporzionale P/C/G del singolo piatto */
+  .macrobar {
+    display: flex;
+    gap: 3px;
+    height: 5px;
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .macrobar > i {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    transition: flex 0.7s var(--mech);
+  }
+  .macrobar > i:nth-child(1) {
+    background: var(--color-ink);
+  }
+  .macrobar > i:nth-child(2) {
+    background: var(--color-lime);
+  }
+  .macrobar > i:nth-child(3) {
+    background: var(--color-tray);
+  }
+
+  /* ---------- blocco di lettura (le cifre dentro il nero) ---------------- */
+  .readout {
+    background: var(--color-ink);
+    display: grid;
+  }
+  .ro-n {
+    display: block;
+    font-size: 30px;
+    font-weight: 700;
+    color: var(--color-lime);
+    letter-spacing: -0.03em;
+    line-height: 1.06;
+    font-family: var(--font-mono);
+  }
+  .ro-l {
+    display: block;
+    margin-top: 6px;
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--color-mink);
+  }
+
+  /* ---------- numero di servizio ---------------------------------------- */
+  .num {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: var(--r-chip);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .num-lime {
+    background: var(--color-lime);
+    color: var(--color-ink);
+  }
+  .num-ink {
+    background: var(--color-ink);
+    color: var(--color-lime);
+  }
+
+  /* ---------- griglia settimanale --------------------------------------- */
+  .dayhead {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+    text-align: center;
+    padding-bottom: 10px;
+  }
+  .rowlab {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+    display: flex;
+    align-items: center;
+  }
+  .cell {
+    display: flex;
+    flex-direction: column;
+    min-height: 84px;
+    padding: 11px 12px;
+    border-radius: var(--r-chip);
+    background: var(--color-cell);
+    text-align: left;
+    width: 100%;
+    transition: background-color 0.28s var(--mech), transform 0.28s var(--snap),
+      box-shadow 0.28s var(--mech);
+  }
+  .cell:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--sh-1);
+  }
+  .cell-full {
+    background: var(--color-card);
+    box-shadow: inset 0 0 0 1.5px var(--color-ink);
+  }
+  .cell-empty {
+    align-items: center;
+    justify-content: center;
+    color: var(--color-muted);
+    font-size: 22px;
+    font-weight: 300;
+  }
+  .cell-empty:hover {
+    background: var(--color-lime);
+    color: var(--color-ink);
+  }
+  .cell-d {
+    font-size: 12.5px;
+    font-weight: 700;
+    line-height: 1.22;
+    letter-spacing: -0.012em;
+  }
+  .cell-k {
+    margin-top: auto;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    font-weight: 500;
+    color: var(--color-muted);
+    padding-top: 8px;
+  }
+  .total {
+    background: var(--color-ink);
+    border-radius: var(--r-core);
+    display: grid;
+    overflow: hidden;
+  }
+  .total-l {
+    padding: 20px 24px;
+    font-size: 13px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    color: #fff;
+  }
+  .total-i {
+    padding: 18px 20px;
+    box-shadow: inset 1px 0 0 var(--hair-ink);
+  }
+  .total-n {
+    font-family: var(--font-mono);
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--color-lime);
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+  }
+
+  /* ---------- ticker ----------------------------------------------------- */
+  .ticker {
+    background: var(--color-lime);
+    overflow: hidden;
+    height: 58px;
+    display: flex;
+    align-items: center;
+  }
+  .tk-w {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--color-ink);
+    padding: 0 22px;
+    white-space: nowrap;
+  }
+  .tk-d {
+    width: 7px;
+    height: 7px;
+    background: var(--color-ink);
+    border-radius: 999px;
+    flex: 0 0 auto;
+  }
+
+  /* ---------- campi ------------------------------------------------------ */
+  .field {
+    width: 100%;
+    height: 52px;
+    padding: 0 18px;
+    border-radius: var(--r-chip);
+    background: var(--color-card);
+    box-shadow: inset 0 0 0 1.5px var(--hair);
+    color: var(--color-ink);
+    font-family: var(--font-mono);
+    font-size: 13.5px;
+    transition: box-shadow 0.28s var(--mech);
+  }
+  textarea.field {
+    height: auto;
+    padding: 14px 18px;
+    line-height: 1.5;
+  }
+  .field::placeholder {
+    color: var(--color-muted);
+  }
+  .field:focus {
+    outline: none;
+    box-shadow: inset 0 0 0 2px var(--color-ink);
+  }
+  .field-err {
+    box-shadow: inset 0 0 0 2px #c02626;
+  }
+
+  .note {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+  }
+}
+
+/* ---------- rivelazione in scroll ---------------------------------------
+   Lo stato di partenza vale SOLO con il JS vivo (html.js): senza questa
+   guardia, con JavaScript disattivato la pagina resterebbe invisibile.      */
+.js .reveal {
+  opacity: 0;
+  transform: translateY(18px);
+}
+.js .reveal.in {
+  opacity: 1;
+  transform: none;
+  transition: opacity 0.7s var(--snap), transform 0.7s var(--snap);
+  transition-delay: var(--d, 0ms);
+}
+
+@keyframes fuel-marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+@keyframes fuel-rise {
+  from {
+    transform: translateY(105%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+@keyframes fuel-scan {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(400%);
+  }
+}
