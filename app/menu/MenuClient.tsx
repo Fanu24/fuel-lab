@@ -2,20 +2,27 @@
 
 import Link from "next/link";
 import { Fragment, useMemo, useState, type ReactNode } from "react";
-import DishCard from "@/components/DishCard";
+import ElementCard from "@/components/ElementCard";
+import { MacroSplit } from "@/components/MacroBar";
 import Reveal from "@/components/Reveal";
 import Ticker from "@/components/Ticker";
-import { Chip, Eyebrow, Rise } from "@/components/ui";
-import { useCart } from "@/lib/cart";
-import { DISHES, dishImg } from "@/lib/dishes";
-import { euro } from "@/lib/pricing";
-import { OBIETTIVI, TAGS, type Dish, type Giorno, type Obiettivo, type Tag } from "@/lib/types";
+import { Chip, Eyebrow, Rise, SectionHead } from "@/components/ui";
+import { EXTRA, PRIMI, SECONDI, elementoImg, getElemento } from "@/lib/catalogo";
+import type { Categoria, Elemento } from "@/lib/catalogo";
+import { usePiano } from "@/lib/piano";
+import { TAGS, type Giorno, type Tag } from "@/lib/types";
 
-type FiltroObiettivo = Obiettivo | "tutti";
+type FiltroCategoria = Categoria | "tutti";
 type FiltroGiorno = Giorno | "tutti";
 type Ordine = "consigliati" | "proteine" | "kcal-su" | "kcal-giu";
 
-const GIORNI: { id: FiltroGiorno; label: string }[] = [
+const CATEGORIE: { id: FiltroCategoria; label: string }[] = [
+  { id: "tutti", label: "Tutti" },
+  { id: "primo", label: "Primi" },
+  { id: "secondo", label: "Secondi" },
+];
+
+const GIORNI_COTTURA: { id: FiltroGiorno; label: string }[] = [
   { id: "tutti", label: "Tutti" },
   { id: "lunedi", label: "Lunedi" },
   { id: "giovedi", label: "Giovedi" },
@@ -31,32 +38,21 @@ const ORDINI: { id: Ordine; label: string }[] = [
 const RITMO = ["Cotto il lunedi", "Consegnato il martedi", "Cotto il giovedi", "Consegnato il venerdi"];
 
 /**
- * Cadenza della vetrina: una scheda larga ogni CICLO, in testa al ciclo.
- *
- * Il numero non e' arbitrario. Una vetrina larga 2 piu' quattro schede normali fanno
- * SEI celle: sei e' divisibile sia per 2 (md) sia per 3 (xl), quindi il ciclo si
- * richiude sempre a fine riga e la vetrina cade sempre in colonna 1. Con il ciclo di
- * sei schede della versione precedente le celle per ciclo erano sette: dispari, quindi
- * la vetrina non entrava piu' nella riga in corso e il grid la spingeva a capo
- * lasciando una CELLA VUOTA in mezzo al catalogo. Sembrava un piatto mancante.
+ * Leggera rotazione alternata sulle schede, ciclo di quattro: la griglia non
+ * sembra un listino stampato. Solo da xl in su: sotto, la rotazione si
+ * mangia il gutter fra colonne strette.
  */
-const CICLO = 5;
+const CICLO = 4;
+const INCLINA = ["", "xl:rotate-[1deg]", "", "xl:rotate-[-1deg]"];
 
 /**
- * Inclinazioni della griglia, per posizione nel ciclo.
- * La posizione 0 e' la vetrina e resta dritta: larga due colonne, ruotata, toccherebbe
- * le vicine. Solo da xl in su: con due colonne la rotazione si mangia il gutter.
+ * La foto della testata e' un elemento vero del catalogo, non uno stock
+ * generico: la pagina promette "quello che leggi qui e' quello che trovi nel
+ * box" e non puo' aprirsi con una foto che nel box non c'e'. Tipizzata come
+ * opzionale di proposito, cosi' un catalogo senza questo id non manda in
+ * errore la testata.
  */
-const INCLINA = ["", "xl:rotate-[1.1deg]", "", "xl:rotate-[-1.2deg]", ""];
-
-/**
- * La foto della testata e' un piatto vero del catalogo, non uno stock generico:
- * la pagina promette "quello che leggi qui e' quello che trovi nel box" e non puo'
- * aprirsi con una foto che nel box non c'e'. Tipizzata come opzionale di proposito,
- * cosi' una settimana senza catalogo non manda in errore la testata.
- */
-const COPERTINA: Dish | undefined =
-  DISHES.find((d) => d.id === "pollo-basmati-broccoli") ?? DISHES[0];
+const COPERTINA: Elemento | undefined = getElemento("secondo-pollo-piastra") ?? SECONDI[0] ?? PRIMI[0];
 
 /* ------------------------------------------------------------------ filtri */
 
@@ -99,7 +95,7 @@ function Gruppo({ etichetta, children }: { etichetta: string; children: ReactNod
   return (
     <div role="group" aria-label={etichetta} className="flex items-center gap-3">
       {/* aria-hidden: il gruppo porta gia' questo stesso testo come aria-label, senza
-          la marcatura uno screen reader leggerebbe "Obiettivo" due volte di fila. */}
+          la marcatura uno screen reader leggerebbe l'etichetta due volte di fila. */}
       <span aria-hidden="true" className="note shrink-0 text-[9.5px]">
         {etichetta}
       </span>
@@ -112,61 +108,126 @@ function Separatore() {
   return <span aria-hidden="true" className="hidden h-6 w-px bg-[var(--hair-soft)] xl:block" />;
 }
 
-/** Il numero deve coincidere sempre con le schede a video: e' l'unica prova che i filtri funzionano. */
-function Contatore({ n, className = "" }: { n: number; className?: string }) {
+/**
+ * Sintesi nella barra filtri, sempre in due numeri: primi e secondi non si
+ * sommano in un unico totale, perche' e' esattamente la distinzione che la
+ * pagina deve mantenere visibile. Compatto sotto md, dove non c'e' spazio
+ * per la coppia di conteggi.
+ */
+function Riepilogo({
+  primi,
+  secondi,
+  compatto = false,
+  className = "",
+}: {
+  primi: number;
+  secondi: number;
+  compatto?: boolean;
+  className?: string;
+}) {
   return (
     <p
       aria-live="polite"
       style={{ fontVariationSettings: '"wdth" 84' }}
       className={`font-mono text-[10.5px] tracking-[.14em] whitespace-nowrap text-muted uppercase ${className}`}
     >
-      <b className="text-[15px] font-normal text-ink">{n}</b> piatti su {DISHES.length}
+      {compatto ? (
+        <>
+          <b className="text-[15px] font-normal text-ink">{primi + secondi}</b> su{" "}
+          {PRIMI.length + SECONDI.length}
+        </>
+      ) : (
+        <>
+          <b className="text-[15px] font-normal text-ink">{primi}</b> primi su {PRIMI.length}
+          <span aria-hidden="true" className="mx-2 opacity-50">
+            &middot;
+          </span>
+          <b className="text-[15px] font-normal text-ink">{secondi}</b> secondi su {SECONDI.length}
+        </>
+      )}
     </p>
   );
+}
+
+/** Il numero deve coincidere sempre con le schede a video: e' l'unica prova che i filtri funzionano. */
+function Contatore({
+  n,
+  tot,
+  etichetta,
+  className = "",
+}: {
+  n: number;
+  tot: number;
+  etichetta: string;
+  className?: string;
+}) {
+  return (
+    <p
+      style={{ fontVariationSettings: '"wdth" 84' }}
+      className={`font-mono text-[10.5px] tracking-[.14em] whitespace-nowrap text-muted uppercase ${className}`}
+    >
+      <b className="text-[15px] font-normal text-ink">{n}</b> {etichetta} su {tot}
+    </p>
+  );
+}
+
+/* ------------------------------------------------------------------ dati */
+
+function filtra(lista: Elemento[], giorno: FiltroGiorno, tag: Tag[]): Elemento[] {
+  // OR dentro i tag: chi accende Carne e Pesce vuole vedere entrambi, non
+  // l'insieme vuoto degli elementi che sono carne E pesce insieme.
+  return lista.filter(
+    (e) => (giorno === "tutti" || e.giorno === giorno) && (tag.length === 0 || tag.some((t) => e.tag.includes(t))),
+  );
+}
+
+function ordina(lista: Elemento[], ordine: Ordine): Elemento[] {
+  if (ordine === "consigliati") return lista;
+  const copia = lista.slice(); // mai in place: PRIMI e SECONDI sono condivisi con tutto il sito
+  copia.sort((a, b) => {
+    // Il secondo criterio non e' decorativo: fra due elementi da 52 g di
+    // proteine chi sta in definizione vuole vedere prima quello che costa
+    // meno calorie.
+    if (ordine === "proteine") return b.proteine - a.proteine || a.kcal - b.kcal;
+    if (ordine === "kcal-su") return a.kcal - b.kcal || b.proteine - a.proteine;
+    return b.kcal - a.kcal || b.proteine - a.proteine;
+  });
+  return copia;
 }
 
 /* ------------------------------------------------------------------ pagina */
 
 export default function MenuClient() {
-  const [obiettivo, setObiettivo] = useState<FiltroObiettivo>("tutti");
+  const [categoria, setCategoria] = useState<FiltroCategoria>("tutti");
   const [giorno, setGiorno] = useState<FiltroGiorno>("tutti");
   const [tag, setTag] = useState<Tag[]>([]);
   const [ordine, setOrdine] = useState<Ordine>("consigliati");
   const [pannello, setPannello] = useState(false);
-  const { pasti, conto, pronto } = useCart();
+  const { pronto, pasti } = usePiano();
 
-  const visibili = useMemo(() => {
-    // AND fra le categorie, OR dentro i tag: chi accende Carne e Pesce vuole vedere
-    // entrambi, non l'insieme vuoto dei piatti che sono carne E pesce insieme.
-    const scelti = DISHES.filter(
-      (d) =>
-        (obiettivo === "tutti" || d.obiettivo.includes(obiettivo)) &&
-        (giorno === "tutti" || d.giorno === giorno) &&
-        (tag.length === 0 || tag.some((t) => d.tag.includes(t))),
-    );
-    if (ordine === "consigliati") return scelti;
+  // AND fra i gruppi di filtro (categoria, giorno, tag), OR dentro il gruppo
+  // tag. La categoria non filtra dentro una lista unica: decide quale delle
+  // due sezioni resta in piedi, perche' primi e secondi sono gia' due
+  // cataloghi separati a monte.
+  const primiVisibili = useMemo(() => {
+    if (categoria === "secondo") return [];
+    return ordina(filtra(PRIMI, giorno, tag), ordine);
+  }, [categoria, giorno, tag, ordine]);
 
-    const ordinati = scelti.slice(); // mai in place: DISHES e' condiviso con tutto il sito
-    ordinati.sort((a, b) => {
-      // Il secondo criterio non e' decorativo: fra due piatti da 52 g di proteine
-      // chi sta in definizione vuole vedere prima quello che costa meno calorie.
-      if (ordine === "proteine") return b.proteine - a.proteine || a.kcal - b.kcal;
-      if (ordine === "kcal-su") return a.kcal - b.kcal || b.proteine - a.proteine;
-      return b.kcal - a.kcal || b.proteine - a.proteine;
-    });
-    return ordinati;
-  }, [obiettivo, giorno, tag, ordine]);
+  const secondiVisibili = useMemo(() => {
+    if (categoria === "primo") return [];
+    return ordina(filtra(SECONDI, giorno, tag), ordine);
+  }, [categoria, giorno, tag, ordine]);
 
-  // L'ordinamento conta come filtro attivo: se ho spostato qualcosa, "Azzera" deve
-  // riportarmi al catalogo com'era, non a meta strada.
+  const totaleVisibile = primiVisibili.length + secondiVisibili.length;
+
+  // L'ordinamento conta come filtro attivo: se ho spostato qualcosa, "Azzera"
+  // deve riportarmi al catalogo com'era, non a meta strada.
   const attivi =
-    (obiettivo !== "tutti" ? 1 : 0) +
-    (giorno !== "tutti" ? 1 : 0) +
-    tag.length +
-    (ordine !== "consigliati" ? 1 : 0);
+    (categoria !== "tutti" ? 1 : 0) + (giorno !== "tutti" ? 1 : 0) + tag.length + (ordine !== "consigliati" ? 1 : 0);
 
   function azzera() {
-    setObiettivo("tutti");
+    setCategoria("tutti");
     setGiorno("tutti");
     setTag([]);
     setOrdine("consigliati");
@@ -183,19 +244,21 @@ export default function MenuClient() {
         <div className="wrap">
           <div className="grid items-center gap-16 lg:grid-cols-[1fr_366px]">
             <div>
-              <Eyebrow className="mb-[30px]">Il menu della settimana</Eyebrow>
+              <Eyebrow className="mb-[30px]">Il catalogo della settimana</Eyebrow>
               <h1 className="h1">
-                {/* Il numero lo conta il catalogo: il menu cambia ogni settimana e una
+                {/* I numeri li conta il catalogo: cambia ogni settimana e una
                     testata scritta a mano prima o poi mentirebbe. */}
-                <Rise i={0}>{DISHES.length} piatti,</Rise>
+                <Rise i={0}>
+                  {PRIMI.length} primi, {SECONDI.length} secondi,
+                </Rise>
                 <Rise i={1}>
-                  <span className="hl">due cotture.</span>
+                  <span className="hl">componi il pasto.</span>
                 </Rise>
               </h1>
               <p className="lead mt-9">
-                Il menu cambia ogni settimana. Matteo cucina il lunedi e il giovedi e consegna il
-                giorno dopo: quello che leggi qui e&apos; quello che trovi nel box, senza surgelati e
-                senza scorte di magazzino.
+                Matteo cucina il lunedi e il giovedi e consegna il giorno dopo. Scegli un primo, un
+                secondo e gli extra che ti servono: quello che leggi qui e&apos; quello che trovi nel
+                box, senza surgelati e senza scorte di magazzino.
               </p>
               <div className="mt-9 flex flex-wrap items-center gap-2.5">
                 <Chip accento>Porzioni pesate</Chip>
@@ -213,7 +276,7 @@ export default function MenuClient() {
                   {COPERTINA ? (
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img
-                      src={dishImg(COPERTINA, 760)}
+                      src={elementoImg(COPERTINA, 760)}
                       alt={`${COPERTINA.nome}, porzione pesata da ${COPERTINA.grammi} grammi`}
                       loading="lazy"
                       className="h-full w-full object-cover"
@@ -240,15 +303,15 @@ export default function MenuClient() {
         durata={38}
       />
 
-      {/* ------------------------------------------- filtri + griglia piatti
-          Barra e griglia stanno nella STESSA sezione: e' l'unico modo perche la
+      {/* ------------------------------------------- filtri + catalogo
+          Barra e griglie stanno nella STESSA sezione: e' l'unico modo perche la
           sticky resti agganciata per tutta la lettura del catalogo.           */}
       <section className="pt-[86px] pb-[110px]">
         <div className="wrap">
-          <h2 className="sr-only">Filtra i piatti</h2>
+          <h2 className="sr-only">Filtra il catalogo</h2>
 
           {/* z-30: sotto al pannello a schermo pieno del Nav (z-50) e sotto alla barra
-              del box (z-40), che deve poter scavalcare i filtri su schermi corti. */}
+              del piano (z-40), che deve poter scavalcare i filtri su schermi corti. */}
           <div className="shell sticky top-[100px] z-30">
             <div className="core p-3 sm:p-4">
               {/* Sotto md la barra intera mangerebbe mezzo schermo: resta una riga
@@ -274,27 +337,24 @@ export default function MenuClient() {
                     {pannello ? "−" : "+"}
                   </span>
                 </button>
-                <Contatore n={visibili.length} />
+                <Riepilogo primi={primiVisibili.length} secondi={secondiVisibili.length} compatto />
               </div>
 
               <div
                 id="pannello-filtri"
                 className={`${pannello ? "flex" : "hidden"} mt-3 flex-col gap-3 md:mt-0 md:flex md:flex-row md:flex-wrap md:items-center md:gap-x-6 md:gap-y-3`}
               >
-                <Gruppo etichetta="Obiettivo">
-                  <Pill attivo={obiettivo === "tutti"} onClick={() => setObiettivo("tutti")}>
-                    Tutti
-                  </Pill>
-                  {OBIETTIVI.map((o) => (
-                    <Pill key={o.id} attivo={obiettivo === o.id} onClick={() => setObiettivo(o.id)}>
-                      {o.label}
+                <Gruppo etichetta="Categoria">
+                  {CATEGORIE.map((c) => (
+                    <Pill key={c.id} attivo={categoria === c.id} onClick={() => setCategoria(c.id)}>
+                      {c.label}
                     </Pill>
                   ))}
                 </Gruppo>
 
                 <Separatore />
 
-                <Gruppo etichetta="Tipo">
+                <Gruppo etichetta="Tag">
                   {TAGS.map((t) => (
                     <Pill
                       key={t.id}
@@ -310,7 +370,7 @@ export default function MenuClient() {
                 <Separatore />
 
                 <Gruppo etichetta="Giorno">
-                  {GIORNI.map((g) => (
+                  {GIORNI_COTTURA.map((g) => (
                     <Pill key={g.id} attivo={giorno === g.id} onClick={() => setGiorno(g.id)}>
                       {g.label}
                     </Pill>
@@ -352,7 +412,11 @@ export default function MenuClient() {
                     </div>
                   </div>
 
-                  <Contatore n={visibili.length} className="hidden md:block" />
+                  <Riepilogo
+                    primi={primiVisibili.length}
+                    secondi={secondiVisibili.length}
+                    className="hidden md:block"
+                  />
 
                   {attivi > 0 ? (
                     <button type="button" onClick={azzera} className="btn btn-s btn-sm">
@@ -367,38 +431,72 @@ export default function MenuClient() {
             </div>
           </div>
 
-          <h2 className="sr-only">Piatti del menu</h2>
+          <h2 className="sr-only">Il catalogo</h2>
 
-          {visibili.length > 0 ? (
-            <div className="mt-12 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-              {visibili.map((d, i) => {
-                // La prima scheda di ogni ciclo diventa vetrina su due colonne: la
-                // griglia perde il passo regolare e il catalogo smette di sembrare un
-                // listino. Sotto al ciclo pieno la vetrina si spegne: con tre risultati
-                // una scheda larga il doppio delle altre non e' ritmo, e' uno sbaglio.
-                const largo = visibili.length >= CICLO && i % CICLO === 0;
-                return (
-                  // Chiave sul solo id: cosi le schede che restano non si smontano a
-                  // ogni click sui filtri (niente foto che sbattono) e a entrare in
-                  // cascata sono davvero solo quelle nuove.
-                  <Reveal
-                    key={d.id}
-                    delay={(i % CICLO) * 80}
-                    className={largo ? "md:col-span-2" : undefined}
-                  >
-                    <div
-                      className={`h-full transition-transform duration-700 ${INCLINA[i % CICLO]}`}
-                      style={{ transitionTimingFunction: "var(--e-over)" }}
-                    >
-                      <DishCard dish={d} variante={largo ? "vetrina" : "griglia"} />
-                    </div>
-                  </Reveal>
-                );
-              })}
-            </div>
+          {totaleVisibile > 0 ? (
+            <>
+              {primiVisibili.length > 0 ? (
+                <div className="mt-14">
+                  <SectionHead
+                    occhiello="Primi · le basi"
+                    titolo={
+                      <>
+                        La base <span className="hl">glucidica.</span>
+                      </>
+                    }
+                    testo="Carboidrati e verdura: la parte del pasto che rifornisce l'allenamento."
+                    azione={<Contatore n={primiVisibili.length} tot={PRIMI.length} etichetta="primi" />}
+                  />
+                  <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                    {primiVisibili.map((e, i) => (
+                      // Chiave sul solo id: cosi le schede che restano non si smontano a
+                      // ogni click sui filtri (niente foto che sbattono) e a entrare in
+                      // cascata sono davvero solo quelle nuove.
+                      <Reveal key={e.id} delay={(i % CICLO) * 80}>
+                        <div
+                          className={`h-full transition-transform duration-700 ${INCLINA[i % CICLO]}`}
+                          style={{ transitionTimingFunction: "var(--e-over)" }}
+                        >
+                          <ElementCard elemento={e} />
+                        </div>
+                      </Reveal>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              {secondiVisibili.length > 0 ? (
+                <div className="mt-16">
+                  <SectionHead
+                    occhiello="Secondi · le proteine"
+                    titolo={
+                      <>
+                        Proteina e <span className="hl">sostanza.</span>
+                      </>
+                    }
+                    testo="Carne, pesce o alternative vegetali: la parte del pasto che ricostruisce."
+                    azione={
+                      <Contatore n={secondiVisibili.length} tot={SECONDI.length} etichetta="secondi" />
+                    }
+                  />
+                  <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                    {secondiVisibili.map((e, i) => (
+                      <Reveal key={e.id} delay={(i % CICLO) * 80}>
+                        <div
+                          className={`h-full transition-transform duration-700 ${INCLINA[i % CICLO]}`}
+                          style={{ transitionTimingFunction: "var(--e-over)" }}
+                        >
+                          <ElementCard elemento={e} />
+                        </div>
+                      </Reveal>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </>
           ) : (
             /* ---------------------------------------------- nessun risultato */
-            <Reveal className="mt-12">
+            <Reveal className="mt-14">
               <div className="shell mx-auto max-w-[760px] md:rotate-[-1.4deg]">
                 <div className="core relative overflow-hidden px-8 py-14 text-center sm:px-14 sm:py-16">
                   <span
@@ -408,13 +506,14 @@ export default function MenuClient() {
                     0
                   </span>
                   <p className="h2 relative">
-                    Nessun piatto
+                    Nessun primo o secondo
                     <br />
                     con questi filtri
                   </p>
                   <p className="lead relative mx-auto mt-6">
-                    Hai stretto troppo la maglia. Togli un tag o cambia obiettivo: i{" "}
-                    {DISHES.length} piatti sono tutti qui, nessuno e&apos; finito.
+                    Hai stretto troppo la maglia. Togli un tag o cambia categoria: i{" "}
+                    {PRIMI.length + SECONDI.length} elementi del catalogo sono tutti qui, nessuno e&apos;
+                    finito.
                   </p>
                   <button type="button" onClick={azzera} className="btn btn-p relative mt-9">
                     Azzera i filtri
@@ -426,6 +525,45 @@ export default function MenuClient() {
               </div>
             </Reveal>
           )}
+
+          {/* ---------------------------------------------------- gli extra
+              Fascia sempre presente, non filtrata: gli extra non hanno tag ne
+              giorno di cottura, non c'e' niente su cui i filtri sopra possano
+              lavorare. Il conteggio resta comunque letto dal catalogo. */}
+          <div className="mt-16">
+            <SectionHead
+              occhiello="Extra"
+              titolo={
+                <>
+                  Il di piu, <span className="hl">se serve.</span>
+                </>
+              }
+              testo={`${EXTRA.length} aggiunte per completare il pasto, sempre a catalogo.`}
+            />
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-8">
+              {EXTRA.map((x, i) => (
+                <Reveal key={x.id} delay={(i % 8) * 45}>
+                  <div className="shell h-full">
+                    <div className="core flex h-full flex-col p-4">
+                      <p className="h3 !text-[16px] leading-tight">{x.nome}</p>
+                      <div className="mt-2.5 flex flex-wrap gap-1.5">
+                        <Chip>{x.grammi} g</Chip>
+                        <Chip>{x.kcal} kcal</Chip>
+                      </div>
+                      <div className="mt-3">
+                        <MacroSplit proteine={x.proteine} carboidrati={x.carboidrati} grassi={x.grassi} />
+                      </div>
+                      {/* Allergeni Reg. UE 1169/2011: campo obbligatorio, mostrato sempre,
+                          anche quando l'elenco e' vuoto - "nessuno" e' un dato, non un buco. */}
+                      <p className="note mt-3 flex-1 !text-[8.5px] leading-relaxed">
+                        {x.allergeni.length > 0 ? x.allergeni.join(", ") : "nessun allergene dichiarato"}
+                      </p>
+                    </div>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
@@ -447,13 +585,13 @@ export default function MenuClient() {
         </div>
       </section>
 
-      {/* ------------------------------------------------------ barra del box
-          Solo a carrello riletto: i numeri del box non esistono al primo render
+      {/* ------------------------------------------------------ barra del piano
+          Solo a piano riletto: i numeri del piano non esistono al primo render
           sul server e stamparli qui vorrebbe dire un mismatch di idratazione.  */}
       {pronto && pasti > 0 ? (
         /* z-40, non 50: il pannello a schermo pieno del Nav sta a z-50 ma viene PRIMA
            nel DOM, quindi a parita' di z-index questa barra gli restava sopra e la pill
-           "Vai al box" galleggiava in mezzo al menu mobile aperto. */
+           "Vai alla settimana" galleggiava in mezzo al menu mobile aperto. */
         <div className="pointer-events-none fixed inset-x-0 bottom-[22px] z-40 flex justify-center px-5">
           <div
             className="shell pointer-events-auto rounded-full"
@@ -465,18 +603,10 @@ export default function MenuClient() {
                 style={{ fontVariationSettings: '"wdth" 84' }}
                 className="font-mono text-[10.5px] tracking-[.12em] whitespace-nowrap text-ink uppercase"
               >
-                <b className="text-[15px] font-normal text-ink">{pasti}</b> pasti
-                <span className="hidden sm:inline"> nel box</span>
+                <b className="text-[15px] font-normal text-ink">{pasti}</b> pasti nella settimana
               </p>
-              <span aria-hidden="true" className="block h-5 w-px bg-[var(--hair)]" />
-              <p
-                style={{ fontVariationSettings: '"wdth" 84' }}
-                className="font-mono text-[12.5px] whitespace-nowrap text-ink"
-              >
-                {euro(conto.totale)}
-              </p>
-              <Link href="/box" className="btn btn-p btn-sm">
-                Vai al box
+              <Link href="/settimana" className="btn btn-p btn-sm">
+                Vai alla settimana
                 <span className="dot" aria-hidden="true">
                   &#8599;
                 </span>
