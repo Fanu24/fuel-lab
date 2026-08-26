@@ -1,9 +1,14 @@
 "use client";
 
 import { useMemo, useState, type FormEvent } from "react";
-import { candidati, numeroPasti, quotaCoperta, targetPerPasto, type Vincoli } from "@/lib/matcher";
+import {
+  combinazioni,
+  numeroPasti,
+  quotaCoperta,
+  targetPerPasto,
+  type Vincoli,
+} from "@/lib/matcher";
 import { TAGS, type Tag, type Target } from "@/lib/types";
-import { DISHES } from "@/lib/dishes";
 
 /**
  * STATO 3 — i macro, modificabili.
@@ -13,6 +18,13 @@ import { DISHES } from "@/lib/dishes";
  * quota coperta va spiegata, altrimenti chi prende un solo pasto al giorno si
  * aspetta 2.240 kcal dentro una schiscetta.
  */
+
+/**
+ * Quanti abbinamenti primo+secondo esistono in totale, senza vincoli.
+ * Calcolato dal catalogo, non scritto a mano: se il catalogo cambia il numero
+ * mostrato in pagina resta vero da solo.
+ */
+const TOTALE_ABBINAMENTI = combinazioni({ escludi: [], soloTag: [], maxRipetizioni: 1 }).length;
 
 type Campo = "kcal" | "proteine" | "carboidrati" | "grassi";
 
@@ -94,10 +106,11 @@ export default function Valori({
     giorni,
   };
 
-  // Quanti piatti restano davvero dopo le esclusioni: se la risposta e' zero il
-  // matcher non ha niente da comporre, e va detto prima del click, non dopo.
+  // Quanti abbinamenti primo+secondo restano davvero dopo le esclusioni: se la
+  // risposta e' zero il matcher non ha niente da comporre, e va detto prima
+  // del click, non dopo.
   const disponibili = useMemo(
-    () => candidati({ ...vincoli, escludi }).length,
+    () => combinazioni({ ...vincoli, escludi }).length,
     [vincoli, escludi],
   );
 
@@ -276,8 +289,8 @@ export default function Valori({
 
             {/* ---------- vincoli ---------- */}
             <fieldset className="mt-9 border-0 p-0">
-              <legend className="bar-l mb-[6px] block">Cosa togliere dal box</legend>
-              <p className="note mb-[14px]">Esclude i piatti che portano il tag</p>
+              <legend className="bar-l mb-[6px] block">Cosa togliere dalla settimana</legend>
+              <p className="note mb-[14px]">Esclude gli elementi che portano il tag</p>
               <div className="flex flex-wrap gap-2.5">
                 {TAGS.map((t) => {
                   const attivo = escludi.includes(t.id);
@@ -317,7 +330,7 @@ export default function Valori({
                       </span>
                       <span
                         className="text-[13.5px] whitespace-nowrap"
-                        style={{ color: attivo ? "#fff" : "var(--color-muted)" }}
+                        style={{ color: attivo ? "var(--color-ink)" : "var(--color-muted)" }}
                       >
                         {t.label}
                       </span>
@@ -331,8 +344,8 @@ export default function Valori({
                 role="status"
               >
                 {disponibili === 0
-                  ? "Con questi vincoli non resta nessun piatto"
-                  : disponibili + ` piatti su ${DISHES.length} restano in gioco`}
+                  ? "Con questi vincoli non resta nessun abbinamento"
+                  : disponibili + ` abbinamenti su ${TOTALE_ABBINAMENTI} restano in gioco`}
               </p>
             </fieldset>
           </div>
@@ -343,7 +356,7 @@ export default function Valori({
               className="rounded-[var(--core-r)] p-6"
               style={{ background: "rgba(201,224,205,.04)", border: "1px solid var(--hair-soft)" }}
             >
-              <p className="bar-l">Il box che stai chiedendo</p>
+              <p className="bar-l">La settimana che stai chiedendo</p>
               <p
                 className="mt-4 font-mono text-[54px] leading-none text-ink"
                 style={{ fontVariationSettings: '"wdth" 82' }}
@@ -404,7 +417,7 @@ export default function Valori({
           style={{ borderColor: "var(--hair-soft)" }}
         >
           <button type="submit" className="btn btn-p" disabled={!pronto}>
-            Componi il mio box
+            Componi la mia settimana
             <span className="dot" aria-hidden="true">
               &#8594;
             </span>

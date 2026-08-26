@@ -6,25 +6,27 @@ import Reveal from "@/components/Reveal";
 import Ticker from "@/components/Ticker";
 import { Eyebrow, Rise } from "@/components/ui";
 import {
-  componiBox,
+  componiPiano,
   TARGET_DEFAULT,
   VINCOLI_DEFAULT,
-  type Composizione,
+  type EsitoPiano,
   type Vincoli,
 } from "@/lib/matcher";
+import { PRIMI, SECONDI } from "@/lib/catalogo";
+import { CASELLE_TOTALI } from "@/lib/settimana";
 import type { Target } from "@/lib/types";
 import Risultato from "./Risultato";
 import Valori from "./Valori";
-import { DISHES } from "@/lib/dishes";
 
 /**
  * LA TUA SCHEDA — quattro stati sulla stessa pagina.
  *
  * L'onesta della pagina e' anche la sua regola di scrittura: l'upload e'
  * scenografico (senza backend nessuno puo leggere davvero un PDF) e ogni stato
- * lo dice. Da qui in poi pero' lavora il matcher vero: componiBox() gira in
- * questo browser sui piatti del catalogo. Quello non lo fingiamo, e infatti
- * dopo "Componi il mio box" non c'e' nessuna finta attesa.
+ * lo dice. Da qui in poi pero' lavora il matcher vero: componiPiano() gira in
+ * questo browser e riempie le caselle della settimana con abbinamenti
+ * primo+secondo. Quello non lo fingiamo, e infatti dopo "Componi la mia
+ * settimana" non c'e' nessuna finta attesa.
  */
 
 type Fase = "carica" | "scansione" | "valori" | "risultato";
@@ -40,9 +42,9 @@ const TAPPE: { fase: Fase; label: string }[] = [
 /**
  * Il tetto di ripetizioni, giro dopo giro.
  * E' l'unica leva onesta che ha "Rigenera": il matcher e' deterministico, a
- * parita di target e vincoli ridarebbe lo stesso identico box. Cambiando quante
- * volte un piatto puo ripetersi cambia davvero la selezione, senza toccare i
- * numeri che l'utente ha appena confermato.
+ * parita di target e vincoli ridarebbe la stessa identica settimana. Cambiando
+ * quante volte un elemento puo ripetersi cambia davvero la selezione, senza
+ * toccare i numeri che l'utente ha appena confermato.
  */
 const RIPETIZIONI = [2, 1, 3, 4];
 
@@ -296,7 +298,7 @@ const PASSI = [
   "lettura del documento",
   "estrazione dei macro",
   "confronto con il catalogo",
-  "composizione del box",
+  "composizione della settimana",
 ];
 
 /** Larghezze delle righe finte del documento: irregolari, come un testo vero. */
@@ -472,7 +474,7 @@ export default function SchedaClient() {
   const [nomeFile, setNomeFile] = useState<string | null>(null);
   const [target, setTarget] = useState<Target>(TARGET_DEFAULT);
   const [vincoli, setVincoli] = useState<Vincoli>(VINCOLI_DEFAULT);
-  const [composizione, setComposizione] = useState<Composizione | null>(null);
+  const [esito, setEsito] = useState<EsitoPiano | null>(null);
   const [giro, setGiro] = useState(0);
 
   const ancora = useRef<HTMLDivElement | null>(null);
@@ -505,7 +507,7 @@ export default function SchedaClient() {
   const conferma = useCallback((t: Target, v: Vincoli) => {
     setTarget(t);
     setVincoli(v);
-    setComposizione(componiBox(t, { ...v, maxRipetizioni: RIPETIZIONI[0] }));
+    setEsito(componiPiano(t, { ...v, maxRipetizioni: RIPETIZIONI[0] }));
     setGiro(0);
     setFase("risultato");
   }, []);
@@ -513,8 +515,8 @@ export default function SchedaClient() {
   const rigenera = useCallback(() => {
     const prossimo = giro + 1;
     setGiro(prossimo);
-    setComposizione(
-      componiBox(target, {
+    setEsito(
+      componiPiano(target, {
         ...vincoli,
         maxRipetizioni: RIPETIZIONI[prossimo % RIPETIZIONI.length],
       }),
@@ -535,8 +537,8 @@ export default function SchedaClient() {
           </h1>
           <div className="mt-11 flex flex-wrap items-end justify-between gap-x-12 gap-y-9">
             <p className="lead">
-              Carichi la scheda, controlli i numeri, il matcher pesca fra le {DISHES.length} schiscette della
-              settimana quelle che chiudono i tuoi macro. Poi cucina Matteo.
+              Carichi la scheda, controlli i numeri, il matcher abbina primi e secondi che chiudono i
+              tuoi macro dentro le {CASELLE_TOTALI} caselle della settimana. Poi cucina Matteo.
             </p>
             <Tappe fase={fase} />
           </div>
@@ -574,10 +576,10 @@ export default function SchedaClient() {
             </Reveal>
           ) : null}
 
-          {fase === "risultato" && composizione !== null ? (
+          {fase === "risultato" && esito !== null ? (
             <Reveal key="risultato">
               <Risultato
-                composizione={composizione}
+                esito={esito}
                 target={target}
                 giro={giro}
                 maxRipetizioni={RIPETIZIONI[giro % RIPETIZIONI.length]}
@@ -677,7 +679,8 @@ export default function SchedaClient() {
                     Vuoi prima vedere cosa si mangia?
                   </h2>
                   <p className="mt-4 max-w-[46ch] text-[15px] text-muted">
-                    Le {DISHES.length} schiscette della settimana, con i macro di ognuna.
+                    I {PRIMI.length} primi e i {SECONDI.length} secondi del catalogo, con i macro di
+                    ognuno.
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-4">
