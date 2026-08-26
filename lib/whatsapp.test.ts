@@ -78,8 +78,8 @@ describe("whatsapp", () => {
     vi.resetModules();
     const { messaggioPiano } = await import("./whatsapp");
     const { PRIMI, SECONDI } = await import("./catalogo");
-    const { GIORNI } = await import("./piano");
-    const piano: import("./piano").Piano = {
+    const { GIORNI } = await import("./settimana");
+    const piano: import("./settimana").Piano = {
       [GIORNI[0]]: {
         pranzo: { primo: PRIMI[0].id, secondo: SECONDI[0].id, extra: [] },
       },

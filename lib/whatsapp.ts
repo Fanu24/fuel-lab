@@ -1,5 +1,5 @@
-import { GIORNI, NOMI_GIORNO, PASTI } from "./piano";
-import type { Casella, GiornoSettimana, Piano } from "./piano";
+import { GIORNI, NOMI_GIORNO, PASTI } from "./settimana";
+import type { Casella, GiornoSettimana, Piano } from "./settimana";
 import { getElemento, getExtra } from "./catalogo";
 import type { Macros } from "./types";
 
