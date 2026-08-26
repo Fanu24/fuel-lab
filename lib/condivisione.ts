@@ -1,6 +1,6 @@
 import { EXTRA, PRIMI, SECONDI } from "./catalogo";
-import { CASELLE_TOTALI, GIORNI, PASTI, potaPiano } from "./piano";
-import type { Casella, Pasto, Piano } from "./piano";
+import { CASELLE_TOTALI, GIORNI, PASTI, potaPiano } from "./settimana";
+import type { Casella, Pasto, Piano } from "./settimana";
 
 /* =========================================================================
    Il piano della settimana dentro un link.

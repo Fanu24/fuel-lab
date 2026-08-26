@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { componiPiano, TARGET_DEFAULT, VINCOLI_DEFAULT, quotaCoperta } from "./matcher";
-import { macroCasella, CASELLE_TOTALI, GIORNI, PASTI } from "./piano";
+import { macroCasella, CASELLE_TOTALI, GIORNI, PASTI } from "./settimana";
 
 const caselle = (p: ReturnType<typeof componiPiano>["piano"]) =>
   GIORNI.flatMap((g) => PASTI.map((m) => p[g]?.[m]).filter(Boolean));

@@ -1,6 +1,13 @@
 import { PRIMI, SECONDI, type Elemento } from "./catalogo";
 import { DISHES } from "./dishes";
-import { CASELLE_TOTALI, GIORNI, PASTI, macroCasella, type Casella, type Piano } from "./piano";
+import {
+  CASELLE_TOTALI,
+  GIORNI,
+  PASTI,
+  macroCasella,
+  type Casella,
+  type Piano,
+} from "./settimana";
 import type { Dish, Macros, Tag, Target } from "./types";
 
 /**
