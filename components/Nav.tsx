@@ -2,19 +2,51 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
-import { useCart } from "@/lib/cart";
+import { useEffect, useState, type ReactNode } from "react";
+import { linkWhatsApp, messaggioServizio } from "@/lib/whatsapp";
 
 const VOCI = [
   { href: "/menu", label: "Menu" },
-  { href: "/come-funziona", label: "Come funziona" },
+  { href: "/servizi", label: "Servizi" },
+  { href: "/settimana", label: "La tua settimana" },
   { href: "/scheda", label: "La tua scheda" },
   { href: "/chi-e-matteo", label: "Chi e Matteo" },
 ];
 
+/**
+ * CTA "Scrivici su WhatsApp", condivisa fra la nav desktop e il pannello
+ * mobile. Se il numero non e' configurato, linkWhatsApp torna null: il
+ * bottone resta visibile ma disabilitato con una spiegazione, non nascosto
+ * e non cliccabile a vuoto (vedi lib/whatsapp.ts).
+ */
+function CtaWhatsApp({
+  className,
+  children,
+  onClick,
+}: {
+  className: string;
+  children: ReactNode;
+  onClick?: () => void;
+}) {
+  const href = linkWhatsApp(messaggioServizio("nav"));
+
+  if (!href) {
+    return (
+      <button type="button" className={className} disabled title="Numero WhatsApp non ancora configurato">
+        {children}
+      </button>
+    );
+  }
+
+  return (
+    <a href={href} target="_blank" rel="noopener noreferrer" className={className} onClick={onClick}>
+      {children}
+    </a>
+  );
+}
+
 export default function Nav() {
   const [aperto, setAperto] = useState(false);
-  const { pasti, pronto } = useCart();
   const percorso = usePathname();
 
   // Il menu mobile e' un pannello a schermo pieno e va chiuso quando si naviga,
@@ -43,17 +75,37 @@ export default function Nav() {
         <div
           className="flex h-[68px] w-[1180px] max-w-[calc(100%-40px)] items-center gap-[38px] rounded-full border pr-3 pl-[26px]"
           style={{
-            background: "rgba(11,33,25,.78)",
+            // Vetro CHIARO, non piu' scuro: il fondo del sito e' chiaro adesso,
+            // e la nav a vetro si inverte insieme (spec sezione 5, punto 2).
+            // Il testo dentro passa a ink nello stesso cambiamento: fondo e
+            // testo si muovono insieme, altrimenti il marchio torna invisibile
+            // (era gia successo, difetto Critical corretto una volta).
+            background: "rgba(244, 241, 232, .82)",
             backdropFilter: "blur(18px) saturate(140%)",
             WebkitBackdropFilter: "blur(18px) saturate(140%)",
             borderColor: "var(--hair)",
-            boxShadow: "inset 0 1px 0 rgba(223,255,62,.1), 0 24px 54px -32px rgba(3,12,8,.9)",
+            boxShadow: "var(--sh-nav)",
           }}
         >
-          <Link href="/" className="mr-auto flex items-center gap-[11px]" aria-label="FUEL, home">
-            <i className="block h-[22px] w-[11px] bg-lime" style={{ transform: "skewX(-12deg)" }} />
-            <span className="font-disp text-[27px] leading-none tracking-[.02em] text-white uppercase">
-              Fuel
+          <Link href="/" className="mr-auto flex items-center gap-[11px]" aria-label="FUEL LAB, home">
+            <i
+              className="block h-[22px] w-[11px] shrink-0 bg-lime"
+              style={{ transform: "skewX(-12deg)" }}
+              aria-hidden="true"
+            />
+            <span className="flex items-baseline gap-[6px]">
+              <span
+                className="font-disp text-[27px] leading-none tracking-[.02em] uppercase"
+                style={{ color: "var(--color-ink)" }}
+              >
+                Fuel
+              </span>
+              <span
+                className="font-disp text-[14px] leading-none tracking-[.06em] uppercase"
+                style={{ color: "var(--color-ink)" }}
+              >
+                Lab
+              </span>
             </span>
           </Link>
 
@@ -63,10 +115,10 @@ export default function Nav() {
                 key={v.href}
                 href={v.href}
                 aria-current={percorso === v.href ? "page" : undefined}
-                className="group relative py-[7px] text-[12px] tracking-[.13em] uppercase transition-colors duration-400 hover:text-white"
+                className="group relative py-[7px] text-[12px] tracking-[.13em] uppercase transition-colors duration-400"
                 style={{
                   fontVariationSettings: '"wdth" 108, "wght" 600',
-                  color: "#fff",
+                  color: "var(--color-ink)",
                 }}
               >
                 {v.label}
@@ -82,12 +134,12 @@ export default function Nav() {
             ))}
           </nav>
 
-          <Link href="/box" className="btn btn-p btn-sm hidden sm:inline-flex">
-            Componi il tuo box
+          <CtaWhatsApp className="btn btn-p btn-sm hidden sm:inline-flex">
+            Scrivici su WhatsApp
             <span className="dot" aria-hidden="true">
-              {pronto && pasti > 0 ? pasti : "↗"}
+              ↗
             </span>
-          </Link>
+          </CtaWhatsApp>
 
           <button
             type="button"
@@ -99,14 +151,14 @@ export default function Nav() {
             style={{ borderColor: "var(--hair)", background: "rgba(223,255,62,.06)" }}
           >
             <span
-              className="absolute block h-[2px] w-[18px] bg-lime transition-transform duration-500"
+              className="absolute block h-[2px] w-[18px] bg-ink transition-transform duration-500"
               style={{
                 transitionTimingFunction: "var(--e-over)",
                 transform: aperto ? "rotate(45deg)" : "translateY(-4px)",
               }}
             />
             <span
-              className="absolute block h-[2px] w-[18px] bg-lime transition-transform duration-500"
+              className="absolute block h-[2px] w-[18px] bg-ink transition-transform duration-500"
               style={{
                 transitionTimingFunction: "var(--e-over)",
                 transform: aperto ? "rotate(-45deg)" : "translateY(4px)",
@@ -123,7 +175,7 @@ export default function Nav() {
         hidden={!aperto}
         className="fixed inset-0 z-50 flex flex-col justify-center px-8 lg:hidden"
         style={{
-          background: "rgba(6,23,16,.94)",
+          background: "rgba(244, 241, 232, .96)",
           backdropFilter: "blur(22px)",
           WebkitBackdropFilter: "blur(22px)",
         }}
@@ -134,7 +186,7 @@ export default function Nav() {
               key={v.href}
               href={v.href}
               onClick={chiudi}
-              className="h3 py-2 transition-colors duration-500 hover:text-white"
+              className="h3 py-2 transition-colors duration-500"
               style={{
                 animation: aperto ? `fuel-rise .7s var(--e-out) both ${90 + i * 60}ms` : undefined,
               }}
@@ -143,12 +195,12 @@ export default function Nav() {
             </Link>
           ))}
         </nav>
-        <Link href="/box" onClick={chiudi} className="btn btn-p mt-10 w-max">
-          Componi il tuo box
+        <CtaWhatsApp className="btn btn-p mt-10 w-max" onClick={chiudi}>
+          Scrivici su WhatsApp
           <span className="dot" aria-hidden="true">
-            {pronto && pasti > 0 ? pasti : "↗"}
+            ↗
           </span>
-        </Link>
+        </CtaWhatsApp>
       </div>
     </>
   );

@@ -8,16 +8,18 @@ export default function Footer() {
           className="flex flex-wrap items-end justify-between gap-10 border-t pt-10"
           style={{ borderColor: "var(--hair-soft)" }}
         >
-          <Link
-            href="/"
-            className="font-disp text-[clamp(64px,11vw,112px)] leading-[.74] uppercase transition-colors duration-700"
-            style={{
-              color: "transparent",
-              WebkitTextStroke: "1.6px rgba(223,255,62,.42)",
-              transitionTimingFunction: "var(--e-out)",
-            }}
-          >
-            Fuel
+          <Link href="/" aria-label="FUEL LAB, home" className="block transition-opacity duration-700 hover:opacity-80">
+            {/* Il PNG intero (1001x704, trasparente) compare qui perche' il footer ha
+                spazio: sotto i ~90px la faccia del cuoco dentro il logo diventa
+                illeggibile, ed e' per questo che in nav il marchio e' a testo. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo-fuellab.png"
+              alt="Logo FUEL LAB"
+              loading="lazy"
+              width={220}
+              className="h-auto w-[220px]"
+            />
           </Link>
 
           <div className="flex flex-col items-start gap-4 pb-3 sm:items-end">
