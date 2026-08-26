@@ -532,15 +532,24 @@ button {
     background: var(--color-ink);
     display: grid;
   }
+  /* Il colore di partenza e quello che sopravvive ovunque; il lime e il mink
+     arrivano solo quando il SELETTORE ha gia visto il fondo scuro. Se una di
+     queste due classi finisse fuori da .readout, con il lime di default
+     sparirebbe a 1.00:1 e con il mink a 1.88:1. La regola non deve dipendere
+     da chi scrive il markup. */
   .ro-n {
     display: block;
     font-size: 30px;
     font-weight: 700;
-    color: var(--color-lime);
+    color: var(--color-ink);
     letter-spacing: -0.03em;
     line-height: 1.06;
     font-family: var(--font-mono);
     font-variation-settings: "wdth" 84;
+  }
+  .readout .ro-n,
+  .on-ink .ro-n {
+    color: var(--color-lime);
   }
   .ro-l {
     display: block;
@@ -551,6 +560,10 @@ button {
     font-weight: 500;
     letter-spacing: 0.16em;
     text-transform: uppercase;
+    color: var(--color-muted);
+  }
+  .readout .ro-l,
+  .on-ink .ro-l {
     color: var(--color-mink);
   }
 
@@ -662,14 +675,20 @@ button {
     padding: 18px 20px;
     box-shadow: inset 1px 0 0 var(--hair-ink);
   }
+  /* stessa forma di .ro-n: inchiostro di default, lime solo sotto un antenato
+     che ha davvero il fondo scuro */
   .total-n {
     font-family: var(--font-mono);
     font-variation-settings: "wdth" 84;
     font-size: 24px;
     font-weight: 700;
-    color: var(--color-lime);
+    color: var(--color-ink);
     letter-spacing: -0.03em;
     line-height: 1.05;
+  }
+  .total .total-n,
+  .on-ink .total-n {
+    color: var(--color-lime);
   }
 
   /* ---------- ticker ------------------------------------------------------ */
