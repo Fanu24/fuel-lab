@@ -392,7 +392,7 @@ export default function ComeFunziona() {
                       className={`note mt-[10px] ml-[6px] inline-block rounded-full border px-4 py-[7px] md:absolute md:-top-4 md:mt-0 md:ml-0 ${
                         invertito ? "md:-left-5 md:rotate-[-3deg]" : "md:-right-5 md:rotate-[3deg]"
                       }`}
-                      style={{ borderColor: "var(--hair)", background: "var(--color-ink-2)" }}
+                      style={{ borderColor: "var(--hair)", background: "var(--color-tray)" }}
                     >
                       {p.etichetta}
                     </span>
@@ -473,14 +473,14 @@ export default function ComeFunziona() {
                   className="mt-10 mb-4 text-[11.5px] font-normal tracking-[.24em] uppercase"
                   style={{
                     fontVariationSettings: '"wdth" 112, "wght" 700',
-                    color: "var(--color-mist-dim)",
+                    color: "var(--color-muted)",
                   }}
                 >
                   Dove perde
                 </h4>
                 <ul
                   className="flex flex-col gap-3 text-[15.5px] leading-[1.6]"
-                  style={{ color: "var(--color-mist-dim)" }}
+                  style={{ color: "var(--color-muted)" }}
                 >
                   <Voce>
                     A meno 18 gradi l&apos;acqua dentro le fibre cristallizza: il petto di pollo esce
@@ -668,7 +668,7 @@ export default function ComeFunziona() {
                     scura di traverso e uno stacco netto sopra. */}
                 <div
                   aria-hidden="true"
-                  className="absolute inset-0 bg-[linear-gradient(180deg,var(--color-core),rgba(14,42,32,.15)_46%,transparent)] md:bg-[linear-gradient(90deg,var(--color-core),rgba(14,42,32,.15)_46%,transparent)]"
+                  className="absolute inset-0 bg-[linear-gradient(180deg,var(--color-card),rgba(14,42,32,.15)_46%,transparent)] md:bg-[linear-gradient(90deg,var(--color-card),rgba(14,42,32,.15)_46%,transparent)]"
                 />
               </figure>
             </div>

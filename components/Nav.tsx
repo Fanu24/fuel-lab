@@ -52,7 +52,7 @@ export default function Nav() {
         >
           <Link href="/" className="mr-auto flex items-center gap-[11px]" aria-label="FUEL, home">
             <i className="block h-[22px] w-[11px] bg-lime" style={{ transform: "skewX(-12deg)" }} />
-            <span className="font-disp text-[27px] leading-none tracking-[.02em] text-ink uppercase">
+            <span className="font-disp text-[27px] leading-none tracking-[.02em] text-white uppercase">
               Fuel
             </span>
           </Link>
@@ -63,10 +63,10 @@ export default function Nav() {
                 key={v.href}
                 href={v.href}
                 aria-current={percorso === v.href ? "page" : undefined}
-                className="group relative py-[7px] text-[12px] tracking-[.13em] uppercase transition-colors duration-400 hover:text-ink"
+                className="group relative py-[7px] text-[12px] tracking-[.13em] uppercase transition-colors duration-400 hover:text-white"
                 style={{
                   fontVariationSettings: '"wdth" 108, "wght" 600',
-                  color: percorso === v.href ? "#fff" : "var(--color-mist)",
+                  color: "#fff",
                 }}
               >
                 {v.label}
@@ -134,7 +134,7 @@ export default function Nav() {
               key={v.href}
               href={v.href}
               onClick={chiudi}
-              className="h3 py-2 transition-colors duration-500 hover:text-ink"
+              className="h3 py-2 transition-colors duration-500 hover:text-white"
               style={{
                 animation: aperto ? `fuel-rise .7s var(--e-out) both ${90 + i * 60}ms` : undefined,
               }}

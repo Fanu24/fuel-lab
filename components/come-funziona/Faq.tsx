@@ -56,7 +56,7 @@ const CSS = `
 
 .cf-a{
   padding:0 0 27px; max-width:64ch;
-  font-size:15.5px; line-height:1.68; color:var(--color-mist);
+  font-size:15.5px; line-height:1.68; color:var(--color-ink);
   animation:cf-apri .5s var(--e-out) both;
 }
 .cf-a strong{ color:#fff; font-variation-settings:"wght" 650; }

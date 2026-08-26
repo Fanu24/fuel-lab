@@ -338,12 +338,12 @@ function Scansione({ nomeFile, onFine }: { nomeFile: string | null; onFine: () =
             }}
           />
           <p
-            className="font-mono text-[10.5px] tracking-[.2em] text-ink uppercase"
+            className="font-mono text-[10.5px] tracking-[.2em] text-lime uppercase"
             style={{ fontVariationSettings: '"wdth" 84' }}
           >
             Scheda
           </p>
-          <p className="mt-2 overflow-hidden text-[15px] text-ellipsis whitespace-nowrap text-ink">
+          <p className="mt-2 overflow-hidden text-[15px] text-ellipsis whitespace-nowrap text-white">
             {nomeFile ?? "valori inseriti a mano"}
           </p>
           <div className="mt-6 grid gap-[10px]">
@@ -399,7 +399,7 @@ function Scansione({ nomeFile, onFine }: { nomeFile: string | null; onFine: () =
                   className="ml-auto font-mono text-[11px] tracking-[.2em] uppercase"
                   style={{
                     fontVariationSettings: '"wdth" 84',
-                    color: fatto ? "var(--color-lime)" : "var(--color-mist-dim)",
+                    color: fatto ? "var(--color-lime)" : "var(--color-mink)",
                   }}
                 >
                   {fatto ? "ok" : corrente ? "..." : "in coda"}
@@ -440,7 +440,7 @@ function Tappe({ fase }: { fase: Fase }) {
                   ? "var(--color-ink)"
                   : fatta
                     ? "var(--color-lime)"
-                    : "var(--color-mist-dim)",
+                    : "var(--color-mink)",
                 border: "1px solid " + (qui ? "transparent" : "var(--hair-soft)"),
                 transition: "background-color .5s var(--e-out), color .5s var(--e-out)",
               }}

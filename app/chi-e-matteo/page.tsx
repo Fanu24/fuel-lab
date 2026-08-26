@@ -122,7 +122,7 @@ function Numero({
           </span>
           <p
             className="mt-3 max-w-[34ch] text-[14.5px] leading-[1.6]"
-            style={{ color: lime ? "rgba(6,23,16,.78)" : "var(--color-mist-dim)" }}
+            style={{ color: lime ? "rgba(6,23,16,.78)" : "var(--color-muted)" }}
           >
             {testo}
           </p>

@@ -232,7 +232,7 @@ export default function Valori({
                         style={{
                           fontVariationSettings: '"wdth" 84',
                           background: pasti === v ? "var(--color-lime)" : "rgba(201,224,205,.05)",
-                          color: pasti === v ? "var(--color-ink)" : "var(--color-mist)",
+                          color: pasti === v ? "var(--color-ink)" : "var(--color-ink)",
                           borderColor: pasti === v ? "transparent" : "var(--hair-soft)",
                         }}
                       >
@@ -262,7 +262,7 @@ export default function Valori({
                         style={{
                           fontVariationSettings: '"wdth" 84',
                           background: giorni === v ? "var(--color-lime)" : "rgba(201,224,205,.05)",
-                          color: giorni === v ? "var(--color-ink)" : "var(--color-mist)",
+                          color: giorni === v ? "var(--color-ink)" : "var(--color-ink)",
                           borderColor: giorni === v ? "transparent" : "var(--hair-soft)",
                         }}
                       >
@@ -309,7 +309,7 @@ export default function Valori({
                         <i
                           className="absolute top-[3px] left-[3px] block h-[14px] w-[14px] rounded-full transition-transform duration-500"
                           style={{
-                            background: attivo ? "var(--color-ink)" : "var(--color-mist)",
+                            background: attivo ? "var(--color-ink)" : "var(--color-ink)",
                             transform: attivo ? "translateX(14px)" : "none",
                             transitionTimingFunction: "var(--e-over)",
                           }}
@@ -317,7 +317,7 @@ export default function Valori({
                       </span>
                       <span
                         className="text-[13.5px] whitespace-nowrap"
-                        style={{ color: attivo ? "#fff" : "var(--color-mist-dim)" }}
+                        style={{ color: attivo ? "#fff" : "var(--color-muted)" }}
                       >
                         {t.label}
                       </span>
