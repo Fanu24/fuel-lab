@@ -171,6 +171,29 @@ function Contatore({
   );
 }
 
+/**
+ * Riga per la sezione che i filtri hanno svuotato (non la categoria: quella
+ * smonta la sezione del tutto, un caso diverso e gia' corretto). Senza
+ * questa riga la sezione sparisce in silenzio quando l'altra ha ancora
+ * risultati - l'utente vede meta pagina scomparire e non sa se ha filtrato
+ * troppo o se il sito e' rotto. Stessa spiegazione dello stato vuoto
+ * generale, in scala ridotta: non serve un blocco grande, basta la frase.
+ */
+function SezioneVuota({ etichetta, onAzzera }: { etichetta: string; onAzzera: () => void }) {
+  return (
+    <p className="lead !max-w-none">
+      Con questi filtri non ci sono {etichetta}.{" "}
+      <button
+        type="button"
+        onClick={onAzzera}
+        className="text-ink underline decoration-[var(--hair)] underline-offset-4 transition-colors duration-300 hover:decoration-current"
+      >
+        Azzera i filtri
+      </button>
+    </p>
+  );
+}
+
 /* ------------------------------------------------------------------ dati */
 
 function filtra(lista: Elemento[], giorno: FiltroGiorno, tag: Tag[]): Elemento[] {
@@ -207,17 +230,22 @@ export default function MenuClient() {
 
   // AND fra i gruppi di filtro (categoria, giorno, tag), OR dentro il gruppo
   // tag. La categoria non filtra dentro una lista unica: decide quale delle
-  // due sezioni resta in piedi, perche' primi e secondi sono gia' due
-  // cataloghi separati a monte.
+  // due sezioni resta montata, perche' primi e secondi sono gia' due
+  // cataloghi separati a monte. "Attiva" e' la stessa domanda posta due
+  // volte - qui per azzerare la lista, sotto nel JSX per decidere se la
+  // sezione compare - cosi' non puo' rispondere in modo diverso nei due posti.
+  const primiAttiva = categoria !== "secondo";
+  const secondiAttiva = categoria !== "primo";
+
   const primiVisibili = useMemo(() => {
-    if (categoria === "secondo") return [];
+    if (!primiAttiva) return [];
     return ordina(filtra(PRIMI, giorno, tag), ordine);
-  }, [categoria, giorno, tag, ordine]);
+  }, [primiAttiva, giorno, tag, ordine]);
 
   const secondiVisibili = useMemo(() => {
-    if (categoria === "primo") return [];
+    if (!secondiAttiva) return [];
     return ordina(filtra(SECONDI, giorno, tag), ordine);
-  }, [categoria, giorno, tag, ordine]);
+  }, [secondiAttiva, giorno, tag, ordine]);
 
   const totaleVisibile = primiVisibili.length + secondiVisibili.length;
 
@@ -435,7 +463,7 @@ export default function MenuClient() {
 
           {totaleVisibile > 0 ? (
             <>
-              {primiVisibili.length > 0 ? (
+              {primiAttiva ? (
                 <div className="mt-14">
                   <SectionHead
                     occhiello="Primi · le basi"
@@ -447,25 +475,31 @@ export default function MenuClient() {
                     testo="Carboidrati e verdura: la parte del pasto che rifornisce l'allenamento."
                     azione={<Contatore n={primiVisibili.length} tot={PRIMI.length} etichetta="primi" />}
                   />
-                  <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-                    {primiVisibili.map((e, i) => (
-                      // Chiave sul solo id: cosi le schede che restano non si smontano a
-                      // ogni click sui filtri (niente foto che sbattono) e a entrare in
-                      // cascata sono davvero solo quelle nuove.
-                      <Reveal key={e.id} delay={(i % CICLO) * 80}>
-                        <div
-                          className={`h-full transition-transform duration-700 ${INCLINA[i % CICLO]}`}
-                          style={{ transitionTimingFunction: "var(--e-over)" }}
-                        >
-                          <ElementCard elemento={e} />
-                        </div>
-                      </Reveal>
-                    ))}
-                  </div>
+                  {primiVisibili.length > 0 ? (
+                    <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                      {primiVisibili.map((e, i) => (
+                        // Chiave sul solo id: cosi le schede che restano non si smontano a
+                        // ogni click sui filtri (niente foto che sbattono) e a entrare in
+                        // cascata sono davvero solo quelle nuove.
+                        <Reveal key={e.id} delay={(i % CICLO) * 80}>
+                          <div
+                            className={`h-full transition-transform duration-700 ${INCLINA[i % CICLO]}`}
+                            style={{ transitionTimingFunction: "var(--e-over)" }}
+                          >
+                            <ElementCard elemento={e} />
+                          </div>
+                        </Reveal>
+                      ))}
+                    </div>
+                  ) : (
+                    // Il tag/giorno ha svuotato SOLO questa sezione: i secondi restano
+                    // (siamo qui, totaleVisibile > 0). Il silenzio va spiegato, non lasciato.
+                    <SezioneVuota etichetta="primi" onAzzera={azzera} />
+                  )}
                 </div>
               ) : null}
 
-              {secondiVisibili.length > 0 ? (
+              {secondiAttiva ? (
                 <div className="mt-16">
                   <SectionHead
                     occhiello="Secondi · le proteine"
@@ -479,18 +513,22 @@ export default function MenuClient() {
                       <Contatore n={secondiVisibili.length} tot={SECONDI.length} etichetta="secondi" />
                     }
                   />
-                  <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-                    {secondiVisibili.map((e, i) => (
-                      <Reveal key={e.id} delay={(i % CICLO) * 80}>
-                        <div
-                          className={`h-full transition-transform duration-700 ${INCLINA[i % CICLO]}`}
-                          style={{ transitionTimingFunction: "var(--e-over)" }}
-                        >
-                          <ElementCard elemento={e} />
-                        </div>
-                      </Reveal>
-                    ))}
-                  </div>
+                  {secondiVisibili.length > 0 ? (
+                    <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                      {secondiVisibili.map((e, i) => (
+                        <Reveal key={e.id} delay={(i % CICLO) * 80}>
+                          <div
+                            className={`h-full transition-transform duration-700 ${INCLINA[i % CICLO]}`}
+                            style={{ transitionTimingFunction: "var(--e-over)" }}
+                          >
+                            <ElementCard elemento={e} />
+                          </div>
+                        </Reveal>
+                      ))}
+                    </div>
+                  ) : (
+                    <SezioneVuota etichetta="secondi" onAzzera={azzera} />
+                  )}
                 </div>
               ) : null}
             </>
