@@ -375,7 +375,7 @@ export default function Valori({
                   {quota}%
                 </p>
                 <p className="mt-3 text-[13.5px] leading-relaxed">
-                  della tua giornata passa da Fuel.{" "}
+                  della tua giornata passa da FUEL LAB.{" "}
                   {pasti === 1
                     ? "Con un pasto solo il resto (colazione, spuntini, cena) lo fai tu: la schiscetta punta a una fetta della scheda, non a tutta."
                     : pasti === 2

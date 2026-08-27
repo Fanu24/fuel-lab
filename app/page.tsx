@@ -160,7 +160,7 @@ export default function Home() {
                 <svg
                   viewBox="0 0 120 120"
                   role="img"
-                  aria-label="Fresco, mai surgelato, Pescara"
+                  aria-label="FUEL LAB — fresco, mai surgelato, Pescara"
                   className={`${stili.timbro} absolute right-[-20px] bottom-[-26px] h-[112px] w-[112px] lg:right-auto lg:bottom-[-42px] lg:left-[-48px] lg:h-[134px] lg:w-[134px]`}
                 >
                   <defs>
@@ -186,18 +186,26 @@ export default function Home() {
                       </textPath>
                     </text>
                   </g>
+                  {/* Il marchio sta su DUE righe, non su una: "FUEL LAB" a 24px
+                      misura circa 90px, e dentro l'anello (r=43) di spazio libero
+                      ce n'e circa 74. Su una riga sola sconfinerebbe sul testo
+                      che gira. A 20px su due righe, baseline 58 e 76, il blocco
+                      resta centrato sul centro geometrico del cerchio. */}
                   <text
-                    x="60"
-                    y="68"
                     textAnchor="middle"
                     style={{
                       fontFamily: "var(--font-disp)",
-                      fontSize: "24px",
+                      fontSize: "20px",
                       letterSpacing: "0.03em",
                       fill: "var(--color-ink)",
                     }}
                   >
-                    FUEL
+                    <tspan x="60" y="58">
+                      FUEL
+                    </tspan>
+                    <tspan x="60" y="76">
+                      LAB
+                    </tspan>
                   </text>
                 </svg>
               </figure>
@@ -220,7 +228,7 @@ export default function Home() {
           calcolare perche' non c'e' alpha. */}
       <section
         className="relative z-[4] mt-[-22px] overflow-x-clip"
-        aria-label="Le tre garanzie Fuel"
+        aria-label="Le tre garanzie FUEL LAB"
       >
         <div className={`${stili.fascia} bg-lime text-ink`}>
           <div

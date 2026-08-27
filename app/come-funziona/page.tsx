@@ -443,12 +443,19 @@ export default function ComeFunziona() {
                       className="font-mono text-[clamp(56px,9vw,102px)] leading-[.78]"
                       style={{
                         fontVariationSettings: '"wdth" 75, "wght" 700',
-                        // Il lime non e' mai testo su fondo chiaro (1.00:1, misurato):
-                        // la cifra e' sempre inchiostro (12.66:1 su carta), il lime resta
-                        // solo come contorno sulla variante "vuoto", per rompere la
-                        // ripetizione senza sparire nella carta.
+                        // Il lime non e' mai testo su fondo chiaro: 1.00:1, misurato,
+                        // cioe' luminanza identica alla carta. Quindi la cifra e' sempre
+                        // inchiostro pieno (12.66:1) e il lime puo' fare solo da contorno.
+                        //
+                        // Il contorno sta sulle tre cifre che PRIMA erano lime pieno, non
+                        // sulla quarta: quando il fondo era scuro, "vuoto" voleva dire cifra
+                        // cava in lime, e su carta una cifra cava in lime non e' poco
+                        // leggibile, e' assente. Su quella l'unico esito possibile era
+                        // l'inchiostro pieno; sulle altre tre il lime torna dov'era.
+                        // Cosi' l'accento resta su 3 cifre su 4 come nel disegno
+                        // originale, invece di spegnersi su tutte e quattro.
                         color: "var(--color-ink)",
-                        WebkitTextStroke: p.vuoto ? "1.5px var(--color-lime)" : undefined,
+                        WebkitTextStroke: p.vuoto ? undefined : "1.5px var(--color-lime)",
                       }}
                     >
                       {p.n}
