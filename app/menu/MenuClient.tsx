@@ -24,18 +24,18 @@ const CATEGORIE: { id: FiltroCategoria; label: string }[] = [
 
 const GIORNI_COTTURA: { id: FiltroGiorno; label: string }[] = [
   { id: "tutti", label: "Tutti" },
-  { id: "lunedi", label: "Lunedi" },
-  { id: "giovedi", label: "Giovedi" },
+  { id: "lunedi", label: "Lunedì" },
+  { id: "giovedi", label: "Giovedì" },
 ];
 
 const ORDINI: { id: Ordine; label: string }[] = [
   { id: "consigliati", label: "Consigliati" },
-  { id: "proteine", label: "Piu proteine" },
+  { id: "proteine", label: "Più proteine" },
   { id: "kcal-su", label: "Meno calorie" },
-  { id: "kcal-giu", label: "Piu calorie" },
+  { id: "kcal-giu", label: "Più calorie" },
 ];
 
-const RITMO = ["Cotto il lunedi", "Consegnato il martedi", "Cotto il giovedi", "Consegnato il venerdi"];
+const RITMO = ["Cotto il lunedì", "Consegnato il martedì", "Cotto il giovedì", "Consegnato il venerdì"];
 
 /**
  * Leggera rotazione alternata sulle schede, ciclo di quattro: la griglia non
@@ -286,8 +286,8 @@ export default function MenuClient() {
                 </Rise>
               </h1>
               <p className="lead mt-9">
-                Matteo cucina il lunedi e il giovedi e consegna il giorno dopo. Scegli un primo, un
-                secondo e gli extra che ti servono: quello che leggi qui e&apos; quello che trovi nel
+                Matteo cucina il luned&igrave; e il gioved&igrave; e consegna il giorno dopo. Scegli un primo, un
+                secondo e gli extra che ti servono: quello che leggi qui &egrave; quello che trovi nel
                 box, senza surgelati e senza scorte di magazzino.
               </p>
               <div className="mt-9 flex flex-wrap items-center gap-2.5">
@@ -329,7 +329,7 @@ export default function MenuClient() {
       </section>
 
       <Ticker
-        parole={["Cotto il lunedi", "Cotto il giovedi", "Mai surgelato", "Pescara e provincia"]}
+        parole={["Cotto il lunedì", "Cotto il giovedì", "Mai surgelato", "Pescara e provincia"]}
         durata={38}
       />
 
@@ -552,7 +552,7 @@ export default function MenuClient() {
                   </p>
                   <p className="lead relative mx-auto mt-6">
                     Hai stretto troppo la maglia. Togli un tag o cambia categoria: i{" "}
-                    {PRIMI.length + SECONDI.length} elementi del catalogo sono tutti qui, nessuno e&apos;
+                    {PRIMI.length + SECONDI.length} elementi del catalogo sono tutti qui, nessuno &egrave;
                     finito.
                   </p>
                   <button type="button" onClick={azzera} className="btn btn-p relative mt-9">
@@ -575,7 +575,7 @@ export default function MenuClient() {
               occhiello="Extra"
               titolo={
                 <>
-                  Il di piu, <span className="hl hl-on"><i className="hl-bar" aria-hidden="true" /><span className="hl-tx">se serve.</span></span>
+                  Il di pi&ugrave;, <span className="hl hl-on"><i className="hl-bar" aria-hidden="true" /><span className="hl-tx">se serve.</span></span>
                 </>
               }
               testo={`${EXTRA.length} aggiunte per completare il pasto, sempre a catalogo.`}

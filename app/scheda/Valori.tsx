@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent, type Ref } from "react";
 import {
   combinazioni,
   numeroPasti,
@@ -53,12 +53,14 @@ export default function Valori({
   nomeFile,
   onConferma,
   onRicomincia,
+  headingRef,
 }: {
   target: Target;
   vincoli: Vincoli;
   nomeFile: string | null;
   onConferma: (t: Target, v: Vincoli) => void;
   onRicomincia: () => void;
+  headingRef?: Ref<HTMLHeadingElement>;
 }) {
   // I campi vivono come testo, non come numeri: con lo stato numerico svuotare
   // una casella per riscriverla la riempirebbe di zeri sotto le dita.
@@ -141,7 +143,13 @@ export default function Valori({
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div>
             <p className="note text-ink">Passo 3 / 4</p>
-            <h2 className="h2 mt-4 !text-[clamp(32px,4.8vw,52px)]">Controlla i numeri.</h2>
+            <h2
+              ref={headingRef}
+              tabIndex={-1}
+              className="h2 mt-4 !text-[clamp(32px,4.8vw,52px)] outline-none"
+            >
+              Controlla i numeri.
+            </h2>
           </div>
           {nomeFile !== null ? (
             <p

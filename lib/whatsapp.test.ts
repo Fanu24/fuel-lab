@@ -276,7 +276,7 @@ describe("i dati di contatto: presenti finiscono nel messaggio, assenti non lasc
       expect(msg).not.toContain("undefined");
       expect(msg).not.toMatch(/\n{3,}/);
       expect(msg).not.toContain("Sono di .");
-      expect(msg).not.toMatch(/numero e' \./);
+      expect(msg).not.toMatch(/numero è \./);
 
       if (contatto.nome) {
         expect(msg).toContain(`Ciao Matteo, sono ${contatto.nome}!`);
@@ -285,7 +285,7 @@ describe("i dati di contatto: presenti finiscono nel messaggio, assenti non lasc
       }
 
       if (contatto.comune) expect(msg).toContain(`Sono di ${contatto.comune}.`);
-      if (contatto.telefono) expect(msg).toContain(`Il mio numero e' ${contatto.telefono}.`);
+      if (contatto.telefono) expect(msg).toContain(`Il mio numero è ${contatto.telefono}.`);
       if (contatto.note) expect(msg).toContain(contatto.note);
     });
   }

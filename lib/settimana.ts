@@ -30,11 +30,11 @@ export const PASTI = ["pranzo", "cena"] as const;
 export type Pasto = (typeof PASTI)[number];
 
 export const NOMI_GIORNO: Record<GiornoSettimana, string> = {
-  lun: "Lunedi",
-  mar: "Martedi",
-  mer: "Mercoledi",
-  gio: "Giovedi",
-  ven: "Venerdi",
+  lun: "Lunedì",
+  mar: "Martedì",
+  mer: "Mercoledì",
+  gio: "Giovedì",
+  ven: "Venerdì",
   sab: "Sabato",
   dom: "Domenica",
 };

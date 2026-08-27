@@ -2,15 +2,20 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent as KeyboardEventReact, type ReactNode } from "react";
 import { linkWhatsApp, messaggioServizio } from "@/lib/whatsapp";
+
+/* Stesso elenco e stessa logica di components/settimana/SelettoreCasella.tsx:
+   cio' che il browser mette nel giro di Tab dentro un pannello. */
+const FOCUSABILI =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 const VOCI = [
   { href: "/menu", label: "Menu" },
   { href: "/servizi", label: "Servizi" },
   { href: "/settimana", label: "La tua settimana" },
   { href: "/scheda", label: "La tua scheda" },
-  { href: "/chi-e-matteo", label: "Chi e Matteo" },
+  { href: "/chi-e-matteo", label: "Chi è Matteo" },
 ];
 
 /**
@@ -48,6 +53,7 @@ function CtaWhatsApp({
 export default function Nav() {
   const [aperto, setAperto] = useState(false);
   const percorso = usePathname();
+  const pannelloMobile = useRef<HTMLDivElement>(null);
 
   // Il menu mobile e' un pannello a schermo pieno e va chiuso quando si naviga,
   // altrimenti resta sopra la pagina nuova. Lo chiudo sul click del link e non
@@ -68,6 +74,51 @@ export default function Nav() {
       window.removeEventListener("keydown", suEsc);
     };
   }, [aperto]);
+
+  /*
+   * Il fuoco entra nel pannello quando si apre - senza, chi apre da tastiera
+   * resterebbe sul bottone hamburger mentre lo schermo dietro cambia del tutto -
+   * e ci rientra se qualcosa lo ha buttato fuori mentre il pannello e' ancora
+   * aperto. Stessa tecnica e stessa ragione di SelettoreCasella: un controllo
+   * che si disabilita mentre ha il fuoco lo perde e lo manda su <body>, e da li'
+   * il giro di Tab qui sotto smetterebbe di vederlo passare.
+   */
+  useEffect(() => {
+    if (!aperto) return;
+    const p = pannelloMobile.current;
+    if (p && !p.contains(document.activeElement)) p.focus();
+  });
+
+  /*
+   * La trappola di Tab: senza, un Tab oltre l'ultimo link del pannello porta il
+   * fuoco sul contenuto della pagina dietro l'overlay opaco, invisibile e con lo
+   * scroll bloccato. Stessa logica di SelettoreCasella (suTasto): il giro resta
+   * chiuso dentro il pannello, Escape (sopra) resta l'unica uscita da tastiera.
+   */
+  function suTastoPannello(e: KeyboardEventReact<HTMLDivElement>) {
+    if (e.key !== "Tab") return;
+    const p = pannelloMobile.current;
+    if (!p) return;
+
+    const nodi = Array.from(p.querySelectorAll<HTMLElement>(FOCUSABILI)).filter(
+      (n) => n.tabIndex >= 0 && n.offsetParent !== null,
+    );
+    if (nodi.length === 0) {
+      e.preventDefault();
+      return;
+    }
+    const primo = nodi[0];
+    const ultimo = nodi[nodi.length - 1];
+    const attivo = document.activeElement;
+
+    if (e.shiftKey && (attivo === primo || attivo === p)) {
+      e.preventDefault();
+      ultimo.focus();
+    } else if (!e.shiftKey && attivo === ultimo) {
+      e.preventDefault();
+      primo.focus();
+    }
+  }
 
   return (
     <>
@@ -172,8 +223,11 @@ export default function Nav() {
           i link senza mettere niente al loro posto: il sito diventava inutilizzabile. */}
       <div
         id="menu-mobile"
+        ref={pannelloMobile}
         hidden={!aperto}
-        className="fixed inset-0 z-50 flex flex-col justify-center px-8 lg:hidden"
+        tabIndex={-1}
+        onKeyDown={suTastoPannello}
+        className="fixed inset-0 z-50 flex flex-col justify-center px-8 outline-none lg:hidden"
         style={{
           background: "rgba(244, 241, 232, .96)",
           backdropFilter: "blur(22px)",

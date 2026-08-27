@@ -58,7 +58,7 @@ const PASSI: Passo[] = [
     n: "01",
     titolo: "Scegli il menu o carica la scheda",
     testo:
-      `${PRIMI.length} primi e ${SECONDI.length} secondi online, con grammi e macro scritti sopra ognuno: puoi comporre la tua settimana a mano in cinque minuti. Se hai una scheda del nutrizionista la carichi e ci pensa il matcher, che sceglie gli abbinamenti piu vicini ai tuoi numeri. Quello che non ti va lo sostituisci, e i totali si ricalcolano davanti a te.`,
+      `${PRIMI.length} primi e ${SECONDI.length} secondi online, con grammi e macro scritti sopra ognuno: puoi comporre la tua settimana a mano in cinque minuti. Se hai una scheda del nutrizionista la carichi e ci pensa il matcher, che sceglie gli abbinamenti più vicini ai tuoi numeri. Quello che non ti va lo sostituisci, e i totali si ricalcolano davanti a te.`,
     dati: [`${PRIMI.length + SECONDI.length} elementi`, "PDF o foto"],
     img: "photo-1466637574441-749b8f19452f",
     alt: "Tagliere di legno con uova, avocado e pomodori, gli ingredienti di partenza",
@@ -68,9 +68,9 @@ const PASSI: Passo[] = [
   },
   {
     n: "02",
-    titolo: "Matteo cucina il lunedi e il giovedi",
+    titolo: "Matteo cucina il lunedì e il giovedì",
     testo:
-      "Non c'e' un magazzino da svuotare. La spesa arriva la mattina presto, la cottura finisce nel pomeriggio, i contenitori si chiudono e vanno in abbattitore a piu 3 gradi, non a meno 18. La schiscetta che apri mercoledi sera e' stata in padella lunedi mattina: sono due giorni, non due stagioni.",
+      "Non c'è un magazzino da svuotare. La spesa arriva la mattina presto, la cottura finisce nel pomeriggio, i contenitori si chiudono e vanno in abbattitore a più 3 gradi, non a meno 18. La schiscetta che apri mercoledì sera è stata in padella lunedì mattina: sono due giorni, non due stagioni.",
     dati: ["2 cotture a settimana", "0 scorte"],
     img: "photo-1414235077428-338989a2e8c0",
     alt: "Impiattamento in una cucina professionale, mani che completano un piatto",
@@ -82,7 +82,7 @@ const PASSI: Passo[] = [
     n: "03",
     titolo: "Consegna a Pescara e provincia",
     testo:
-      "Il giro parte nel pomeriggio dello stesso giorno di cottura. La fascia la scegli tu quando ordini, 17:00-19:00 oppure 19:00-21:00, e ricevi un messaggio quando il furgone esce. Se a casa non c'e' nessuno l'ordine torna in frigo da Matteo e riprovi il giorno dopo: non lo lasciamo sullo zerbino a luglio.",
+      "Il giro parte nel pomeriggio dello stesso giorno di cottura. La fascia la scegli tu quando ordini, 17:00-19:00 oppure 19:00-21:00, e ricevi un messaggio quando il furgone esce. Se a casa non c'è nessuno l'ordine torna in frigo da Matteo e riprovi il giorno dopo: non lo lasciamo sullo zerbino a luglio.",
     dati: ["17:00-21:00", "Pescara + provincia"],
     img: "photo-1498837167922-ddd27525d352",
     alt: "Contenitori di meal prep con porzioni pesate, pronti per la consegna",
@@ -94,10 +94,10 @@ const PASSI: Passo[] = [
     n: "04",
     titolo: "In frigo 4 giorni, tre minuti e sei a tavola",
     testo:
-      "Padella coperta a fuoco medio, tre minuti, un cucchiaio d'acqua perche i cereali non si asciughino. Oppure microonde a 900 W per due minuti, con il coperchio appoggiato ma non chiuso. Non serve altro e non serve scongelare niente: e' cibo gia cotto, lo stai solo riportando in temperatura.",
+      "Padella coperta a fuoco medio, tre minuti, un cucchiaio d'acqua perché i cereali non si asciughino. Oppure microonde a 900 W per due minuti, con il coperchio appoggiato ma non chiuso. Non serve altro e non serve scongelare niente: è cibo già cotto, lo stai solo riportando in temperatura.",
     dati: ["3 min padella", "2 min microonde"],
     img: "photo-1432139555190-58524dae6a55",
-    alt: "Piatto di carne con patate e verdure, gia pronto da mangiare",
+    alt: "Piatto di carne con patate e verdure, già pronto da mangiare",
     rot: "md:rotate-[2.4deg]",
     vuoto: true,
     etichetta: "Nessuno scongelamento",
@@ -110,7 +110,7 @@ const DOMANDE: Domanda[] = [
     a: (
       <>
         <strong>Quattro giorni dalla consegna.</strong> Sull&apos;etichetta trovi la data e
-        l&apos;ora di cottura, non una scadenza generica stampata a monte: il quarto giorno e&apos;
+        l&apos;ora di cottura, non una scadenza generica stampata a monte: il quarto giorno &egrave;
         l&apos;ultimo utile, non un margine di sicurezza gonfiato per stare tranquilli. Tienile nel
         ripiano centrale del frigo, tra 0 e 4 gradi, con il coperchio chiuso. Oltre il quarto giorno
         non le mangeremmo neanche noi.
@@ -121,11 +121,11 @@ const DOMANDE: Domanda[] = [
     q: "Posso congelarle io?",
     a: (
       <>
-        Si, ed e&apos; la cosa piu sensata da fare se sai gia che salterai un giorno. Falla pero il
-        giorno stesso della consegna, non il terzo: congelare qualcosa che ha gia tre giorni non
+        S&igrave;, ed &egrave; la cosa pi&ugrave; sensata da fare se sai gi&agrave; che salterai un giorno. Falla pero il
+        giorno stesso della consegna, non il terzo: congelare qualcosa che ha gi&agrave; tre giorni non
         recupera niente. Sappi solo che al riscaldamento il riso e le verdure perdono un po&apos; di
         consistenza. Hai comprato del fresco e lo stai trasformando in un surgelato casalingo:
-        legittimo, ma e&apos; un passo indietro.
+        legittimo, ma &egrave; un passo indietro.
       </>
     ),
   },
@@ -133,7 +133,7 @@ const DOMANDE: Domanda[] = [
     q: "Come si scaldano, esattamente?",
     a: (
       <>
-        <strong>Padella:</strong> coperta, fuoco medio, tre minuti, un cucchiaio d&apos;acqua. E&apos;
+        <strong>Padella:</strong> coperta, fuoco medio, tre minuti, un cucchiaio d&apos;acqua. &Egrave;
         il metodo che restituisce meglio le carni. <strong>Microonde:</strong> 900 W per due minuti,
         coperchio appoggiato ma non chiuso, mescolando a meta. <strong>Forno:</strong> 180 gradi per
         quindici minuti, se hai tempo e vuoi la resa migliore sulle cotture lunghe. I nostri
@@ -147,10 +147,10 @@ const DOMANDE: Domanda[] = [
       <>
         Sono in polipropilene monomateriale (PP 5): lavabili in lavastoviglie e riciclabili nella
         plastica. Se li lasci puliti fuori dalla porta alla consegna successiva li ritiriamo e li
-        rimettiamo in ciclo, e ti scaliamo 30 centesimi a contenitore sull&apos;ordine dopo. Non e&apos;
+        rimettiamo in ciclo, e ti scaliamo 30 centesimi a contenitore sull&apos;ordine dopo. Non &egrave;
         obbligatorio e non facciamo la predica a nessuno. Abbiamo provato il vetro, che non regge il
         trasporto in furgone, e il compostabile monouso, che cede dopo due giorni in frigo: per ora
-        questo e&apos; il compromesso meno peggiore.
+        questo &egrave; il compromesso meno peggiore.
       </>
     ),
   },
@@ -158,9 +158,9 @@ const DOMANDE: Domanda[] = [
     q: "Posso saltare una settimana?",
     a: (
       <>
-        Si, dal tuo account oppure con un messaggio a Matteo, <strong>entro il venerdi</strong> della
+        S&igrave;, dal tuo account oppure con un messaggio a Matteo, <strong>entro il venerd&igrave;</strong> della
         settimana precedente. L&apos;abbonamento va in pausa, non si azzera: quando torni ritrovi i
-        tuoi target, le tue esclusioni e gli elementi che avevi messo da parte. Non c&apos;e&apos; un
+        tuoi target, le tue esclusioni e gli elementi che avevi messo da parte. Non c&apos;&egrave; un
         limite al numero di pause: ferie e trasferte non sono un problema da risolvere con una
         penale.
       </>
@@ -171,10 +171,10 @@ const DOMANDE: Domanda[] = [
     a: (
       <>
         Con un click dal tuo account, o scrivendo. Nessun preavviso di trenta giorni, nessuna penale,
-        nessuna telefonata per convincerti a restare. L&apos;unica regola e&apos; sempre il{" "}
-        <strong>venerdi</strong>: dopo quel giorno la spesa della settimana successiva e&apos; gia
-        stata fatta, e quella settimana la paghi. E&apos; l&apos;unico modo che conosciamo per non buttare
-        cibo gia comprato.
+        nessuna telefonata per convincerti a restare. L&apos;unica regola &egrave; sempre il{" "}
+        <strong>venerd&igrave;</strong>: dopo quel giorno la spesa della settimana successiva &egrave; gi&agrave;
+        stata fatta, e quella settimana la paghi. &Egrave; l&apos;unico modo che conosciamo per non buttare
+        cibo gi&agrave; comprato.
       </>
     ),
   },
@@ -183,7 +183,7 @@ const DOMANDE: Domanda[] = [
     a: (
       <>
         Carichi la scheda nuova e la settimana successiva viene ricomposta sui numeri nuovi, senza disdire
-        e riscriverti. Succede spesso: le schede si aggiornano ogni sei-otto settimane, ed e&apos;
+        e riscriverti. Succede spesso: le schede si aggiornano ogni sei-otto settimane, ed &egrave;
         esattamente il motivo per cui il matcher lavora sui tuoi target e non su un menu fisso
         deciso a settembre.
       </>
@@ -194,12 +194,12 @@ const DOMANDE: Domanda[] = [
     a: (
       <>
         In fase di ordine escludi i tag che non puoi mangiare e quegli elementi spariscono dal tuo
-        catalogo, non restano li grigi a tentarti. Su ogni etichetta trovi l&apos;elenco completo
-        degli allergeni del lotto. Un avvertimento onesto: la cucina e&apos; una sola e lavora anche
+        catalogo, non restano l&igrave; grigi a tentarti. Su ogni etichetta trovi l&apos;elenco completo
+        degli allergeni del lotto. Un avvertimento onesto: la cucina &egrave; una sola e lavora anche
         glutine, pesce e frutta a guscio, quindi{" "}
         <strong>non possiamo garantire l&apos;assenza di contaminazione crociata</strong>. Se hai una
         celiachia o un&apos;allergia diagnosticata scrivici prima: ti diciamo la verita, anche quando
-        la verita e&apos; che non facciamo al caso tuo.
+        la verita &egrave; che non facciamo al caso tuo.
       </>
     ),
   },
@@ -207,7 +207,7 @@ const DOMANDE: Domanda[] = [
     q: "Dove trovo gli allergeni di ogni primo e secondo?",
     a: (
       <>
-        Ogni primo, secondo ed extra del catalogo dichiara i suoi allergeni: e&apos; un campo
+        Ogni primo, secondo ed extra del catalogo dichiara i suoi allergeni: &egrave; un campo
         obbligatorio, come impone il{" "}
         <strong>Regolamento UE 1169/2011</strong>, e non un&apos;etichetta aggiunta dopo. Li vedi
         mentre componi la tua settimana, prima ancora di ordinare, non solo sul contenitore alla
@@ -216,13 +216,13 @@ const DOMANDE: Domanda[] = [
     ),
   },
   {
-    q: "Il mio nutrizionista puo parlare con Matteo?",
+    q: "Il mio nutrizionista può parlare con Matteo?",
     a: (
       <>
-        Volentieri, e capita spesso. Ci sentiamo per capire come e&apos; costruita la scheda, quali
-        sostituzioni accetta e dove c&apos;e&apos; margine di manovra sui contorni. Chiedi al tuo
+        Volentieri, e capita spesso. Ci sentiamo per capire come &egrave; costruita la scheda, quali
+        sostituzioni accetta e dove c&apos;&egrave; margine di manovra sui contorni. Chiedi al tuo
         professionista di scriverci: rispondiamo entro il giorno lavorativo successivo. Quello che
-        non facciamo mai e&apos; toccare la tua dieta di nostra iniziativa: noi la traduciamo in
+        non facciamo mai &egrave; toccare la tua dieta di nostra iniziativa: noi la traduciamo in
         una settimana di primi e secondi, non la correggiamo.
       </>
     ),
@@ -233,7 +233,7 @@ const DOMANDE: Domanda[] = [
       <>
         Quando componi la tua settimana ottieni un link: lo mandi al tuo nutrizionista su WhatsApp
         o via mail, e lui lo apre e vede esattamente i primi, i secondi e i macro che hai scelto,
-        senza doversi registrare da nessuna parte. Puo approvarla cosi com&apos;e&apos; o segnarti
+        senza doversi registrare da nessuna parte. Pu&ograve; approvarla cos&igrave; com&apos;&egrave; o segnarti
         cosa cambiare, e tu aggiorni la settimana di conseguenza.
       </>
     ),
@@ -254,9 +254,9 @@ const DOMANDE: Domanda[] = [
     q: "A che ora consegnate?",
     a: (
       <>
-        Lunedi e giovedi pomeriggio, in due fasce: <strong>17:00-19:00</strong> e{" "}
+        Luned&igrave; e gioved&igrave; pomeriggio, in due fasce: <strong>17:00-19:00</strong> e{" "}
         <strong>19:00-21:00</strong>. Scegli quella che vuoi al momento dell&apos;ordine, e puoi
-        cambiarla settimana per settimana. Ricevi un messaggio quando il furgone parte, cosi non
+        cambiarla settimana per settimana. Ricevi un messaggio quando il furgone parte, cos&igrave; non
         resti in casa ad aspettare per due ore.
       </>
     ),
@@ -301,13 +301,13 @@ export default function ComeFunziona() {
                   non va, perche senza la maschera di .ln slitterebbe sopra il titolo */}
               <Reveal delay={520}>
                 <p className="lead mt-10">
-                  Il surgelato dura sei mesi perche a meno 18 gradi non succede piu niente: ne il
-                  buono ne il cattivo. Non e&apos; cibo appena cotto, e&apos; cibo messo in pausa.
+                  Il surgelato dura sei mesi perch&eacute; a meno 18 gradi non succede pi&ugrave; niente: n&eacute; il
+                  buono n&eacute; il cattivo. Non &egrave; cibo appena cotto, &egrave; cibo messo in pausa.
                 </p>
                 <p className="lead mt-5">
                   Le nostre schiscette durano <b className="text-ink">quattro giorni in frigo</b>.
-                  Non e&apos; un limite del servizio da nascondere in fondo alla pagina: e&apos; la
-                  prova che dentro c&apos;e&apos; roba viva, cotta lunedi mattina e non lo scorso
+                  Non &egrave; un limite del servizio da nascondere in fondo alla pagina: &egrave; la
+                  prova che dentro c&apos;&egrave; roba viva, cotta luned&igrave; mattina e non lo scorso
                   marzo.
                 </p>
                 <p className="note mt-11">Cucina FUEL LAB / Pescara / due cotture a settimana</p>
@@ -352,7 +352,7 @@ export default function ComeFunziona() {
                       Misurato, non dedotto. Sotto lg il cartellino e' statico
                       (mt-6, sotto la figura) e bottom-6 va benissimo. */}
                   <figcaption className="note absolute right-6 bottom-6 left-6 text-white lg:bottom-20">
-                    Abbattuto a piu 3 gradi. Mai a meno 18.
+                    Abbattuto a pi&ugrave; 3 gradi. Mai a meno 18.
                   </figcaption>
                 </div>
               </figure>
@@ -516,7 +516,7 @@ export default function ComeFunziona() {
                   surgelato
                 </>
               }
-              testo="Il surgelato non e' il nemico: e' un prodotto diverso, che risolve un problema diverso. Ecco dove vince lui e dove perdiamo noi."
+              testo="Il surgelato non è il nemico: è un prodotto diverso, che risolve un problema diverso. Ecco dove vince lui e dove perdiamo noi."
             />
           </Reveal>
 
@@ -537,7 +537,7 @@ export default function ComeFunziona() {
                 <ul className="flex flex-col gap-3 text-[15.5px] leading-[1.6]">
                   <Voce>Dura sei mesi nel congelatore. Ne compri dodici e te ne dimentichi.</Voce>
                   <Voce>Si spedisce in tutta Italia: funziona anche se abiti a Bolzano.</Voce>
-                  <Voce>Costa meno, perche la produzione e&apos; su scala industriale.</Voce>
+                  <Voce>Costa meno, perch&eacute; la produzione &egrave; su scala industriale.</Voce>
                   <Voce>Non ha finestre di consegna: arriva quando arriva, e va bene lo stesso.</Voce>
                 </ul>
 
@@ -558,7 +558,7 @@ export default function ComeFunziona() {
                     A meno 18 gradi l&apos;acqua dentro le fibre cristallizza: il petto di pollo esce
                     asciutto, le verdure molli.
                   </Voce>
-                  <Voce>Lo scongelamento e&apos; un passaggio in piu, e va programmato la sera prima.</Voce>
+                  <Voce>Lo scongelamento &egrave; un passaggio in pi&ugrave;, e va programmato la sera prima.</Voce>
                   <Voce>
                     Il condimento serve a coprire la consistenza persa, non a completare il piatto.
                   </Voce>
@@ -606,7 +606,7 @@ export default function ComeFunziona() {
                       stabilimento.
                     </Voce>
                     <Voce scuro>
-                      Le verdure sono di stagione perche non possono essere altro: si comprano la
+                      Le verdure sono di stagione perch&eacute; non possono essere altro: si comprano la
                       mattina.
                     </Voce>
                   </ul>
@@ -632,11 +632,11 @@ export default function ComeFunziona() {
                       fingiamo di poterlo fare.
                     </Voce>
                     <Voce scuro>
-                      Costa piu di un surgelato industriale: siamo una cucina con una persona
+                      Costa pi&ugrave; di un surgelato industriale: siamo una cucina con una persona
                       dentro, non uno stabilimento.
                     </Voce>
                     <Voce scuro>
-                      Devi decidere entro il venerdi. La spesa si fa prima di cucinare.
+                      Devi decidere entro il venerd&igrave;. La spesa si fa prima di cucinare.
                     </Voce>
                   </ul>
                 </div>
@@ -647,7 +647,7 @@ export default function ComeFunziona() {
           <Reveal delay={80}>
             <p className="lead mt-16 max-w-[64ch] md:mt-24">
               Se abiti fuori dall&apos;Abruzzo, o se vuoi riempire il congelatore e non pensarci per
-              un mese, <b className="text-ink">il surgelato e&apos; la scelta giusta</b> e non
+              un mese, <b className="text-ink">il surgelato &egrave; la scelta giusta</b> e non
               proveremo a convincerti del contrario. FUEL LAB ha senso se vivi qui, se mangi per
               allenarti, e se ti sei stufato di piatti che tornano tutti allo stesso sapore.
             </p>
@@ -700,7 +700,7 @@ export default function ComeFunziona() {
               <div className="p-9 md:p-14">
                 <Eyebrow className="mb-[26px]">Il passo uno</Eyebrow>
                 <h2 className="h2">
-                  Il menu e&apos; gia
+                  Il menu &egrave; gi&agrave;
                   <br />
                   online.
                 </h2>
@@ -723,7 +723,7 @@ export default function ComeFunziona() {
                     </span>
                   </Link>
                 </div>
-                <p className="note mt-9">Consegne lunedi e giovedi / disdici quando vuoi</p>
+                <p className="note mt-9">Consegne luned&igrave; e gioved&igrave; / disdici quando vuoi</p>
               </div>
 
               <figure className="relative min-h-[240px] md:min-h-0">

@@ -63,10 +63,10 @@ type Errori = Partial<Record<ChiaveModulo, string>>;
 function valida(m: Modulo): Errori {
   const e: Errori = {};
 
-  if (!m.nome.trim()) e.nome = "Serve un nome: e' cosi' che Matteo sa a chi sta scrivendo.";
+  if (!m.nome.trim()) e.nome = "Serve un nome: è così che Matteo sa a chi sta scrivendo.";
 
   const cifre = m.telefono.replace(/\D/g, "");
-  if (!cifre) e.telefono = "Serve un numero: e' il punto da cui parte la chat su WhatsApp.";
+  if (!cifre) e.telefono = "Serve un numero: è il punto da cui parte la chat su WhatsApp.";
   else if (cifre.length < 9) e.telefono = "Il numero sembra troppo corto.";
 
   if (m.comune.trim().length < 2) {
@@ -304,10 +304,10 @@ function ServizioSenzaPiano({ servizio }: { servizio: Servizio }) {
       <div className="shell">
         <div className="core p-[32px] text-center md:p-[46px]">
           <h2 className="h2 max-w-[20ch] mx-auto" style={{ fontSize: "min(48px, 8vw)" }}>
-            La tua settimana e&apos; ancora vuota.
+            La tua settimana &egrave; ancora vuota.
           </h2>
           <p className="lead mx-auto mt-5">
-            Per {servizio.nome.toLowerCase()} Matteo ha bisogno di una settimana composta: e&apos;
+            Per {servizio.nome.toLowerCase()} Matteo ha bisogno di una settimana composta: &egrave;
             quello che il messaggio gli racconta. Componila e poi torna qui, ci vogliono due
             minuti.
           </p>
@@ -419,17 +419,17 @@ export default function RichiestaClient() {
   let statoTesto: string;
   if (!configurato) {
     statoTesto =
-      "Il numero WhatsApp di Matteo non e' ancora attivo: il bottone si accende da solo appena lo sara'. Intanto quello che scrivi qui resta solo su questo browser.";
+      "Il numero WhatsApp di Matteo non è ancora attivo: il bottone si accende da solo appena lo sara'. Intanto quello che scrivi qui resta solo su questo browser.";
   } else if (!valido) {
     statoTesto = iniziato
       ? `Manca ancora ${elenco(mancano)}.`
       : "Compila nome, telefono e comune: il bottone si accende da solo.";
   } else if (cliccato) {
     statoTesto =
-      "Si e' aperta una scheda di WhatsApp col messaggio gia' scritto: da li' lo mandi tu, quando vuoi.";
+      "Si è aperta una scheda di WhatsApp col messaggio già scritto: da lì lo mandi tu, quando vuoi.";
   } else {
     statoTesto =
-      "Tutto pronto. Qui non viene salvato nulla: alla conferma si apre WhatsApp col messaggio gia' scritto.";
+      "Tutto pronto. Qui non viene salvato nulla: alla conferma si apre WhatsApp col messaggio già scritto.";
   }
 
   return (
@@ -445,8 +445,8 @@ export default function RichiestaClient() {
             </Rise>
           </h1>
           <p className="lead mt-7">
-            Nome, telefono e comune: cosi&apos; Matteo sa chi gli scrive. Poi si apre WhatsApp col
-            messaggio gia&apos; pronto, settimana compresa se ne hai gia&apos; composta una.
+            Nome, telefono e comune: cos&igrave; Matteo sa chi gli scrive. Poi si apre WhatsApp col
+            messaggio gi&agrave; pronto, settimana compresa se ne hai gi&agrave; composta una.
           </p>
           <div className="mt-7 flex flex-wrap items-center gap-2.5">
             <Chip>Form breve</Chip>
@@ -461,8 +461,8 @@ export default function RichiestaClient() {
             <Chip accento>Fase A</Chip>
             <p className="max-w-[780px] text-[13.5px] leading-relaxed text-ink">
               In questa fase non esiste ancora un database: nessun dato di questo modulo viene
-              registrato da nessuna parte. Alla conferma si apre WhatsApp col messaggio gia&apos;
-              scritto, ed e&apos; li&apos; che comincia la conversazione vera con Matteo.
+              registrato da nessuna parte. Alla conferma si apre WhatsApp col messaggio gi&agrave;
+              scritto, ed &egrave; l&igrave; che comincia la conversazione vera con Matteo.
             </p>
           </div>
         </div>

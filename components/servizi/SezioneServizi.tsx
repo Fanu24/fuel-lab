@@ -131,9 +131,9 @@ function LinkServizio({ servizio }: { servizio: Servizio }) {
     <Link
       href={servizio.href}
       className="btn btn-s btn-sm"
-      aria-label={`Scopri di piu': ${servizio.nome}`}
+      aria-label={`Scopri di più: ${servizio.nome}`}
     >
-      Scopri di piu&apos;
+      Scopri di pi&ugrave;
       <span className="dot" aria-hidden="true">
         &#8594;
       </span>
@@ -168,7 +168,7 @@ export default function SezioneServizi({ conTestata = true }: { conTestata?: boo
                   di mangiare bene.
                 </>
               }
-              testo="Il menu gia' pronto, il piano sui macro della tua scheda, oppure Matteo che cucina dentro casa tua. Il prezzo esatto lo definiamo insieme su WhatsApp."
+              testo="Il menu già pronto, il piano sui macro della tua scheda, oppure Matteo che cucina dentro casa tua. Il prezzo esatto lo definiamo insieme su WhatsApp."
             />
           </Reveal>
         ) : (
@@ -190,7 +190,7 @@ export default function SezioneServizi({ conTestata = true }: { conTestata?: boo
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={menu.img}
-                    alt="Contenitori di meal prep pronti, il menu della settimana gia' composto"
+                    alt="Contenitori di meal prep pronti, il menu della settimana già composto"
                     loading="lazy"
                     decoding="async"
                     className="h-full w-full object-cover"
@@ -263,7 +263,7 @@ export default function SezioneServizi({ conTestata = true }: { conTestata?: boo
                   </p>
                   <p className="note mt-6 max-w-[44ch]">
                     Vende il tempo di Matteo, non la produzione in serie: l&apos;unico esito
-                    possibile e&apos; una conversazione.
+                    possibile &egrave; una conversazione.
                   </p>
 
                   <div className="mt-7">

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo } from "react";
+import { useMemo, type Ref } from "react";
 import ElementCard from "@/components/ElementCard";
 import { MacroBar } from "@/components/MacroBar";
 import Reveal from "@/components/Reveal";
@@ -50,6 +50,7 @@ export default function Risultato({
   maxRipetizioni,
   onRigenera,
   onModifica,
+  headingRef,
 }: {
   esito: EsitoPiano;
   target: Target;
@@ -57,6 +58,7 @@ export default function Risultato({
   maxRipetizioni: number;
   onRigenera: () => void;
   onModifica: () => void;
+  headingRef?: Ref<HTMLHeadingElement>;
 }) {
   const router = useRouter();
   const { sostituisciPiano, pasti, pronto } = usePiano();
@@ -109,7 +111,9 @@ export default function Risultato({
     return (
       <div className="shell">
         <div className="core p-10">
-          <h2 className="h3">Nessuna casella riempita</h2>
+          <h2 ref={headingRef} tabIndex={-1} className="h3 outline-none">
+            Nessuna casella riempita
+          </h2>
           <p className="mt-4 max-w-[52ch] text-[15px] text-muted">
             Con i vincoli che hai scelto il catalogo resta vuoto. Riapri i valori e togli
             un&apos;esclusione.
@@ -131,7 +135,13 @@ export default function Risultato({
         {/* ================= verdetto + azioni ================= */}
         <div>
           <p className="note text-ink">Passo 4 / 4</p>
-          <h2 className="h2 mt-4 !text-[clamp(32px,4.8vw,52px)]">La tua settimana.</h2>
+          <h2
+            ref={headingRef}
+            tabIndex={-1}
+            className="h2 mt-4 !text-[clamp(32px,4.8vw,52px)] outline-none"
+          >
+            La tua settimana.
+          </h2>
 
           {esito.aCentro ? (
             <div
@@ -143,7 +153,7 @@ export default function Risultato({
               </p>
               <p className="mt-4 max-w-[44ch] text-[14px] leading-relaxed">
                 Ogni macro sta entro il 10% del bersaglio della settimana. Sui singoli giorni
-                qualcosa oscilla, sul totale no: e&apos; il modo in cui si legge una scheda.
+                qualcosa oscilla, sul totale no: &egrave; il modo in cui si legge una scheda.
               </p>
             </div>
           ) : (
@@ -175,8 +185,8 @@ export default function Risultato({
                   ))}
                 </ul>
                 <p className="mt-6 max-w-[52ch] text-[14px] leading-relaxed text-muted">
-                  Le caselle si riempiono con abbinamenti primo+secondo, non piatti interi: piu
-                  vicino di cosi, con questi vincoli, non si arriva. Rigenera per un&apos;altra
+                  Le caselle si riempiono con abbinamenti primo+secondo, non piatti interi: pi&ugrave;
+                  vicino di cos&igrave;, con questi vincoli, non si arriva. Rigenera per un&apos;altra
                   combinazione oppure allarga i valori.
                 </p>
               </div>
@@ -209,7 +219,7 @@ export default function Risultato({
           <div className="mt-6 grid gap-2">
             {pronto && pasti > 0 ? (
               <p className="note" style={{ color: "#c02626" }}>
-                Nella tua settimana hai gia {pasti} pasti: questa azione li sostituisce
+                Nella tua settimana hai gi&agrave; {pasti} pasti: questa azione li sostituisce
               </p>
             ) : null}
             {giro > 0 ? (

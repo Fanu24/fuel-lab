@@ -263,7 +263,7 @@ export function componiMessaggio(args: {
   const telefono = contatto.telefono.trim();
   const contattoTesto = [
     comune ? `Sono di ${comune}.` : "",
-    telefono ? `Il mio numero e' ${telefono}.` : "",
+    telefono ? `Il mio numero è ${telefono}.` : "",
   ]
     .filter(Boolean)
     .join(" ");

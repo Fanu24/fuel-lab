@@ -408,7 +408,7 @@ export const SECONDI: Elemento[] = [
   },
   {
     id: "secondo-salmone-vapore", nome: "Salmone al vapore",
-    descrizione: "Salmone cotto al vapore, piu magro di quello al forno.",
+    descrizione: "Salmone cotto al vapore, più magro di quello al forno.",
     categoria: "secondo", grammi: 190,
     kcal: 337, proteine: 35, carboidrati: 2, grassi: 21,
     tag: ["pesce", "senza-glutine"], allergeni: ["pesce"],

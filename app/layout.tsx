@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     template: "%s — FUEL LAB",
   },
   description:
-    "Meal prep fresco a Pescara, mai surgelato. Schiscette costruite sui macro della tua scheda, cucinate il lunedi e il giovedi. Menu della settimana, piano sui tuoi macro, home cooking.",
+    "Meal prep fresco a Pescara, mai surgelato. Schiscette costruite sui macro della tua scheda, cucinate il lunedì e il giovedì. Menu della settimana, piano sui tuoi macro, home cooking.",
 };
 
 /* La barra del browser prende il colore della carta: su mobile e la prima

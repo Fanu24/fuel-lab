@@ -28,7 +28,7 @@ export default function Footer() {
                 { href: "/menu", label: "Menu" },
                 { href: "/come-funziona", label: "Come funziona" },
                 { href: "/scheda", label: "La tua scheda" },
-                { href: "/chi-e-matteo", label: "Chi e Matteo" },
+                { href: "/chi-e-matteo", label: "Chi è Matteo" },
                 { href: "/settimana", label: "Componi la settimana" },
               ].map((v) => (
                 <Link

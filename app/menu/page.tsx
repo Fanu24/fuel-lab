@@ -7,7 +7,7 @@ import MenuClient from "./MenuClient";
 // al primo taglio.
 export const metadata: Metadata = {
   title: "Menu della settimana",
-  description: `${PRIMI.length} primi e ${SECONDI.length} secondi da comporre, piu ${EXTRA.length} extra: macro dichiarati e porzioni pesate per ogni elemento. Filtra per categoria, tag e giorno di cottura, poi componi il tuo pasto.`,
+  description: `${PRIMI.length} primi e ${SECONDI.length} secondi da comporre, più ${EXTRA.length} extra: macro dichiarati e porzioni pesate per ogni elemento. Filtra per categoria, tag e giorno di cottura, poi componi il tuo pasto.`,
 };
 
 export default function PaginaMenu() {

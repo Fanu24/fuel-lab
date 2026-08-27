@@ -8,7 +8,7 @@ import RichiestaClient from "./RichiestaClient";
 export const metadata: Metadata = {
   title: "Scrivi a Matteo",
   description:
-    "Nome, telefono e comune, poi WhatsApp con il messaggio gia' scritto: la tua settimana e il servizio che ti interessa, pronti per Matteo. Nessun pagamento, nessun dato salvato in questa fase.",
+    "Nome, telefono e comune, poi WhatsApp con il messaggio già scritto: la tua settimana e il servizio che ti interessa, pronti per Matteo. Nessun pagamento, nessun dato salvato in questa fase.",
 };
 
 /** Il guscio di attesa per il confine di Suspense richiesto da useSearchParams. */

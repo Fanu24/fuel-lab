@@ -55,7 +55,7 @@ export const SERVIZI: Servizio[] = [
     numero: "01",
     nome: "Il menu della settimana",
     descrizione:
-      "Primi, secondi ed extra con i macro dichiarati su ogni piatto. Componi la settimana schiscetta per schiscetta: i numeri tornano sempre, perche' li vedi prima di scegliere.",
+      "Primi, secondi ed extra con i macro dichiarati su ogni piatto. Componi la settimana schiscetta per schiscetta: i numeri tornano sempre, perché li vedi prima di scegliere.",
     prezzo: { tipo: "soglia", valore: SOGLIA_PREZZO, unita: "a pasto" },
     img: foto("photo-1505576399279-565b52d4ac71", 900),
     href: "/menu",
@@ -65,7 +65,7 @@ export const SERVIZI: Servizio[] = [
     numero: "02",
     nome: "Sui macro della tua scheda",
     descrizione:
-      "Carichi il PDF o i numeri del tuo nutrizionista, il piano si compone da solo sui tuoi target: il matcher sceglie le schiscette piu' vicine ai tuoi macro, tu confermi.",
+      "Carichi il PDF o i numeri del tuo nutrizionista, il piano si compone da solo sui tuoi target: il matcher sceglie le schiscette più vicine ai tuoi macro, tu confermi.",
     prezzo: { tipo: "soglia", valore: SOGLIA_PREZZO, unita: "a pasto" },
     img: foto("photo-1512058564366-18510be2db19", 900),
     href: "/scheda",
@@ -75,7 +75,7 @@ export const SERVIZI: Servizio[] = [
     numero: "03",
     nome: "Home cooking",
     descrizione:
-      "Matteo viene a casa tua: fa la spesa, cucina e porziona nella tua cucina. Non e' produzione in serie, e' il suo tempo dedicato solo a te, e per questo ha un'economia sua.",
+      "Matteo viene a casa tua: fa la spesa, cucina e porziona nella tua cucina. Non è produzione in serie, è il suo tempo dedicato solo a te, e per questo ha un'economia sua.",
     prezzo: { tipo: "preventivo" },
     img: foto("photo-1414235077428-338989a2e8c0", 1000),
     // non e' una pagina che spiega il servizio (non esiste ancora): e' un posizionamento

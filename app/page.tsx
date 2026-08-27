@@ -13,7 +13,7 @@ import stili from "@/components/home/home.module.css";
 export const metadata: Metadata = {
   title: "Mangia come ti alleni",
   description:
-    "Meal prep fresco a Pescara, mai surgelato. Primi, secondi ed extra con i macro dichiarati su ogni elemento, cucinati il lunedi e il giovedi. Il menu della settimana, il piano sui tuoi macro, o Matteo che cucina dentro casa tua.",
+    "Meal prep fresco a Pescara, mai surgelato. Primi, secondi ed extra con i macro dichiarati su ogni elemento, cucinati il lunedì e il giovedì. Il menu della settimana, il piano sui tuoi macro, o Matteo che cucina dentro casa tua.",
 };
 
 /* React non tipa le custom property. Un'asserzione sparsa a ogni chiamata e'
@@ -59,7 +59,7 @@ const PASSI: {
   },
   {
     n: "02",
-    titolo: "Matteo cucina il lunedi e il giovedi",
+    titolo: "Matteo cucina il lunedì e il giovedì",
     testo:
       "Materia prima comprata la mattina, cottura nel pomeriggio, porzionatura al grammo con la bilancia accesa.",
     lime: true,
@@ -78,7 +78,7 @@ const PASSI: {
     n: "04",
     titolo: "Scaldi 3 minuti e mangi",
     testo:
-      "Microonde o padella. Tre minuti e in tavola arriva esattamente il primo e il secondo che hai scelto, piu' gli extra.",
+      "Microonde o padella. Tre minuti e in tavola arriva esattamente il primo e il secondo che hai scelto, più gli extra.",
     gr: "1.4deg",
     su: "lg:mt-[72px]",
   },
@@ -280,7 +280,7 @@ export default function Home() {
           <div className="wrap">
             <Reveal>
               <SectionHead
-                occhiello={`${PRIMI.length} primi, ${SECONDI.length} secondi, mai un piatto gia' chiuso`}
+                occhiello={`${PRIMI.length} primi, ${SECONDI.length} secondi, mai un piatto già chiuso`}
                 titolo={
                   <>
                     Anteprima
@@ -288,7 +288,7 @@ export default function Home() {
                     della settimana
                   </>
                 }
-                testo="Un primo, un secondo e gli extra che ti servono: quello che vedi qui e' quello che trovi nel catalogo completo, pronto per finire nella tua settimana."
+                testo="Un primo, un secondo e gli extra che ti servono: quello che vedi qui è quello che trovi nel catalogo completo, pronto per finire nella tua settimana."
                 azione={
                   <Link href="/menu" className="btn btn-s">
                     Sfoglia tutto il catalogo
@@ -411,7 +411,7 @@ export default function Home() {
                 comporrebbe a 4.45:1, sotto soglia: SU_LIME e' il verde piu scuro
                 gia' in uso in SezioneServizi.tsx per lo stesso identico problema. */}
             <p className="note" style={{ color: SU_LIME }}>
-              Pescara e provincia &middot; Consegna il lunedi e il giovedi
+              Pescara e provincia &middot; Consegna il luned&igrave; e il gioved&igrave;
             </p>
             <h2 className="h2 mt-6 text-ink">
               Mangia come

@@ -56,7 +56,7 @@ export default function ElementCard({
     const slot = primaLibera(elemento.categoria);
     if (!slot) {
       setStato("pieno");
-      setAnnuncio(`Settimana piena: non c'e' posto per ${elemento.nome}.`);
+      setAnnuncio(`Settimana piena: non c'è posto per ${elemento.nome}.`);
       return;
     }
     metti(slot.g, slot.m, elemento.categoria, elemento.id);
@@ -77,7 +77,7 @@ export default function ElementCard({
     stato === "aggiunto"
       ? `${elemento.nome} aggiunto alla settimana`
       : stato === "pieno"
-        ? `Settimana piena, non e' stato possibile aggiungere ${elemento.nome}`
+        ? `Settimana piena, non è stato possibile aggiungere ${elemento.nome}`
         : `Aggiungi ${elemento.nome} alla settimana`;
 
   return (

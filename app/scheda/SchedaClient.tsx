@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type Ref } from "react";
 import Reveal from "@/components/Reveal";
 import Ticker from "@/components/Ticker";
 import { Eyebrow, Rise } from "@/components/ui";
@@ -77,9 +77,11 @@ const foto = (id: string, w: number) =>
 function Caricamento({
   onScheda,
   onMano,
+  headingRef,
 }: {
   onScheda: (nome: string) => void;
   onMano: () => void;
+  headingRef?: Ref<HTMLHeadingElement>;
 }) {
   const [caldo, setCaldo] = useState(false);
   const [errore, setErrore] = useState<string | null>(null);
@@ -175,7 +177,11 @@ function Caricamento({
 
         <div className="relative z-1 w-full">
           <p className="note text-ink">Passo 1 / 4</p>
-          <h2 className="h3 mt-4 max-w-[380px] !text-[clamp(26px,4.4vw,36px)]">
+          <h2
+            ref={headingRef}
+            tabIndex={-1}
+            className="h3 mt-4 max-w-[380px] !text-[clamp(26px,4.4vw,36px)] outline-none"
+          >
             Trascina qui la scheda del tuo nutrizionista
           </h2>
           <p className="mt-4 max-w-[430px] text-[15px] leading-relaxed text-ink">
@@ -304,7 +310,15 @@ const PASSI = [
 /** Larghezze delle righe finte del documento: irregolari, come un testo vero. */
 const RIGHE_DOC = [86, 64, 92, 48, 78, 88, 40, 70, 82, 56];
 
-function Scansione({ nomeFile, onFine }: { nomeFile: string | null; onFine: () => void }) {
+function Scansione({
+  nomeFile,
+  onFine,
+  headingRef,
+}: {
+  nomeFile: string | null;
+  onFine: () => void;
+  headingRef?: Ref<HTMLHeadingElement>;
+}) {
   const [passo, setPasso] = useState(0);
 
   useEffect(() => {
@@ -366,7 +380,13 @@ function Scansione({ nomeFile, onFine }: { nomeFile: string | null; onFine: () =
       {/* ---------- telemetria ---------- */}
       <div>
         <p className="note text-ink">Passo 2 / 4</p>
-        <h2 className="h2 mt-4 !text-[clamp(34px,5.2vw,56px)]">Un attimo.</h2>
+        <h2
+          ref={headingRef}
+          tabIndex={-1}
+          className="h2 mt-4 !text-[clamp(34px,5.2vw,56px)] outline-none"
+        >
+          Un attimo.
+        </h2>
 
         <ol className="mt-9 grid gap-[14px]" aria-label="Avanzamento della lettura" aria-live="polite">
           {PASSI.map((p, i) => {
@@ -417,7 +437,7 @@ function Scansione({ nomeFile, onFine }: { nomeFile: string | null; onFine: () =
         </ol>
 
         <p className="note mt-9 border-t pt-6" style={{ borderColor: "var(--hair-soft)" }}>
-          Simulazione: il file non viene aperto ne caricato
+          Simulazione: il file non viene aperto n&eacute; caricato
         </p>
       </div>
     </div>
@@ -486,16 +506,22 @@ export default function SchedaClient() {
   const [giro, setGiro] = useState(0);
 
   const ancora = useRef<HTMLDivElement | null>(null);
+  const titoloPannello = useRef<HTMLHeadingElement | null>(null);
   const primoRender = useRef(true);
 
   // Ogni salto di stato riscrive mezza pagina: senza riportare l'occhio in cima
   // al pannello il contenuto nuovo comincerebbe sopra il bordo dello schermo.
+  // Il bottone che ha innescato il passaggio viene smontato insieme al vecchio
+  // pannello, quindi senza portare il fuoco sull'h2 del pannello nuovo cadrebbe
+  // su <body>: chi naviga da tastiera riparte dalla cima del documento e chi
+  // usa uno screen reader non riceve nessun annuncio del pannello nuovo.
   useEffect(() => {
     if (primoRender.current) {
       primoRender.current = false;
       return;
     }
     ancora.current?.scrollIntoView({ block: "start" });
+    titoloPannello.current?.focus();
   }, [fase]);
 
   const daScheda = useCallback((nome: string) => {
@@ -562,13 +588,17 @@ export default function SchedaClient() {
               e' quello che fa entrare il pannello nuovo invece di sostituirlo secco. */}
           {fase === "carica" ? (
             <Reveal key="carica">
-              <Caricamento onScheda={daScheda} onMano={aMano} />
+              <Caricamento onScheda={daScheda} onMano={aMano} headingRef={titoloPannello} />
             </Reveal>
           ) : null}
 
           {fase === "scansione" ? (
             <Reveal key="scansione">
-              <Scansione nomeFile={nomeFile} onFine={scansioneFinita} />
+              <Scansione
+                nomeFile={nomeFile}
+                onFine={scansioneFinita}
+                headingRef={titoloPannello}
+              />
             </Reveal>
           ) : null}
 
@@ -580,6 +610,7 @@ export default function SchedaClient() {
                 nomeFile={origine === "scheda" ? nomeFile : null}
                 onConferma={conferma}
                 onRicomincia={() => setFase("carica")}
+                headingRef={titoloPannello}
               />
             </Reveal>
           ) : null}
@@ -593,6 +624,7 @@ export default function SchedaClient() {
                 maxRipetizioni={RIPETIZIONI[giro % RIPETIZIONI.length]}
                 onRigenera={rigenera}
                 onModifica={() => setFase("valori")}
+                headingRef={titoloPannello}
               />
             </Reveal>
           ) : null}
@@ -619,20 +651,20 @@ export default function SchedaClient() {
                   {
                     n: "01",
                     t: "Il file non esce dal tuo computer",
-                    d: "Non c'e' nessun caricamento: la pagina legge solo il nome del file per mostrartelo. Niente server, niente copie, niente scheda del nutrizionista che gira in rete.",
+                    d: "Non c'è nessun caricamento: la pagina legge solo il nome del file per mostrartelo. Niente server, niente copie, niente scheda del nutrizionista che gira in rete.",
                     // rientro applicato solo da md in su: sotto, la colonna si raddrizza
                     sposta: "",
                   },
                   {
                     n: "02",
                     t: "I numeri li scrivi tu",
-                    d: "L'animazione di lettura e' scenografia. Il pannello parte da una scheda tipo e la correggi a mano in dieci secondi. Quando ordini davvero, Matteo guarda la tua scheda con te e imposta i valori insieme.",
+                    d: "L'animazione di lettura è scenografia. Il pannello parte da una scheda tipo e la correggi a mano in dieci secondi. Quando ordini davvero, Matteo guarda la tua scheda con te e imposta i valori insieme.",
                     sposta: "md:ml-10",
                   },
                   {
                     n: "03",
-                    t: "Il matcher invece e' vero",
-                    d: "L'algoritmo che sceglie i piatti gira qui, adesso, su tutto il catalogo: minimizza lo scarto dai tuoi macro e pesa le proteine piu di tutto. Per questo dopo non trovi nessuna finta attesa.",
+                    t: "Il matcher invece è vero",
+                    d: "L'algoritmo che sceglie i piatti gira qui, adesso, su tutto il catalogo: minimizza lo scarto dai tuoi macro e pesa le proteine più di tutto. Per questo dopo non trovi nessuna finta attesa.",
                     sposta: "md:ml-5",
                   },
                 ].map((b, i) => (
@@ -670,7 +702,7 @@ export default function SchedaClient() {
                   />
                 </div>
               </figure>
-              <p className="note mt-6 px-2">Pescara — cottura del lunedi e del giovedi</p>
+              <p className="note mt-6 px-2">Pescara — cottura del luned&igrave; e del gioved&igrave;</p>
             </Reveal>
           </div>
         </div>

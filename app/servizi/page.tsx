@@ -36,7 +36,7 @@ export default function Servizi() {
               non va, perche senza la maschera di .ln slitterebbe sopra il titolo */}
           <Reveal delay={480}>
             <p className="lead mt-10 max-w-[54ch]">
-              Il menu gia&apos; pronto, il piano che si costruisce sui macro della tua scheda,
+              Il menu gi&agrave; pronto, il piano che si costruisce sui macro della tua scheda,
               oppure Matteo che cucina dentro la tua cucina. Qui sotto trovi solo la soglia
               d&apos;ingresso: il prezzo esatto lo definiamo insieme, su WhatsApp.
             </p>
