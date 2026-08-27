@@ -21,16 +21,31 @@ import { linkWhatsApp, messaggioServizio } from "@/lib/whatsapp";
    Sul blocco lime il testo resta inchiostro (ink su lime = 12.61:1, la
    sola combinazione in cui il lime tocca del testo, come SUPERFICIE).
    .price-da, .price-u e .note portano di default var(--color-muted), che
-   e' tarato su paper/card/cell: qui dentro lo sovrascriviamo con
-   rgba(18,48,31,x), lo stesso inchiostro a opacita' ridotta gia' usato
-   sui blocchi lime di app/come-funziona e app/chi-e-matteo. E' lo stesso
-   colore di --color-ink, non un altro verde: scala con qualunque tonalita'
-   di lime finisse in --color-lime domani, invece di dipendere da un
-   contrasto misurato una volta sola e mai piu' verificato.
+   e' tarato su paper/card/cell: qui dentro vanno sovrascritti.
+
+   ATTENZIONE al metodo, non solo al colore: un rgba(...) semitrasparente
+   su un fondo colorato va giudicato sul COMPOSITO (il colore che risulta
+   dalla miscela con lo sfondo), mai sul colore nudo. Il primo tentativo
+   qui dentro usava rgba(18,48,31,.62) — l'inchiostro base, alpha .62 — e
+   sembrava piu scuro quindi piu sicuro. Il composito reale sopra il lime
+   e' rgb(96,127,43): contrasto 4.07:1, SOTTO AA. Il verde di --color-ink
+   e' gia abbastanza chiaro di suo che a alpha .62 la miscela con un fondo
+   luminoso come il lime si schiarisce troppo.
+
+   Il pattern giusto, gia in uso in app/come-funziona/page.tsx e
+   app/chi-e-matteo/page.tsx per lo stesso identico problema, parte da un
+   verde piu scuro della base ink, rgb(6,23,16), non da --color-ink:
+     rgba(6,23,16,.66) -> composito rgb(80,102,32) -> 5.69:1 su lime
+   Margine vero, non un rasoio: e' il valore usato qui sotto (SU_LIME).
+   rgba(18,48,31,.7) invece resta valido (INK_70, composito 5.14:1): la
+   differenza non e' l'opacita', e' la base + l'alpha insieme, e va sempre
+   verificata sul composito, mai assunta per analogia con un altro valore.
    ========================================================================= */
 
+/** rgba(18,48,31,.7): composito su lime = 5.14:1. Usato solo per il corpo testo, non per le micro-label. */
 const INK_70 = "rgba(18,48,31,.7)";
-const INK_62 = "rgba(18,48,31,.62)";
+/** rgba(6,23,16,.66): composito su lime = 5.69:1. Stesso verde scuro gia in uso su come-funziona.tsx e chi-e-matteo.tsx per il testo secondario sui blocchi lime. */
+const SU_LIME = "rgba(6,23,16,.66)";
 
 /** "8,90 €", mai un totale: la virgola italiana e il simbolo, niente di piu'. */
 function formattaSoglia(valore: number): string {
@@ -54,11 +69,11 @@ function PrezzoServizio({ prezzo, scuro = false }: { prezzo: Prezzo; scuro?: boo
 
   return (
     <p className="price">
-      <span className="price-da" style={scuro ? { color: INK_62 } : undefined}>
+      <span className="price-da" style={scuro ? { color: SU_LIME } : undefined}>
         A partire da
       </span>
       <span className="price-n">{formattaSoglia(prezzo.valore)}</span>
-      <span className="price-u" style={scuro ? { color: INK_62 } : undefined}>
+      <span className="price-u" style={scuro ? { color: SU_LIME } : undefined}>
         {prezzo.unita}
       </span>
     </p>
@@ -90,7 +105,7 @@ function CtaServizio({ servizio, scuro = false }: { servizio: Servizio; scuro?: 
             ↗
           </span>
         </button>
-        <p className="note mt-3 max-w-[30ch]" style={scuro ? { color: INK_62 } : undefined}>
+        <p className="note mt-3 max-w-[30ch]" style={scuro ? { color: SU_LIME } : undefined}>
           Numero WhatsApp non ancora attivo: il bottone si accende appena e&apos; online.
         </p>
       </div>
@@ -107,7 +122,14 @@ function CtaServizio({ servizio, scuro = false }: { servizio: Servizio; scuro?: 
   );
 }
 
-/** Link secondario "Scopri di piu'": porta alla pagina del sito dove il servizio e' spiegato per esteso. */
+/**
+ * Link secondario "Scopri di piu'". Per il menu e la scheda porta allo strumento vero e
+ * proprio del servizio (/menu, /scheda), dove il servizio e' davvero spiegato per esteso.
+ * Per l'home cooking porta invece a /chi-e-matteo: quella pagina e' la biografia di Matteo,
+ * non contiene ancora una spiegazione del servizio home cooking. Il link resta un
+ * posizionamento deliberato ("conosci Matteo prima di farlo entrare in casa tua"), non una
+ * promessa di approfondimento che la pagina di destinazione non mantiene.
+ */
 function LinkServizio({ servizio }: { servizio: Servizio }) {
   return (
     <Link href={servizio.href} className="btn btn-s btn-sm">

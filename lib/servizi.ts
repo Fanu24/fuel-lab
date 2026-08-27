@@ -78,6 +78,9 @@ export const SERVIZI: Servizio[] = [
       "Matteo viene a casa tua: fa la spesa, cucina e porziona nella tua cucina. Non e' produzione in serie, e' il suo tempo dedicato solo a te, e per questo ha un'economia sua.",
     prezzo: { tipo: "preventivo" },
     img: foto("photo-1414235077428-338989a2e8c0", 1000),
+    // non e' una pagina che spiega il servizio (non esiste ancora): e' un posizionamento
+    // deliberato, "conosci Matteo prima di farlo entrare in casa tua". Vedi il commento
+    // di LinkServizio in components/servizi/SezioneServizi.tsx per il dettaglio.
     href: "/chi-e-matteo",
   },
 ];
