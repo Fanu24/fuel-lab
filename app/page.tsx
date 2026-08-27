@@ -206,9 +206,52 @@ export default function Home() {
         </div>
       </section>
 
+      {/* =========================== FASCIA FIDUCIA =======================
+          Rimessa nel ciclo di correzione 1: era nel mockup della direzione
+          scelta dal committente, subito sotto l'hero, prima di qualunque
+          impegno di lettura. E' l'unico elemento fermo (non un marquee) della
+          pagina, quindi il solo posto che si scansiona in due secondi. Le
+          prime due affermazioni sono ridondanti con eyebrow/ticker/timbro/
+          lead/passo 03: costa poco tenerle. La terza - macro certificati -
+          non era coperta da nessun'altra parte in evidenza: e' il vero
+          differenziale per chi si allena, a differenza di "fresco e locale"
+          che dice chiunque. Testo scuro pieno su lime pieno: text-ink =
+          12,607:1 (valore documentato in globals.css), nessun composito da
+          calcolare perche' non c'e' alpha. */}
+      <section
+        className="relative z-[4] mt-[-22px] overflow-x-clip"
+        aria-label="Le tre garanzie Fuel"
+      >
+        <div className={`${stili.fascia} bg-lime text-ink`}>
+          <div
+            className={`${stili.fasciaIn} grid gap-3 py-8 md:grid-cols-[1fr_auto_1fr_auto_1fr] md:items-center md:gap-[26px] md:py-[34px]`}
+          >
+            <p className="font-disp text-[21px] leading-[1.02] uppercase md:text-[27px]">
+              Fresco, mai surgelato
+            </p>
+            <i className="hidden h-[9px] w-[9px] rotate-45 bg-ink md:block" aria-hidden="true" />
+            <p className="font-disp text-[21px] leading-[1.02] uppercase md:text-center md:text-[27px]">
+              Consegnato a Pescara
+              <br className="hidden md:block" /> e provincia
+            </p>
+            <i className="hidden h-[9px] w-[9px] rotate-45 bg-ink md:block" aria-hidden="true" />
+            <p className="font-disp text-[21px] leading-[1.02] uppercase md:text-right md:text-[27px]">
+              Macro certificati
+              <br className="hidden md:block" /> su primi e secondi
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* =============================== TICKER =========================== */}
       <Ticker
-        parole={["FRESCO MAI SURGELATO", "PESCARA E PROVINCIA", "PRIMI E SECONDI", "CUCINATO OGGI"]}
+        parole={[
+          "FRESCO MAI SURGELATO",
+          "PESCARA E PROVINCIA",
+          "I TUOI MACRO",
+          "PRIMI E SECONDI",
+          "CUCINATO OGGI",
+        ]}
       />
 
       {/* =========================== I NOSTRI SERVIZI ======================
