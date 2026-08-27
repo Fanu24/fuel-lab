@@ -41,7 +41,7 @@ export default function Footer() {
                 </Link>
               ))}
             </nav>
-            <p className="note">Matteo Pantane &middot; Pescara &middot; Cucinato il lunedi e il giovedi</p>
+            <p className="note">Matteo Pantan&egrave; &middot; Pescara &middot; Cucinato il luned&igrave; e il gioved&igrave;</p>
             <p className="note" style={{ letterSpacing: ".12em" }}>
               Demo dimostrativa &mdash; nessun ordine viene registrato
             </p>

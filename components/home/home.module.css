@@ -4,31 +4,6 @@
    caricamento e il fermo delle barre macro. Niente di riscritto.
    ========================================================================= */
 
-/* ---------- il blocco lime del titolo si apre come una tenda ------------- */
-@keyframes tenda {
-  from {
-    clip-path: inset(0 0 100% 0);
-  }
-  to {
-    clip-path: inset(0 0 0 0);
-  }
-}
-.tenda {
-  clip-path: inset(0 0 0 0);
-  animation-name: tenda;
-  animation-duration: 0.85s;
-  animation-timing-function: var(--e-mass);
-  animation-fill-mode: both;
-  animation-delay: 1s;
-}
-/* Senza il ritardo azzerato, chi ha chiesto meno movimento vedrebbe un buco
-   di un secondo al posto della parola: la durata viene tagliata, il delay no. */
-@media (prefers-reduced-motion: reduce) {
-  .tenda {
-    animation-delay: 0s;
-  }
-}
-
 /* ---------- fascia fiducia: esce dal contenitore e si inclina ------------ */
 .fascia {
   width: 112%;
@@ -49,63 +24,6 @@
   .fasciaIn {
     transform: rotate(1.15deg);
   }
-}
-
-/* ---------- zona di caricamento (disegnata, il vero upload sta in /scheda) */
-/* Fondo e bordo stanno qui e non in uno style inline: uno stile inline vincerebbe
-   sulla riga :hover e la zona resterebbe morta al passaggio del mouse. */
-.zona {
-  border-color: rgba(223, 255, 62, 0.34);
-  background: rgba(223, 255, 62, 0.035);
-  transition: background-color 0.5s var(--e-out), border-color 0.5s var(--e-out),
-    scale 0.6s var(--e-over);
-}
-.zona::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  border-radius: inherit;
-  /* stessa inclinazione a 115 gradi delle barre macro, piu la riga di partenza */
-  background:
-    linear-gradient(90deg, var(--color-lime) 0 6px, transparent 6px),
-    repeating-linear-gradient(115deg, rgba(223, 255, 62, 0.1) 0 6px, rgba(223, 255, 62, 0.022) 6px 14px);
-  opacity: 0.5;
-  transition: opacity 0.55s var(--e-out);
-}
-.zona > * {
-  position: relative;
-  z-index: 1;
-}
-.zona:hover,
-.zona:focus-visible {
-  border-color: var(--color-lime);
-  background: rgba(223, 255, 62, 0.1);
-  scale: 1.008;
-}
-.zona:hover::before,
-.zona:focus-visible::before {
-  opacity: 1;
-}
-
-/* ---------- pannello macro ---------------------------------------------- */
-/* Le barre restano a zero finche il pannello non entra in campo. La regola vive
-   sotto html.js: senza JavaScript l'osservatore non scatta mai e i valori
-   devono comunque leggersi pieni invece che vuoti. */
-:global(html.js) .pannello[data-acceso="no"] :global(.bar-track > i) {
-  transform: scaleX(0);
-}
-.pannello :global(.bar-track > i) {
-  transition-duration: 1.35s;
-  transition-timing-function: var(--e-mass);
-}
-/* cascata: le tre barre partono a scaglioni, non insieme */
-.barre > div:nth-child(2) :global(.bar-track > i) {
-  transition-delay: 150ms;
-}
-.barre > div:nth-child(3) :global(.bar-track > i) {
-  transition-delay: 300ms;
 }
 
 /* ---------- pill scura sul fondo lime della chiusura --------------------- */

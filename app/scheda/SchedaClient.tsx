@@ -401,7 +401,12 @@ function Scansione({ nomeFile, onFine }: { nomeFile: string | null; onFine: () =
                   className="ml-auto font-mono text-[11px] tracking-[.2em] uppercase"
                   style={{
                     fontVariationSettings: '"wdth" 84',
-                    color: fatto ? "var(--color-lime)" : "var(--color-mink)",
+                    // Questa colonna sta su CARTA, non dentro il documento scuro qui
+                    // accanto: il lime ci fa 1.00:1 (luminanza identica) e il mink 1.84:1,
+                    // cioe i due divieti scritti in testa a globals.css. L'accento lime
+                    // resta dov'era gia, sul rombo qui sopra, che e una SUPERFICIE.
+                    // ink 12.66:1 su carta, muted 4.65:1: la gerarchia regge lo stesso.
+                    color: fatto ? "var(--color-ink)" : "var(--color-muted)",
                   }}
                 >
                   {fatto ? "ok" : corrente ? "..." : "in coda"}

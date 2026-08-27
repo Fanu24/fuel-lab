@@ -19,7 +19,7 @@ import type { Elemento } from "@/lib/catalogo";
  */
 
 const SCALA = 1.2;
-export const POS_TACCA = (100 / SCALA).toFixed(4); // 83.3333%
+const POS_TACCA = (100 / SCALA).toFixed(4); // 83.3333%
 
 export function MacroBar({
   etichetta,

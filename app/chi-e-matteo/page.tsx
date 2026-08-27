@@ -8,9 +8,9 @@ import StrisciaCucina from "@/components/chi-e-matteo/StrisciaCucina";
 import { PRIMI, SECONDI } from "@/lib/catalogo";
 
 export const metadata: Metadata = {
-  title: "Matteo Pantane, il cuoco",
+  title: "Matteo Pantanè, il cuoco",
   description:
-    "Matteo Pantane, cuoco a Pescara. La storia di FUEL LAB, la scelta del fresco contro il surgelato e i numeri della cucina che prepara ogni settimana.",
+    "Matteo Pantanè, cuoco a Pescara. La storia di FUEL LAB, la scelta del fresco contro il surgelato e i numeri della cucina che prepara ogni settimana.",
 };
 
 /** Le foto non legate a un elemento. Stessa firma di elementoImg(), id gia verificati altrove. */
@@ -157,7 +157,7 @@ export default function ChiEMatteo() {
               <h1 className="h1">
                 <Rise i={0}>Matteo</Rise>
                 <Rise i={1}>
-                  <span className="hl hl-on"><i className="hl-bar" aria-hidden="true" /><span className="hl-tx">Pantane.</span></span>
+                  <span className="hl hl-on"><i className="hl-bar" aria-hidden="true" /><span className="hl-tx">Pantan&egrave;.</span></span>
                 </Rise>
               </h1>
 
@@ -414,7 +414,7 @@ export default function ChiEMatteo() {
                   aria-hidden="true"
                 />
                 <span className="note" style={{ color: "rgba(6,23,16,.66)" }}>
-                  Matteo Pantane &middot; cuoco
+                  Matteo Pantan&egrave; &middot; cuoco
                 </span>
               </figcaption>
             </figure>
