@@ -878,30 +878,6 @@ async function scatti(page, nome, dir) {
   return file;
 }
 
-/** Ritaglio di un elemento: qui il clip in coordinate di PAGINA e' obbligatorio. */
-async function scattoElemento(page, selettore, nomeFile, margine = 26) {
-  const box = await page.evaluate(
-    (sel, m) => {
-      const el = document.querySelector(sel);
-      if (!el) return null;
-      el.scrollIntoView({ block: "center", behavior: "auto" });
-      const r = el.getBoundingClientRect();
-      return {
-        x: Math.max(0, r.left + window.scrollX - m),
-        y: Math.max(0, r.top + window.scrollY - m),
-        width: r.width + m * 2,
-        height: r.height + m * 2,
-      };
-    },
-    selettore,
-    margine,
-  );
-  if (!box) return null;
-  await new Promise((r) => setTimeout(r, 400));
-  fs.mkdirSync(path.dirname(nomeFile), { recursive: true });
-  await page.screenshot({ path: nomeFile, clip: box, captureBeyondViewport: true });
-  return nomeFile;
-}
 
 /* ------------------------------------------------------------------------ */
 

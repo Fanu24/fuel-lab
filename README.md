@@ -1,9 +1,11 @@
-# FUEL — demo
+# FUEL LAB — demo
 
 Sito dimostrativo per **Matteo Pantanè**, cuoco a Pescara: meal prep **fresco, mai surgelato**,
-consegnato in zona due volte a settimana, componibile a mano o a partire dalla scheda del nutrizionista.
+consegnato in zona due volte a settimana, componibile a mano o a partire dalla scheda del
+nutrizionista.
 
-Next.js 16 (App Router) · React 19 · TypeScript · Tailwind 4. Nessun backend: tutto gira nel browser.
+Next.js 16 (App Router) · React 19 · TypeScript · Tailwind 4. **Nessun backend: tutto gira nel
+browser.** Il contatto finale non è un pagamento, è un messaggio su WhatsApp già scritto.
 
 ## Avvio
 
@@ -22,90 +24,91 @@ npm run build && npm start
 
 | Rotta | Cosa fa |
 |---|---|
-| `/` | Home: hero, fascia fiducia, come funziona, menu della settimana, teaser configuratore |
-| `/menu` | I 27 piatti con filtri veri per obiettivo, tipo, giorno di cottura e ordinamento |
-| `/box` | Taglia (6/10/15/20), formula singola o abbonamento, riepilogo macro e conto |
-| `/scheda` | Carica la scheda → macro modificabili → **il matcher compone il box** |
-| `/checkout` | Dati, CAP della zona servita, slot di consegna, conferma |
-| `/come-funziona` | Il servizio, fresco contro surgelato, FAQ |
-| `/chi-e-matteo` | Il cuoco: è il differenziatore "locale, non nazionale" |
+| `/` | Home: hero col timbro, fascia fiducia, come funziona, teaser del configuratore |
+| `/menu` | Il catalogo diviso in **primi**, **secondi** ed extra, con filtri e ordinamenti |
+| `/settimana` | La griglia LUN→DOM × pranzo/cena: si compone la settimana e i macro si sommano |
+| `/servizi` | I tre servizi: menu della settimana, piano sui tuoi macro, home cooking |
+| `/scheda` | Si carica la scheda del nutrizionista → macro modificabili → **il matcher compone** |
+| `/richiesta` | Il modulo che diventa il messaggio WhatsApp |
+| `/come-funziona` | Il servizio, il fresco contro il surgelato, le FAQ |
+| `/chi-e-matteo` | La storia, i numeri, cosa FUEL LAB non è |
 
-## Cosa è vero e cosa è finto
+## Cosa è vero e cosa è scenografia
 
-Questa distinzione conta, perché la demo non deve promettere cose che il sito non fa.
+Il punto di questa demo è che le parti che il cliente deve poter provare **funzionano davvero**.
+Quelle che richiedono un backend sono dichiarate qui invece di essere nascoste.
 
-**Finto, e dichiarato in pagina:**
-- Il **caricamento della scheda**. Senza backend un PDF non si può leggere: l'animazione di
-  lettura è scenografia, e i macro che compaiono sono una scheda tipo da correggere a mano.
-  La pagina lo dice esplicitamente, in due punti.
-- Il **checkout**. Nessun pagamento, nessun ordine registrato, nessun dato che lascia il browser.
+**Vero:**
 
-**Vero, e funziona davvero:**
-- Il **matcher** (`lib/matcher.ts`). Costruzione greedy con proiezione sul totale, poi passate di
-  scambi locali, con pesi diversi per macro: le proteine pesano 1,6 perché sono il vincolo che un
-  atleta controlla davvero, i grassi 0,7 perché nelle schede hanno la tolleranza più ampia.
-  Sul fabbisogno tipo chiude entro il **2,2%** su tutti e quattro i macro.
-- I **filtri** del menu, il **carrello** (persiste in `localStorage`, si sincronizza fra schede),
-  i **prezzi**, la **validazione del CAP** sulla zona servita.
+- **Il catalogo.** 27 primi, 27 secondi e 8 extra costruiti a mano, con allergeni per Reg. UE
+  1169/2011. I macro rispettano l'identità di Atwater: `kcal === P*4 + C*4 + G*9`, verificata dai test.
+- **Il matcher.** Algoritmo reale (goloso più scambi locali) che compone i pasti sui macro
+  obiettivo. Calibrato: su 729 abbinamenti la media è 562,3 kcal contro un bersaglio di 560.
+- **La griglia settimanale.** Le scelte si salvano in `localStorage` e sopravvivono al ricaricamento.
+  Due schede aperte restano sincronizzate.
+- **Il link da mandare al nutrizionista.** La settimana viene codificata nella query string, senza
+  server. Porta con sé un'impronta del catalogo: un link nato da un menu diverso viene **rifiutato**
+  invece di essere decodificato in piatti sbagliati.
+- **Il messaggio WhatsApp.** Composto per intero dai dati inseriti, con un solo saluto e una sola
+  domanda di chiusura qualunque sia il servizio di partenza.
 
-## Due decisioni di modello che vale la pena conoscere
+**Scenografia:**
 
-**Il prezzo lo decide la taglia del box, non il piatto.** Così il salmone non costa più del pollo
-e nessuno finisce a ottimizzare il carrello invece della dieta. È il motivo per cui i piatti in
-`lib/dishes.ts` non hanno un prezzo proprio.
+- **Il caricamento della scheda del nutrizionista.** Il file non viene letto né interpretato: non
+  c'è OCR e non c'è parsing. L'animazione di caricamento è teatro; i macro che compaiono sono
+  modificabili a mano ed è da lì che parte il matcher, che invece è vero.
+- **Le foto dei piatti.** Sono Unsplash, vanno sostituite con scatti veri.
+- **Alcuni testi editoriali** sono segnaposto, segnalati da un commento nel sorgente.
 
-**Ogni schiscetta copre un quarto della giornata** (`quotaCoperta` in `lib/matcher.ts`).
-Non è un numero tondo scelto per eleganza: con il fabbisogno tipo chiede a ogni piatto 560 kcal
-e 45/62/16 g, mentre la media reale dei 27 piatti è 562 kcal e 44/61/16 g. Bersaglio e catalogo
-hanno lo stesso baricentro, quindi il matcher può davvero centrarlo.
-**Se il catalogo cambia verso porzioni più grandi o più piccole, questa costante va rifatta insieme a lui.**
+**Non c'è ancora:**
 
-## Limite noto
+- **La dashboard di Matteo** (chi ha scritto, numeri di telefono, storico). È la Fase B: richiede
+  database e autenticazione, e non è stata pianificata in questo giro.
+- **Il numero WhatsApp.** Vedi sotto.
 
-Un fabbisogno da **3.000 kcal al giorno su 3 pasti** chiede 750 kcal e 90 g di carboidrati a
-schiscetta, mentre il piatto più carico del catalogo ne ha 648 e 84. È fuori portata per
-costruzione, non un difetto dell'algoritmo: nessuna porzione fresca da 500 g ci arriva.
-Il sito **lo dichiara** invece di consegnare in silenzio un box corto — ed è il comportamento
-giusto. Per servire davvero quel profilo servirebbero porzioni maggiorate (taglia L), che oggi
-non esistono nel modello.
+## Il numero WhatsApp
 
-## Da rivedere con il cliente
+Va nella variabile d'ambiente `NEXT_PUBLIC_WHATSAPP`.
 
-- **Testi**: sono segnaposto credibili, non approvati. In particolare il racconto in `/chi-e-matteo`.
-- **Foto**: tutte da Unsplash, segnaposto. Servono scatti veri dei piatti di Matteo — è il
-  materiale che regge metà del sito.
-- **Prezzi**: 10,90 → 8,90 € a pasto secondo la taglia, −15% con l'abbonamento. Numeri plausibili,
-  da confermare sui costi reali.
-- **Zona servita**: la validazione accetta i CAP di Pescara e provincia. Da verificare contro
-  l'area che il furgone copre davvero.
-- **Menu**: 27 piatti con macro coerenti (`kcal = P·4 + C·4 + G·9` su ogni riga), ma inventati.
-  Vanno sostituiti con le ricette e i valori reali.
+Finché è vuota, i bottoni WhatsApp restano **disabilitati con una spiegazione**: mai un link a
+`wa.me/` senza numero, perché un mezzo link sembra funzionante finché non ci si clicca sopra.
+Questo è il caso normale della demo, non un caso limite.
 
-## Struttura
-
-```
-app/            una cartella per rotta; i client component sono file separati
-                cosi ogni page.tsx puo restare server e esportare metadata
-components/     Nav, Footer, DishCard, MacroBar, Ticker, Reveal, ui
-  home/         componenti solo della home
-lib/
-  dishes.ts     il catalogo
-  matcher.ts    l'algoritmo che compone il box
-  cart.tsx      carrello su useSyncExternalStore (niente mismatch di idratazione)
-  pricing.ts    taglie, sconti, consegna
-  types.ts      il modello dati
+```bash
+# in locale
+echo "NEXT_PUBLIC_WHATSAPP=39XXXXXXXXXX" >> .env.local
 ```
 
-## Note di design
+## Test
 
-Direzione visiva **"Bosco Elettrico"**: verde bosco e lime elettrico, Anton per il display,
-Martian Mono per ogni numero, griglia deliberatamente rotta.
-Il tema è **bloccato scuro**: è identità di marca, non una preferenza, quindi non c'è light mode.
+```bash
+npx vitest run        # 102 test sul dominio: catalogo, piano, matcher, link, messaggio
+npx tsc --noEmit
+npx eslint app components lib
+```
 
-Una regola di forma attraversa tutto (`app/globals.css`): gli elementi interattivi sono pill piene,
-i contenitori hanno guscio da 26px e nucleo da 18px — la differenza è il padding, così le curve
-restano concentriche.
+Il controllo che conta di più però non è nella suite: `scripts/verifica.mjs` apre un Chrome vero,
+percorre tutte le rotte e **calcola il contrasto di ogni nodo di testo sul rendering reale**,
+risalendo gli antenati per trovare il fondo effettivo e fondendo i colori semitrasparenti.
 
-Le barre macro hanno la **tacca del target** alla stessa altezza su ogni riga. Senza quella, una
-barra all'88% e una al 99% sembrano entrambe "piena" e il pannello smette di raccontare lo scarto
-dal piano, diventando un punteggio.
+Serve perché questo sito è nato con il fondo scuro ed è stato portato su fondo chiaro: decine di
+colori scelti per il buio erano rimasti dov'erano. Il lime del marchio e la carta hanno **luminanza
+identica** — 1,00:1 — quindi il lime può fare da fondo, mai da testo. Cercare i colori sospetti a
+mano ha fallito cinque volte; misurarli tutti no.
+
+```bash
+npm run build && npx next start -p 4311 &
+node scripts/verifica.mjs
+```
+
+## Da rivedere con Matteo
+
+- [ ] **Il numero WhatsApp**, che ancora manca
+- [ ] **Le foto**: sostituire le Unsplash con scatti veri dei piatti
+- [ ] **I testi segnaposto**, in particolare la storia e i numeri di `/chi-e-matteo`
+- [ ] **La soglia di 8,90 €** a pasto: confermare o cambiare
+- [ ] **Il logo vettoriale** con la tagline giusta, al posto del ritaglio provvisorio
+- [ ] **Il raggio di consegna**: le pagine dicono "Pescara e provincia, entro venti
+      chilometri". Da confermare, perche e scritto nella copy in piu punti
+- [ ] **La dashboard** (Fase B): decidere se serve davvero un pannello o se basta che i messaggi
+      WhatsApp arrivino ordinati
