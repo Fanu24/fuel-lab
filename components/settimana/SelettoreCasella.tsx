@@ -62,16 +62,6 @@ function corrispondeElemento(e: Elemento, q: string): boolean {
 const FOCUSABILI =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-/*
- * Stesso rattoppo di app/settimana/SettimanaClient.tsx, dove sta la spiegazione
- * per esteso: il reset non stratificato `button { background: none; color:
- * inherit }` di globals.css batte .btn-p, che vive in @layer components, e lo
- * stile inline e' l'unica dichiarazione che gli sopravvive. Senza, il primario
- * di questo pannello e' testo nudo invece di una pillola. Bianco su inchiostro:
- * 14.30:1. Si cancella con l'altro, quando i reset entreranno in @layer base.
- */
-const RATTOPPO_BTN_P = { background: "var(--color-ink)", color: "#fff" } as const;
-
 export default function SelettoreCasella({
   giorno,
   pasto,
@@ -430,12 +420,7 @@ export default function SelettoreCasella({
                 ×
               </span>
             </button>
-            <button
-              type="button"
-              className="btn btn-p btn-sm"
-              style={RATTOPPO_BTN_P}
-              onClick={onChiudi}
-            >
+            <button type="button" className="btn btn-p btn-sm" onClick={onChiudi}>
               Fatto
               <span className="dot" aria-hidden="true">
                 ✓

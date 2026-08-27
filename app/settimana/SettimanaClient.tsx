@@ -57,40 +57,6 @@ type Esito = "attesa" | "chiede" | "importato" | "accettato" | "rifiutato";
 const LINK_ROTTO =
   "Questo link non risulta leggibile. Di solito vuol dire che nasce da un menu diverso da quello di questa settimana: il piano esisteva davvero, ma i piatti a cui punta adesso stanno in altre posizioni, e mostrarti quelli sbagliati sarebbe peggio che non mostrarti niente. Chiedi di ricomporre la settimana sul menu di adesso e di rimandarti il link.";
 
-/*
- * RATTOPPO LOCALE a un difetto che NON nasce qui, misurato in Chrome su questa
- * pagina e sulle altre.
- *
- * globals.css azzera gli elementi fuori da ogni @layer:
- *   a      { color: inherit }
- *   button { background: none; color: inherit }
- * mentre .btn-p vive dentro @layer components. Per la cascata dei layer il CSS
- * non stratificato batte QUALUNQUE layer, quindi su <a> e su <button> le due
- * dichiarazioni di .btn-p non arrivano mai. Le conseguenze, misurate:
- *
- *   <Link className="btn btn-p">   fondo ink applicato, colore ereditato ink
- *                                  -> testo inchiostro su inchiostro, 1.00:1,
- *                                     cioe' un bottone primario ILLEGGIBILE
- *   <button className="btn btn-p"> fondo perso, testo ink su carta a 12.66:1:
- *                                  si legge, ma non sembra piu' un primario
- *
- * Nessuna classe puo' rimediare: ho provato anche una utility Tailwind
- * (bg-ink su un <button>) e perde pure lei, perche' anche @layer utilities e'
- * un layer. Lo stile inline e' l'unica dichiarazione che vince, ed e' per questo
- * che sta qui invece che in una classe.
- *
- * La correzione VERA e' una riga in globals.css - i reset dentro @layer base -
- * e vale per le altre otto occorrenze di btn-p sparse fra box, checkout, menu,
- * scheda, chi-e-matteo e come-funziona, che oggi hanno lo stesso guasto. Quel
- * file non e' nel perimetro del Task 10: e' la stessa famiglia della Ruling R18
- * e va alla passata sistematica. Quando sara' fatta, questa costante e le sue
- * tre applicazioni si cancellano in un colpo solo.
- *
- * Il bianco qui e' il caso legale: sta su fondo inchiostro, 14.30:1, esattamente
- * come fa .total-l nella barra scura.
- */
-const RATTOPPO_BTN_P = { background: "var(--color-ink)", color: "#fff" } as const;
-
 /** Quante caselle piene porta un piano. Serve per raccontare cosa c'e' nel link. */
 function contaCaselle(p: Piano): number {
   let n = 0;
@@ -308,7 +274,6 @@ export default function SettimanaClient() {
                 <button
                   type="button"
                   className="btn btn-p"
-                  style={RATTOPPO_BTN_P}
                   onClick={() => void condividi()}
                   disabled={!pronto || pasti === 0}
                   title={
@@ -369,7 +334,7 @@ export default function SettimanaClient() {
                   link invece resta valido, puoi aprirlo anche dopo.
                 </p>
                 <div className="mt-8 flex flex-wrap gap-3">
-                  <button type="button" className="btn btn-p" style={RATTOPPO_BTN_P} onClick={accetta}>
+                  <button type="button" className="btn btn-p" onClick={accetta}>
                     Sostituisci con quella del link
                     <span className="dot" aria-hidden="true">
                       ↓
@@ -435,7 +400,7 @@ export default function SettimanaClient() {
                         sotto e scegliere a mano.
                       </p>
                       <div className="mt-9 flex flex-wrap justify-center gap-3">
-                        <Link href="/menu" className="btn btn-p" style={RATTOPPO_BTN_P}>
+                        <Link href="/menu" className="btn btn-p">
                           Sfoglia il menu
                           <span className="dot" aria-hidden="true">
                             →

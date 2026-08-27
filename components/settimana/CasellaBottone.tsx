@@ -111,121 +111,102 @@ export default function CasellaBottone({
       aria-expanded={aperta}
       aria-label={`${NOMI_GIORNO[giorno]}, ${NOMI_PASTO[pasto].toLowerCase()}: ${dettaglio}`}
       onClick={(e) => onApri(giorno, pasto, e.currentTarget)}
-      className="block w-full"
+      className={`cell ${vuota ? "cell-empty" : "cell-full"} ${forma}`}
     >
-      {/*
-       * La veste sta su uno <span> e non sul <button>.
-       *
-       * globals.css azzera `button { background: none; color: inherit }` FUORI da
-       * ogni @layer, e il CSS non stratificato batte qualunque layer: su un
-       * <button> le classi .cell e .cell-empty, che vivono in @layer components,
-       * non arrivano mai. Misurato in Chrome: la casella vuota restava senza
-       * fondo e il suo "+" ereditava l'inchiostro invece del muted, e soprattutto
-       * `.cell-empty:hover { background: lime }` non scattava - cioe' l'unica
-       * affordance che dice che una casella si puo' riempire.
-       *
-       * Uno <span> quel reset non lo incontra, quindi il fondo, il colore, il
-       * passaggio a lime e l'ombra tornano a funzionare con le classi del sistema,
-       * senza duplicare qui nessun valore. Il bottone resta il bottone: sua
-       * l'etichetta, suo il focus, suo l'anello di :focus-visible, che gli sta
-       * intorno esatto perche' lo span lo riempie tutto.
-       */}
-      <span className={`cell ${vuota ? "cell-empty" : "cell-full"} ${forma}`}>
-        {vuota ? (
-          <>
+      {vuota ? (
+        <>
+          <span
+            aria-hidden="true"
+            className="text-[26px] leading-none font-light"
+          >
+            +
+          </span>
+          {riga ? (
+            // Sotto lg c'e' la larghezza per dire cosa fa il bottone. Il colore
+            // lo eredita da .cell-empty: muted sulla casella (4.75:1) e ink sul
+            // lime del passaggio del mouse (12.61:1), corretti entrambi.
+            <span className="mt-2 text-[12px] font-semibold tracking-[.02em]">
+              Aggiungi {NOMI_PASTO[pasto].toLowerCase()}
+            </span>
+          ) : null}
+        </>
+      ) : riga ? (
+        <>
+          {/* justify-between su una card larga 900px metterebbe il nome del piatto
+            e le sue kcal a mezzo metro di distanza: da sm le kcal seguono il nome
+            invece di inseguire il bordo destro. */}
+          <span className="flex w-full items-start justify-between gap-3 sm:justify-start sm:gap-8">
+            <span className="flex min-w-0 flex-col gap-1.5">
+              {primo ? (
+                <span className="cell-d text-[14px]">{primo.nome}</span>
+              ) : null}
+              {secondo ? (
+                <span className="cell-d text-[14px]">{secondo.nome}</span>
+              ) : null}
+            </span>
+            <span className="mono shrink-0 text-[11px] font-medium text-muted">
+              {macro.kcal} kcal
+            </span>
+          </span>
+          {extra.length > 0 ? (
+            <span className="mt-3 flex flex-wrap gap-1.5">
+              {extra.map((e) => (
+                <span key={e.id} className="chip">
+                  {e.nome}
+                </span>
+              ))}
+            </span>
+          ) : null}
+          <span className="mono mt-3 text-[10px] font-medium text-muted">
+            P {macro.proteine} · C {macro.carboidrati} · G {macro.grassi}
+          </span>
+        </>
+      ) : (
+        <>
+          {primo ? (
+            <span className="cell-d hyphens-auto break-words text-[11px] xl:text-[12.5px]">
+              {primo.nome}
+            </span>
+          ) : null}
+          {/* Casella di soli extra: senza questa riga sarebbe una casella piena
+            che sembra vuota, con un numero di kcal comparso dal niente. */}
+          {!primo && !secondo ? (
+            <span className="cell-d text-[11px] xl:text-[12.5px]">
+              Solo extra
+            </span>
+          ) : null}
+          {secondo ? (
             <span
-              aria-hidden="true"
-              className="text-[26px] leading-none font-light"
+              className={`cell-d hyphens-auto break-words text-[11px] xl:text-[12.5px] ${
+                primo ? "mt-1.5 border-t pt-1.5" : ""
+              }`}
+              style={primo ? { borderColor: "var(--hair-soft)" } : undefined}
             >
-              +
+              {secondo.nome}
             </span>
-            {riga ? (
-              // Sotto lg c'e' la larghezza per dire cosa fa il bottone. Il colore
-              // lo eredita da .cell-empty: muted sulla casella (4.75:1) e ink sul
-              // lime del passaggio del mouse (12.61:1), corretti entrambi.
-              <span className="mt-2 text-[12px] font-semibold tracking-[.02em]">
-                Aggiungi {NOMI_PASTO[pasto].toLowerCase()}
-              </span>
-            ) : null}
-          </>
-        ) : riga ? (
-          <>
-            {/* justify-between su una card larga 900px metterebbe il nome del piatto
-              e le sue kcal a mezzo metro di distanza: da sm le kcal seguono il nome
-              invece di inseguire il bordo destro. */}
-            <span className="flex w-full items-start justify-between gap-3 sm:justify-start sm:gap-8">
-              <span className="flex min-w-0 flex-col gap-1.5">
-                {primo ? (
-                  <span className="cell-d text-[14px]">{primo.nome}</span>
-                ) : null}
-                {secondo ? (
-                  <span className="cell-d text-[14px]">{secondo.nome}</span>
-                ) : null}
-              </span>
-              <span className="mono shrink-0 text-[11px] font-medium text-muted">
-                {macro.kcal} kcal
-              </span>
-            </span>
+          ) : null}
+          <span className="cell-k flex items-center justify-between gap-2">
+            <span>{macro.kcal} kcal</span>
             {extra.length > 0 ? (
-              <span className="mt-3 flex flex-wrap gap-1.5">
+              // Pallini a inchiostro, non lime: il lime su carta bianca sta a
+              // 1.13:1, cioe' un pallino che non si vede. Il nome degli extra
+              // resta nell'aria-label del bottone.
+              <span
+                className="flex shrink-0 gap-[3px]"
+                aria-hidden="true"
+                title={extra.map((e) => e.nome).join(", ")}
+              >
                 {extra.map((e) => (
-                  <span key={e.id} className="chip">
-                    {e.nome}
-                  </span>
+                  <i
+                    key={e.id}
+                    className="block h-[6px] w-[6px] rounded-full bg-ink"
+                  />
                 ))}
               </span>
             ) : null}
-            <span className="mono mt-3 text-[10px] font-medium text-muted">
-              P {macro.proteine} · C {macro.carboidrati} · G {macro.grassi}
-            </span>
-          </>
-        ) : (
-          <>
-            {primo ? (
-              <span className="cell-d hyphens-auto break-words text-[11px] xl:text-[12.5px]">
-                {primo.nome}
-              </span>
-            ) : null}
-            {/* Casella di soli extra: senza questa riga sarebbe una casella piena
-              che sembra vuota, con un numero di kcal comparso dal niente. */}
-            {!primo && !secondo ? (
-              <span className="cell-d text-[11px] xl:text-[12.5px]">
-                Solo extra
-              </span>
-            ) : null}
-            {secondo ? (
-              <span
-                className={`cell-d hyphens-auto break-words text-[11px] xl:text-[12.5px] ${
-                  primo ? "mt-1.5 border-t pt-1.5" : ""
-                }`}
-                style={primo ? { borderColor: "var(--hair-soft)" } : undefined}
-              >
-                {secondo.nome}
-              </span>
-            ) : null}
-            <span className="cell-k flex items-center justify-between gap-2">
-              <span>{macro.kcal} kcal</span>
-              {extra.length > 0 ? (
-                // Pallini a inchiostro, non lime: il lime su carta bianca sta a
-                // 1.13:1, cioe' un pallino che non si vede. Il nome degli extra
-                // resta nell'aria-label del bottone.
-                <span
-                  className="flex shrink-0 gap-[3px]"
-                  aria-hidden="true"
-                  title={extra.map((e) => e.nome).join(", ")}
-                >
-                  {extra.map((e) => (
-                    <i
-                      key={e.id}
-                      className="block h-[6px] w-[6px] rounded-full bg-ink"
-                    />
-                  ))}
-                </span>
-              ) : null}
-            </span>
-          </>
-        )}
-      </span>
+          </span>
+        </>
+      )}
     </button>
   );
 }
