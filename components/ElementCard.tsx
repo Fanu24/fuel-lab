@@ -20,9 +20,18 @@ type Stato = "pronto" | "aggiunto" | "pieno";
 export default function ElementCard({
   elemento,
   variante = "griglia",
+  anteprima = false,
 }: {
   elemento: Elemento;
   variante?: "griglia" | "riga";
+  /**
+   * Sola lettura: niente bottone "Aggiungi". Serve alla card che mostra un
+   * elemento gia dentro un piano calcolato altrove (l'anteprima del risultato
+   * in /scheda) e che si applica tutto insieme: un bottone capace di scrivere
+   * un solo elemento nella prima casella libera contraddirebbe quell'azione
+   * di blocco. Di default resta attivo: /menu non deve cambiare comportamento.
+   */
+  anteprima?: boolean;
 }) {
   const { metti, primaLibera, pronto } = usePiano();
   const [stato, setStato] = useState<Stato>("pronto");
@@ -101,18 +110,20 @@ export default function ElementCard({
             style={{ borderColor: "var(--hair-soft)" }}
           >
             <span className="note">{elemento.giorno === "lunedi" ? "cotto lun" : "cotto gio"}</span>
-            <button
-              type="button"
-              className="btn btn-s btn-sm"
-              onClick={aggiungi}
-              disabled={!pronto}
-              aria-live="polite"
-            >
-              {etichettaBottone}
-              <span className="dot" aria-hidden="true">
-                {puntinoBottone}
-              </span>
-            </button>
+            {anteprima ? null : (
+              <button
+                type="button"
+                className="btn btn-s btn-sm"
+                onClick={aggiungi}
+                disabled={!pronto}
+                aria-live="polite"
+              >
+                {etichettaBottone}
+                <span className="dot" aria-hidden="true">
+                  {puntinoBottone}
+                </span>
+              </button>
+            )}
           </div>
         </div>
       </div>

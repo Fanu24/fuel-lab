@@ -438,16 +438,16 @@ function Tappe({ fase }: { fase: Fase }) {
               style={{
                 fontVariationSettings: '"wdth" 84',
                 background: qui ? "var(--color-lime)" : "rgba(201,224,205,.05)",
-                color: qui
-                  ? "var(--color-ink)"
-                  : fatta
-                    ? "var(--color-lime)"
-                    : "var(--color-mink)",
+                // Testata su fondo paper, sempre chiaro: ink e muted reggono
+                // qui, lime e mink no (lime su paper e 1:1, mink e riservato ai
+                // blocchi scuri). Il passo fatto si distingue dal futuro per
+                // FORMA (la spunta sotto), il colore e solo un rinforzo.
+                color: qui ? "var(--color-ink)" : fatta ? "var(--color-ink)" : "var(--color-muted)",
                 border: "1px solid " + (qui ? "transparent" : "var(--hair-soft)"),
                 transition: "background-color .5s var(--e-out), color .5s var(--e-out)",
               }}
             >
-              <b className="font-normal opacity-60">{i + 1}</b>
+              <b className="font-normal opacity-60">{fatta ? "✓" : i + 1}</b>
               {t.label}
             </span>
             {i < TAPPE.length - 1 ? (

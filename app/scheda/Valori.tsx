@@ -206,7 +206,7 @@ export default function Valori({
                     <p
                       id={"aiuto-" + c}
                       className="note mt-[10px] px-1"
-                      style={err !== null ? { color: "#ff9d9d" } : undefined}
+                      style={err !== null ? { color: "#c02626" } : undefined}
                     >
                       {err ?? "da " + LIMITI[c].min + " a " + LIMITI[c].max}
                     </p>
@@ -340,7 +340,7 @@ export default function Valori({
               </div>
               <p
                 className="note mt-[14px]"
-                style={disponibili === 0 ? { color: "#ff9d9d" } : undefined}
+                style={disponibili === 0 ? { color: "#c02626" } : undefined}
                 role="status"
               >
                 {disponibili === 0

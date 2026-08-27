@@ -208,7 +208,7 @@ export default function Risultato({
 
           <div className="mt-6 grid gap-2">
             {pronto && pasti > 0 ? (
-              <p className="note" style={{ color: "#ff9d9d" }}>
+              <p className="note" style={{ color: "#c02626" }}>
                 Nella tua settimana hai gia {pasti} pasti: questa azione li sostituisce
               </p>
             ) : null}
@@ -270,12 +270,17 @@ export default function Risultato({
 
       {/* ================= gli elementi scelti ================= */}
       <div className="mt-[86px]">
-        <div className="mb-9 flex flex-wrap items-end justify-between gap-6">
+        <div className="mb-2 flex flex-wrap items-end justify-between gap-6">
           <h3 className="h3">Cosa mangi</h3>
           <p className="note">
             {elementi.length} elementi diversi — {totalePasti} caselle su {CASELLE_TOTALI}
           </p>
         </div>
+        {/* anteprima, non catalogo: niente bottone "Aggiungi" per card, sennò un
+            click scriverebbe un solo elemento nella prima casella libera della
+            settimana gia salvata, mentre "Metti nella settimana" qui sopra la
+            sostituisce tutta insieme - due azioni che si contraddirebbero. */}
+        <p className="note mb-9">Sola anteprima: entra tutto insieme con &quot;Metti nella settimana&quot;.</p>
 
         <div className="grid items-start gap-6 md:grid-cols-2 lg:grid-cols-3">
           {elementi.map((r, i) => (
@@ -287,7 +292,7 @@ export default function Risultato({
               {/* La pastiglia sta dentro la rotazione, non fuori: agganciata al
                   riquadro dritto si staccherebbe dall'angolo della card inclinata. */}
               <div className={"relative h-full " + ROTAZIONI[i % ROTAZIONI.length]}>
-                <ElementCard elemento={r.elemento} />
+                <ElementCard elemento={r.elemento} anteprima />
                 {r.qta > 1 ? (
                   <span
                     className="pointer-events-none absolute -top-3 right-4 z-10 rounded-full bg-lime px-[13px] py-[6px] font-mono text-[12px] text-ink transition-transform duration-700 group-hover:-translate-y-2.5"
