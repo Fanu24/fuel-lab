@@ -13,6 +13,13 @@ export const metadata: Metadata = {
     "Quattro passi dalla scheda del nutrizionista al tuo frigo, il confronto onesto tra fresco e surgelato e le risposte vere su conservazione, consegne, allergeni e disdetta.",
 };
 
+/*
+ * NOTA REDAZIONALE (non va in pagina): i testi di questa pagina - i quattro
+ * passi, il confronto fresco/surgelato e le risposte della FAQ - sono
+ * segnaposto. Vanno riscritti con Matteo, numeri e date compresi, prima di
+ * andare online.
+ */
+
 /**
  * Le foto non legate a un elemento del catalogo. Stessa firma di elementoImg(),
  * ma il tipo tiene la lista chiusa ai soli id gia in uso altrove nel sito: un
@@ -51,8 +58,8 @@ const PASSI: Passo[] = [
     n: "01",
     titolo: "Scegli il menu o carica la scheda",
     testo:
-      `${PRIMI.length + SECONDI.length} piatti online, con grammi e macro scritti sopra ognuno: puoi comporre il box a mano in cinque minuti. Se hai una scheda del nutrizionista la carichi e ci pensa il matcher, che sceglie le schiscette piu vicine ai tuoi numeri. Quello che non ti va lo sostituisci, e i totali si ricalcolano davanti a te.`,
-    dati: [`${PRIMI.length + SECONDI.length} piatti`, "PDF o foto"],
+      `${PRIMI.length} primi e ${SECONDI.length} secondi online, con grammi e macro scritti sopra ognuno: puoi comporre la tua settimana a mano in cinque minuti. Se hai una scheda del nutrizionista la carichi e ci pensa il matcher, che sceglie gli abbinamenti piu vicini ai tuoi numeri. Quello che non ti va lo sostituisci, e i totali si ricalcolano davanti a te.`,
+    dati: [`${PRIMI.length + SECONDI.length} elementi`, "PDF o foto"],
     img: "photo-1466637574441-749b8f19452f",
     alt: "Tagliere di legno con uova, avocado e pomodori, gli ingredienti di partenza",
     rot: "md:rotate-[-2.4deg]",
@@ -75,7 +82,7 @@ const PASSI: Passo[] = [
     n: "03",
     titolo: "Consegna a Pescara e provincia",
     testo:
-      "Il giro parte nel pomeriggio dello stesso giorno di cottura. La fascia la scegli tu quando ordini, 17:00-19:00 oppure 19:00-21:00, e ricevi un messaggio quando il furgone esce. Se a casa non c'e' nessuno il box torna in frigo da Matteo e riprovi il giorno dopo: non lo lasciamo sullo zerbino a luglio.",
+      "Il giro parte nel pomeriggio dello stesso giorno di cottura. La fascia la scegli tu quando ordini, 17:00-19:00 oppure 19:00-21:00, e ricevi un messaggio quando il furgone esce. Se a casa non c'e' nessuno l'ordine torna in frigo da Matteo e riprovi il giorno dopo: non lo lasciamo sullo zerbino a luglio.",
     dati: ["17:00-21:00", "Pescara + provincia"],
     img: "photo-1498837167922-ddd27525d352",
     alt: "Contenitori di meal prep con porzioni pesate, pronti per la consegna",
@@ -140,7 +147,7 @@ const DOMANDE: Domanda[] = [
       <>
         Sono in polipropilene monomateriale (PP 5): lavabili in lavastoviglie e riciclabili nella
         plastica. Se li lasci puliti fuori dalla porta alla consegna successiva li ritiriamo e li
-        rimettiamo in ciclo, e ti scaliamo 30 centesimi a contenitore sul box dopo. Non e&apos;
+        rimettiamo in ciclo, e ti scaliamo 30 centesimi a contenitore sull&apos;ordine dopo. Non e&apos;
         obbligatorio e non facciamo la predica a nessuno. Abbiamo provato il vetro, che non regge il
         trasporto in furgone, e il compostabile monouso, che cede dopo due giorni in frigo: per ora
         questo e&apos; il compromesso meno peggiore.
@@ -153,7 +160,7 @@ const DOMANDE: Domanda[] = [
       <>
         Si, dal tuo account oppure con un messaggio a Matteo, <strong>entro il venerdi</strong> della
         settimana precedente. L&apos;abbonamento va in pausa, non si azzera: quando torni ritrovi i
-        tuoi target, le tue esclusioni e i piatti che avevi messo da parte. Non c&apos;e&apos; un
+        tuoi target, le tue esclusioni e gli elementi che avevi messo da parte. Non c&apos;e&apos; un
         limite al numero di pause: ferie e trasferte non sono un problema da risolvere con una
         penale.
       </>
@@ -166,7 +173,7 @@ const DOMANDE: Domanda[] = [
         Con un click dal tuo account, o scrivendo. Nessun preavviso di trenta giorni, nessuna penale,
         nessuna telefonata per convincerti a restare. L&apos;unica regola e&apos; sempre il{" "}
         <strong>venerdi</strong>: dopo quel giorno la spesa della settimana successiva e&apos; gia
-        stata fatta, e quel box lo paghi. E&apos; l&apos;unico modo che conosciamo per non buttare
+        stata fatta, e quella settimana la paghi. E&apos; l&apos;unico modo che conosciamo per non buttare
         cibo gia comprato.
       </>
     ),
@@ -175,7 +182,7 @@ const DOMANDE: Domanda[] = [
     q: "E se cambio dieta a meta percorso?",
     a: (
       <>
-        Carichi la scheda nuova e il box successivo viene ricomposto sui numeri nuovi, senza disdire
+        Carichi la scheda nuova e la settimana successiva viene ricomposta sui numeri nuovi, senza disdire
         e riscriverti. Succede spesso: le schede si aggiornano ogni sei-otto settimane, ed e&apos;
         esattamente il motivo per cui il matcher lavora sui tuoi target e non su un menu fisso
         deciso a settembre.
@@ -186,13 +193,25 @@ const DOMANDE: Domanda[] = [
     q: "Ho un'allergia o un'intolleranza.",
     a: (
       <>
-        In fase di ordine escludi i tag che non puoi mangiare e quei piatti spariscono dal tuo
+        In fase di ordine escludi i tag che non puoi mangiare e quegli elementi spariscono dal tuo
         catalogo, non restano li grigi a tentarti. Su ogni etichetta trovi l&apos;elenco completo
         degli allergeni del lotto. Un avvertimento onesto: la cucina e&apos; una sola e lavora anche
         glutine, pesce e frutta a guscio, quindi{" "}
         <strong>non possiamo garantire l&apos;assenza di contaminazione crociata</strong>. Se hai una
         celiachia o un&apos;allergia diagnosticata scrivici prima: ti diciamo la verita, anche quando
         la verita e&apos; che non facciamo al caso tuo.
+      </>
+    ),
+  },
+  {
+    q: "Dove trovo gli allergeni di ogni primo e secondo?",
+    a: (
+      <>
+        Ogni primo, secondo ed extra del catalogo dichiara i suoi allergeni: e&apos; un campo
+        obbligatorio, come impone il{" "}
+        <strong>Regolamento UE 1169/2011</strong>, e non un&apos;etichetta aggiunta dopo. Li vedi
+        mentre componi la tua settimana, prima ancora di ordinare, non solo sul contenitore alla
+        consegna.
       </>
     ),
   },
@@ -204,7 +223,18 @@ const DOMANDE: Domanda[] = [
         sostituzioni accetta e dove c&apos;e&apos; margine di manovra sui contorni. Chiedi al tuo
         professionista di scriverci: rispondiamo entro il giorno lavorativo successivo. Quello che
         non facciamo mai e&apos; toccare la tua dieta di nostra iniziativa: noi la traduciamo in
-        piatti, non la correggiamo.
+        una settimana di primi e secondi, non la correggiamo.
+      </>
+    ),
+  },
+  {
+    q: "Come faccio vedere la settimana al mio nutrizionista?",
+    a: (
+      <>
+        Quando componi la tua settimana ottieni un link: lo mandi al tuo nutrizionista su WhatsApp
+        o via mail, e lui lo apre e vede esattamente i primi, i secondi e i macro che hai scelto,
+        senza doversi registrare da nessuna parte. Puo approvarla cosi com&apos;e&apos; o segnarti
+        cosa cambiare, e tu aggiorni la settimana di conseguenza.
       </>
     ),
   },
@@ -214,8 +244,8 @@ const DOMANDE: Domanda[] = [
       <>
         Pescara citta, Montesilvano, Spoltore, Francavilla al Mare, Citta Sant&apos;Angelo, Chieti e
         Chieti Scalo, San Giovanni Teatino. Oltre i venti chilometri dalla cucina la catena del
-        freddo diventa un rischio che non ci prendiamo, e preferiamo dire di no che consegnare un box
-        tiepido. Se sei appena fuori zona scrivici lo stesso: quando in un comune si accumulano
+        freddo diventa un rischio che non ci prendiamo, e preferiamo dire di no che consegnare
+        qualcosa di tiepido. Se sei appena fuori zona scrivici lo stesso: quando in un comune si accumulano
         abbastanza ordini, il giro lo apriamo.
       </>
     ),
@@ -389,11 +419,17 @@ export default function ComeFunziona() {
                         contenuto perso sul telefono): resta nel flusso dentro il guscio,
                         dritta. Fondo pieno, non vetro smerigliato: sta sopra una foto
                         opaca, il blur non aveva niente da sfocare. */}
+                    {/* .note e' muted di default (4.45:1 sul guscio tray, sotto AA):
+                        qui sta proprio sul guscio, quindi forza ink (11.26:1). */}
                     <span
                       className={`note mt-[10px] ml-[6px] inline-block rounded-full border px-4 py-[7px] md:absolute md:-top-4 md:mt-0 md:ml-0 ${
                         invertito ? "md:-left-5 md:rotate-[-3deg]" : "md:-right-5 md:rotate-[3deg]"
                       }`}
-                      style={{ borderColor: "var(--hair)", background: "var(--color-tray)" }}
+                      style={{
+                        borderColor: "var(--hair)",
+                        background: "var(--color-tray)",
+                        color: "var(--color-ink)",
+                      }}
                     >
                       {p.etichetta}
                     </span>
@@ -407,9 +443,11 @@ export default function ComeFunziona() {
                       className="font-mono text-[clamp(56px,9vw,102px)] leading-[.78]"
                       style={{
                         fontVariationSettings: '"wdth" 75, "wght" 700',
-                        // il riempimento resta lime a bassa opacita, non trasparente: se
-                        // -webkit-text-stroke non e' supportato il numero si legge lo stesso
-                        color: p.vuoto ? "rgba(223,255,62,.14)" : "var(--color-lime)",
+                        // Il lime non e' mai testo su fondo chiaro (1.00:1, misurato):
+                        // la cifra e' sempre inchiostro (12.66:1 su carta), il lime resta
+                        // solo come contorno sulla variante "vuoto", per rompere la
+                        // ripetizione senza sparire nella carta.
+                        color: "var(--color-ink)",
                         WebkitTextStroke: p.vuoto ? "1.5px var(--color-lime)" : undefined,
                       }}
                     >
@@ -634,8 +672,9 @@ export default function ComeFunziona() {
                   online.
                 </h2>
                 <p className="lead mt-7">
-                  Ventiquattro piatti con grammi e macro alla luce del sole. Guardali, oppure salta
-                  la scelta e lascia che sia la tua scheda a comporre il box.
+                  {PRIMI.length} primi e {SECONDI.length} secondi con grammi e macro alla luce del
+                  sole. Guardali, oppure salta la scelta e lascia che sia la tua scheda a comporre
+                  la tua settimana.
                 </p>
                 <div className="mt-10 flex flex-wrap gap-3">
                   <Link href="/menu" className="btn btn-p">

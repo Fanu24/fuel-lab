@@ -10,7 +10,7 @@ import { PRIMI, SECONDI } from "@/lib/catalogo";
 export const metadata: Metadata = {
   title: "Matteo Pantane, il cuoco",
   description:
-    "Matteo Pantane, cuoco a Pescara. La storia di FUEL LAB, la scelta del fresco contro il surgelato e i numeri della cucina che prepara i box.",
+    "Matteo Pantane, cuoco a Pescara. La storia di FUEL LAB, la scelta del fresco contro il surgelato e i numeri della cucina che prepara ogni settimana.",
 };
 
 /** Le foto non legate a un elemento. Stessa firma di elementoImg(), id gia verificati altrove. */
@@ -109,7 +109,10 @@ function Numero({
             }`}
             style={{
               fontVariationSettings: '"wdth" 75, "wght" 700',
-              color: lime ? "var(--color-ink)" : "#fff",
+              // .core e' sempre card (bianco) fuori dalla variante lime: il bianco
+              // era testo su fondo bianco, 1.00:1. ink su lime e su card sono
+              // entrambi ben sopra AA (12.61:1 e 14.30:1).
+              color: "var(--color-ink)",
             }}
           >
             {cifra}
@@ -336,7 +339,7 @@ export default function ChiEMatteo() {
             />
             <Numero
               cifra={String(PRIMI.length + SECONDI.length)}
-              etichetta="Piatti in rotazione"
+              etichetta="Elementi in rotazione"
               testo="Il menu si muove con la stagione, i macro della tua scheda no."
               posizione="md:col-span-4 md:col-start-2 md:-mt-[26px]"
               rotazione="md:rotate-[1.4deg]"
@@ -445,8 +448,8 @@ export default function ChiEMatteo() {
                     diventa il tuo menu.
                   </h2>
                   <p className="lead mt-6">
-                    Carica il PDF del nutrizionista o scrivi i numeri a mano. Il box si compone sui
-                    tuoi macro, poi lo cucino io il luned&igrave; o il gioved&igrave;.
+                    Carica il PDF del nutrizionista o scrivi i numeri a mano. La tua settimana si
+                    compone sui tuoi macro, poi la cucino io il luned&igrave; o il gioved&igrave;.
                   </p>
                 </div>
                 <div className="relative flex flex-wrap gap-3 lg:flex-col lg:items-end">
@@ -457,7 +460,7 @@ export default function ChiEMatteo() {
                     </span>
                   </Link>
                   <Link href="/menu" className="btn btn-s">
-                    Guarda i {PRIMI.length + SECONDI.length} piatti
+                    Guarda i {PRIMI.length + SECONDI.length} elementi
                     <span className="dot" aria-hidden="true">
                       &#8599;
                     </span>

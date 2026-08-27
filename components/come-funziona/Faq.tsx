@@ -31,12 +31,18 @@ const CSS = `
 
 .cf-t{
   flex:1; margin:0;
-  font-family:var(--font-ui); font-size:17.5px; line-height:1.34; color:#fff;
+  font-family:var(--font-ui); font-size:17.5px; line-height:1.34; color:var(--color-ink);
   font-variation-settings:"wdth" 104, "wght" 600;
   letter-spacing:-.005em;
-  transition:color .4s var(--e-out);
+  transition:text-decoration-color .4s var(--e-out);
+  text-decoration-line:underline;
+  text-decoration-color:transparent;
+  text-underline-offset:4px;
+  text-decoration-thickness:2px;
 }
-.cf-q > summary:hover .cf-t{ color:var(--color-lime); }
+/* Il lime resta una sottolineatura, mai il colore del testo: come testo su
+   fondo chiaro il lime e' indistinguibile dalla carta (1.00:1 misurato). */
+.cf-q > summary:hover .cf-t{ text-decoration-color:var(--color-lime); }
 
 .cf-x{
   position:relative; flex:0 0 auto; margin-top:1px;
@@ -59,7 +65,7 @@ const CSS = `
   font-size:15.5px; line-height:1.68; color:var(--color-ink);
   animation:cf-apri .5s var(--e-out) both;
 }
-.cf-a strong{ color:#fff; font-variation-settings:"wght" 650; }
+.cf-a strong{ color:var(--color-ink); font-variation-settings:"wght" 650; }
 /* sotto prefers-reduced-motion globals.css azzera gia la durata */
 @keyframes cf-apri{ from{ opacity:0; transform:translateY(-9px); } to{ opacity:1; transform:none; } }
 
