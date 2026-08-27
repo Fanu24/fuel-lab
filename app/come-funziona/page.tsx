@@ -293,7 +293,7 @@ export default function ComeFunziona() {
               <h1 className="h1">
                 <Rise i={0}>Fresco vuol dire</Rise>
                 <Rise i={1}>
-                  <span className="hl">che scade.</span>
+                  <span className="hl hl-on"><i className="hl-bar" aria-hidden="true" /><span className="hl-tx">che scade.</span></span>
                 </Rise>
               </h1>
 
@@ -319,7 +319,13 @@ export default function ComeFunziona() {
                 figura larga quanto il .wrap, inclinata, uscirebbe dal viewport. */}
             <Reveal delay={300} className="relative">
               <figure className="shell lg:rotate-[-2.4deg]">
-                <div className="core relative aspect-[4/5]">
+                {/* on-ink: la meta' bassa di questa figura e' coperta da una
+                    velatura quasi nera, e li' dentro .note con --color-muted
+                    valeva 1.58:1 misurato sui pixel veri del rendering, cioe'
+                    una didascalia invisibile. .on-ink e' la marcatura prevista
+                    dal foglio di stile per le zone scure: porta .note su
+                    --color-mink, 6.74:1 sull'inchiostro. */}
+                <div className="core on-ink relative aspect-[4/5]">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={foto("photo-1518843875459-f738682238a6", 900)}
@@ -331,9 +337,21 @@ export default function ComeFunziona() {
                   <div
                     aria-hidden="true"
                     className="absolute inset-0"
-                    style={{ background: "linear-gradient(180deg, transparent 42%, rgba(6,23,16,.82))" }}
+                    style={{ background: "linear-gradient(180deg, transparent 42%, rgba(6,23,16,.9))" }}
                   />
-                  <figcaption className="note absolute right-6 bottom-6 left-6">
+                  {/* text-white e non --color-mink: il mink e' tarato sull'inchiostro
+                      pieno (6.74:1), ma qui sotto c'e' una FOTO, e sul verde della
+                      verdura misurato coi pixel il mink scendeva a 4.23:1. Sopra
+                      un fondo che non si controlla si usa il bianco. */}
+                  {/* lg:bottom-20 e non bottom-6: da lg il cartellino lime esce
+                      dall'angolo in basso a sinistra della figura (lg:-bottom-10
+                      lg:-left-9) e a bottom-6 ci finiva SOPRA la didascalia. Nel
+                      browser: cartellino 745..989 x 804..902, didascalia
+                      827..1300 x 800..836, cioe' i primi 162px di testo coperti
+                      - a video si leggeva solo "...RADI. MAI A MENO 18.".
+                      Misurato, non dedotto. Sotto lg il cartellino e' statico
+                      (mt-6, sotto la figura) e bottom-6 va benissimo. */}
+                  <figcaption className="note absolute right-6 bottom-6 left-6 text-white lg:bottom-20">
                     Abbattuto a piu 3 gradi. Mai a meno 18.
                   </figcaption>
                 </div>
@@ -455,7 +473,15 @@ export default function ComeFunziona() {
                         // Cosi' l'accento resta su 3 cifre su 4 come nel disegno
                         // originale, invece di spegnersi su tutte e quattro.
                         color: "var(--color-ink)",
-                        WebkitTextStroke: p.vuoto ? undefined : "1.5px var(--color-lime)",
+                        // 2px e non 1.5px: guardato nel browser a 102px affiancando
+                        // le quattro varianti (1.5 / 2 / 2.5 / 3). A 1.5px il lime
+                        // non legge come un contorno voluto, sembra una sbavatura di
+                        // stampa; a 2.5px comincia a chiudere la barra del "1" e il
+                        // taglio dello zero. 2px e' il punto in cui si vede che e'
+                        // una scelta. Resta assoluto e non in em di proposito: la
+                        // cifra scende a 56px sul telefono e un contorno in em li'
+                        // si assottiglierebbe fino a sparire.
+                        WebkitTextStroke: p.vuoto ? undefined : "2px var(--color-lime)",
                       }}
                     >
                       {p.n}

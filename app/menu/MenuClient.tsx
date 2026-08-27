@@ -139,7 +139,9 @@ function Riepilogo({
       ) : (
         <>
           <b className="text-[15px] font-normal text-ink">{primi}</b> primi su {PRIMI.length}
-          <span aria-hidden="true" className="mx-2 opacity-50">
+          {/* niente opacity qui: su muted valeva 2.10:1 su bianco, misurato nel
+              browser. Il separatore e' gia' leggero di suo a 10.5px. */}
+          <span aria-hidden="true" className="mx-2">
             &middot;
           </span>
           <b className="text-[15px] font-normal text-ink">{secondi}</b> secondi su {SECONDI.length}
@@ -280,7 +282,7 @@ export default function MenuClient() {
                   {PRIMI.length} primi, {SECONDI.length} secondi,
                 </Rise>
                 <Rise i={1}>
-                  <span className="hl">componi il pasto.</span>
+                  <span className="hl hl-on"><i className="hl-bar" aria-hidden="true" /><span className="hl-tx">componi il pasto.</span></span>
                 </Rise>
               </h1>
               <p className="lead mt-9">
@@ -469,7 +471,7 @@ export default function MenuClient() {
                     occhiello="Primi · le basi"
                     titolo={
                       <>
-                        La base <span className="hl">glucidica.</span>
+                        La base <span className="hl hl-on"><i className="hl-bar" aria-hidden="true" /><span className="hl-tx">glucidica.</span></span>
                       </>
                     }
                     testo="Carboidrati e verdura: la parte del pasto che rifornisce l'allenamento."
@@ -505,7 +507,7 @@ export default function MenuClient() {
                     occhiello="Secondi · le proteine"
                     titolo={
                       <>
-                        Proteina e <span className="hl">sostanza.</span>
+                        Proteina e <span className="hl hl-on"><i className="hl-bar" aria-hidden="true" /><span className="hl-tx">sostanza.</span></span>
                       </>
                     }
                     testo="Carne, pesce o alternative vegetali: la parte del pasto che ricostruisce."
@@ -573,7 +575,7 @@ export default function MenuClient() {
               occhiello="Extra"
               titolo={
                 <>
-                  Il di piu, <span className="hl">se serve.</span>
+                  Il di piu, <span className="hl hl-on"><i className="hl-bar" aria-hidden="true" /><span className="hl-tx">se serve.</span></span>
                 </>
               }
               testo={`${EXTRA.length} aggiunte per completare il pasto, sempre a catalogo.`}

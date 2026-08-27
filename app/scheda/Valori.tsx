@@ -182,7 +182,10 @@ export default function Valori({
                   <div key={c}>
                     <label htmlFor={"campo-" + c} className="bar-l mb-[10px] block">
                       {LIMITI[c].label}{" "}
-                      <span className="font-normal tracking-normal normal-case opacity-55">
+                      {/* text-muted (5.66:1 su card) al posto di opacity-55, che
+                          sull'inchiostro faceva 3.49:1: stessa gerarchia, colore
+                          della palette invece di un composito non governato. */}
+                      <span className="font-normal tracking-normal normal-case text-muted">
                         ({LIMITI[c].unita})
                       </span>
                     </label>
@@ -402,7 +405,7 @@ export default function Valori({
                       className="font-mono text-[14px] text-ink"
                       style={{ fontVariationSettings: '"wdth" 84' }}
                     >
-                      {numeriOk ? r.v : "—"} <em className="not-italic opacity-45">{r.u}</em>
+                      {numeriOk ? r.v : "—"} <em className="not-italic text-muted">{r.u}</em>
                     </span>
                   </li>
                 ))}

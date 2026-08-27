@@ -466,10 +466,16 @@ function RigaScelta({
     >
       <span className="min-w-0 flex-1">
         <span className="block text-[13.5px] leading-tight font-bold">{nome}</span>
-        <span className="mono mt-1.5 block text-[10px] font-medium text-muted">{dettaglio}</span>
+        {/* Non text-muted: queste due righe stanno dentro la scocca, e muted su
+            tray misura 4.45:1, sotto AA - e' il confine che globals.css dichiara
+            in cima al foglio ("il testo secondario non va MAI sul guscio").
+            A 10px e 9.5px il margine non c'e': vanno a inchiostro, 12.00:1 su
+            cell e 12.61:1 sul lime della riga scelta. La gerarchia con il nome
+            la fanno gia' corpo e peso, non serve spegnere il colore. */}
+        <span className="mono mt-1.5 block text-[10px] font-medium text-ink">{dettaglio}</span>
         {/* Allergeni sempre in chiaro, anche quando non ce ne sono: e' un obbligo
             di legge, e "nessuno dichiarato" e' un dato, non un buco. */}
-        <span className="mono mt-1 block text-[9.5px] font-medium tracking-[.12em] text-muted uppercase">
+        <span className="mono mt-1 block text-[9.5px] font-medium tracking-[.12em] text-ink uppercase">
           Allergeni: {allergeni.length > 0 ? allergeni.join(", ") : "nessuno dichiarato"}
         </span>
       </span>

@@ -441,7 +441,7 @@ export default function RichiestaClient() {
           <h1 className="h1 max-w-[19ch]">
             <Rise i={0}>Due minuti di form,</Rise>
             <Rise i={1}>
-              <span className="hl">poi parli con Matteo.</span>
+              <span className="hl hl-on"><i className="hl-bar" aria-hidden="true" /><span className="hl-tx">poi parli con Matteo.</span></span>
             </Rise>
           </h1>
           <p className="lead mt-7">

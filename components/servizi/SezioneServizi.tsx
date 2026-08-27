@@ -141,27 +141,37 @@ function LinkServizio({ servizio }: { servizio: Servizio }) {
   );
 }
 
-export default function SezioneServizi() {
+/**
+ * `conTestata` esiste per una ragione vista a video, non teorica: in /servizi
+ * la testata della pagina dice gia' "Tre modi di mangiare bene." con il suo
+ * occhiello e il suo lead, e seicento pixel piu' sotto questa sezione ripeteva
+ * lo STESSO titolo con un lead quasi identico. Due volte lo stesso annuncio di
+ * fila, con in mezzo solo aria. In home invece la sezione arriva in mezzo ad
+ * altro e la sua testata serve: li' resta accesa (e' il valore predefinito).
+ */
+export default function SezioneServizi({ conTestata = true }: { conTestata?: boolean }) {
   const menu = getServizio("menu-settimana");
   const macro = getServizio("sui-tuoi-macro");
   const homeCooking = getServizio("home-cooking");
 
   return (
-    <section className="py-[110px] md:py-[150px]">
+    <section className={conTestata ? "py-[110px] md:py-[150px]" : "pb-[110px] md:pb-[150px]"}>
       <div className="wrap">
-        <Reveal>
-          <SectionHead
-            occhiello="I nostri servizi"
-            titolo={
-              <>
-                Tre modi
-                <br />
-                di mangiare bene.
-              </>
-            }
-            testo="Il menu gia' pronto, il piano sui macro della tua scheda, oppure Matteo che cucina dentro casa tua. Il prezzo esatto lo definiamo insieme su WhatsApp."
-          />
-        </Reveal>
+        {conTestata ? (
+          <Reveal>
+            <SectionHead
+              occhiello="I nostri servizi"
+              titolo={
+                <>
+                  Tre modi
+                  <br />
+                  di mangiare bene.
+                </>
+              }
+              testo="Il menu gia' pronto, il piano sui macro della tua scheda, oppure Matteo che cucina dentro casa tua. Il prezzo esatto lo definiamo insieme su WhatsApp."
+            />
+          </Reveal>
+        ) : null}
 
         <div className="grid gap-6 md:grid-cols-12">
           {/* ---------------- 01: il menu della settimana ---------------- */}

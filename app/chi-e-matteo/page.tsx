@@ -157,7 +157,7 @@ export default function ChiEMatteo() {
               <h1 className="h1">
                 <Rise i={0}>Matteo</Rise>
                 <Rise i={1}>
-                  <span className="hl">Pantane.</span>
+                  <span className="hl hl-on"><i className="hl-bar" aria-hidden="true" /><span className="hl-tx">Pantane.</span></span>
                 </Rise>
               </h1>
 

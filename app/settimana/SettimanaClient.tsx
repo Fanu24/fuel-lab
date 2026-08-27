@@ -251,7 +251,7 @@ export default function SettimanaClient() {
           <h1 className="h1">
             <Rise i={0}>Sette giorni,</Rise>
             <Rise i={1}>
-              <span className="hl">quattordici caselle.</span>
+              <span className="hl hl-on"><i className="hl-bar" aria-hidden="true" /><span className="hl-tx">quattordici caselle.</span></span>
             </Rise>
           </h1>
 

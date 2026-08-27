@@ -279,7 +279,14 @@
   }
 
   /* Evidenziatore lime: e l'unico modo in cui il lime tocca del testo,
-     perche il testo resta inchiostro e il lime sta dietro. */
+     perche il testo resta inchiostro e il lime sta dietro.
+
+     .hl DA SOLA NON DISEGNA NIENTE. Serve la struttura completa:
+       <span class="hl hl-on"><i class="hl-bar"/><span class="hl-tx">…</span></span>
+     Senza i due figli la classe aggiunge solo un position:relative e il lime
+     non compare: verificato nel browser, dove dieci titoli su undici avevano
+     class="hl" e zero evidenziatori a video. Il bar si accende con .hl-on
+     (statico) oppure con un antenato .in, cioe' dentro un <Reveal>. */
   .hl {
     position: relative;
     display: inline-block;

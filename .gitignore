@@ -43,3 +43,6 @@ next-env.d.ts
 
 # brainstorming visivo (mockup e screenshot di lavoro)
 .superpowers/
+
+# screenshot prodotti da scripts/verifica.mjs --scatti
+.verifica-scatti/

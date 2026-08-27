@@ -12,10 +12,10 @@ export const metadata: Metadata = {
 /**
  * Pagina /servizi: una piccola testata editoriale (coerente con le altre rotte
  * del sito, vedi app/come-funziona e app/chi-e-matteo) seguita dalla sezione
- * riusabile SezioneServizi, che porta gia' con se' la propria intestazione
- * "I nostri servizi". Il Task 12a importera' lo stesso componente in home:
- * questa pagina non duplica nessuna delle sue interfacce, si limita a
- * montarla dentro una rotta dedicata.
+ * riusabile SezioneServizi, montata SENZA la sua intestazione: quella dice
+ * "Tre modi di mangiare bene." esattamente come l'h1 qui sopra, e a video
+ * le due comparivano una dopo l'altra separate solo da spazio vuoto. In
+ * home la stessa sezione tiene la sua testata, perche' li' serve davvero.
  */
 export default function Servizi() {
   return (
@@ -28,7 +28,7 @@ export default function Servizi() {
           <h1 className="h1 max-w-[17ch]">
             <Rise i={0}>Tre modi</Rise>
             <Rise i={1}>
-              <span className="hl">di mangiare bene.</span>
+              <span className="hl hl-on"><i className="hl-bar" aria-hidden="true" /><span className="hl-tx">di mangiare bene.</span></span>
             </Rise>
           </h1>
 
@@ -45,7 +45,7 @@ export default function Servizi() {
         </div>
       </section>
 
-      <SezioneServizi />
+      <SezioneServizi conTestata={false} />
     </>
   );
 }

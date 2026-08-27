@@ -447,7 +447,10 @@ function Tappe({ fase }: { fase: Fase }) {
                 transition: "background-color .5s var(--e-out), color .5s var(--e-out)",
               }}
             >
-              <b className="font-normal opacity-60">{fatta ? "✓" : i + 1}</b>
+              {/* Senza opacita': a .6 il numero faceva 2.36:1 sul passo futuro e
+                  3.85:1 su quello corrente. Il numero della tappa e' contenuto,
+                  e la gerarchia con l'etichetta la fa gia' il peso del carattere. */}
+              <b className="font-normal">{fatta ? "✓" : i + 1}</b>
               {t.label}
             </span>
             {i < TAPPE.length - 1 ? (
@@ -532,7 +535,7 @@ export default function SchedaClient() {
           <h1 className="h1 max-w-[15ch]">
             <Rise i={0}>La tua scheda</Rise>
             <Rise i={1}>
-              diventa <span className="hl">il tuo menu.</span>
+              diventa <span className="hl hl-on"><i className="hl-bar" aria-hidden="true" /><span className="hl-tx">il tuo menu.</span></span>
             </Rise>
           </h1>
           <div className="mt-11 flex flex-wrap items-end justify-between gap-x-12 gap-y-9">
