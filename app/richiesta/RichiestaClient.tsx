@@ -125,13 +125,53 @@ function senzaSaluto(testo: string): string {
 }
 
 /**
+ * Toglie l'ultima domanda di chiusura da un testo, se il testo finisce con
+ * "?". Serve ad applicare la STESSA deduplicazione sia al corpo del
+ * servizio sia al corpo della settimana, invece di sapere a memoria che
+ * "Mi dici come possiamo organizzarci?" e' la chiusura di messaggioPiano():
+ * quel taglio specifico e' esattamente il difetto trovato in revisione —
+ * funzionava solo perche' cercava una stringa fissa, e non vedeva che
+ * TESTI_SERVIZIO["sui-tuoi-macro"] chiude anche lui con una domanda propria
+ * ("...mi dici come funziona e come partire?"), lasciando due punti
+ * interrogativi nello stesso messaggio.
+ *
+ * Cerca un confine STRUTTURALE, non una frase:
+ * 1. se il testo ha un'interruzione di paragrafo (una riga vuota, come fra
+ *    i blocchi di messaggioPiano) e l'ultimo paragrafo e' - da solo, senza
+ *    altre righe dentro - una domanda, toglie quel paragrafo intero;
+ * 2. altrimenti (un solo paragrafo, come i testi di messaggioServizio) e la
+ *    domanda e' agganciata al resto con un connettivo (": ", come in
+ *    "...servizio Sui tuoi macro): mi dici come funziona..."), tiene la
+ *    frase fino al connettivo e toglie solo la domanda;
+ * 3. se non trova nessuno dei due confini, il testo intero E' la domanda:
+ *    non c'e' contesto da salvare, e torna vuoto — un blocco perso e'
+ *    meglio di due punti interrogativi nello stesso messaggio.
+ */
+function senzaDomandaFinale(testo: string): string {
+  const t = testo.trim();
+  if (!t.endsWith("?")) return t;
+
+  const paragrafi = t.split(/\n{2,}/);
+  const ultimo = paragrafi[paragrafi.length - 1];
+  if (paragrafi.length > 1 && !ultimo.includes("\n")) {
+    return paragrafi.slice(0, -1).join("\n\n").trim();
+  }
+
+  const confine = t.lastIndexOf(": ");
+  if (confine !== -1) return t.slice(0, confine).trim();
+
+  return "";
+}
+
+/**
  * Il messaggio unico che Matteo legge sul telefono: un saluto solo (col
  * nome, se c'e'), il contesto del servizio da messaggioServizio(), la
- * settimana composta quando il servizio la richiede (da messaggioPiano(),
- * senza il suo saluto e senza la sua domanda di chiusura, che qui
- * diventerebbe una domanda duplicata), poi comune e telefono — che
- * lib/whatsapp.ts non conosce, li ha raccolti solo questo form — la nota
- * libera se c'e', e una sola domanda finale.
+ * settimana composta quando il servizio la richiede (da messaggioPiano()),
+ * poi comune e telefono — che lib/whatsapp.ts non conosce, li ha raccolti
+ * solo questo form — la nota libera se c'e', e una sola domanda finale.
+ * Entrambi i testi che vengono da lib/whatsapp.ts passano da
+ * senzaDomandaFinale(): ognuno dei due puo', per conto suo, gia' chiudere
+ * con una domanda, e questa pagina ne aggiunge sempre esattamente una.
  */
 function componiMessaggio(args: {
   servizio: Servizio;
@@ -145,13 +185,11 @@ function componiMessaggio(args: {
 
   const blocchi: string[] = [nome ? `Ciao Matteo, sono ${nome}!` : "Ciao Matteo!"];
 
-  const corpoServizio = senzaSaluto(messaggioServizio(servizio.id));
+  const corpoServizio = senzaDomandaFinale(senzaSaluto(messaggioServizio(servizio.id)));
   if (corpoServizio) blocchi.push(corpoServizio);
 
   if (richiedePiano) {
-    const corpoPiano = senzaSaluto(messaggioPiano(piano, macro))
-      .replace(/\n*Mi dici come possiamo organizzarci\?\s*$/, "")
-      .trim();
+    const corpoPiano = senzaDomandaFinale(senzaSaluto(messaggioPiano(piano, macro)));
     if (corpoPiano) blocchi.push(corpoPiano);
   }
 
