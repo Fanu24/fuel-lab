@@ -139,3 +139,140 @@ export function messaggioPiano(p: Piano, macro: Macros, nome?: string): string {
 
   return blocchi.join("\n");
 }
+
+/* =========================================================================
+   componiMessaggio — dove il servizio e la settimana diventano un unico
+   messaggio.
+
+   messaggioServizio() e messaggioPiano() qui sopra sono separate e nessuna
+   delle due sa dell'altra. Comporle in un testo con un saluto solo, non due
+   messaggi incollati, e' il lavoro di componiMessaggio() e delle sue due
+   funzioni di supporto qui sotto.
+   ========================================================================= */
+
+/** I quattro dati che il form di richiesta raccoglie e che messaggioServizio()
+ *  e messaggioPiano() non conoscono: le raccoglie solo chi chiama
+ *  componiMessaggio(). Campo vuoto ("") quando non c'e' un valore, mai assente. */
+export interface DatiContatto {
+  nome: string;
+  telefono: string;
+  comune: string;
+  note: string;
+}
+
+/**
+ * Toglie il saluto iniziale ("Ciao Matteo!" o "Ciao Matteo, sono X!") da un
+ * testo prodotto da messaggioServizio() o messaggioPiano(). Serve perche'
+ * componiMessaggio() (piu' sotto) saluta una volta sola: unire i due testi
+ * senza questo passaggio produrrebbe due "Ciao Matteo" nello stesso
+ * messaggio — due testi appiccicati, non un messaggio unico.
+ *
+ * Il punto delicato e' fermarsi al primo "!", non a fine riga: in
+ * messaggioServizio() il saluto NON sta su una riga propria (e' seguito
+ * dal resto della frase sulla stessa riga, es. "Ciao Matteo! Ho visto..."),
+ * mentre in messaggioPiano() il saluto e' un blocco a se', seguito da un
+ * "\n". Un `[^\n]*` si sarebbe fermato solo a fine riga: nel primo caso
+ * avrebbe mangiato l'intero messaggio del servizio, lasciando un blocco
+ * vuoto. `[^!]*!` si ferma al primo punto esclamativo in entrambi i casi.
+ * Se il testo non comincia con un saluto riconoscibile (l'implementazione
+ * di messaggioServizio()/messaggioPiano() e' cambiata sotto i piedi) lo
+ * lascia intatto: un saluto ripetuto e' un difetto piccolo, un pezzo di
+ * messaggio perso no.
+ */
+export function senzaSaluto(testo: string): string {
+  return testo.replace(/^Ciao Matteo(, sono [^!]*)?!\s*/, "").trim();
+}
+
+/**
+ * Toglie l'ultima domanda di chiusura da un testo, se il testo finisce con
+ * "?". Serve ad applicare la STESSA deduplicazione sia al corpo del
+ * servizio sia al corpo della settimana, invece di sapere a memoria che
+ * "Mi dici come possiamo organizzarci?" e' la chiusura di messaggioPiano():
+ * quel taglio specifico e' esattamente il difetto trovato in revisione —
+ * funzionava solo perche' cercava una stringa fissa, e non vedeva che
+ * TESTI_SERVIZIO["sui-tuoi-macro"] chiude anche lui con una domanda propria
+ * ("...mi dici come funziona e come partire?"), lasciando due punti
+ * interrogativi nello stesso messaggio.
+ *
+ * Cerca un confine STRUTTURALE, non una frase:
+ * 1. se il testo ha un'interruzione di paragrafo (una riga vuota, come fra
+ *    i blocchi di messaggioPiano) e l'ultimo paragrafo e' - da solo, senza
+ *    altre righe dentro - una domanda, toglie quel paragrafo intero;
+ * 2. altrimenti (un solo paragrafo, come i testi di messaggioServizio) e la
+ *    domanda e' agganciata al resto con un connettivo (": ", come in
+ *    "...servizio Sui tuoi macro): mi dici come funziona..."), tiene la
+ *    frase fino al connettivo e toglie solo la domanda;
+ * 3. se non trova nessuno dei due confini, il testo intero E' la domanda:
+ *    non c'e' contesto da salvare, e torna vuoto — un blocco perso e'
+ *    meglio di due punti interrogativi nello stesso messaggio.
+ */
+export function senzaDomandaFinale(testo: string): string {
+  const t = testo.trim();
+  if (!t.endsWith("?")) return t;
+
+  const paragrafi = t.split(/\n{2,}/);
+  const ultimo = paragrafi[paragrafi.length - 1];
+  if (paragrafi.length > 1 && !ultimo.includes("\n")) {
+    return paragrafi.slice(0, -1).join("\n\n").trim();
+  }
+
+  const confine = t.lastIndexOf(": ");
+  if (confine !== -1) return t.slice(0, confine).trim();
+
+  return "";
+}
+
+/**
+ * Il messaggio unico che Matteo legge sul telefono: un saluto solo (col
+ * nome, se c'e'), il contesto del servizio da messaggioServizio(), la
+ * settimana composta quando il servizio la richiede (da messaggioPiano()),
+ * poi comune e telefono — che messaggioServizio() e messaggioPiano() non
+ * conoscono, li raccoglie solo il form di chi chiama questa funzione — la
+ * nota libera se c'e', e una sola domanda finale. Entrambi i testi che
+ * vengono da messaggioServizio() e messaggioPiano() passano da
+ * senzaDomandaFinale(): ognuno dei due puo', per conto suo, gia' chiudere
+ * con una domanda, e componiMessaggio() ne aggiunge sempre esattamente una.
+ *
+ * `servizioId` e' una stringa, non l'union ServizioId di lib/servizi.ts: e'
+ * lo stesso principio di messaggioServizio() qui sopra, per lo stesso
+ * motivo — questo modulo non dipende da quale altro file definisce i
+ * servizi, quindi un id ignoto ottiene comunque un messaggio sensato invece
+ * di un errore.
+ */
+export function componiMessaggio(args: {
+  servizioId: string;
+  richiedePiano: boolean;
+  piano: Piano;
+  macro: Macros;
+  contatto: DatiContatto;
+}): string {
+  const { servizioId, richiedePiano, piano, macro, contatto } = args;
+  const nome = contatto.nome.trim();
+
+  const blocchi: string[] = [nome ? `Ciao Matteo, sono ${nome}!` : "Ciao Matteo!"];
+
+  const corpoServizio = senzaDomandaFinale(senzaSaluto(messaggioServizio(servizioId)));
+  if (corpoServizio) blocchi.push(corpoServizio);
+
+  if (richiedePiano) {
+    const corpoPiano = senzaDomandaFinale(senzaSaluto(messaggioPiano(piano, macro)));
+    if (corpoPiano) blocchi.push(corpoPiano);
+  }
+
+  const comune = contatto.comune.trim();
+  const telefono = contatto.telefono.trim();
+  const contattoTesto = [
+    comune ? `Sono di ${comune}.` : "",
+    telefono ? `Il mio numero e' ${telefono}.` : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+  if (contattoTesto) blocchi.push(contattoTesto);
+
+  const note = contatto.note.trim();
+  if (note) blocchi.push(note);
+
+  blocchi.push("Mi dici come possiamo organizzarci?");
+
+  return blocchi.join("\n\n");
+}
