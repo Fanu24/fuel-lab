@@ -2,7 +2,6 @@ import Link from "next/link";
 import Reveal from "@/components/Reveal";
 import { SectionHead } from "@/components/ui";
 import { getServizio, type Prezzo, type Servizio } from "@/lib/servizi";
-import { linkWhatsApp, messaggioServizio } from "@/lib/whatsapp";
 
 /* =========================================================================
    Sezione "I nostri servizi": componente riusabile, montato dalla pagina
@@ -81,44 +80,38 @@ function PrezzoServizio({ prezzo, scuro = false }: { prezzo: Prezzo; scuro?: boo
 }
 
 /**
- * CTA WhatsApp del singolo servizio. Il caso normale in questa fase e' che
- * il numero non sia ancora configurato (vedi lib/whatsapp.ts): il bottone
- * resta visibile ma disabilitato, con una spiegazione scritta e non solo
- * un title al passaggio del mouse, che su touch nessuno vede mai. Mai un
- * href verso "wa.me/" senza numero: un cliente che ci clicca sopra pensa
- * che il servizio sia rotto.
+ * CTA del singolo servizio. Punta a /richiesta?servizio={id} - il modulo che
+ * raccoglie nome, telefono e comune prima di aprire WhatsApp con un
+ * riepilogo - non piu' direttamente a "wa.me/" (difetto Critical corretto in
+ * revisione: le CTA saltavano il modulo, e senza modulo non si raccoglie
+ * nessun contatto per la dashboard della Fase B). /richiesta legge
+ * "servizio" gia' da sola: vedi servizioDaParam() in
+ * app/richiesta/RichiestaClient.tsx.
+ *
+ * E' un link interno, quindi funziona sempre: a differenza del vecchio
+ * bottone verso WhatsApp, non dipende piu' da NEXT_PUBLIC_WHATSAPP e non va
+ * piu' disabilitato quando il numero non e' ancora configurato (lo stato
+ * normale di questa fase). L'unico bottone che resta disabilitato in quel
+ * caso e' "Apri WhatsApp" dentro /richiesta stessa, perche' li' serve
+ * davvero il numero.
+ *
+ * aria-label distinto per servizio: senza, tre link nella stessa sezione si
+ * chiamerebbero tutti "Scrivi a Matteo" e chi naviga per elenco di link non
+ * saprebbe quale sceglie (stesso difetto, stessa correzione, del bottone
+ * "Aggiungi" in components/ElementCard.tsx).
  */
-function CtaServizio({ servizio, scuro = false }: { servizio: Servizio; scuro?: boolean }) {
-  const href = linkWhatsApp(messaggioServizio(servizio.id));
-
-  if (!href) {
-    return (
-      <div>
-        <button
-          type="button"
-          className="btn btn-p btn-sm"
-          disabled
-          title="Numero WhatsApp non ancora configurato"
-        >
-          Scrivici su WhatsApp
-          <span className="dot" aria-hidden="true">
-            ↗
-          </span>
-        </button>
-        <p className="note mt-3 max-w-[30ch]" style={scuro ? { color: SU_LIME } : undefined}>
-          Numero WhatsApp non ancora attivo: il bottone si accende appena e&apos; online.
-        </p>
-      </div>
-    );
-  }
-
+function CtaServizio({ servizio }: { servizio: Servizio }) {
   return (
-    <a href={href} target="_blank" rel="noopener noreferrer" className="btn btn-p btn-sm">
-      Scrivici su WhatsApp
+    <Link
+      href={`/richiesta?servizio=${servizio.id}`}
+      className="btn btn-p btn-sm"
+      aria-label={`Scrivi a Matteo per ${servizio.nome}`}
+    >
+      Scrivi a Matteo
       <span className="dot" aria-hidden="true">
-        ↗
+        →
       </span>
-    </a>
+    </Link>
   );
 }
 
@@ -129,10 +122,17 @@ function CtaServizio({ servizio, scuro = false }: { servizio: Servizio; scuro?: 
  * non contiene ancora una spiegazione del servizio home cooking. Il link resta un
  * posizionamento deliberato ("conosci Matteo prima di farlo entrare in casa tua"), non una
  * promessa di approfondimento che la pagina di destinazione non mantiene.
+ *
+ * aria-label distinto per lo stesso motivo di CtaServizio qui sopra: tre
+ * "Scopri di piu'" identici non si distinguono a chi naviga per elenco di link.
  */
 function LinkServizio({ servizio }: { servizio: Servizio }) {
   return (
-    <Link href={servizio.href} className="btn btn-s btn-sm">
+    <Link
+      href={servizio.href}
+      className="btn btn-s btn-sm"
+      aria-label={`Scopri di piu': ${servizio.nome}`}
+    >
       Scopri di piu&apos;
       <span className="dot" aria-hidden="true">
         &#8594;
@@ -171,7 +171,15 @@ export default function SezioneServizi({ conTestata = true }: { conTestata?: boo
               testo="Il menu gia' pronto, il piano sui macro della tua scheda, oppure Matteo che cucina dentro casa tua. Il prezzo esatto lo definiamo insieme su WhatsApp."
             />
           </Reveal>
-        ) : null}
+        ) : (
+          // conTestata=false vuol dire niente SectionHead, quindi niente h2 in
+          // pagina: in /servizi il salto risultante era h1 -> tre h3 (uno per
+          // servizio), senza nessun livello in mezzo. Questo h2 lo rimette senza
+          // fare tornare la duplicazione che conTestata=false esiste per evitare
+          // (vedi il commento su conTestata piu' sotto): e' sr-only, quindi
+          // struttura per chi naviga a titoli, nessuna riga in piu' a video.
+          <h2 className="sr-only">I nostri servizi</h2>
+        )}
 
         <div className="grid gap-6 md:grid-cols-12">
           {/* ---------------- 01: il menu della settimana ---------------- */}
@@ -232,7 +240,7 @@ export default function SezioneServizi({ conTestata = true }: { conTestata?: boo
                 <div className="mt-10">
                   <PrezzoServizio prezzo={macro.prezzo} scuro />
                   <div className="mt-6 flex flex-wrap gap-3">
-                    <CtaServizio servizio={macro} scuro />
+                    <CtaServizio servizio={macro} />
                     <LinkServizio servizio={macro} />
                   </div>
                 </div>

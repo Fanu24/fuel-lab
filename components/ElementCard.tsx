@@ -35,6 +35,10 @@ export default function ElementCard({
 }) {
   const { metti, primaLibera, pronto } = usePiano();
   const [stato, setStato] = useState<Stato>("pronto");
+  // L'annuncio vive separato da `stato`: si scrive solo quando l'utente preme
+  // il bottone, mai quando `stato` torna da solo a "pronto" col timeout qui
+  // sotto. Vedi il commento sulla regione live piu' in basso per il perche'.
+  const [annuncio, setAnnuncio] = useState("");
   const riga = variante === "riga";
 
   // La conferma "Aggiunto" torna al bottone normale da sola: senza timeout
@@ -52,15 +56,29 @@ export default function ElementCard({
     const slot = primaLibera(elemento.categoria);
     if (!slot) {
       setStato("pieno");
+      setAnnuncio(`Settimana piena: non c'e' posto per ${elemento.nome}.`);
       return;
     }
     metti(slot.g, slot.m, elemento.categoria, elemento.id);
     setStato("aggiunto");
+    setAnnuncio(`${elemento.nome} aggiunto alla settimana.`);
   };
 
   const etichettaBottone =
     stato === "aggiunto" ? "Aggiunto" : stato === "pieno" ? "Settimana piena" : "Aggiungi";
   const puntinoBottone = stato === "aggiunto" ? "✓" : stato === "pieno" ? "!" : "+";
+  // Nome accessibile per esteso: su /menu ci sono 54 di questi bottoni dentro
+  // altrettanti <article>, e "Aggiungi" da solo li rende indistinguibili a chi
+  // naviga per elenco di bottoni invece che per pagina intera. Stessa
+  // invariante gia' scritta per CasellaBottone in
+  // components/settimana/CasellaBottone.tsx: l'etichetta racconta il bottone
+  // per intero, elemento compreso.
+  const etichettaAccessibile =
+    stato === "aggiunto"
+      ? `${elemento.nome} aggiunto alla settimana`
+      : stato === "pieno"
+        ? `Settimana piena, non e' stato possibile aggiungere ${elemento.nome}`
+        : `Aggiungi ${elemento.nome} alla settimana`;
 
   return (
     <article
@@ -111,18 +129,32 @@ export default function ElementCard({
           >
             <span className="note">{elemento.giorno === "lunedi" ? "cotto lun" : "cotto gio"}</span>
             {anteprima ? null : (
-              <button
-                type="button"
-                className="btn btn-s btn-sm"
-                onClick={aggiungi}
-                disabled={!pronto}
-                aria-live="polite"
-              >
-                {etichettaBottone}
-                <span className="dot" aria-hidden="true">
-                  {puntinoBottone}
+              <>
+                <button
+                  type="button"
+                  className="btn btn-s btn-sm"
+                  onClick={aggiungi}
+                  disabled={!pronto}
+                  aria-label={etichettaAccessibile}
+                >
+                  {etichettaBottone}
+                  <span className="dot" aria-hidden="true">
+                    {puntinoBottone}
+                  </span>
+                </button>
+                {/* Regione live separata dal bottone, non aria-live sul bottone
+                    stesso: l'`aria-live` era su un nodo il cui contenuto
+                    cambiava anche da solo, col timeout qui sopra, tornando da
+                    "Aggiunto" ad "Aggiungi" dopo 1800ms. Sul bottone quel
+                    ritorno veniva letto come un secondo annuncio - un evento
+                    che l'utente non ha causato, spacciato per un cambiamento
+                    di stato. Qui invece si scrive solo su un'azione vera
+                    (aggiungi(), sopra): il ritorno automatico non tocca
+                    `annuncio`, quindi non genera nessun secondo annuncio. */}
+                <span role="status" aria-live="polite" className="sr-only">
+                  {annuncio}
                 </span>
-              </button>
+              </>
             )}
           </div>
         </div>

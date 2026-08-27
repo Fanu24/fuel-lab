@@ -37,6 +37,12 @@ import type { Piano } from "@/lib/settimana";
       esiste due volte, nella griglia e nella card del giorno, con una sola
       delle due visibile alla volta.
 
+   4. LA SETTIMANA PORTA DA QUALCHE PARTE. "Richiedi questa settimana" e' la
+      CTA primaria della testata e porta a /richiesta: senza, la settimana
+      composta qui non arrivava mai a Matteo. Disabilitata a settimana vuota
+      (vedi il commento sul bottone), per lo stesso motivo per cui lo e' gia'
+      "Condividi col tuo nutrizionista".
+
    Sul link, in piu', una scelta di forma: la decisione NON e' stato. Il piano
    del link si ricava dalla query string a ogni render, e l'unica cosa che vale
    la pena ricordare e' la risposta dell'utente. Con la decisione in stato
@@ -271,9 +277,54 @@ export default function SettimanaClient() {
 
             <div>
               <div className="flex flex-wrap gap-3">
+                {/*
+                 * La CTA che manca nel difetto trovato in revisione: senza
+                 * questa, la settimana composta non porta da nessuna parte,
+                 * e /richiesta - il modulo che raccoglie nome, telefono e
+                 * comune prima di aprire WhatsApp - resta raggiungibile solo
+                 * digitando l'indirizzo a mano. E' primaria (btn-p) perche'
+                 * e' il vero traguardo della pagina: le altre due sono
+                 * strumenti per arrivare a una settimana, non l'arrivo.
+                 * "Condividi" scende quindi a secondaria (btn-s).
+                 *
+                 * Settimana vuota: bottone disabilitato con spiegazione, non
+                 * link che passa lo stesso. "Condividi col tuo nutrizionista"
+                 * qui accanto segue gia' questa regola (disabled quando
+                 * pasti === 0): un'altra CTA con la stessa condizione ma un
+                 * comportamento diverso sarebbe incoerente. E mandare a
+                 * /richiesta chi non ha ancora scelto niente produrrebbe un
+                 * messaggio a Matteo senza contenuto ("Non ho ancora scelto
+                 * nessun pasto"): esattamente il difetto che questa CTA
+                 * esiste per chiudere, spostato di una pagina invece che
+                 * corretto. Chi vuole l'home cooking - l'unico dei tre
+                 * servizi che non ha bisogno di nessuna settimana - lo
+                 * chiede da /servizi o dalla home, non da qui: questa pagina
+                 * e' la scheda del meal prep, non l'ingresso generale a
+                 * /richiesta.
+                 */}
+                {pronto && pasti > 0 ? (
+                  <Link href="/richiesta" className="btn btn-p">
+                    Richiedi questa settimana
+                    <span className="dot" aria-hidden="true">
+                      →
+                    </span>
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn btn-p"
+                    disabled
+                    title="Settimana vuota: prima riempi una casella"
+                  >
+                    Richiedi questa settimana
+                    <span className="dot" aria-hidden="true">
+                      →
+                    </span>
+                  </button>
+                )}
                 <button
                   type="button"
-                  className="btn btn-p"
+                  className="btn btn-s"
                   onClick={() => void condividi()}
                   disabled={!pronto || pasti === 0}
                   title={
