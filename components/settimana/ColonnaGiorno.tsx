@@ -8,7 +8,7 @@ import CasellaBottone, { NOMI_PASTO } from "./CasellaBottone";
 import type { ApriCasella, CasellaAperta } from "./CasellaBottone";
 
 /* =========================================================================
-   Il giorno come card: la vista sotto md.
+   Il giorno come card: la vista sotto lg.
 
    NON e' la griglia con lo scroll orizzontale. Una 7x2 a 390px darebbe colonne
    da 45px: i nomi dei piatti diventerebbero due lettere e un trattino, e la
@@ -17,7 +17,7 @@ import type { ApriCasella, CasellaAperta } from "./CasellaBottone";
    giorni per volta senza mai vedere la settimana, che e' l'unica cosa che
    questa pagina esiste per far vedere.
 
-   Quindi sotto md l'informazione cambia FORMA. L'asse orizzontale (i giorni)
+   Quindi sotto lg l'informazione cambia FORMA. L'asse orizzontale (i giorni)
    diventa verticale - una card per giorno, impilate - e dentro ogni card i due
    pasti tornano uno sotto l'altro con la larghezza piena: i nomi si leggono per
    intero, gli extra hanno il loro nome invece di un pallino, e i macro del
@@ -38,14 +38,16 @@ export default function ColonnaGiorno({
 
   return (
     <article className="shell">
-      <div className="core p-4">
+      <div className="core p-4 sm:p-6">
         <header
           className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 border-b pb-4"
           style={{ borderColor: "var(--hair-soft)" }}
         >
-          {/* .h3 scala su min(38px, 4.6vw): a 390px varrebbe 18px, cioe' meno
-              del testo dentro le caselle. Qui la misura la fissa la utility. */}
-          <h3 className="h3 text-[27px]">{NOMI_GIORNO[giorno]}</h3>
+          {/* .h3 scala su min(38px, 4.6vw): a 390px varrebbe 18px, cioe' meno del
+              testo dentro le caselle, e la misura va fissata a mano. Sopra i ~590px
+              quel motivo non esiste piu' - e questa pila adesso arriva fino a 1023 -
+              quindi al gradino sm il titolo torna della taglia della card. */}
+          <h3 className="h3 text-[27px] sm:text-[34px]">{NOMI_GIORNO[giorno]}</h3>
           <p className="mono text-[12px] font-bold">
             {Math.round(macro.kcal)}
             <span className="font-medium text-muted"> kcal</span>

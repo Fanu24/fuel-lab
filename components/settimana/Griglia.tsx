@@ -8,7 +8,7 @@ import CasellaBottone, { NOMI_PASTO } from "./CasellaBottone";
 import type { ApriCasella, CasellaAperta } from "./CasellaBottone";
 
 /* =========================================================================
-   La griglia: sette colonne per due righe, da md in su.
+   La griglia: sette colonne per due righe, da lg in su.
 
    E' la vista che rende la settimana una scheda di allenamento invece di un
    carrello: i giorni stanno uno accanto all'altro e sotto ogni colonna ci sono
@@ -16,7 +16,13 @@ import type { ApriCasella, CasellaAperta } from "./CasellaBottone";
    scarica e quale e' carica. Un elenco di quattordici righe direbbe le stesse
    cose e non farebbe vedere nessuna di queste.
 
-   Sotto md questo componente non esiste: non si comprime e non scorre di lato,
+   L'interruttore sta a lg e non a md perche' la larghezza di colonna e' l'unica
+   misura che conta: a 768px le sette colonne fanno 77,7px l'una, e sotto i 100px
+   una griglia settimanale non si legge - i nomi dei piatti vanno a capo quattro
+   volte e la riga dei macro sotto e' illeggibile a qualunque corpo. A 1024px la
+   colonna vale 107px, a 1280 ne vale 140: da li' in poi la griglia funziona.
+
+   Sotto lg questo componente non esiste: non si comprime e non scorre di lato,
    sparisce e al suo posto va ColonnaGiorno. Vedi il commento la' dentro.
    ========================================================================= */
 
@@ -30,17 +36,20 @@ export default function Griglia({
   const { casella, macroGiorno } = usePiano();
 
   return (
-    <div className="shell hidden md:block">
-      <div className="core p-4 lg:p-6">
+    <div className="shell hidden lg:block">
+      <div className="core p-4 xl:p-6">
         {/* Una sola griglia CSS per intestazioni, caselle e macro: le colonne
             restano allineate perche' sono le stesse, non tre griglie diverse
             che si somigliano. */}
-        <div className="grid grid-cols-[54px_repeat(7,minmax(0,1fr))] gap-1.5 lg:grid-cols-[76px_repeat(7,minmax(0,1fr))] lg:gap-2">
+        <div className="grid grid-cols-[54px_repeat(7,minmax(0,1fr))] gap-1.5 xl:grid-cols-[76px_repeat(7,minmax(0,1fr))] xl:gap-2">
           <span aria-hidden="true" />
+          {/* Nome per esteso e basta: l'abbreviazione serviva alla fascia stretta,
+              che adesso non vede piu' la griglia. "MERCOLEDI", il piu' lungo, misura
+              ~72px a 10.5px di Martian Mono stretto, e la colonna piu' stretta in cui
+              questa griglia esiste ne vale 107. */}
           {GIORNI.map((g) => (
             <span key={g} className="dayhead">
-              <span className="lg:hidden">{g}</span>
-              <span className="hidden lg:inline">{NOMI_GIORNO[g]}</span>
+              {NOMI_GIORNO[g]}
             </span>
           ))}
 
@@ -73,7 +82,7 @@ export default function Griglia({
                 className="mt-2 border-t px-1 pt-3"
                 style={{ borderColor: "var(--hair-soft)" }}
               >
-                <p className="mono text-[11px] leading-none font-bold lg:text-[12px]">
+                <p className="mono text-[11px] leading-none font-bold xl:text-[12px]">
                   {Math.round(macro.kcal)}
                   <span className="font-medium text-muted"> kcal</span>
                 </p>
@@ -83,7 +92,7 @@ export default function Griglia({
                   carboidrati={macro.carboidrati}
                   grassi={macro.grassi}
                 />
-                <p className="mono mt-2 text-[9px] leading-none font-medium text-muted lg:text-[9.5px]">
+                <p className="mono mt-2 text-[9px] leading-none font-medium text-muted xl:text-[9.5px]">
                   P{macro.proteine} C{macro.carboidrati} G{macro.grassi}
                 </p>
               </div>

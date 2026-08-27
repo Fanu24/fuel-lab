@@ -8,7 +8,7 @@ import type { Casella, GiornoSettimana, Pasto } from "@/lib/settimana";
 /* =========================================================================
    La casella: lo stesso bottone nelle due viste.
 
-   La griglia (da md in su) e la card del giorno (sotto md) sono due layout
+   La griglia (da lg in su) e la card del giorno (sotto lg) sono due layout
    diversi, non lo stesso layout a due larghezze - ma la casella dentro e' lo
    stesso oggetto e deve comportarsi allo stesso modo: stesso stato pieno/vuoto,
    stessa etichetta per chi legge con lo screen reader, stesso modo di aprire il
@@ -21,7 +21,10 @@ import type { Casella, GiornoSettimana, Pasto } from "@/lib/settimana";
    ========================================================================= */
 
 /** I due pasti in chiaro. Il dominio ha le sigle, l'interfaccia ha le parole. */
-export const NOMI_PASTO: Record<Pasto, string> = { pranzo: "Pranzo", cena: "Cena" };
+export const NOMI_PASTO: Record<Pasto, string> = {
+  pranzo: "Pranzo",
+  cena: "Cena",
+};
 
 export interface CasellaAperta {
   giorno: GiornoSettimana;
@@ -33,7 +36,11 @@ export interface CasellaAperta {
  * chiusura il focus deve tornare LI', non in cima alla pagina. Chi naviga da
  * tastiera altrimenti perde il posto a ogni casella riempita.
  */
-export type ApriCasella = (giorno: GiornoSettimana, pasto: Pasto, da: HTMLElement) => void;
+export type ApriCasella = (
+  giorno: GiornoSettimana,
+  pasto: Pasto,
+  da: HTMLElement,
+) => void;
 
 /** Gli oggetti veri dietro gli id. Gli id spariti dal catalogo si scartano. */
 function contenutoCasella(c: Casella | undefined): {
@@ -76,15 +83,23 @@ export default function CasellaBottone({
     : [
         primo ? `primo ${primo.nome}` : null,
         secondo ? `secondo ${secondo.nome}` : null,
-        extra.length > 0 ? `${extra.length} extra: ${extra.map((e) => e.nome).join(", ")}` : null,
+        extra.length > 0
+          ? `${extra.length} extra: ${extra.map((e) => e.nome).join(", ")}`
+          : null,
         `${macro.kcal} kcal. Modifica`,
       ]
         .filter((x): x is string => x !== null)
         .join(", ");
 
+  /*
+   * Due gradini di densita', uno per vista. La griglia esiste solo da lg, quindi
+   * il suo secondo gradino sta a xl (colonne da 140px) e non a lg, dove sarebbe
+   * codice morto. La card del giorno copre da 320 a 1023px, che e' un intervallo
+   * troppo largo per una misura sola: a sm prende piu' respiro.
+   */
   const forma = riga
-    ? "min-h-[92px] p-4"
-    : "min-h-[112px] p-2 lg:min-h-[132px] lg:p-3";
+    ? "min-h-[92px] p-4 sm:p-5"
+    : "min-h-[112px] p-2 xl:min-h-[132px] xl:p-3";
 
   return (
     <button
@@ -96,87 +111,121 @@ export default function CasellaBottone({
       aria-expanded={aperta}
       aria-label={`${NOMI_GIORNO[giorno]}, ${NOMI_PASTO[pasto].toLowerCase()}: ${dettaglio}`}
       onClick={(e) => onApri(giorno, pasto, e.currentTarget)}
-      className={`cell ${vuota ? "cell-empty" : "cell-full"} ${forma}`}
+      className="block w-full"
     >
-      {vuota ? (
-        <>
-          <span aria-hidden="true" className="text-[26px] leading-none font-light">
-            +
-          </span>
-          {riga ? (
-            // Sotto md c'e' la larghezza per dire cosa fa il bottone. Il colore
-            // lo eredita da .cell-empty: muted sulla casella (4.75:1) e ink sul
-            // lime del passaggio del mouse (12.61:1), corretti entrambi.
-            <span className="mt-2 text-[12px] font-semibold tracking-[.02em]">
-              Aggiungi {NOMI_PASTO[pasto].toLowerCase()}
-            </span>
-          ) : null}
-        </>
-      ) : riga ? (
-        <>
-          <span className="flex w-full items-start justify-between gap-3">
-            <span className="flex min-w-0 flex-col gap-1.5">
-              {primo ? <span className="cell-d text-[14px]">{primo.nome}</span> : null}
-              {secondo ? <span className="cell-d text-[14px]">{secondo.nome}</span> : null}
-            </span>
-            <span className="mono shrink-0 text-[11px] font-medium text-muted">
-              {macro.kcal} kcal
-            </span>
-          </span>
-          {extra.length > 0 ? (
-            <span className="mt-3 flex flex-wrap gap-1.5">
-              {extra.map((e) => (
-                <span key={e.id} className="chip">
-                  {e.nome}
-                </span>
-              ))}
-            </span>
-          ) : null}
-          <span className="mono mt-3 text-[10px] font-medium text-muted">
-            P {macro.proteine} · C {macro.carboidrati} · G {macro.grassi}
-          </span>
-        </>
-      ) : (
-        <>
-          {primo ? (
-            <span className="cell-d hyphens-auto break-words text-[11px] lg:text-[12.5px]">
-              {primo.nome}
-            </span>
-          ) : null}
-          {/* Casella di soli extra: senza questa riga sarebbe una casella piena
-              che sembra vuota, con un numero di kcal comparso dal niente. */}
-          {!primo && !secondo ? (
-            <span className="cell-d text-[11px] lg:text-[12.5px]">Solo extra</span>
-          ) : null}
-          {secondo ? (
+      {/*
+       * La veste sta su uno <span> e non sul <button>.
+       *
+       * globals.css azzera `button { background: none; color: inherit }` FUORI da
+       * ogni @layer, e il CSS non stratificato batte qualunque layer: su un
+       * <button> le classi .cell e .cell-empty, che vivono in @layer components,
+       * non arrivano mai. Misurato in Chrome: la casella vuota restava senza
+       * fondo e il suo "+" ereditava l'inchiostro invece del muted, e soprattutto
+       * `.cell-empty:hover { background: lime }` non scattava - cioe' l'unica
+       * affordance che dice che una casella si puo' riempire.
+       *
+       * Uno <span> quel reset non lo incontra, quindi il fondo, il colore, il
+       * passaggio a lime e l'ombra tornano a funzionare con le classi del sistema,
+       * senza duplicare qui nessun valore. Il bottone resta il bottone: sua
+       * l'etichetta, suo il focus, suo l'anello di :focus-visible, che gli sta
+       * intorno esatto perche' lo span lo riempie tutto.
+       */}
+      <span className={`cell ${vuota ? "cell-empty" : "cell-full"} ${forma}`}>
+        {vuota ? (
+          <>
             <span
-              className={`cell-d hyphens-auto break-words text-[11px] lg:text-[12.5px] ${
-                primo ? "mt-1.5 border-t pt-1.5" : ""
-              }`}
-              style={primo ? { borderColor: "var(--hair-soft)" } : undefined}
+              aria-hidden="true"
+              className="text-[26px] leading-none font-light"
             >
-              {secondo.nome}
+              +
             </span>
-          ) : null}
-          <span className="cell-k flex items-center justify-between gap-2">
-            <span>{macro.kcal} kcal</span>
+            {riga ? (
+              // Sotto lg c'e' la larghezza per dire cosa fa il bottone. Il colore
+              // lo eredita da .cell-empty: muted sulla casella (4.75:1) e ink sul
+              // lime del passaggio del mouse (12.61:1), corretti entrambi.
+              <span className="mt-2 text-[12px] font-semibold tracking-[.02em]">
+                Aggiungi {NOMI_PASTO[pasto].toLowerCase()}
+              </span>
+            ) : null}
+          </>
+        ) : riga ? (
+          <>
+            {/* justify-between su una card larga 900px metterebbe il nome del piatto
+              e le sue kcal a mezzo metro di distanza: da sm le kcal seguono il nome
+              invece di inseguire il bordo destro. */}
+            <span className="flex w-full items-start justify-between gap-3 sm:justify-start sm:gap-8">
+              <span className="flex min-w-0 flex-col gap-1.5">
+                {primo ? (
+                  <span className="cell-d text-[14px]">{primo.nome}</span>
+                ) : null}
+                {secondo ? (
+                  <span className="cell-d text-[14px]">{secondo.nome}</span>
+                ) : null}
+              </span>
+              <span className="mono shrink-0 text-[11px] font-medium text-muted">
+                {macro.kcal} kcal
+              </span>
+            </span>
             {extra.length > 0 ? (
-              // Pallini a inchiostro, non lime: il lime su carta bianca sta a
-              // 1.13:1, cioe' un pallino che non si vede. Il nome degli extra
-              // resta nell'aria-label del bottone.
-              <span
-                className="flex shrink-0 gap-[3px]"
-                aria-hidden="true"
-                title={extra.map((e) => e.nome).join(", ")}
-              >
+              <span className="mt-3 flex flex-wrap gap-1.5">
                 {extra.map((e) => (
-                  <i key={e.id} className="block h-[6px] w-[6px] rounded-full bg-ink" />
+                  <span key={e.id} className="chip">
+                    {e.nome}
+                  </span>
                 ))}
               </span>
             ) : null}
-          </span>
-        </>
-      )}
+            <span className="mono mt-3 text-[10px] font-medium text-muted">
+              P {macro.proteine} · C {macro.carboidrati} · G {macro.grassi}
+            </span>
+          </>
+        ) : (
+          <>
+            {primo ? (
+              <span className="cell-d hyphens-auto break-words text-[11px] xl:text-[12.5px]">
+                {primo.nome}
+              </span>
+            ) : null}
+            {/* Casella di soli extra: senza questa riga sarebbe una casella piena
+              che sembra vuota, con un numero di kcal comparso dal niente. */}
+            {!primo && !secondo ? (
+              <span className="cell-d text-[11px] xl:text-[12.5px]">
+                Solo extra
+              </span>
+            ) : null}
+            {secondo ? (
+              <span
+                className={`cell-d hyphens-auto break-words text-[11px] xl:text-[12.5px] ${
+                  primo ? "mt-1.5 border-t pt-1.5" : ""
+                }`}
+                style={primo ? { borderColor: "var(--hair-soft)" } : undefined}
+              >
+                {secondo.nome}
+              </span>
+            ) : null}
+            <span className="cell-k flex items-center justify-between gap-2">
+              <span>{macro.kcal} kcal</span>
+              {extra.length > 0 ? (
+                // Pallini a inchiostro, non lime: il lime su carta bianca sta a
+                // 1.13:1, cioe' un pallino che non si vede. Il nome degli extra
+                // resta nell'aria-label del bottone.
+                <span
+                  className="flex shrink-0 gap-[3px]"
+                  aria-hidden="true"
+                  title={extra.map((e) => e.nome).join(", ")}
+                >
+                  {extra.map((e) => (
+                    <i
+                      key={e.id}
+                      className="block h-[6px] w-[6px] rounded-full bg-ink"
+                    />
+                  ))}
+                </span>
+              ) : null}
+            </span>
+          </>
+        )}
+      </span>
     </button>
   );
 }

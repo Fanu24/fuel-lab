@@ -46,8 +46,50 @@ import type { Piano } from "@/lib/settimana";
 
 type Avviso = { tono: "ok" | "attenzione"; testo: string };
 
+/**
+ * Che fine ha fatto il link. Un solo stato per tutti e quattro i rami, cosi' non
+ * puo' esistere la combinazione in cui la settimana e' stata importata ma nessuno
+ * se n'e' accorto: e' quella che lasciava il `?p=` nell'indirizzo e faceva
+ * ricomparire la domanda al primo aggiornamento della pagina.
+ */
+type Esito = "attesa" | "chiede" | "importato" | "accettato" | "rifiutato";
+
 const LINK_ROTTO =
   "Questo link non risulta leggibile. Di solito vuol dire che nasce da un menu diverso da quello di questa settimana: il piano esisteva davvero, ma i piatti a cui punta adesso stanno in altre posizioni, e mostrarti quelli sbagliati sarebbe peggio che non mostrarti niente. Chiedi di ricomporre la settimana sul menu di adesso e di rimandarti il link.";
+
+/*
+ * RATTOPPO LOCALE a un difetto che NON nasce qui, misurato in Chrome su questa
+ * pagina e sulle altre.
+ *
+ * globals.css azzera gli elementi fuori da ogni @layer:
+ *   a      { color: inherit }
+ *   button { background: none; color: inherit }
+ * mentre .btn-p vive dentro @layer components. Per la cascata dei layer il CSS
+ * non stratificato batte QUALUNQUE layer, quindi su <a> e su <button> le due
+ * dichiarazioni di .btn-p non arrivano mai. Le conseguenze, misurate:
+ *
+ *   <Link className="btn btn-p">   fondo ink applicato, colore ereditato ink
+ *                                  -> testo inchiostro su inchiostro, 1.00:1,
+ *                                     cioe' un bottone primario ILLEGGIBILE
+ *   <button className="btn btn-p"> fondo perso, testo ink su carta a 12.66:1:
+ *                                  si legge, ma non sembra piu' un primario
+ *
+ * Nessuna classe puo' rimediare: ho provato anche una utility Tailwind
+ * (bg-ink su un <button>) e perde pure lei, perche' anche @layer utilities e'
+ * un layer. Lo stile inline e' l'unica dichiarazione che vince, ed e' per questo
+ * che sta qui invece che in una classe.
+ *
+ * La correzione VERA e' una riga in globals.css - i reset dentro @layer base -
+ * e vale per le altre otto occorrenze di btn-p sparse fra box, checkout, menu,
+ * scheda, chi-e-matteo e come-funziona, che oggi hanno lo stesso guasto. Quel
+ * file non e' nel perimetro del Task 10: e' la stessa famiglia della Ruling R18
+ * e va alla passata sistematica. Quando sara' fatta, questa costante e le sue
+ * tre applicazioni si cancellano in un colpo solo.
+ *
+ * Il bianco qui e' il caso legale: sta su fondo inchiostro, 14.30:1, esattamente
+ * come fa .total-l nella barra scura.
+ */
+const RATTOPPO_BTN_P = { background: "var(--color-ink)", color: "#fff" } as const;
 
 /** Quante caselle piene porta un piano. Serve per raccontare cosa c'e' nel link. */
 function contaCaselle(p: Piano): number {
@@ -60,7 +102,7 @@ export default function SettimanaClient() {
   const { piano, pronto, pasti, macroSettimana, sostituisciPiano, svuota } = usePiano();
 
   const [aperta, setAperta] = useState<CasellaAperta | null>(null);
-  const [risposta, setRisposta] = useState<"nessuna" | "accettato" | "rifiutato">("nessuna");
+  const [esito, setEsito] = useState<Esito>("attesa");
   const [avvisoChiuso, setAvvisoChiuso] = useState(false);
   const [statoLink, setStatoLink] = useState<"pronto" | "copiato" | "manuale">("pronto");
   const [link, setLink] = useState("");
@@ -109,18 +151,31 @@ export default function SettimanaClient() {
   const dalLink = useMemo(() => (param === null ? null : decodificaPiano(param)), [param]);
 
   /*
-   * L'unico bit di memoria di tutta la faccenda: la settimana locale era vuota
-   * QUANDO il link e' arrivato? Dopo l'importazione non lo e' piu', e senza
-   * questo la pagina chiederebbe conferma di un'importazione appena fatta.
+   * La decisione si prende una volta sola, al primo render in cui lo store ha
+   * finito di leggere: la settimana locale era vuota QUANDO il link e' arrivato?
+   * Dopo l'importazione non lo e' piu', e senza questa memoria la pagina
+   * chiederebbe conferma di un'importazione appena fatta.
+   *
    * Aggiornare lo stato durante il render e' il modo che React documenta per i
    * valori che dipendono da un ingresso cambiato: la condizione smette subito di
    * valere, il render riparte prima di dipingere e non c'e' nessun giro in piu'
    * sullo schermo. La stessa cosa dentro un effetto sarebbe un render a cascata.
    */
-  const [eraVuota, setEraVuota] = useState<boolean | null>(null);
-  if (pronto && dalLink !== null && eraVuota === null) setEraVuota(pasti === 0);
+  if (pronto && dalLink !== null && esito === "attesa") {
+    setEsito(pasti === 0 ? "importato" : "chiede");
+  }
 
-  const chiedeConferma = pronto && dalLink !== null && eraVuota === false && risposta === "nessuna";
+  const chiedeConferma = esito === "chiede";
+
+  const pulisciUrl = useCallback(() => {
+    // Via il ?p= appena il link ha fatto il suo lavoro - importato in silenzio o
+    // risposto a mano, non fa differenza. Senza, un aggiornamento della pagina
+    // (F5, ripristino di sessione, bfcache) troverebbe la settimana non piu'
+    // vuota e chiederebbe di sostituirla con quella del link che l'aveva appena
+    // riempita: la domanda giusta al momento sbagliato, che offre di buttare via
+    // le modifiche fatte nel frattempo.
+    window.history.replaceState(null, "", window.location.pathname);
+  }, []);
 
   /*
    * Il frame fra "il link e' buono e la settimana e' vuota" e "il piano e'
@@ -132,7 +187,7 @@ export default function SettimanaClient() {
    */
   const [svuotataAMano, setSvuotataAMano] = useState(false);
   const importaOra =
-    eraVuota === true &&
+    esito === "importato" &&
     !svuotataAMano &&
     dalLink !== null &&
     contaCaselle(dalLink) > 0 &&
@@ -141,10 +196,11 @@ export default function SettimanaClient() {
   // Settimana vuota e link valido: si carica e basta. Non c'e' niente da
   // proteggere, e una domanda con una risposta sola e' solo un ostacolo.
   useEffect(() => {
-    if (eraVuota !== true || dalLink === null || importato.current) return;
+    if (esito !== "importato" || dalLink === null || importato.current) return;
     importato.current = true;
     sostituisciPiano(dalLink);
-  }, [eraVuota, dalLink, sostituisciPiano]);
+    pulisciUrl();
+  }, [esito, dalLink, sostituisciPiano, pulisciUrl]);
 
   // La domanda va trovata anche col focus, non solo con gli occhi: chi naviga da
   // tastiera altrimenti continuerebbe a riempire caselle senza sapere che c'e'
@@ -153,21 +209,14 @@ export default function SettimanaClient() {
     if (chiedeConferma) titoloArrivo.current?.focus();
   }, [chiedeConferma]);
 
-  const pulisciUrl = useCallback(() => {
-    // Via il ?p= dopo la risposta: senza, un aggiornamento della pagina
-    // riproporrebbe la stessa domanda su una settimana che nel frattempo
-    // l'utente ha gia' cambiato.
-    window.history.replaceState(null, "", window.location.pathname);
-  }, []);
-
   const accetta = () => {
     if (dalLink) sostituisciPiano(dalLink);
-    setRisposta("accettato");
+    setEsito("accettato");
     pulisciUrl();
   };
 
   const rifiuta = () => {
-    setRisposta("rifiutato");
+    setEsito("rifiutato");
     pulisciUrl();
   };
 
@@ -178,19 +227,22 @@ export default function SettimanaClient() {
   let avviso: Avviso | null = null;
   if (!avvisoChiuso) {
     if (param !== null && dalLink === null) avviso = { tono: "attenzione", testo: LINK_ROTTO };
-    // Il conteggio viene dal piano, non dal link: dopo la risposta il ?p= sparisce
-    // dall'indirizzo, e con lui sparirebbe il messaggio se dipendesse da quello.
-    else if (risposta === "accettato")
+    // Ogni conteggio viene dal piano, non dal link: appena il link ha fatto il suo
+    // lavoro il ?p= sparisce dall'indirizzo, e con lui sparirebbe il messaggio se
+    // dipendesse da quello.
+    else if (esito === "accettato")
       avviso = {
         tono: "ok",
         testo: `Sostituita: adesso vedi la settimana del link, ${pasti} caselle su ${CASELLE_TOTALI}.`,
       };
-    else if (risposta === "rifiutato")
+    else if (esito === "rifiutato")
       avviso = { tono: "ok", testo: "Ho tenuto la tua settimana. Il link non ha cambiato niente." };
-    else if (eraVuota === true && dalLink)
+    // Non durante il frame dell'importazione (direbbe zero) e non dopo uno
+    // svuotamento a mano (direbbe zero un'altra volta, e mentendo).
+    else if (esito === "importato" && !importaOra && !svuotataAMano)
       avviso = {
         tono: "ok",
-        testo: `Settimana caricata dal link: ${contaCaselle(dalLink)} caselle su ${CASELLE_TOTALI}. Adesso puoi cambiarla come vuoi.`,
+        testo: `Settimana caricata dal link: ${pasti} caselle su ${CASELLE_TOTALI}. Adesso puoi cambiarla come vuoi.`,
       };
   }
 
@@ -256,6 +308,7 @@ export default function SettimanaClient() {
                 <button
                   type="button"
                   className="btn btn-p"
+                  style={RATTOPPO_BTN_P}
                   onClick={() => void condividi()}
                   disabled={!pronto || pasti === 0}
                   title={
@@ -316,7 +369,7 @@ export default function SettimanaClient() {
                   link invece resta valido, puoi aprirlo anche dopo.
                 </p>
                 <div className="mt-8 flex flex-wrap gap-3">
-                  <button type="button" className="btn btn-p" onClick={accetta}>
+                  <button type="button" className="btn btn-p" style={RATTOPPO_BTN_P} onClick={accetta}>
                     Sostituisci con quella del link
                     <span className="dot" aria-hidden="true">
                       ↓
@@ -382,7 +435,7 @@ export default function SettimanaClient() {
                         sotto e scegliere a mano.
                       </p>
                       <div className="mt-9 flex flex-wrap justify-center gap-3">
-                        <Link href="/menu" className="btn btn-p">
+                        <Link href="/menu" className="btn btn-p" style={RATTOPPO_BTN_P}>
                           Sfoglia il menu
                           <span className="dot" aria-hidden="true">
                             →
@@ -400,11 +453,12 @@ export default function SettimanaClient() {
                 </Reveal>
               ) : null}
 
-              {/* Da md in su la griglia 7x2. Sotto md non si comprime e non
-                  scorre di lato: cambia forma, una card per giorno. */}
+              {/* Da lg in su la griglia 7x2. Sotto lg non si comprime e non scorre
+                  di lato: cambia forma, una card per giorno. L'altra meta' di questo
+                  interruttore sta in Griglia.tsx, con il conto delle larghezze. */}
               <Griglia apri={apri} aperta={aperta} />
 
-              <div className="flex flex-col gap-4 md:hidden">
+              <div className="flex flex-col gap-4 lg:hidden">
                 {GIORNI.map((g) => (
                   <ColonnaGiorno key={g} giorno={g} apri={apri} aperta={aperta} />
                 ))}

@@ -62,6 +62,16 @@ function corrispondeElemento(e: Elemento, q: string): boolean {
 const FOCUSABILI =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
+/*
+ * Stesso rattoppo di app/settimana/SettimanaClient.tsx, dove sta la spiegazione
+ * per esteso: il reset non stratificato `button { background: none; color:
+ * inherit }` di globals.css batte .btn-p, che vive in @layer components, e lo
+ * stile inline e' l'unica dichiarazione che gli sopravvive. Senza, il primario
+ * di questo pannello e' testo nudo invece di una pillola. Bianco su inchiostro:
+ * 14.30:1. Si cancella con l'altro, quando i reset entreranno in @layer base.
+ */
+const RATTOPPO_BTN_P = { background: "var(--color-ink)", color: "#fff" } as const;
+
 export default function SelettoreCasella({
   giorno,
   pasto,
@@ -101,12 +111,46 @@ export default function SelettoreCasella({
   const trovati = scheda === "extra" ? elencoExtra.length : elenco.length;
   const nomeScheda = scheda === "extra" ? "extra" : scheda === "primo" ? "primi" : "secondi";
 
-  // Il pannello prende il focus all'apertura: cosi' lo screen reader annuncia il
-  // dialogo con il suo titolo, e il primo Tab entra dentro invece di ripartire
-  // dall'inizio del documento.
+  /*
+   * Il focus entra nel pannello all'apertura - cosi' lo screen reader annuncia il
+   * dialogo col suo titolo e il primo Tab entra dentro invece di ripartire dal
+   * documento - e ci RIENTRA se qualcosa lo ha buttato fuori.
+   *
+   * La seconda meta' non e' teorica, e' misurata in Chrome. Due bottoni di questo
+   * pannello distruggono se stessi: "Svuota la casella" si auto-disabilita (per
+   * specifica HTML un elemento disabilitato perde il focus) e "Azzera la ricerca"
+   * si smonta insieme allo stato vuoto che lo conteneva. In entrambi i casi il
+   * focus finisce su <body>, cioe' FUORI da un pannello dichiarato aria-modal e
+   * con la pagina bloccata: da li' nessun tasto premuto raggiunge piu' questo
+   * componente, perche' un evento su body non attraversa un suo discendente.
+   *
+   * Va fatto dopo il render, non dentro gli handler: quando l'handler finisce
+   * React puo' non aver ancora disabilitato o smontato niente, e un focus messo
+   * troppo presto verrebbe tolto un istante dopo. Un effetto senza dipendenze
+   * gira dopo ogni commit, che e' esattamente quando serve. Mentre il pannello e'
+   * aperto niente fuori puo' avere legittimamente il focus, quindi la condizione
+   * non ha falsi positivi.
+   */
   useEffect(() => {
-    pannello.current?.focus();
-  }, []);
+    const p = pannello.current;
+    if (p && !p.contains(document.activeElement)) p.focus();
+  });
+
+  /*
+   * Escape su document e non solo sul pannello, per la stessa ragione: se il
+   * focus e' finito su body l'handler del pannello non lo vede piu' passare, e
+   * l'unica uscita da un modale resterebbe il mouse. Questo listener e' l'unico
+   * proprietario di Escape; il pannello si tiene solo il giro di Tab.
+   */
+  useEffect(() => {
+    const suEsc = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      e.preventDefault();
+      onChiudi();
+    };
+    document.addEventListener("keydown", suEsc);
+    return () => document.removeEventListener("keydown", suEsc);
+  }, [onChiudi]);
 
   // La pagina sotto non deve scorrere: su mobile il pannello e' un foglio che
   // copre tutto, e lo scroll che continua dietro fa perdere il punto in cui si
@@ -127,12 +171,8 @@ export default function SelettoreCasella({
     );
   }
 
+  // Solo Tab: Escape lo tiene il listener su document, vedi sopra.
   function suTasto(e: KeyboardEventReact<HTMLDivElement>) {
-    if (e.key === "Escape") {
-      e.preventDefault();
-      onChiudi();
-      return;
-    }
     if (e.key !== "Tab") return;
 
     const nodi = nodiFocusabili();
@@ -390,7 +430,12 @@ export default function SelettoreCasella({
                 ×
               </span>
             </button>
-            <button type="button" className="btn btn-p btn-sm" onClick={onChiudi}>
+            <button
+              type="button"
+              className="btn btn-p btn-sm"
+              style={RATTOPPO_BTN_P}
+              onClick={onChiudi}
+            >
               Fatto
               <span className="dot" aria-hidden="true">
                 ✓
