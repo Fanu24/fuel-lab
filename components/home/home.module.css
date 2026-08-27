@@ -135,7 +135,6 @@
 /* I ritardi lunghi delle entrate vanno azzerati, non solo accorciati: la regola
    globale taglia la durata e lascerebbe il contenuto invisibile per un secondo. */
 @media (prefers-reduced-motion: reduce) {
-  .tenda,
   .salita,
   .scatto,
   .timbro {

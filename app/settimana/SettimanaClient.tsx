@@ -245,7 +245,7 @@ export default function SettimanaClient() {
       : statoLink === "manuale"
         ? "Gli appunti non sono disponibili qui. Copia il link a mano:"
         : pronto && pasti === 0
-          ? "Riempi almeno una casella e il link diventa disponibile."
+          ? "Riempi almeno una casella: da lì si accendono sia la richiesta sia il link da mandare al nutrizionista."
           : "Il link porta dentro la settimana intera. Non serve un account, per nessuno dei due.";
 
   return (
@@ -314,7 +314,14 @@ export default function SettimanaClient() {
                     type="button"
                     className="btn btn-p"
                     disabled
+                    // Il title non basta: al passaggio del mouse non lo vede chi sta
+                    // su un telefono, ed e proprio il difetto che questa pagina
+                    // rimprovera altrove. La spiegazione vera e il paragrafo qui
+                    // sotto, sempre visibile; aria-describedby la lega al controllo
+                    // perche aria-live annuncia solo i CAMBI, e chi apre la pagina
+                    // con la settimana gia vuota non sentirebbe niente.
                     title="Settimana vuota: prima riempi una casella"
+                    aria-describedby="nota-settimana"
                   >
                     Richiedi questa settimana
                     <span className="dot" aria-hidden="true">
@@ -346,7 +353,7 @@ export default function SettimanaClient() {
 
               {/* aria-live: l'esito della copia cambia lontano dal punto in cui
                   si sta guardando, cioe' il bottone appena premuto. */}
-              <p className="note mt-4 leading-relaxed" aria-live="polite">
+              <p id="nota-settimana" className="note mt-4 leading-relaxed" aria-live="polite">
                 {messaggioLink}
               </p>
 

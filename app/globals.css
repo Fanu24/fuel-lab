@@ -71,7 +71,7 @@
   --e-over: cubic-bezier(0.2, 1.3, 0.34, 1);
   --e-mech: cubic-bezier(0.65, 0, 0.35, 1);
   /* La terza easing della direzione originale: peso che parte lento e arriva
-     secco. La cercano il pannello macro, la tenda del titolo e le scansioni. */
+     secco. La cercano le scansioni di /scheda e le entrate della home. */
   --e-mass: cubic-bezier(0.62, 0.04, 0.16, 1);
 
   /* Ombre ambientali diffusissime: su fondo chiaro le superfici devono
