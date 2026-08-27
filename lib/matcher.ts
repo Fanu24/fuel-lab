@@ -1,5 +1,4 @@
 import { PRIMI, SECONDI, type Elemento } from "./catalogo";
-import { DISHES } from "./dishes";
 import {
   CASELLE_TOTALI,
   GIORNI,
@@ -8,7 +7,7 @@ import {
   type Casella,
   type Piano,
 } from "./settimana";
-import type { Dish, Macros, Tag, Target } from "./types";
+import type { Macros, Tag, Target } from "./types";
 
 /**
  * Il matcher: da una scheda del nutrizionista al piano della settimana.
@@ -28,10 +27,6 @@ import type { Dish, Macros, Tag, Target } from "./types";
  * Strategia: costruzione greedy (a ogni passo l'opzione che avvicina di piu il totale)
  * seguita da passate di scambi locali. Non e' un ottimo globale, ma su meno di mille
  * opzioni converge in millisecondi e produce settimane sensate e varie.
- *
- * componiBox() resta accanto a componiPiano() finche la pagina /scheda non passa al
- * piano a caselle: lavora sui piatti interi di lib/dishes.ts, ma attraverso lo stesso
- * motore, cosi le due strade non possono divergere mentre convivono.
  */
 
 export interface Vincoli {
@@ -61,7 +56,7 @@ export const TARGET_DEFAULT: Target = {
 };
 
 /**
- * Quota del fabbisogno giornaliero che Fuel copre davvero.
+ * Quota del fabbisogno giornaliero che FUEL LAB copre davvero.
  * Chi prende un solo pasto al giorno fa colazione e cena per conto suo: puntare al
  * 100% dei macro su quell'unico pasto darebbe una schiscetta da 2.240 kcal.
  *
@@ -153,10 +148,6 @@ function passaITag(tag: Tag[], vincoli: Vincoli): boolean {
   return true;
 }
 
-export function candidati(vincoli: Vincoli, catalogo: Dish[] = DISHES): Dish[] {
-  return catalogo.filter((d) => passaITag(d.tag, vincoli));
-}
-
 export function ammesso(e: Elemento, vincoli: Vincoli): boolean {
   return passaITag(e.tag, vincoli);
 }
@@ -164,9 +155,9 @@ export function ammesso(e: Elemento, vincoli: Vincoli): boolean {
 /* =========================================================================
    Il motore, scritto una volta sola.
 
-   Un'opzione e' una cosa che riempie un posto: un piatto per il box vecchio, una
-   casella per il piano. Al motore interessano solo i suoi macro e gli id che
-   consumano una ripetizione, quindi puo essere lo stesso per entrambi.
+   Un'opzione e' una cosa che riempie una casella del piano. Al motore
+   interessano solo i suoi macro e gli id che consumano una ripetizione, e il
+   generico T tiene la porta aperta a un'altra unita' di scelta in futuro.
    ========================================================================= */
 
 interface Opzione<T> {
@@ -311,7 +302,7 @@ function opzioniCasella(vincoli: Vincoli): Opzione<Casella>[] {
   // Senza, il primo porta almeno 33 g di carboidrati in ogni casella e il matcher non
   // ha modo di scendere sotto quel tetto: gli scenari di definizione escono tutti
   // sopra il target. Il gemello (solo primo) non c'e' apposta, perche una schiscetta
-  // senza proteine non e' un pasto che Fuel vende.
+  // senza proteine non e' un pasto che FUEL LAB vende.
   for (const s of secondi) {
     out.push({ valore: { secondo: s.id, extra: [] }, macro: sommaMacro([s]), chiavi: [s.id] });
   }
@@ -387,55 +378,4 @@ export function componiPiano(target: Target, vincoli: Vincoli = VINCOLI_DEFAULT)
   // schiscette per coprire il fabbisogno di 15 sbaglierebbe tutte e 14.
   const scelte = scegli(pool, posti, bersaglioDi(perPasto, posti), vincoli.maxRipetizioni);
   return esitoPiano(versaNelPiano(scelte.map((o) => o.valore)), bersaglio);
-}
-
-/* =========================================================================
-   Il box a piatti interi: la strada vecchia, viva finche /scheda non passa
-   al piano a caselle.
-   ========================================================================= */
-
-export interface Composizione {
-  piatti: Dish[];
-  totali: Macros;
-  bersaglio: Macros;
-  /** scarto percentuale per macro, positivo = sopra il target */
-  scarti: { kcal: number; proteine: number; carboidrati: number; grassi: number };
-  /** true se ogni macro sta entro il 10% del target */
-  aCentro: boolean;
-}
-
-function esito(piatti: Dish[], bersaglio: Macros): Composizione {
-  const totali = sommaMacro(piatti);
-  const scarti = scartiDi(totali, bersaglio);
-  return {
-    piatti,
-    totali,
-    bersaglio,
-    scarti,
-    aCentro: Object.values(scarti).every((s) => Math.abs(s) <= 10),
-  };
-}
-
-/**
- * Compone il box.
- * Restituisce sempre qualcosa: se i vincoli non lasciano abbastanza piatti,
- * riempie con quelli disponibili invece di fallire in faccia all'utente.
- */
-export function componiBox(target: Target, vincoli: Vincoli = VINCOLI_DEFAULT): Composizione {
-  const n = numeroPasti(target);
-  const bersaglio = bersaglioDi(targetPerPasto(target), n);
-
-  const pool = candidati(vincoli).map<Opzione<Dish>>((d) => ({
-    valore: d,
-    macro: d,
-    chiavi: [d.id],
-  }));
-  if (!pool.length) return esito([], bersaglio);
-
-  const piatti = scegli(pool, n, bersaglio, vincoli.maxRipetizioni).map((o) => o.valore);
-
-  // Ordine di servizio: prima i piatti del lunedi, poi quelli del giovedi.
-  piatti.sort((a, b) => (a.giorno === b.giorno ? 0 : a.giorno === "lunedi" ? -1 : 1));
-
-  return esito(piatti, bersaglio);
 }

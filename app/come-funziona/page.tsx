@@ -5,7 +5,7 @@ import Reveal from "@/components/Reveal";
 import Ticker from "@/components/Ticker";
 import { Eyebrow, SectionHead, Rise } from "@/components/ui";
 import Faq, { type Domanda } from "@/components/come-funziona/Faq";
-import { DISHES } from "@/lib/dishes";
+import { PRIMI, SECONDI } from "@/lib/catalogo";
 
 export const metadata: Metadata = {
   title: "Come funziona",
@@ -14,10 +14,11 @@ export const metadata: Metadata = {
 };
 
 /**
- * Le foto non legate a un piatto. Stessa firma di dishImg(), ma il tipo tiene la
- * lista chiusa ai soli id gia in uso altrove nel sito: un refuso si ferma alla
- * compilazione invece di diventare un riquadro vuoto in produzione. Le foto dei
- * piatti non passano da qui, quelle hanno dishImg().
+ * Le foto non legate a un elemento del catalogo. Stessa firma di elementoImg(),
+ * ma il tipo tiene la lista chiusa ai soli id gia in uso altrove nel sito: un
+ * refuso si ferma alla compilazione invece di diventare un riquadro vuoto in
+ * produzione. Le foto degli elementi non passano da qui, quelle hanno
+ * elementoImg().
  */
 type IdFoto =
   | "photo-1466637574441-749b8f19452f"
@@ -50,8 +51,8 @@ const PASSI: Passo[] = [
     n: "01",
     titolo: "Scegli il menu o carica la scheda",
     testo:
-      `${DISHES.length} piatti online, con grammi e macro scritti sopra ognuno: puoi comporre il box a mano in cinque minuti. Se hai una scheda del nutrizionista la carichi e ci pensa il matcher, che sceglie le schiscette piu vicine ai tuoi numeri. Quello che non ti va lo sostituisci, e i totali si ricalcolano davanti a te.`,
-    dati: [`${DISHES.length} piatti`, "PDF o foto"],
+      `${PRIMI.length + SECONDI.length} piatti online, con grammi e macro scritti sopra ognuno: puoi comporre il box a mano in cinque minuti. Se hai una scheda del nutrizionista la carichi e ci pensa il matcher, che sceglie le schiscette piu vicine ai tuoi numeri. Quello che non ti va lo sostituisci, e i totali si ricalcolano davanti a te.`,
+    dati: [`${PRIMI.length + SECONDI.length} piatti`, "PDF o foto"],
     img: "photo-1466637574441-749b8f19452f",
     alt: "Tagliere di legno con uova, avocado e pomodori, gli ingredienti di partenza",
     rot: "md:rotate-[-2.4deg]",
@@ -279,7 +280,7 @@ export default function ComeFunziona() {
                   prova che dentro c&apos;e&apos; roba viva, cotta lunedi mattina e non lo scorso
                   marzo.
                 </p>
-                <p className="note mt-11">Cucina Fuel / Pescara / due cotture a settimana</p>
+                <p className="note mt-11">Cucina FUEL LAB / Pescara / due cotture a settimana</p>
               </Reveal>
             </div>
 
@@ -513,7 +514,7 @@ export default function ComeFunziona() {
                   >
                     Opzione B
                   </p>
-                  <h3 className="h3 mt-3 text-ink">Il fresco / Fuel</h3>
+                  <h3 className="h3 mt-3 text-ink">Il fresco / FUEL LAB</h3>
 
                   <h4
                     className="mt-9 mb-4 text-[11.5px] font-normal tracking-[.24em] uppercase"
@@ -576,7 +577,7 @@ export default function ComeFunziona() {
             <p className="lead mt-16 max-w-[64ch] md:mt-24">
               Se abiti fuori dall&apos;Abruzzo, o se vuoi riempire il congelatore e non pensarci per
               un mese, <b className="text-ink">il surgelato e&apos; la scelta giusta</b> e non
-              proveremo a convincerti del contrario. Fuel ha senso se vivi qui, se mangi per
+              proveremo a convincerti del contrario. FUEL LAB ha senso se vivi qui, se mangi per
               allenarti, e se ti sei stufato di piatti che tornano tutti allo stesso sapore.
             </p>
           </Reveal>

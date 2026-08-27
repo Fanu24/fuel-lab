@@ -11,8 +11,8 @@ type Stato = "pronto" | "aggiunto" | "pieno";
 
 /**
  * La scheda del catalogo nuovo: un primo o un secondo, mai un piatto intero.
- * Sostituisce DishCard per il catalogo primi/secondi, ma DishCard resta -
- * lo importano ancora tre pagine che sopravvivono fino ai Task 9 e 12.
+ * Sostituisce DishCard, rimossa insieme al vecchio catalogo a piatti interi,
+ * al box e al checkout.
  *
  * Le foto vanno SENZA filtro di luminosita: erano scurite per il fondo nero,
  * su chiaro tornano naturali.

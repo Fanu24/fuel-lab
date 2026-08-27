@@ -32,7 +32,7 @@ export interface Macros {
 
 /** Obiettivi giornalieri letti dalla scheda del nutrizionista. */
 export interface Target extends Macros {
-  /** pasti al giorno che Fuel deve coprire */
+  /** pasti al giorno che FUEL LAB deve coprire */
   pastiAlGiorno: number;
   /** giorni coperti dal box */
   giorni: number;

@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Anton, Archivo, Martian_Mono } from "next/font/google";
-import { CartProvider } from "@/lib/cart";
 import { PianoProvider } from "@/lib/piano";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
@@ -60,21 +59,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
-        {/*
-          Due provider montati insieme, non uno di troppo: il piano settimanale e'
-          il modello nuovo, ma sei pagine leggono ancora il carrello e verranno
-          spostate una alla volta. Togliere CartProvider adesso lascerebbe la build
-          rotta per tutta la migrazione, e in quella finestra nessuna rottura vera
-          si distinguerebbe piu' da quelle attese. CartProvider sparisce quando
-          l'ultima pagina avra' smesso di usarlo.
-        */}
-        <CartProvider>
-          <PianoProvider>
-            <Nav />
-            <main id="contenuto">{children}</main>
-            <Footer />
-          </PianoProvider>
-        </CartProvider>
+        <PianoProvider>
+          <Nav />
+          <main id="contenuto">{children}</main>
+          <Footer />
+        </PianoProvider>
       </body>
     </html>
   );

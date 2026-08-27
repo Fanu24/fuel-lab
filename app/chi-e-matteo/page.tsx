@@ -5,15 +5,15 @@ import Reveal from "@/components/Reveal";
 import Ticker from "@/components/Ticker";
 import { Chip, Eyebrow, Rise } from "@/components/ui";
 import StrisciaCucina from "@/components/chi-e-matteo/StrisciaCucina";
-import { DISHES } from "@/lib/dishes";
+import { PRIMI, SECONDI } from "@/lib/catalogo";
 
 export const metadata: Metadata = {
   title: "Matteo Pantane, il cuoco",
   description:
-    "Matteo Pantane, cuoco a Pescara. La storia di Fuel, la scelta del fresco contro il surgelato e i numeri della cucina che prepara i box.",
+    "Matteo Pantane, cuoco a Pescara. La storia di FUEL LAB, la scelta del fresco contro il surgelato e i numeri della cucina che prepara i box.",
 };
 
-/** Le foto non legate a un piatto. Stessa firma di dishImg(), id gia verificati altrove. */
+/** Le foto non legate a un elemento. Stessa firma di elementoImg(), id gia verificati altrove. */
 function foto(id: string, w = 1000): string {
   return `https://images.unsplash.com/${id}?w=${w}&q=80&auto=format&fit=crop`;
 }
@@ -132,7 +132,7 @@ function Numero({
   );
 }
 
-/** Riga della lista "quello che Fuel non e'": rombo lime + misura corta. */
+/** Riga della lista "quello che FUEL LAB non e'": rombo lime + misura corta. */
 function Nega({ children }: { children: ReactNode }) {
   return (
     <li className="flex items-start gap-[14px]">
@@ -163,8 +163,8 @@ export default function ChiEMatteo() {
                   il paragrafo slitterebbe sopra il titolo */}
               <Reveal delay={420}>
                 <p className="lead mt-12">
-                  Dodici anni di cucina professionale, un furgone e due cotture a settimana. Fuel
-                  &egrave; la risposta a un problema che ho visto in palestra, non un piano
+                  Dodici anni di cucina professionale, un furgone e due cotture a settimana. FUEL
+                  LAB &egrave; la risposta a un problema che ho visto in palestra, non un piano
                   industriale.
                 </p>
                 <div className="mt-9 flex flex-wrap gap-[10px]">
@@ -217,7 +217,7 @@ export default function ChiEMatteo() {
 
       {/* ---------------- il racconto ----------------
           NOTA REDAZIONALE (non va in pagina): i tre blocchi qui sotto e la lista
-          "quello che Fuel non e'" sono segnaposto. Vanno riscritti con Matteo,
+          "quello che FUEL LAB non e'" sono segnaposto. Vanno riscritti con Matteo,
           numeri e date compresi, prima di andare online. Un cliente che apre il
           sito non deve leggere gli appunti di lavorazione. */}
       <section className="pb-[120px] lg:pb-[150px]">
@@ -229,7 +229,7 @@ export default function ChiEMatteo() {
                 <h2 className="h2">
                   Come &egrave;
                   <br />
-                  nato Fuel.
+                  nato FUEL LAB.
                 </h2>
               </Reveal>
             </div>
@@ -265,8 +265,8 @@ export default function ChiEMatteo() {
                   abbattitore, niente magazzino, niente scorte da tre mesi: quello che esce dalla
                   cucina ha quattro giorni di frigo davanti, poi finisce. &Egrave; una scelta scomoda
                   &mdash; mi obbliga a fare la spesa due volte a settimana e a buttare quello che
-                  avanza &mdash; ma &egrave; l&rsquo;unica ragione per cui un contenitore Fuel sa di
-                  cibo cucinato e non di cibo scongelato. &Egrave; anche il motivo per cui non
+                  avanza &mdash; ma &egrave; l&rsquo;unica ragione per cui un contenitore FUEL LAB
+                  sa di cibo cucinato e non di cibo scongelato. &Egrave; anche il motivo per cui non
                   spedisco: oltre i quaranta minuti di furgone il vantaggio sparisce. Quindi resto su
                   Pescara e provincia, e va bene cos&igrave;.
                 </Blocco>
@@ -277,7 +277,7 @@ export default function ChiEMatteo() {
               <Reveal delay={160}>
                 <div className="shell md:rotate-[1.2deg]">
                   <div className="core px-[26px] pt-[24px] pb-[28px] md:px-[34px] md:pt-[30px] md:pb-[34px]">
-                    <span className="note">Quello che Fuel non &egrave;</span>
+                    <span className="note">Quello che FUEL LAB non &egrave;</span>
                     <ul className="mt-6 flex flex-col gap-[14px]">
                       <Nega>
                         Non &egrave; una dieta. I numeri li decide il tuo nutrizionista, io li
@@ -335,7 +335,7 @@ export default function ChiEMatteo() {
               ritardo={90}
             />
             <Numero
-              cifra={String(DISHES.length)}
+              cifra={String(PRIMI.length + SECONDI.length)}
               etichetta="Piatti in rotazione"
               testo="Il menu si muove con la stagione, i macro della tua scheda no."
               posizione="md:col-span-4 md:col-start-2 md:-mt-[26px]"
@@ -457,7 +457,7 @@ export default function ChiEMatteo() {
                     </span>
                   </Link>
                   <Link href="/menu" className="btn btn-s">
-                    Guarda i {DISHES.length} piatti
+                    Guarda i {PRIMI.length + SECONDI.length} piatti
                     <span className="dot" aria-hidden="true">
                       &#8599;
                     </span>
