@@ -419,7 +419,7 @@ export default function RichiestaClient() {
   let statoTesto: string;
   if (!configurato) {
     statoTesto =
-      "Il numero WhatsApp di Matteo non è ancora attivo: il bottone si accende da solo appena lo sara'. Intanto quello che scrivi qui resta solo su questo browser.";
+      "Il numero WhatsApp di Matteo non è ancora attivo: il bottone si accende da solo appena lo sarà. Intanto quello che scrivi qui resta solo su questo browser.";
   } else if (!valido) {
     statoTesto = iniziato
       ? `Manca ancora ${elenco(mancano)}.`
