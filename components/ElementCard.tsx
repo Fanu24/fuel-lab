@@ -100,7 +100,7 @@ export default function ElementCard({
         </figure>
 
         <div className={`flex flex-1 flex-col ${riga ? "p-6" : "p-6"}`}>
-          <h3 className={`h3 ${riga ? "!text-[25px]" : "!text-[27px]"}`}>{elemento.nome}</h3>
+          <h3 className={`h3 ${riga ? "!text-[20px]" : "!text-[22px]"}`}>{elemento.nome}</h3>
 
           {!riga && <p className="mt-3 text-[14px] leading-relaxed text-muted">{elemento.descrizione}</p>}
 

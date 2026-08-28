@@ -105,7 +105,7 @@ function Numero({
               le altre. Le misure sono ricalate: il mono e' molto piu largo del display. */}
           <span
             className={`block font-mono leading-[.82] ${
-              grande ? "text-[clamp(64px,9.4vw,124px)]" : "text-[clamp(52px,6.6vw,86px)]"
+              grande ? "text-[clamp(46px,6.6vw,86px)]" : "text-[clamp(38px,4.8vw,60px)]"
             }`}
             style={{
               fontVariationSettings: '"wdth" 75, "wght" 700',
@@ -149,11 +149,11 @@ export default function ChiEMatteo() {
   return (
     <>
       {/* ---------------- testata editoriale ---------------- */}
-      <section className="relative overflow-x-clip pt-[150px] pb-[104px] lg:pt-[178px] lg:pb-[132px]">
+      <section className="fascia fascia-t fascia-carta relative overflow-x-clip">
         <div className="wrap">
           <div className="grid items-start gap-16 lg:grid-cols-[minmax(0,1fr)_386px] lg:gap-20">
             <div>
-              <Eyebrow className="mb-[44px]">Il cuoco</Eyebrow>
+              <Eyebrow className="mb-[28px]">Il cuoco</Eyebrow>
               <h1 className="h1">
                 <Rise i={0}>Matteo</Rise>
                 <Rise i={1}>
@@ -165,12 +165,12 @@ export default function ChiEMatteo() {
                   insieme: fuel-rise qui non va, perche senza la maschera di .ln
                   il paragrafo slitterebbe sopra il titolo */}
               <Reveal delay={420}>
-                <p className="lead mt-12">
+                <p className="lead mt-8">
                   Dodici anni di cucina professionale, un furgone e due cotture a settimana. FUEL
                   LAB &egrave; la risposta a un problema che ho visto in palestra, non un piano
                   industriale.
                 </p>
-                <div className="mt-9 flex flex-wrap gap-[10px]">
+                <div className="mt-7 flex flex-wrap gap-[10px]">
                   <Chip accento>Pescara e provincia</Chip>
                   <Chip>In cucina dal 2014</Chip>
                   <Chip>Cuoco, non nutrizionista</Chip>
@@ -204,7 +204,7 @@ export default function ChiEMatteo() {
                 style={{ background: "var(--color-lime)", borderRadius: "var(--core-r)" }}
               >
                 <span
-                  className="block font-disp text-[25px] leading-none uppercase"
+                  className="block font-disp text-[21px] leading-none uppercase"
                   style={{ color: "var(--color-ink)" }}
                 >
                   Pescara
@@ -223,12 +223,14 @@ export default function ChiEMatteo() {
           "quello che FUEL LAB non e'" sono segnaposto. Vanno riscritti con Matteo,
           numeri e date compresi, prima di andare online. Un cliente che apre il
           sito non deve leggere gli appunti di lavorazione. */}
-      <section className="pb-[120px] lg:pb-[150px]">
+      {/* Guscio: il racconto e' testo lungo, ed e' la sezione che senza un
+          cambio di superficie si saldava alla testata in un unico foglio. */}
+      <section className="fascia fascia-guscio">
         <div className="wrap">
           <div className="grid gap-14 lg:grid-cols-[286px_minmax(0,1fr)] lg:gap-20">
             <div className="lg:sticky lg:top-[132px] lg:self-start">
               <Reveal>
-                <Eyebrow className="mb-[26px]">Il racconto</Eyebrow>
+                <Eyebrow className="mb-[18px]">Il racconto</Eyebrow>
                 <h2 className="h2">
                   Come &egrave;
                   <br />
@@ -237,7 +239,7 @@ export default function ChiEMatteo() {
               </Reveal>
             </div>
 
-            <div className="flex flex-col gap-[52px]">
+            <div className="flex flex-col gap-[38px]">
               <Reveal>
                 <Blocco indice="01" occhiello="Dodici anni di servizi">
                   Ho cominciato a sedici anni lavando pentole in un ristorante sul lungomare e non
@@ -304,11 +306,12 @@ export default function ChiEMatteo() {
       </section>
 
       {/* ---------------- i numeri ---------------- */}
-      <section className="overflow-x-clip pb-[120px] lg:pb-[150px]">
+      {/* Carta: le quattro celle sono .shell, e il guscio se le mangerebbe. */}
+      <section className="fascia fascia-carta overflow-x-clip">
         <div className="wrap">
           <Reveal>
-            <div className="mb-12 max-w-[620px]">
-              <Eyebrow className="mb-[26px]">In numeri</Eyebrow>
+            <div className="mb-9 max-w-[620px]">
+              <Eyebrow className="mb-[18px]">In numeri</Eyebrow>
               <h2 className="h2">
                 Quattro numeri,
                 <br />
@@ -363,12 +366,14 @@ export default function ChiEMatteo() {
       />
 
       {/* ---------------- la cucina ---------------- */}
-      <section className="overflow-x-clip pt-[110px] pb-[124px] lg:pt-[140px] lg:pb-[150px]">
+      {/* Guscio: solo foto e didascalie. Le .shell delle foto salgono a carta
+          da sole (vedi .fascia-guscio .shell in globals.css). */}
+      <section className="fascia fascia-guscio overflow-x-clip">
         <div className="wrap">
           <Reveal>
-            <div className="mb-14 flex flex-wrap items-end justify-between gap-8">
+            <div className="mb-10 flex flex-wrap items-end justify-between gap-8">
               <div>
-                <Eyebrow className="mb-[26px]">La cucina</Eyebrow>
+                <Eyebrow className="mb-[18px]">La cucina</Eyebrow>
                 <h2 className="h2">
                   Dove
                   <br />
@@ -389,7 +394,10 @@ export default function ChiEMatteo() {
       </section>
 
       {/* ---------------- la citazione ---------------- */}
-      <section className="overflow-x-clip pb-[124px] lg:pb-[156px]">
+      {/* La lastra lime e' gia' una fascia per conto suo: la sezione che la
+          contiene resta carta, altrimenti sarebbero due stacchi uno dentro
+          l'altro. */}
+      <section className="fascia fascia-carta fascia-alta overflow-x-clip">
         <Reveal>
           {/* lastra piu larga della pagina e ruotata, con il contenuto contro-ruotato:
               inclina il blocco senza inclinare la lettura. L'alone e' lime, non nero:
@@ -398,16 +406,16 @@ export default function ChiEMatteo() {
             className="w-full bg-lime md:-ml-[6%] md:w-[112%] md:rotate-[-1.15deg]"
             style={{ boxShadow: "0 40px 80px -46px rgba(223,255,62,.4)" }}
           >
-            <figure className="mx-auto w-[1180px] max-w-[calc(100%-40px)] py-[62px] md:max-w-[calc(100%/1.12_-_40px)] md:rotate-[1.15deg] md:py-[88px]">
+            <figure className="mx-auto w-[1180px] max-w-[calc(100%-40px)] py-[46px] md:max-w-[calc(100%/1.12_-_40px)] md:rotate-[1.15deg] md:py-[64px]">
               <blockquote>
                 <p
-                  className="font-disp text-[clamp(38px,6.2vw,84px)] leading-[.9] uppercase"
+                  className="font-disp text-[clamp(27px,4.3vw,58px)] leading-[.92] uppercase"
                   style={{ color: "var(--color-ink)", letterSpacing: "-.01em" }}
                 >
                   Non vendo diete. Cucino quello che il tuo nutrizionista ha gi&agrave; deciso.
                 </p>
               </blockquote>
-              <figcaption className="mt-9 flex items-center gap-3">
+              <figcaption className="mt-7 flex items-center gap-3">
                 <i
                   className="block h-[9px] w-[9px] rotate-45"
                   style={{ background: "var(--color-ink)" }}
@@ -423,7 +431,9 @@ export default function ChiEMatteo() {
       </section>
 
       {/* ---------------- chiusura ---------------- */}
-      <section className="pb-[132px] lg:pb-[160px]">
+      {/* Chiusura su fascia INCHIOSTRO, come su /come-funziona e /scheda: la
+          firma di fine pagina. Tutto il testo sta dentro il nucleo bianco. */}
+      <section className="fascia fascia-ink">
         <div className="wrap">
           <Reveal>
             <div className="shell">
@@ -441,7 +451,7 @@ export default function ChiEMatteo() {
                   }}
                 />
                 <div className="relative">
-                  <Eyebrow className="mb-[26px]">Il passo dopo</Eyebrow>
+                  <Eyebrow className="mb-[18px]">Il passo dopo</Eyebrow>
                   <h2 className="h2">
                     La tua scheda
                     <br />

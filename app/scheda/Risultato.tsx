@@ -138,7 +138,7 @@ export default function Risultato({
           <h2
             ref={headingRef}
             tabIndex={-1}
-            className="h2 mt-4 !text-[clamp(32px,4.8vw,52px)] outline-none"
+            className="h2 mt-4 !text-[clamp(23px,3.4vw,36px)] outline-none"
           >
             La tua settimana.
           </h2>
@@ -148,7 +148,7 @@ export default function Risultato({
               className="mt-8 rounded-[var(--shell)] bg-lime px-7 py-8 text-ink md:-rotate-[1.2deg]"
               role="status"
             >
-              <p className="font-disp text-[clamp(28px,3.6vw,40px)] leading-[.94] uppercase">
+              <p className="font-disp text-[clamp(21px,2.6vw,29px)] leading-[.96] uppercase">
                 La settimana centra i tuoi macro
               </p>
               <p className="mt-4 max-w-[44ch] text-[14px] leading-relaxed">
@@ -159,7 +159,7 @@ export default function Risultato({
           ) : (
             <div className="mt-8 shell" role="status">
               <div className="core px-7 py-8">
-                <p className="font-disp text-[clamp(26px,3.4vw,36px)] leading-[.96] text-ink uppercase">
+                <p className="font-disp text-[clamp(20px,2.4vw,26px)] leading-[.98] text-ink uppercase">
                   Ci siamo quasi: {fuori.length === 1 ? "un macro" : fuori.length + " macro"} fuori
                   tiro
                 </p>
@@ -261,7 +261,7 @@ export default function Risultato({
             >
               <span className="bar-l">Calorie</span>
               <p
-                className="font-mono text-[38px] leading-none text-ink"
+                className="font-mono text-[30px] leading-none text-ink"
                 style={{ fontVariationSettings: '"wdth" 82' }}
               >
                 {numero(esito.totali.kcal)}

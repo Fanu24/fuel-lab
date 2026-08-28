@@ -245,7 +245,7 @@ export default function SelettoreCasella({
           >
             <div>
               <span className="label">Componi la casella</span>
-              <h2 id={idTitolo} className="h3 mt-2 text-[24px] sm:text-[28px]">
+              <h2 id={idTitolo} className="h3 mt-2 text-[20px] sm:text-[24px]">
                 {NOMI_GIORNO[giorno]} · {NOMI_PASTO[pasto]}
               </h2>
             </div>

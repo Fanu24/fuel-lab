@@ -251,9 +251,12 @@ export default function SettimanaClient() {
   return (
     <>
       {/* ---------------- testata ---------------- */}
-      <section className="pt-[152px] pb-[44px] md:pt-[190px]">
+      {/* Testata sulla carta - qui stanno le chip nude, che sono guscio e sul
+          guscio sparirebbero - e griglia sul guscio: due superfici, un confine
+          visibile invece di quaranta pixel di vuoto. */}
+      <section className="fascia fascia-t fascia-carta">
         <div className="wrap">
-          <Eyebrow className="mb-[30px]">La tua settimana</Eyebrow>
+          <Eyebrow className="mb-[20px]">La tua settimana</Eyebrow>
           <h1 className="h1">
             <Rise i={0}>Sette giorni,</Rise>
             <Rise i={1}>
@@ -261,7 +264,7 @@ export default function SettimanaClient() {
             </Rise>
           </h1>
 
-          <div className="mt-11 grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,400px)] lg:items-end">
+          <div className="mt-8 grid gap-9 lg:grid-cols-[minmax(0,1fr)_minmax(0,400px)] lg:items-end">
             <div>
               <p className="lead">
                 Non &egrave; un carrello, &egrave; una scheda: pranzo e cena di ogni giorno, con i
@@ -382,7 +385,7 @@ export default function SettimanaClient() {
                 <h2
                   ref={titoloArrivo}
                   tabIndex={-1}
-                  className="h3 max-w-[24ch] text-[26px] outline-none md:text-[32px]"
+                  className="h3 max-w-[24ch] text-[21px] outline-none md:text-[26px]"
                 >
                   Sostituisco la tua settimana con quella del link?
                 </h2>
@@ -436,7 +439,7 @@ export default function SettimanaClient() {
       </section>
 
       {/* ---------------- la settimana ---------------- */}
-      <section className="pb-[110px] md:pb-[150px]">
+      <section className="fascia fascia-guscio">
         <div className="wrap">
           {!pronto ? (
             <div className="shell">
@@ -450,7 +453,7 @@ export default function SettimanaClient() {
                 <Reveal className="mb-8">
                   <div className="shell">
                     <div className="core p-8 text-center md:p-14">
-                      <p className="h3 text-[30px] md:text-[40px]">
+                      <p className="h3 text-[22px] md:text-[28px]">
                         Quattordici caselle, ancora tutte vuote.
                       </p>
                       <p className="lead mx-auto mt-6">

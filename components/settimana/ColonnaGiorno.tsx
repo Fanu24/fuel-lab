@@ -43,11 +43,11 @@ export default function ColonnaGiorno({
           className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 border-b pb-4"
           style={{ borderColor: "var(--hair-soft)" }}
         >
-          {/* .h3 scala su min(38px, 4.6vw): a 390px varrebbe 18px, cioe' meno del
-              testo dentro le caselle, e la misura va fissata a mano. Sopra i ~590px
-              quel motivo non esiste piu' - e questa pila adesso arriva fino a 1023 -
-              quindi al gradino sm il titolo torna della taglia della card. */}
-          <h3 className="h3 text-[27px] sm:text-[34px]">{NOMI_GIORNO[giorno]}</h3>
+          {/* .h3 adesso e' clamp(17px, 3.6vw, 30px): a 390px vale 17px, cioe' meno
+              del testo dentro le caselle, e la misura va fissata a mano. Sopra i
+              ~590px quel motivo non esiste piu' - e questa pila adesso arriva fino
+              a 1023 - quindi al gradino sm il titolo torna della taglia della card. */}
+          <h3 className="h3 text-[22px] sm:text-[27px]">{NOMI_GIORNO[giorno]}</h3>
           <p className="mono text-[12px] font-bold">
             {Math.round(macro.kcal)}
             <span className="font-medium text-muted"> kcal</span>

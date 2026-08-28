@@ -20,10 +20,15 @@ export const metadata: Metadata = {
 export default function Servizi() {
   return (
     <>
-      <section className="relative overflow-x-clip pt-[152px] pb-[70px] md:pt-[190px] md:pb-[94px]">
+      {/* Testata sulla carta, servizi sul guscio: il confine fra le due si vede
+          senza contare i pixel di vuoto (vedi "ritmo delle superfici" in
+          globals.css). Le card dei servizi sono .shell, cioe' guscio: sulla
+          fascia guscio la classe le porta a carta da sola, e la doppia scocca
+          resta leggibile. */}
+      <section className="fascia fascia-t fascia-carta relative overflow-x-clip">
         <div className="wrap">
           <Reveal>
-            <Eyebrow className="mb-[30px]">Come lavoriamo</Eyebrow>
+            <Eyebrow className="mb-[20px]">Come lavoriamo</Eyebrow>
           </Reveal>
           <h1 className="h1 max-w-[17ch]">
             <Rise i={0}>Tre modi</Rise>
@@ -35,17 +40,17 @@ export default function Servizi() {
           {/* il lead entra dopo le due righe del titolo, non insieme: fuel-rise qui
               non va, perche senza la maschera di .ln slitterebbe sopra il titolo */}
           <Reveal delay={480}>
-            <p className="lead mt-10 max-w-[54ch]">
+            <p className="lead mt-7 max-w-[54ch]">
               Il menu gi&agrave; pronto, il piano che si costruisce sui macro della tua scheda,
               oppure Matteo che cucina dentro la tua cucina. Qui sotto trovi solo la soglia
               d&apos;ingresso: il prezzo esatto lo definiamo insieme, su WhatsApp.
             </p>
-            <p className="note mt-9">Menu e scheda / a partire da 8,90 &euro; a pasto</p>
+            <p className="note mt-7">Menu e scheda / a partire da 8,90 &euro; a pasto</p>
           </Reveal>
         </div>
       </section>
 
-      <SezioneServizi conTestata={false} />
+      <SezioneServizi conTestata={false} fascia="guscio" />
     </>
   );
 }

@@ -338,7 +338,7 @@ function ServizioSenzaPiano({ servizio }: { servizio: Servizio }) {
 /** Scheletro mostrato finche' il piano non e' stato riletto da localStorage. */
 function Scheletro() {
   return (
-    <section className="pb-[140px]">
+    <section className="fascia fascia-guscio">
       <div className="wrap">
         <p className="sr-only" role="status">
           Sto rileggendo la tua settimana.
@@ -435,9 +435,12 @@ export default function RichiestaClient() {
   return (
     <>
       {/* ---------------------------------------------------------- testata */}
-      <section className="pt-[152px] pb-[54px] md:pt-[190px] md:pb-[68px]">
+      {/* Testata sulla carta - qui ci sono le chip nude, che sono guscio - e
+          modulo sul guscio: chi arriva vede subito dove finisce la spiegazione
+          e comincia la cosa da compilare. */}
+      <section className="fascia fascia-t fascia-carta">
         <div className="wrap">
-          <Eyebrow className="mb-[26px]">Scrivi a Matteo</Eyebrow>
+          <Eyebrow className="mb-[18px]">Scrivi a Matteo</Eyebrow>
           <h1 className="h1 max-w-[19ch]">
             <Rise i={0}>Due minuti di form,</Rise>
             <Rise i={1}>
@@ -455,7 +458,7 @@ export default function RichiestaClient() {
           </div>
 
           <div
-            className="mt-[42px] flex flex-wrap items-center gap-x-5 gap-y-3 rounded-[var(--shell)] border px-[22px] py-[16px]"
+            className="mt-[32px] flex flex-wrap items-center gap-x-5 gap-y-3 rounded-[var(--shell)] border px-[22px] py-[16px]"
             style={{ borderColor: "var(--hair)", background: "rgba(223,255,62,.06)" }}
           >
             <Chip accento>Fase A</Chip>
@@ -472,7 +475,7 @@ export default function RichiestaClient() {
       {!pronto ? (
         <Scheletro />
       ) : (
-        <section className="pb-[130px] md:pb-[150px]">
+        <section className="fascia fascia-guscio">
           <div className="wrap">
             <Reveal>
               <div className="shell">

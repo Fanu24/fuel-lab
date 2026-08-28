@@ -26,8 +26,16 @@
 
    DUE CONFINI DA NON SUPERARE, anche questi misurati:
      muted su tray  = 4.45 : 1 -> sotto AA. Il testo secondario non va MAI sul
-       guscio: sta su paper, su card o su cell. Sul guscio si usa ink.
+       guscio COL MUTED DI SERIE. Da quando esistono le fasce il guscio e' anche
+       il fondo di intere sezioni, quindi il caso capita davvero: .fascia-guscio
+       ridefinisce --color-muted su --muted-guscio #4f5f54, che fa 5.34 : 1 sul
+       guscio e 6.00 : 1 sulla carta. Fuori dalle fasce la regola resta.
      mink  su paper = 1.88 : 1 -> mink vive solo dentro i blocchi scuri.
+
+   LE FASCE (in fondo a @layer components, cercare "ritmo delle superfici").
+   Il fondo non e' piu' un foglio unico: ogni sezione dichiara la propria
+   superficie fra carta, guscio, lime e inchiostro, e due sezioni vicine non
+   hanno mai la stessa. Il passo verticale sta in --y-fascia, un token solo.
 
    SHAPE LOCK, una scala sola, ogni gradino -8px (che e il padding):
      guscio 26px -> nucleo 18px -> chip e caselle 10px.
@@ -83,6 +91,32 @@
   --wrap: 1200px;
   --gut: 40px;
   --nav-h: 64px;
+
+  /* RITMO VERTICALE, in un posto solo.
+     I titoli sono scesi di circa un terzo: le spaziature tarate sui titoli
+     vecchi, lasciate dov'erano, diventavano vuoti senza motivo. Qui il passo
+     di una fascia e quello di una testata si ritarano insieme, e le pagine
+     chiedono .fascia invece di scrivere py-[110px] a mano. */
+  --y-fascia: 68px;
+  --y-testata: 122px;
+
+  /* Il secondario sul GUSCIO.
+     muted #5b6b5f su tray fa 4.45:1 - sotto AA - ed e' il confine scritto in
+     testa a questo foglio. Con le fasce il guscio smette di essere solo il
+     bordo di una card e diventa il fondo di intere sezioni, quindi il testo
+     secondario ci finisce sopra davvero. Questo verde e' lo stesso muted
+     abbassato finche' non passa: 5.34:1 su tray, 6.00:1 su carta (misurati
+     con la stessa formula del resto del foglio). Non e' un colore nuovo del
+     sistema: e' l'istanza del muted valida sul guscio, e la usa .fascia-guscio
+     ridefinendo --color-muted per tutto il proprio sottoalbero. */
+  --muted-guscio: #4f5f54;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --y-fascia: 92px;
+    --y-testata: 148px;
+  }
 }
 
 @layer base {
@@ -248,23 +282,37 @@
     text-transform: uppercase;
     color: var(--color-ink);
   }
+  /* LA SCALA SCENDE DI CIRCA UN TERZO, e Anton resta Anton.
+     A schermo intero un titolo alto 102px spingeva tutto il contenuto sotto la
+     piega e da solo faceva buona parte dei quasi 6000px della home: il carattere
+     non era il problema, la misura si. Il tetto e' quello che cambia
+     (102 -> 68, 72 -> 48, 38 -> 30), il maiuscolo e la personalita' no.
+
+     clamp e non min: min(68px, 5.6vw) a 390px varrebbe 21px, cioe' un titolo
+     PIU PICCOLO del testo che gli sta sotto - il difetto opposto, sul telefono.
+     Il pavimento tiene la misura mobile a quella di prima (h1 31 -> 30,
+     h2 22 -> 22, h3 18 -> 17): a 390px un titolone non spinge niente sotto la
+     piega, quindi li' non c'e' niente da tagliare. Il soffitto fa il taglio
+     vero dove il difetto c'era davvero, cioe' sul desktop. */
   .h1 {
-    font-size: min(102px, 8vw);
-    line-height: 0.86;
+    font-size: clamp(30px, 5.6vw, 68px);
+    line-height: 0.88;
     letter-spacing: -0.012em;
   }
   .h2 {
-    font-size: min(72px, 5.7vw);
-    line-height: 0.88;
+    font-size: clamp(22px, 4vw, 48px);
+    line-height: 0.9;
     letter-spacing: -0.01em;
   }
   .h3 {
-    font-size: min(38px, 4.6vw);
-    line-height: 0.98;
+    font-size: clamp(17px, 3.6vw, 30px);
+    line-height: 1;
   }
+  /* sceso con i titoli: a 19px accanto a un h2 da 48 il lead pesava quanto il
+     titolo e la gerarchia si appiattiva */
   .lead {
-    font-size: 19px;
-    line-height: 1.52;
+    font-size: 17.5px;
+    line-height: 1.56;
     color: var(--color-muted);
     max-width: 44ch;
   }
@@ -799,6 +847,110 @@
     font-style: inherit;
   }
 
+  /* ---------- fasce: il ritmo delle superfici ------------------------------
+     IL DIFETTO CHE QUESTE CLASSI CHIUDONO.
+     Il fondo era carta uniforme dalla prima riga all'ultima, su ogni pagina.
+     Ogni sezione ripeteva lo stesso schema - occhiello, titolone, paragrafo,
+     contenuto - e finiva in trecento pixel di vuoto beige identico al vuoto
+     della sezione prima. Il vuoto tutto uguale non e' una struttura: chi
+     scorreva non aveva NIENTE che gli dicesse dove una cosa finisce e comincia
+     la successiva. Adesso ogni sezione dichiara la superficie su cui sta, e il
+     confine si vede invece di doverlo contare in pixel.
+
+     QUATTRO SUPERFICI, in ordine di forza. Sono quelle della tavolozza, non
+     colori nuovi: la profondita' deve venire dall'identita' del sito (carta
+     calda, verde inchiostro, lime acido), non da una sfumatura.
+       .fascia-carta    paper  #F4F1E8  il fondo di riposo
+       .fascia-guscio   tray   #E9E4D6  la fascia alternata, un gradino caldo
+       .fascia-lime     lime   #DFFF3E  respiro acido, sempre corta
+       .fascia-ink      ink    #12301F  lo stacco forte, di norma la chiusura
+
+     TRE REGOLE.
+     1. Due fasce vicine non hanno MAI la stessa superficie: e' l'unica cosa
+        che rende il confine un confine.
+     2. Sul guscio non si appoggia niente che sia gia' guscio. La .shell qui
+        sotto e' coperta d'ufficio; le chip nude no, e vanno tenute sulla carta
+        (in pratica: nelle testate, che sono tutte carta).
+     3. Sull'inchiostro il testo cambia colore, e lo fa con .on-ink - la
+        marcatura che il progetto ha gia' - non con colori scritti nel markup.
+
+     Il passo verticale sta in --y-fascia, cioe' in :root: cambiare la scala
+     tipografica non deve voler dire rincorrere trenta py-[110px] nel JSX.
+     Tre gradini, e si combinano con la superficie:
+       .fascia          il passo normale     68 / 92
+       .fascia-corta    respiro breve        44 / 60
+       .fascia-alta     sezione che pesa     88 / 118
+       .fascia-t        testata di pagina   122 / 148 (solo in alto)
+     .fascia-corta oggi non la usa nessuna rotta: sta qui perche' la scala sia
+     completa quando la home verra' ricostruita su queste classi. */
+  .fascia {
+    position: relative;
+    padding-top: var(--y-fascia);
+    padding-bottom: var(--y-fascia);
+  }
+  /* La testata di pagina schiva la nav flottante (22px dall'alto + 72 di
+     altezza) e non ha una fascia sopra di se da cui staccarsi. */
+  .fascia-t {
+    padding-top: var(--y-testata);
+  }
+  .fascia-corta {
+    --y-fascia: 44px;
+  }
+  .fascia-alta {
+    --y-fascia: 88px;
+  }
+  @media (min-width: 768px) {
+    .fascia-corta {
+      --y-fascia: 60px;
+    }
+    .fascia-alta {
+      --y-fascia: 118px;
+    }
+  }
+
+  .fascia-carta {
+    background: var(--color-paper);
+  }
+
+  .fascia-guscio {
+    background: var(--color-tray);
+    /* vedi --muted-guscio in :root: sul guscio il muted di serie fa 4.45:1 */
+    --color-muted: var(--muted-guscio);
+  }
+  /* Il guscio della doppia scocca e' fatto dello stesso colore della fascia:
+     senza questa riga una card su fascia guscio perde il gradino esterno e
+     resta un rettangolo bianco appoggiato sul nulla. Sulla fascia la scocca
+     sale invece di scendere - guscio, carta, bianco - ed e' la stessa scala
+     letta al contrario, con lo stesso salto di luminanza (1.12) fra i gradini. */
+  .fascia-guscio .shell {
+    background: var(--color-paper);
+  }
+
+  /* Il lime come FASCIA dritta. Oggi in pagina la superficie lime arriva da
+     due strade che esistevano gia' - il nastro .ticker e le due lastre ruotate
+     di /menu e /chi-e-matteo - e nessuna delle due e' una fascia dritta:
+     questa classe e' quella, per chi ne avra' bisogno. Vale la regola detta
+     sopra: corta. Una fascia lime lunga smette di essere un respiro. */
+  .fascia-lime {
+    background: var(--color-lime);
+  }
+
+  .fascia-ink {
+    background: var(--color-ink);
+    color: #fff;
+  }
+  /* Le superfici chiare DENTRO una fascia scura restano chiare, e il testo con
+     loro. Senza questa riga il bianco della fascia si eredita dentro le card e
+     diventa bianco su bianco: 1.00:1, esattamente il difetto che questo sito ha
+     gia' pagato dieci volte. Le stesse due classi ripristinano anche i filetti,
+     che .on-ink porta sul bianco al 16%. */
+  .fascia-ink .shell,
+  .fascia-ink .core {
+    color: var(--color-ink);
+    --hair: rgba(18, 48, 31, 0.14);
+    --hair-soft: rgba(18, 48, 31, 0.1);
+  }
+
   /* ---------- regioni scure ------------------------------------------------
      .on-ink marca una zona scura (il fondo lo mettono .readout, .total o una
      utility bg-ink). Non impone il fondo: ribalta solo cio che su scuro
@@ -849,6 +1001,59 @@
   /* Dentro i blocchi scuri il focus a inchiostro sparirebbe. */
   .on-ink :focus-visible {
     outline-color: var(--color-lime);
+  }
+
+  /* UNA SUPERFICIE CHIARA DENTRO UNA ZONA SCURA.
+     E' il caso che le fasce introducono e che .on-ink da sola non prevedeva:
+     una card bianca appoggiata su una fascia inchiostro. .on-ink ribalta tutto
+     il proprio sottoalbero, e il sottoalbero adesso comprende anche il bianco:
+     senza queste righe .lead e .note dentro la card finirebbero sul mink
+     (1.88:1 sulla card) e i titoli sul bianco (1.00:1). Sarebbe l'undicesima
+     famiglia di testo invisibile di questo progetto.
+     La specificita' e' di un gradino sopra .on-ink .lead, quindi vince senza
+     !important. Attenzione: .core.on-ink - stesso elemento, come la figura di
+     /come-funziona - non e' toccato, perche' qui .core e' un DISCENDENTE. */
+  .on-ink .core,
+  .on-ink .core .h1,
+  .on-ink .core .h2,
+  .on-ink .core .h3 {
+    color: var(--color-ink);
+  }
+  .on-ink .core {
+    --hair: rgba(18, 48, 31, 0.14);
+    --hair-soft: rgba(18, 48, 31, 0.1);
+  }
+  .on-ink .core .lead,
+  .on-ink .core .label,
+  .on-ink .core .note,
+  .on-ink .core .bar-v,
+  .on-ink .core .dayhead,
+  .on-ink .core .rowlab,
+  .on-ink .core .cell-k,
+  .on-ink .core .price-da,
+  .on-ink .core .price-u {
+    color: var(--color-muted);
+  }
+  .on-ink .core .bar-v b {
+    color: var(--color-ink);
+  }
+  .on-ink .core .eyebrow {
+    background: var(--color-card);
+    box-shadow: inset 0 0 0 1px rgba(18, 48, 31, 0.14);
+    color: var(--color-ink);
+  }
+  .on-ink .core .eyebrow b {
+    background: var(--color-ink);
+  }
+  .on-ink .core .bar-track {
+    background: var(--color-tray);
+  }
+  .on-ink .core .bar-tick {
+    background: var(--color-ink);
+    opacity: 0.45;
+  }
+  .on-ink .core :focus-visible {
+    outline-color: var(--color-ink);
   }
 }
 

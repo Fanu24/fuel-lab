@@ -20,7 +20,7 @@ export const metadata: Metadata = {
  */
 function Attesa() {
   return (
-    <section className="pt-[152px] pb-[110px] md:pt-[190px] md:pb-[150px]">
+    <section className="fascia fascia-t fascia-carta">
       <div className="wrap">
         <div className="shell">
           <div className="core grid min-h-[340px] place-items-center p-10">

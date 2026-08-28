@@ -180,7 +180,7 @@ function Caricamento({
           <h2
             ref={headingRef}
             tabIndex={-1}
-            className="h3 mt-4 max-w-[380px] !text-[clamp(26px,4.4vw,36px)] outline-none"
+            className="h3 mt-4 max-w-[380px] !text-[clamp(19px,3vw,26px)] outline-none"
           >
             Trascina qui la scheda del tuo nutrizionista
           </h2>
@@ -383,7 +383,7 @@ function Scansione({
         <h2
           ref={headingRef}
           tabIndex={-1}
-          className="h2 mt-4 !text-[clamp(34px,5.2vw,56px)] outline-none"
+          className="h2 mt-4 !text-[clamp(24px,3.6vw,38px)] outline-none"
         >
           Un attimo.
         </h2>
@@ -560,16 +560,16 @@ export default function SchedaClient() {
   return (
     <>
       {/* ========================= TESTATA ========================= */}
-      <section className="pt-[158px] pb-[56px]">
+      <section className="fascia fascia-t fascia-carta">
         <div className="wrap">
-          <Eyebrow className="mb-8">Personalizzato sui tuoi macro</Eyebrow>
+          <Eyebrow className="mb-6">Personalizzato sui tuoi macro</Eyebrow>
           <h1 className="h1 max-w-[15ch]">
             <Rise i={0}>La tua scheda</Rise>
             <Rise i={1}>
               diventa <span className="hl hl-on"><i className="hl-bar" aria-hidden="true" /><span className="hl-tx">il tuo menu.</span></span>
             </Rise>
           </h1>
-          <div className="mt-11 flex flex-wrap items-end justify-between gap-x-12 gap-y-9">
+          <div className="mt-8 flex flex-wrap items-end justify-between gap-x-12 gap-y-8">
             <p className="lead">
               Carichi la scheda, controlli i numeri, il matcher abbina primi e secondi che chiudono i
               tuoi macro dentro le {CASELLE_TOTALI} caselle della settimana. Poi cucina Matteo.
@@ -580,7 +580,9 @@ export default function SchedaClient() {
       </section>
 
       {/* ========================= IL FLUSSO ========================= */}
-      <section className="pb-[126px]" id="flusso">
+      {/* Il flusso e' la zona di lavoro della pagina: sta sul guscio, e i
+          pannelli .shell che lo compongono salgono a carta da soli. */}
+      <section className="fascia fascia-guscio" id="flusso">
         <div className="wrap">
           <div ref={ancora} className="scroll-mt-[118px]" />
 
@@ -637,16 +639,17 @@ export default function SchedaClient() {
       />
 
       {/* ========================= ONESTA ========================= */}
-      <section className="py-[124px]">
+      {/* Torna sulla carta dopo il ticker lime. */}
+      <section className="fascia fascia-carta">
         <div className="wrap">
           <div className="grid items-start gap-14 lg:grid-cols-[1fr_388px]">
             <div>
               <Reveal>
-                <Eyebrow className="mb-7">Come funziona davvero</Eyebrow>
+                <Eyebrow className="mb-5">Come funziona davvero</Eyebrow>
                 <h2 className="h2 max-w-[13ch]">Cosa succede al tuo file.</h2>
               </Reveal>
 
-              <div className="mt-12 grid gap-5">
+              <div className="mt-9 grid gap-5">
                 {[
                   {
                     n: "01",
@@ -678,7 +681,7 @@ export default function SchedaClient() {
                           {b.n}
                         </p>
                         <div>
-                          <h3 className="h3 !text-[23px]">{b.t}</h3>
+                          <h3 className="h3 !text-[19px]">{b.t}</h3>
                           <p className="mt-3 max-w-[54ch] text-[14.5px] leading-relaxed text-muted">
                             {b.d}
                           </p>
@@ -709,13 +712,15 @@ export default function SchedaClient() {
       </section>
 
       {/* ========================= CHIUSURA ========================= */}
-      <section className="pb-[138px]">
+      {/* Chiusura su fascia INCHIOSTRO: la firma di fine pagina, uguale su
+          /come-funziona e /chi-e-matteo. */}
+      <section className="fascia fascia-ink">
         <div className="wrap">
           <Reveal>
             <div className="shell">
               <div className="core flex flex-wrap items-center justify-between gap-8 p-9 sm:p-12">
                 <div>
-                  <h2 className="h2 !text-[clamp(30px,4.4vw,46px)]">
+                  <h2 className="h2 !text-[clamp(22px,3.2vw,32px)]">
                     Vuoi prima vedere cosa si mangia?
                   </h2>
                   <p className="mt-4 max-w-[46ch] text-[15px] text-muted">

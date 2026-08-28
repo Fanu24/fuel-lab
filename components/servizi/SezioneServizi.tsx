@@ -149,13 +149,26 @@ function LinkServizio({ servizio }: { servizio: Servizio }) {
  * fila, con in mezzo solo aria. In home invece la sezione arriva in mezzo ad
  * altro e la sua testata serve: li' resta accesa (e' il valore predefinito).
  */
-export default function SezioneServizi({ conTestata = true }: { conTestata?: boolean }) {
+export default function SezioneServizi({
+  conTestata = true,
+  fascia = "carta",
+}: {
+  conTestata?: boolean;
+  /**
+   * La superficie su cui la sezione si appoggia. Non e' una decorazione: il
+   * sistema di fasce vuole che due sezioni vicine non abbiano mai lo stesso
+   * fondo, e questa sezione vive in due pagine diverse con un vicino diverso.
+   * In /servizi segue una testata di carta, quindi chiede il guscio; in home
+   * resta sulla carta (valore predefinito), dove la decide la pagina.
+   */
+  fascia?: "carta" | "guscio";
+}) {
   const menu = getServizio("menu-settimana");
   const macro = getServizio("sui-tuoi-macro");
   const homeCooking = getServizio("home-cooking");
 
   return (
-    <section className={conTestata ? "py-[110px] md:py-[150px]" : "pb-[110px] md:pb-[150px]"}>
+    <section className={fascia === "guscio" ? "fascia fascia-guscio" : "fascia fascia-carta"}>
       <div className="wrap">
         {conTestata ? (
           <Reveal>

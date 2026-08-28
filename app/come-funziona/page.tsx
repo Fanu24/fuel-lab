@@ -283,12 +283,12 @@ export default function ComeFunziona() {
       {/* ========================= TESTATA ========================= */}
       {/* overflow-x-clip come le altre testate del sito: taglia solo le sporgenze
           laterali, senza trasformare la sezione in un contenitore di scorrimento */}
-      <section className="relative overflow-x-clip pt-[152px] pb-[110px] md:pt-[190px] md:pb-[150px]">
+      <section className="fascia fascia-t fascia-carta relative overflow-x-clip">
         <div className="wrap">
           <div className="grid gap-16 lg:grid-cols-[minmax(0,1.04fr)_minmax(0,.96fr)] lg:items-end lg:gap-20">
             <div>
               <Reveal>
-                <Eyebrow className="mb-[30px]">Il servizio</Eyebrow>
+                <Eyebrow className="mb-[20px]">Il servizio</Eyebrow>
               </Reveal>
               <h1 className="h1">
                 <Rise i={0}>Fresco vuol dire</Rise>
@@ -300,7 +300,7 @@ export default function ComeFunziona() {
               {/* il lead entra dopo le due righe del titolo, non insieme: fuel-rise qui
                   non va, perche senza la maschera di .ln slitterebbe sopra il titolo */}
               <Reveal delay={520}>
-                <p className="lead mt-10">
+                <p className="lead mt-7">
                   Il surgelato dura sei mesi perch&eacute; a meno 18 gradi non succede pi&ugrave; niente: n&eacute; il
                   buono n&eacute; il cattivo. Non &egrave; cibo appena cotto, &egrave; cibo messo in pausa.
                 </p>
@@ -310,7 +310,7 @@ export default function ComeFunziona() {
                   prova che dentro c&apos;&egrave; roba viva, cotta luned&igrave; mattina e non lo scorso
                   marzo.
                 </p>
-                <p className="note mt-11">Cucina FUEL LAB / Pescara / due cotture a settimana</p>
+                <p className="note mt-8">Cucina FUEL LAB / Pescara / due cotture a settimana</p>
               </Reveal>
             </div>
 
@@ -362,7 +362,7 @@ export default function ComeFunziona() {
                 style={{ boxShadow: "0 34px 66px -34px rgba(223,255,62,.45)" }}
               >
                 <span
-                  className="font-mono text-[52px] leading-[.8]"
+                  className="font-mono text-[40px] leading-[.8]"
                   style={{ fontVariationSettings: '"wdth" 75, "wght" 700' }}
                 >
                   4
@@ -391,8 +391,12 @@ export default function ComeFunziona() {
         </div>
       </section>
 
-      {/* ====================== I QUATTRO PASSI ====================== */}
-      <section className="py-[110px] md:py-[150px]">
+      {/* ====================== I QUATTRO PASSI ======================
+          Guscio: e' la sezione piu' lunga della pagina e il cambio di superficie
+          la stacca dalla testata senza aggiungere vuoto. Dentro non ci sono
+          card .shell ne' chip nude, solo foto, testo e chip lime: e' esattamente
+          il contenuto che il guscio regge. */}
+      <section className="fascia fascia-guscio">
         <div className="wrap">
           <Reveal>
             <SectionHead
@@ -408,7 +412,7 @@ export default function ComeFunziona() {
             />
           </Reveal>
 
-          <ol className="mt-2 flex flex-col gap-[92px] md:gap-[130px]">
+          <ol className="mt-2 flex flex-col gap-[62px] md:gap-[88px]">
             {PASSI.map((p, i) => {
               const invertito = i % 2 === 1;
               return (
@@ -458,7 +462,7 @@ export default function ComeFunziona() {
                         e uno screen reader non deve leggere "zero uno" due volte */}
                     <p
                       aria-hidden="true"
-                      className="font-mono text-[clamp(56px,9vw,102px)] leading-[.78]"
+                      className="font-mono text-[clamp(40px,6.2vw,70px)] leading-[.78]"
                       style={{
                         fontVariationSettings: '"wdth" 75, "wght" 700',
                         // Il lime non e' mai testo su fondo chiaro: 1.00:1, misurato,
@@ -503,8 +507,10 @@ export default function ComeFunziona() {
         </div>
       </section>
 
-      {/* ================== FRESCO CONTRO SURGELATO ================== */}
-      <section className="py-[110px] md:py-[150px]">
+      {/* ================== FRESCO CONTRO SURGELATO ==================
+          Torna sulla carta: le due schede del confronto sono .shell, e la doppia
+          scocca carta/guscio/bianco si legge meglio qui che sul guscio. */}
+      <section className="fascia fascia-carta">
         <div className="wrap">
           <Reveal>
             <SectionHead
@@ -645,7 +651,7 @@ export default function ComeFunziona() {
           </div>
 
           <Reveal delay={80}>
-            <p className="lead mt-16 max-w-[64ch] md:mt-24">
+            <p className="lead mt-11 max-w-[64ch] md:mt-16">
               Se abiti fuori dall&apos;Abruzzo, o se vuoi riempire il congelatore e non pensarci per
               un mese, <b className="text-ink">il surgelato &egrave; la scelta giusta</b> e non
               proveremo a convincerti del contrario. FUEL LAB ha senso se vivi qui, se mangi per
@@ -655,14 +661,16 @@ export default function ComeFunziona() {
         </div>
       </section>
 
-      {/* ===================== DOMANDE FREQUENTI ===================== */}
-      <section className="py-[110px] md:py-[150px]">
+      {/* ===================== DOMANDE FREQUENTI =====================
+          Guscio: l'elenco e' testo su filetti, niente card. L'inchiostro delle
+          domande sul guscio fa 11.26:1. */}
+      <section className="fascia fascia-guscio">
         <div className="wrap">
           <div className="grid gap-12 lg:grid-cols-[minmax(0,.78fr)_minmax(0,1.22fr)] lg:gap-20">
             <Reveal>
               {/* la testata resta agganciata mentre si scorre l'elenco delle risposte */}
               <div className="lg:sticky lg:top-[124px]">
-                <Eyebrow className="mb-[26px]">Domande frequenti</Eyebrow>
+                <Eyebrow className="mb-[18px]">Domande frequenti</Eyebrow>
                 <h2 className="h2">
                   Le cose
                   <br />
@@ -672,11 +680,11 @@ export default function ComeFunziona() {
                 </h2>
                 {/* il conteggio esce dall'elenco: aggiungere una domanda non lascia
                     indietro un numero scritto a mano nel paragrafo accanto */}
-                <p className="mt-7 max-w-[38ch] text-[16px] leading-[1.66]">
+                <p className="mt-6 max-w-[38ch] text-[15.5px] leading-[1.66]">
                   {DOMANDE.length} risposte scritte come le daremmo al telefono, comprese quelle che
                   non ci fanno bella figura.
                 </p>
-                <p className="note mt-9">Non trovi la tua? Scrivi a Matteo</p>
+                <p className="note mt-7">Non trovi la tua? Scrivi a Matteo</p>
               </div>
             </Reveal>
 
@@ -693,23 +701,28 @@ export default function ComeFunziona() {
         durata={38}
       />
 
-      <section className="py-[110px] md:py-[150px]">
+      {/* Chiusura su fascia INCHIOSTRO: e' lo stacco forte della pagina e
+          l'ancora prima del footer. Non serve .on-ink perche' qui non c'e'
+          nessun testo appoggiato direttamente sullo scuro - tutto sta dentro
+          il nucleo bianco della card - e .fascia-ink riporta comunque il colore
+          a inchiostro dentro .shell e .core. */}
+      <section className="fascia fascia-ink">
         <div className="wrap">
           <Reveal className="shell md:rotate-[-1.1deg]">
             <div className="core grid md:grid-cols-[minmax(0,1.18fr)_minmax(0,.82fr)]">
               <div className="p-9 md:p-14">
-                <Eyebrow className="mb-[26px]">Il passo uno</Eyebrow>
+                <Eyebrow className="mb-[18px]">Il passo uno</Eyebrow>
                 <h2 className="h2">
                   Il menu &egrave; gi&agrave;
                   <br />
                   online.
                 </h2>
-                <p className="lead mt-7">
+                <p className="lead mt-6">
                   {PRIMI.length} primi e {SECONDI.length} secondi con grammi e macro alla luce del
                   sole. Guardali, oppure salta la scelta e lascia che sia la tua scheda a comporre
                   la tua settimana.
                 </p>
-                <div className="mt-10 flex flex-wrap gap-3">
+                <div className="mt-8 flex flex-wrap gap-3">
                   <Link href="/menu" className="btn btn-p">
                     Guarda il menu
                     <span className="dot" aria-hidden="true">
@@ -723,7 +736,7 @@ export default function ComeFunziona() {
                     </span>
                   </Link>
                 </div>
-                <p className="note mt-9">Consegne luned&igrave; e gioved&igrave; / disdici quando vuoi</p>
+                <p className="note mt-7">Consegne luned&igrave; e gioved&igrave; / disdici quando vuoi</p>
               </div>
 
               <figure className="relative min-h-[240px] md:min-h-0">

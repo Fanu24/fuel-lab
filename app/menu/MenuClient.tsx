@@ -270,11 +270,11 @@ export default function MenuClient() {
   return (
     <>
       {/* ---------------------------------------------------------- testata */}
-      <section className="pt-[168px] pb-[92px]">
+      <section className="fascia fascia-t fascia-carta">
         <div className="wrap">
           <div className="grid items-center gap-16 lg:grid-cols-[1fr_366px]">
             <div>
-              <Eyebrow className="mb-[30px]">Il catalogo della settimana</Eyebrow>
+              <Eyebrow className="mb-[20px]">Il catalogo della settimana</Eyebrow>
               <h1 className="h1">
                 {/* I numeri li conta il catalogo: cambia ogni settimana e una
                     testata scritta a mano prima o poi mentirebbe. */}
@@ -285,12 +285,12 @@ export default function MenuClient() {
                   <span className="hl hl-on"><i className="hl-bar" aria-hidden="true" /><span className="hl-tx">componi il pasto.</span></span>
                 </Rise>
               </h1>
-              <p className="lead mt-9">
+              <p className="lead mt-7">
                 Matteo cucina il luned&igrave; e il gioved&igrave; e consegna il giorno dopo. Scegli un primo, un
                 secondo e gli extra che ti servono: quello che leggi qui &egrave; quello che trovi nel
                 box, senza surgelati e senza scorte di magazzino.
               </p>
-              <div className="mt-9 flex flex-wrap items-center gap-2.5">
+              <div className="mt-7 flex flex-wrap items-center gap-2.5">
                 <Chip accento>Porzioni pesate</Chip>
                 <Chip>Macro dichiarati</Chip>
                 <Chip>Consegna a Pescara</Chip>
@@ -318,7 +318,7 @@ export default function MenuClient() {
                 className="absolute -bottom-7 -left-6 hidden rotate-[4.5deg] rounded-[18px] bg-lime px-5 py-4 text-ink shadow-[0_36px_62px_-36px_rgba(2,11,7,.95)] sm:block"
                 aria-hidden="true"
               >
-                <p className="font-disp text-[30px] leading-none uppercase">Lun / Gio</p>
+                <p className="font-disp text-[24px] leading-none uppercase">Lun / Gio</p>
                 <p className="mt-1.5 font-mono text-[9px] tracking-[.2em] uppercase">
                   le due cotture
                 </p>
@@ -336,7 +336,11 @@ export default function MenuClient() {
       {/* ------------------------------------------- filtri + catalogo
           Barra e griglie stanno nella STESSA sezione: e' l'unico modo perche la
           sticky resti agganciata per tutta la lettura del catalogo.           */}
-      <section className="pt-[86px] pb-[110px]">
+      {/* Il catalogo e' la zona di lavoro: sta sul GUSCIO, cosi si stacca dalla
+          testata e dalla chiusura senza che serva vuoto in mezzo. Le card sono
+          .shell e sulla fascia guscio salgono a carta da sole, quindi la doppia
+          scocca resta leggibile card per card. */}
+      <section className="fascia fascia-guscio">
         <div className="wrap">
           <h2 className="sr-only">Filtra il catalogo</h2>
 
@@ -541,7 +545,7 @@ export default function MenuClient() {
                 <div className="core relative overflow-hidden px-8 py-14 text-center sm:px-14 sm:py-16">
                   <span
                     aria-hidden="true"
-                    className="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 font-mono text-[190px] leading-none text-ink opacity-[.05]"
+                    className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 font-mono text-[140px] leading-none text-ink opacity-[.05]"
                   >
                     0
                   </span>
@@ -570,7 +574,7 @@ export default function MenuClient() {
               Fascia sempre presente, non filtrata: gli extra non hanno tag ne
               giorno di cottura, non c'e' niente su cui i filtri sopra possano
               lavorare. Il conteggio resta comunque letto dal catalogo. */}
-          <div className="mt-16">
+          <div className="mt-12">
             <SectionHead
               occhiello="Extra"
               titolo={
@@ -608,12 +612,14 @@ export default function MenuClient() {
       </section>
 
       {/* ------------------------------------------- il ritmo della settimana */}
-      <section className="relative overflow-x-clip pt-[30px] pb-[132px]">
+      {/* La lastra lime chiude la pagina: la sezione che la porta torna carta,
+          altrimenti sarebbero due stacchi uno dentro l'altro. */}
+      <section className="fascia fascia-carta relative overflow-x-clip">
         <div className="-ml-[6%] w-[112%] bg-lime text-ink shadow-[0_36px_74px_-48px_rgba(2,11,7,.9)] md:rotate-[-1.15deg]">
           <div className="mx-auto flex w-[1180px] max-w-[calc(100%/1.12-40px)] flex-wrap items-center justify-center gap-x-6 gap-y-2 py-8 md:rotate-[1.15deg]">
             {RITMO.map((v, i) => (
               <Fragment key={v}>
-                <span className="font-disp text-[19px] leading-none uppercase sm:text-[25px]">
+                <span className="font-disp text-[16px] leading-none uppercase sm:text-[21px]">
                   {v}
                 </span>
                 {i < RITMO.length - 1 ? (

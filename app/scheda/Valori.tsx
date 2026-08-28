@@ -146,7 +146,7 @@ export default function Valori({
             <h2
               ref={headingRef}
               tabIndex={-1}
-              className="h2 mt-4 !text-[clamp(32px,4.8vw,52px)] outline-none"
+              className="h2 mt-4 !text-[clamp(23px,3.4vw,36px)] outline-none"
             >
               Controlla i numeri.
             </h2>
@@ -369,7 +369,7 @@ export default function Valori({
             >
               <p className="bar-l">La settimana che stai chiedendo</p>
               <p
-                className="mt-4 font-mono text-[54px] leading-none text-ink"
+                className="mt-4 font-mono text-[40px] leading-none text-ink"
                 style={{ fontVariationSettings: '"wdth" 82' }}
               >
                 {pastiTotali}
@@ -380,7 +380,7 @@ export default function Valori({
 
               <div className="mt-7 rounded-[14px] bg-lime p-5 text-ink">
                 <p
-                  className="font-mono text-[30px] leading-none"
+                  className="font-mono text-[25px] leading-none"
                   style={{ fontVariationSettings: '"wdth" 82' }}
                 >
                   {quota}%
