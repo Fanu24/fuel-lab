@@ -124,7 +124,7 @@ export default function Nav() {
     <>
       <header className="fixed inset-x-0 top-0 z-60 flex justify-center pt-[22px]">
         <div
-          className="flex h-[68px] w-[1180px] max-w-[calc(100%-40px)] items-center gap-[38px] rounded-full border pr-3 pl-[26px]"
+          className="flex h-[72px] w-[1180px] max-w-[calc(100%-40px)] items-center gap-[38px] rounded-full border pr-3 pl-[26px]"
           style={{
             // Vetro CHIARO, non piu' scuro: il fondo del sito e' chiaro adesso,
             // e la nav a vetro si inverte insieme (spec sezione 5, punto 2).
@@ -138,26 +138,25 @@ export default function Nav() {
             boxShadow: "var(--sh-nav)",
           }}
         >
-          <Link href="/" className="mr-auto flex items-center gap-[11px]" aria-label="FUEL LAB, home">
-            <i
-              className="block h-[22px] w-[11px] shrink-0 bg-lime"
-              style={{ transform: "skewX(-12deg)" }}
-              aria-hidden="true"
+          {/* Il logo del committente, non piu una ricostruzione a testo. La barra e
+              cresciuta apposta per ospitarlo: sotto i ~44px la faccia del cuoco dentro
+              la parola FUEL smette di leggersi e il marchio diventa una macchia nera.
+              Niente piu trattino lime accanto: con un logo figurativo era un secondo
+              segno che diceva la stessa cosa.
+              alt vuoto perche il nome accessibile lo da gia aria-label sul link: due
+              volte lo stesso testo e rumore per chi usa uno screen reader. */}
+          <Link href="/" className="mr-auto flex items-center" aria-label="FUEL LAB, home">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo-fuellab.png"
+              alt=""
+              width={1001}
+              height={704}
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
+              className="h-[44px] w-auto lg:h-[54px]"
             />
-            <span className="flex items-baseline gap-[6px]">
-              <span
-                className="font-disp text-[27px] leading-none tracking-[.02em] uppercase"
-                style={{ color: "var(--color-ink)" }}
-              >
-                Fuel
-              </span>
-              <span
-                className="font-disp text-[14px] leading-none tracking-[.06em] uppercase"
-                style={{ color: "var(--color-ink)" }}
-              >
-                Lab
-              </span>
-            </span>
           </Link>
 
           <nav className="hidden items-center gap-8 lg:flex">
