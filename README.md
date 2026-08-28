@@ -7,6 +7,11 @@ nutrizionista.
 Next.js 16 (App Router) · React 19 · TypeScript · Tailwind 4. **Nessun backend: tutto gira nel
 browser.** Il contatto finale non è un pagamento, è un messaggio su WhatsApp già scritto.
 
+**Online:** <https://fuel-lab-cyan.vercel.app>
+
+Verificato sul sito pubblicato, non solo in locale: 4489 nodi di testo misurati su 16
+caricamenti, zero violazioni di contrasto.
+
 ## Avvio
 
 ```bash
@@ -77,6 +82,10 @@ Questo è il caso normale della demo, non un caso limite.
 ```bash
 # in locale
 echo "NEXT_PUBLIC_WHATSAPP=39XXXXXXXXXX" >> .env.local
+
+# in produzione, quando arriva il numero di Matteo
+vercel env add NEXT_PUBLIC_WHATSAPP
+vercel --prod
 ```
 
 ## Test
