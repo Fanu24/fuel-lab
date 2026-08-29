@@ -1,13 +1,12 @@
-import type { CSSProperties } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import Reveal from "@/components/Reveal";
-import Ticker from "@/components/Ticker";
-import ElementCard from "@/components/ElementCard";
-import SezioneServizi from "@/components/servizi/SezioneServizi";
-import { Eyebrow, SectionHead, Rise } from "@/components/ui";
+import { Eyebrow, Rise } from "@/components/ui";
 import { PRIMI, SECONDI, elementoImg } from "@/lib/catalogo";
 import type { Elemento } from "@/lib/catalogo";
+import { getServizio } from "@/lib/servizi";
+import type { Prezzo, ServizioId } from "@/lib/servizi";
+import { GIORNI, NOMI_GIORNO } from "@/lib/settimana";
 import stili from "@/components/home/home.module.css";
 
 export const metadata: Metadata = {
@@ -16,84 +15,196 @@ export const metadata: Metadata = {
     "Meal prep fresco a Pescara, mai surgelato. Primi, secondi ed extra con i macro dichiarati su ogni elemento, cucinati il lunedì e il giovedì. Il menu della settimana, il piano sui tuoi macro, o Matteo che cucina dentro casa tua.",
 };
 
-/* React non tipa le custom property. Un'asserzione sparsa a ogni chiamata e'
-   rumore che finisce per coprire gli errori veri: le variabili passano tutte da
-   qui e il file resta senza asserzioni.
-   Le rotazioni viaggiano su variabile e non su classe per un motivo preciso:
-   home.module.css le accende solo da 768px in su, cosi sotto md la griglia resta
-   dritta e niente sborda su uno schermo da 390. */
-type Variabili = Record<`--${string}`, string>;
-const vars = (v: Variabili): CSSProperties => v;
+/* =========================================================================
+   LA HOME, RIPENSATA.
 
-/* La home non conosce nessun URL di immagine: pesca dal catalogo nuovo e basta,
-   mai da lib/dishes.ts (i piatti interi). Il menu cambia ogni settimana: se un
-   giorno si accorcia, la sezione si accorcia con lui invece di esplodere su un
-   indice che non c'e'. */
-const eroe: Elemento | undefined = SECONDI[0];
-const anteprimaPrimo: Elemento | undefined = PRIMI[0];
-const anteprimaSecondi: Elemento[] = SECONDI.slice(1, 3);
+   IL DIFETTO CHE QUESTA PAGINA CHIUDE. Prima c'erano sei sezioni e 5378px, e
+   il problema non era il numero di parole: era che OGNI sezione si spiegava a
+   parole prima di mostrare qualcosa. Lo stesso schema quattro volte -
+   pillola-occhiello, titolone su due righe, paragrafo di tre righe, e solo
+   dopo il contenuto. Chi arriva vuole vedere il cibo, non leggere
+   l'introduzione al cibo.
 
-/* Stesso verde scuro di components/servizi/SezioneServizi.tsx, non --color-ink:
-   il composito su lime va sempre giudicato dopo la miscela, mai sul colore nudo.
-   rgba(18,48,31,.65) (ink base) sopra il lime compone a 4.45:1, sotto soglia -
-   e' lo stesso errore documentato in quel file con alpha .62. Questo verde piu
-   scuro, rgb(6,23,16), a alpha .66 compone a 5.69:1: margine vero. */
+   QUATTRO SEZIONI, ognuna su una superficie diversa dalla vicina (vedi "il
+   ritmo delle superfici" in app/globals.css):
+
+     1. hero + il cibo subito     carta, con la fascia fiducia LIME sotto
+     2. i tre servizi             guscio
+     3. componi la settimana      carta
+     4. scrivi a Matteo           inchiostro, corta
+
+   COSA E' USCITO, E DOVE E' FINITO.
+   - "Come funziona" in quattro passi: vive per intero, con piu' dettaglio, su
+     /come-funziona. In home resta il rimando breve nella chiusura. Nessuna
+     riga andava salvata altrove: il solo dettaglio che qui c'era e li' no,
+     "porzionatura al grammo", sta gia' su /chi-e-matteo (didascalia della
+     striscia cucina) e su /scheda.
+   - Il ticker: diceva le stesse tre cose della fascia fiducia, che gli stava
+     due centimetri sopra. Erano anche due superfici lime attaccate, cioe' la
+     regola delle fasce rotta. Il componente resta, e lo montano /menu,
+     /scheda, /come-funziona e /chi-e-matteo.
+   - La sezione servizi lunga (components/servizi/SezioneServizi.tsx): resta
+     su /servizi, dove ha una pagina tutta per se'. Qui i tre servizi
+     diventano tre carte pari: una scelta, non un racconto.
+   - L'anteprima con le ElementCard intere (macro, allergeni, "Aggiungi"): era
+     una scheda tecnica messa in vetrina. In home il catalogo si mostra come
+     vetrina - foto, nome, macro in una riga - e la scheda intera sta su
+     /menu, dove serve davvero.
+
+   UN'AZIONE SOLA PER SEZIONE: il menu, la scelta del servizio, la settimana,
+   la richiesta. Dove l'azione compare due volte (bottone piu' blocco
+   cliccabile) le due portano allo stesso posto.
+   ========================================================================= */
+
+/* Stesso verde scuro di components/servizi/SezioneServizi.tsx, non
+   --color-ink: il composito su lime va giudicato dopo la miscela, mai sul
+   colore nudo. rgba(18,48,31,.65) sopra il lime compone a 4.45:1, sotto
+   soglia. Questo verde piu' scuro, rgb(6,23,16), a alpha .66 compone a
+   5.69:1: margine vero. */
 const SU_LIME = "rgba(6,23,16,.66)";
 
-/* I quattro passi. Il secondo e' il blocco lime pieno: rompe la fila e cade
-   proprio sul momento che vende il servizio, la cucina di Matteo. */
-const PASSI: {
-  n: string;
-  titolo: string;
-  testo: string;
+/* La home non conosce nessun URL di immagine: pesca dal catalogo e basta. Il
+   menu cambia ogni settimana, quindi tutto quello che segue regge anche se il
+   catalogo si accorcia. */
+const eroe: Elemento | undefined = SECONDI[0];
+
+/* LE FOTO NON SONO UNICHE PER ELEMENTO, ed e' il tranello del catalogo:
+   PRIMI[i] e SECONDI[i] ereditano la stessa foto dai 27 piatti di partenza.
+   L'anteprima vecchia prendeva PRIMI[0] accanto a SECONDI[0] e mostrava due
+   volte la stessa scodella, una nell'eroe e una nella card grande. Qui la
+   vetrina si costruisce scartando le foto gia' in pagina invece di fidarsi
+   degli indici; la coda sul catalogo intero e' la rete di sicurezza per il
+   giorno in cui i primi quattro nomi non bastassero piu'. */
+function vetrina(quanti: number, gia: string[]): Elemento[] {
+  const viste = new Set(gia);
+  const scelti: Elemento[] = [];
+  for (const e of [PRIMI[1], SECONDI[2], PRIMI[3], SECONDI[4], ...PRIMI, ...SECONDI]) {
+    if (!e || viste.has(e.img)) continue;
+    viste.add(e.img);
+    scelti.push(e);
+    if (scelti.length === quanti) break;
+  }
+  return scelti;
+}
+const VETRINA = vetrina(4, eroe ? [eroe.img] : []);
+
+/* I tre servizi come SCELTA, non come racconto: una riga sola per servizio,
+   la soglia, un'azione. Le descrizioni per esteso stanno in lib/servizi.ts e
+   si leggono su /servizi: qui una carta larga un terzo di schermo ne
+   mostrerebbe quattro righe, e sarebbero di nuovo parole prima del prodotto.
+   L'azione e' il passo successivo VERO di quel servizio, non un generico
+   "scopri": il menu si sfoglia, la scheda si carica, l'home cooking - che non
+   ha una pagina propria e non ha un prezzo - si chiede a Matteo. */
+const CARTE: {
+  id: ServizioId;
+  riga: string;
+  href: string;
+  azione: string;
+  /** la carta lime: rompe la fila di tre e cade sul servizio che ci distingue */
   lime?: boolean;
-  gr: string;
-  su?: string;
 }[] = [
   {
-    n: "01",
-    titolo: "Scegli primi e secondi",
-    testo:
-      "Componi il pasto dal menu della settimana - un primo, un secondo, gli extra che vuoi - oppure carica la scheda del nutrizionista e lascia scegliere al matcher sui tuoi macro.",
-    gr: "-1.2deg",
+    id: "menu-settimana",
+    riga: "Primi, secondi ed extra con i macro scritti sopra ognuno: il pasto lo componi tu.",
+    href: "/menu",
+    azione: "Sfoglia il menu",
   },
   {
-    n: "02",
-    titolo: "Matteo cucina il lunedì e il giovedì",
-    testo:
-      "Materia prima comprata la mattina, cottura nel pomeriggio, porzionatura al grammo con la bilancia accesa.",
+    id: "sui-tuoi-macro",
+    riga: "Carichi la scheda del nutrizionista e la settimana si compone sui tuoi numeri.",
+    href: "/scheda",
+    azione: "Carica la scheda",
     lime: true,
-    gr: "1.8deg",
-    su: "lg:mt-[54px]",
   },
   {
-    n: "03",
-    titolo: "Consegna fresca a casa",
-    testo:
-      "A Pescara e provincia, in giornata. I contenitori arrivano freddi di frigo: non hanno mai visto un congelatore.",
-    gr: "-0.8deg",
-    su: "lg:mt-[18px]",
-  },
-  {
-    n: "04",
-    titolo: "Scaldi 3 minuti e mangi",
-    testo:
-      "Microonde o padella. Tre minuti e in tavola arriva esattamente il primo e il secondo che hai scelto, più gli extra.",
-    gr: "1.4deg",
-    su: "lg:mt-[72px]",
+    id: "home-cooking",
+    riga: "Matteo viene a casa tua: spesa, cottura e porzionatura nella tua cucina.",
+    href: "/richiesta?servizio=home-cooking",
+    azione: "Scrivi a Matteo",
   },
 ];
+
+/** "8,90 €": la virgola italiana e il simbolo, mai un totale. */
+function soglia(valore: number): string {
+  return `${valore.toFixed(2).replace(".", ",")} €`;
+}
+
+/* Il prezzo nella stessa scocca .price del resto del sito. E' l'unico posto
+   della home in cui compare un numero in euro, ed e' la soglia d'ingresso:
+   l'home cooking non ne ha una e dice "Su preventivo", senza nessuna cifra. */
+function PrezzoBreve({ prezzo, suLime = false }: { prezzo: Prezzo; suLime?: boolean }) {
+  if (prezzo.tipo === "preventivo") {
+    return (
+      <p className="price">
+        <span className="price-n">Su preventivo</span>
+      </p>
+    );
+  }
+  return (
+    <p className="price">
+      <span className="price-da" style={suLime ? { color: SU_LIME } : undefined}>
+        A partire da
+      </span>
+      <span className="price-n">{soglia(prezzo.valore)}</span>
+      <span className="price-u" style={suLime ? { color: SU_LIME } : undefined}>
+        {prezzo.unita}
+      </span>
+    </p>
+  );
+}
+
+/* La settimana d'esempio: due caselle piene su quattordici. Il vuoto e' il
+   punto - la griglia si legge come una scheda da riempire, non come un
+   listino - e i nomi dentro le due caselle piene sono elementi veri del
+   catalogo, non testo finto. */
+function cella(...e: (Elemento | undefined)[]): Elemento[] {
+  return e.filter((x): x is Elemento => x !== undefined);
+}
+const CASELLE: [Elemento[], Elemento[]][] = GIORNI.map((_, i) => {
+  if (i === 0) return [cella(PRIMI[5], SECONDI[0]), []];
+  if (i === 3) return [[], cella(PRIMI[3], SECONDI[2])];
+  return [[], []];
+});
+
+function CasellaEsempio({ dentro }: { dentro: Elemento[] }) {
+  if (dentro.length === 0) {
+    /* Niente .cell-empty: quella classe accende il lime al passaggio del
+       mouse, e qui prometterebbe un bottone dove c'e' un'anteprima. */
+    return (
+      <div className="cell w-full items-center justify-center text-[20px] font-light text-muted">
+        <span aria-hidden="true">+</span>
+        <span className="sr-only">casella libera</span>
+      </div>
+    );
+  }
+  const kcal = dentro.reduce((s, e) => s + e.kcal, 0);
+  return (
+    <div className="cell cell-full w-full">
+      {dentro.map((e) => (
+        <p key={e.id} className="cell-d">
+          {e.nome}
+        </p>
+      ))}
+      <p className="cell-k">{kcal} kcal</p>
+    </div>
+  );
+}
 
 export default function Home() {
   return (
     <>
-      {/* ============================== HERO ============================== */}
-      <section className="relative overflow-x-clip pt-[152px] pb-16 md:pt-[172px] md:pb-20">
+      {/* ==================== 1. HERO + IL CIBO SUBITO ====================
+          Una schermata sola per dire cosa si vende e a chi (occhiello: dove e
+          ogni quanto; titolo: a chi si allena; riga sotto: cosa arriva), e
+          subito sotto il cibo vero del catalogo. Nessun occhiello, nessun
+          titolo e nessun paragrafo davanti alle foto: la riga in mono sopra
+          la vetrina e' un'etichetta, non un'introduzione. */}
+      <section className="relative overflow-x-clip pt-[122px] pb-14 md:pt-[136px] md:pb-16">
         <div className="wrap">
-          <div className="relative">
-            <div className="relative z-[2] w-full max-w-[880px]">
-              <div className={`${stili.salita} mb-9 md:mb-12`} style={{ animationDelay: "150ms" }}>
-                <Eyebrow>Pescara &mdash; Consegna fresca 2 volte a settimana</Eyebrow>
+          <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-16">
+            <div>
+              <div className={`${stili.salita} mb-8`} style={{ animationDelay: "150ms" }}>
+                <Eyebrow>Pescara e provincia &mdash; consegna fresca 2 volte a settimana</Eyebrow>
               </div>
 
               <h1 className="h1">
@@ -108,26 +219,16 @@ export default function Home() {
               </h1>
 
               <p
-                className={`lead ${stili.salita} mt-12 md:mt-14`}
-                style={{ animationDelay: "1180ms" }}
+                className={`lead ${stili.salita} mt-8 max-w-[46ch]`}
+                style={{ animationDelay: "900ms" }}
               >
-                Scegli primi e secondi dal menu della settimana, o carica la scheda del tuo
-                nutrizionista: Matteo cucina i tuoi macro e te li porta a casa freschi, mai
-                surgelati.
+                Primi e secondi cucinati freschi sui tuoi macro, a casa tua il luned&igrave; e il
+                gioved&igrave;. Mai surgelati.
               </p>
 
-              <div
-                className={`${stili.salita} mt-9 flex flex-wrap items-center gap-3.5`}
-                style={{ animationDelay: "1320ms" }}
-              >
+              <div className={`${stili.salita} mt-8`} style={{ animationDelay: "1020ms" }}>
                 <Link href="/menu" className="btn btn-p">
                   Sfoglia il menu
-                  <span className="dot" aria-hidden="true">
-                    &rarr;
-                  </span>
-                </Link>
-                <Link href="/scheda" className="btn btn-s">
-                  Carica la scheda
                   <span className="dot" aria-hidden="true">
                     &rarr;
                   </span>
@@ -137,14 +238,12 @@ export default function Home() {
 
             {eroe ? (
               <figure
-                className={`shell ${stili.scatto} relative mt-16 w-[280px] max-w-full sm:w-[340px] lg:absolute lg:top-4 lg:right-[-10px] lg:z-[3] lg:mt-0 lg:w-[366px]`}
+                className={`shell ${stili.scatto} relative mx-auto w-[280px] max-w-full sm:w-[340px] lg:mx-0 lg:h-[384px] lg:w-full`}
               >
-                <div className="core aspect-[4/5]">
-                  {/* Unica immagine non lazy della pagina, ed e' voluto: e' l'LCP.
-                      Mandarla in lazy sposterebbe in avanti il primo contenuto
-                      utile invece di alleggerire la pagina. Niente filtro di
-                      luminosita': era scurita per il fondo nero, su chiaro torna
-                      naturale. */}
+                <div className="core aspect-[4/5] lg:aspect-auto lg:h-full">
+                  {/* Unica immagine non lazy della pagina, ed e' voluto: e'
+                      l'LCP. Mandarla in lazy sposterebbe in avanti il primo
+                      contenuto utile invece di alleggerire la pagina. */}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={elementoImg(eroe, 900)}
@@ -161,7 +260,7 @@ export default function Home() {
                   viewBox="0 0 120 120"
                   role="img"
                   aria-label="FUEL LAB — fresco, mai surgelato, Pescara"
-                  className={`${stili.timbro} absolute right-[-20px] bottom-[-26px] h-[112px] w-[112px] lg:right-auto lg:bottom-[-42px] lg:left-[-48px] lg:h-[134px] lg:w-[134px]`}
+                  className={`${stili.timbro} absolute right-[-18px] bottom-[-24px] h-[104px] w-[104px] lg:right-auto lg:bottom-[-32px] lg:left-[-42px] lg:h-[122px] lg:w-[122px]`}
                 >
                   <defs>
                     <path
@@ -187,10 +286,9 @@ export default function Home() {
                     </text>
                   </g>
                   {/* Il marchio sta su DUE righe, non su una: "FUEL LAB" a 24px
-                      misura circa 90px, e dentro l'anello (r=43) di spazio libero
-                      ce n'e circa 74. Su una riga sola sconfinerebbe sul testo
-                      che gira. A 20px su due righe, baseline 58 e 76, il blocco
-                      resta centrato sul centro geometrico del cerchio. */}
+                      misura circa 90px, e dentro l'anello (r=43) di spazio
+                      libero ce n'e' circa 74. A 20px su due righe, baseline 58
+                      e 76, il blocco resta centrato sul cerchio. */}
                   <text
                     textAnchor="middle"
                     style={{
@@ -211,39 +309,84 @@ export default function Home() {
               </figure>
             ) : null}
           </div>
+
+          {/* ---- la vetrina: quattro elementi veri, nella stessa schermata ---- */}
+          {VETRINA.length > 0 ? (
+            <div className="mt-12 md:mt-14">
+              <Reveal className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+                <p className="note">
+                  Questa settimana in cucina &middot; {PRIMI.length} primi &middot;{" "}
+                  {SECONDI.length} secondi
+                </p>
+                <p className="note">Mai un piatto gi&agrave; chiuso</p>
+              </Reveal>
+
+              <div className="mt-5 grid grid-cols-2 gap-4 md:gap-5 lg:grid-cols-4">
+                {VETRINA.map((e, i) => (
+                  <Reveal key={e.id} delay={i * 80} className="h-full">
+                    <Link
+                      href="/menu"
+                      aria-label={`${e.nome}, ${e.categoria === "primo" ? "primo" : "secondo"} da ${e.kcal} kcal: sfoglia il menu`}
+                      className="shell group block h-full transition-transform duration-500 hover:-translate-y-1.5"
+                      style={{ transitionTimingFunction: "var(--e-over)" }}
+                    >
+                      <div className="core flex h-full flex-col">
+                        <figure className="relative aspect-[3/2] overflow-hidden bg-tray">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={elementoImg(e, 640)}
+                            alt={e.nome}
+                            loading="lazy"
+                            decoding="async"
+                            className="h-full w-full object-cover transition-transform duration-[1.2s] group-hover:scale-[1.06]"
+                            style={{ transitionTimingFunction: "var(--e-out)" }}
+                          />
+                          <span className="chip chip-k absolute top-3 left-3 uppercase">
+                            {e.categoria === "primo" ? "Primo" : "Secondo"}
+                          </span>
+                        </figure>
+                        <div className="flex flex-1 flex-col p-4 sm:p-5">
+                          <p className="h3 !text-[17px] sm:!text-[19px]">{e.nome}</p>
+                          <p className="mono mt-auto pt-3 text-[10.5px] text-muted">
+                            {e.kcal} kcal &middot; P {e.proteine} &middot; C {e.carboidrati}{" "}
+                            &middot; G {e.grassi}
+                          </p>
+                        </div>
+                      </div>
+                    </Link>
+                  </Reveal>
+                ))}
+              </div>
+            </div>
+          ) : null}
         </div>
       </section>
 
-      {/* =========================== FASCIA FIDUCIA =======================
-          Rimessa nel ciclo di correzione 1: era nel mockup della direzione
-          scelta dal committente, subito sotto l'hero, prima di qualunque
-          impegno di lettura. E' l'unico elemento fermo (non un marquee) della
-          pagina, quindi il solo posto che si scansiona in due secondi. Le
-          prime due affermazioni sono ridondanti con eyebrow/ticker/timbro/
-          lead/passo 03: costa poco tenerle. La terza - macro certificati -
-          non era coperta da nessun'altra parte in evidenza: e' il vero
-          differenziale per chi si allena, a differenza di "fresco e locale"
-          che dice chiunque. Testo scuro pieno su lime pieno: text-ink =
-          12,607:1 (valore documentato in globals.css), nessun composito da
-          calcolare perche' non c'e' alpha. */}
+      {/* ========================= FASCIA FIDUCIA =========================
+          Resta, e resta piccola. E' l'unico elemento fermo della pagina,
+          quindi il solo che si scansiona in due secondi, e la terza
+          affermazione - macro certificati - e' il vero differenziale per chi
+          si allena, a differenza di "fresco e locale" che dice chiunque.
+          Testo scuro pieno su lime pieno: 12.61:1, nessun composito da
+          calcolare perche' non c'e' nessun alpha. */}
       <section
         className="relative z-[4] mt-[-22px] overflow-x-clip"
         aria-label="Le tre garanzie FUEL LAB"
       >
         <div className={`${stili.fascia} bg-lime text-ink`}>
           <div
-            className={`${stili.fasciaIn} grid gap-3 py-8 md:grid-cols-[1fr_auto_1fr_auto_1fr] md:items-center md:gap-[26px] md:py-[34px]`}
+            className={`${stili.fasciaIn} grid gap-3 py-7 md:grid-cols-[1fr_auto_1fr_auto_1fr] md:items-center md:gap-[26px] md:py-8`}
           >
-            <p className="font-disp text-[21px] leading-[1.02] uppercase md:text-[27px]">
+            <p className="font-disp text-[21px] leading-[1.02] uppercase md:text-[26px]">
               Fresco, mai surgelato
             </p>
             <i className="hidden h-[9px] w-[9px] rotate-45 bg-ink md:block" aria-hidden="true" />
-            <p className="font-disp text-[21px] leading-[1.02] uppercase md:text-center md:text-[27px]">
+            <p className="font-disp text-[21px] leading-[1.02] uppercase md:text-center md:text-[26px]">
               Consegnato a Pescara
               <br className="hidden md:block" /> e provincia
             </p>
             <i className="hidden h-[9px] w-[9px] rotate-45 bg-ink md:block" aria-hidden="true" />
-            <p className="font-disp text-[21px] leading-[1.02] uppercase md:text-right md:text-[27px]">
+            <p className="font-disp text-[21px] leading-[1.02] uppercase md:text-right md:text-[26px]">
               Macro certificati
               <br className="hidden md:block" /> su primi e secondi
             </p>
@@ -251,180 +394,173 @@ export default function Home() {
         </div>
       </section>
 
-      {/* =============================== TICKER =========================== */}
-      <Ticker
-        parole={[
-          "FRESCO MAI SURGELATO",
-          "PESCARA E PROVINCIA",
-          "I TUOI MACRO",
-          "PRIMI E SECONDI",
-          "CUCINATO OGGI",
-        ]}
-      />
-
-      {/* =========================== I NOSTRI SERVIZI ======================
-          Componente gia' pronto (Task 12): porta la propria SectionHead e il
-          proprio <section>, si monta cosi' com'e'. */}
-      <SezioneServizi />
-
-      {/* ======================= ANTEPRIMA DELLA SETTIMANA =================
-          Non un carrello e non i numeri live del piano: page.tsx resta un
-          Server Component (esporta metadata) e non puo' chiamare usePiano().
-          Quello che puo' fare e' mostrare un assaggio vero del catalogo nuovo -
-          un primo, due secondi, con ElementCard che gestisce da sola lo stato
-          "Aggiungi" dietro pronto (il componente e' client e legge usePiano al
-          suo interno). Il link in fondo porta alla settimana vera, con la
-          griglia delle 14 caselle e i macro che si aggiornano mentre scegli. */}
-      {anteprimaPrimo && anteprimaSecondi.length > 0 ? (
-        <section className="overflow-x-clip py-[110px] md:py-[150px]">
-          <div className="wrap">
-            <Reveal>
-              <SectionHead
-                occhiello={`${PRIMI.length} primi, ${SECONDI.length} secondi, mai un piatto già chiuso`}
-                titolo={
-                  <>
-                    Anteprima
-                    <br />
-                    della settimana
-                  </>
-                }
-                testo="Un primo, un secondo e gli extra che ti servono: quello che vedi qui è quello che trovi nel catalogo completo, pronto per finire nella tua settimana."
-                azione={
-                  <Link href="/menu" className="btn btn-s">
-                    Sfoglia tutto il catalogo
-                    <span className="dot" aria-hidden="true">
-                      &rarr;
-                    </span>
-                  </Link>
-                }
-              />
-            </Reveal>
-
-            {/* Stessa cascata sull'asse Z dell'impaginazione precedente: un
-                primo grande a sinistra, due secondi impilati a destra. */}
-            <div className="grid items-start gap-8 lg:grid-cols-2 lg:gap-8 xl:grid-cols-[minmax(0,1.18fr)_minmax(0,1fr)] xl:gap-11">
-              <Reveal delay={40}>
-                <div className={stili.rotto} style={vars({ "--gr": "-1.4deg" })}>
-                  <ElementCard elemento={anteprimaPrimo} />
-                </div>
-              </Reveal>
-
-              <div className="grid gap-6 md:gap-[26px] lg:mt-9">
-                {anteprimaSecondi.map((e, i) => (
-                  <Reveal key={e.id} delay={160 + i * 100}>
-                    <div
-                      className={stili.rotto}
-                      style={vars(
-                        i === 0 ? { "--gr": "2.1deg" } : { "--gr": "-1.6deg", "--tx": "26px" },
-                      )}
-                    >
-                      <ElementCard elemento={e} variante="riga" />
-                    </div>
-                  </Reveal>
-                ))}
-              </div>
-            </div>
-
-            <Reveal delay={260} className="mt-10 flex justify-center">
-              <Link href="/settimana" className="btn btn-p">
-                Vai alla tua settimana
-                <span className="dot" aria-hidden="true">
-                  &rarr;
-                </span>
-              </Link>
-            </Reveal>
-          </div>
-        </section>
-      ) : null}
-
-      {/* ============================ COME FUNZIONA ======================= */}
-      <section className="py-[110px] md:py-[150px]">
+      {/* ======================== 2. I TRE SERVIZI ========================
+          Guscio: la superficie cambia subito dopo la fascia lime, cosi il
+          confine si vede senza contare il vuoto. Tre carte pari, un'azione
+          per carta, nessun paragrafo introduttivo. */}
+      <section className="fascia fascia-guscio">
         <div className="wrap">
-          <Reveal>
-            <SectionHead
-              occhiello="Dalla scheda al tavolo"
-              titolo={
-                <>
-                  Quattro mosse,
-                  <br />
-                  zero pensieri
-                </>
-              }
-              azione={
-                <Link href="/come-funziona" className="btn btn-s">
-                  Come funziona nel dettaglio
+          <Reveal className="mb-9 flex flex-wrap items-end justify-between gap-x-8 gap-y-3">
+            <h2 className="h2">Tre modi di mangiare bene.</h2>
+            <p className="note">Il prezzo esatto lo definiamo insieme su WhatsApp</p>
+          </Reveal>
+
+          <div className="grid gap-5 md:grid-cols-3 md:gap-6">
+            {CARTE.map((c, i) => {
+              const s = getServizio(c.id);
+              return (
+                <Reveal key={c.id} delay={i * 90} className="h-full">
+                  <Link
+                    href={c.href}
+                    aria-label={`${s.nome}: ${c.azione}`}
+                    className="shell block h-full transition-transform duration-500 hover:-translate-y-1.5"
+                    style={{
+                      transitionTimingFunction: "var(--e-over)",
+                      ...(c.lime ? { background: "var(--color-lime)" } : null),
+                    }}
+                  >
+                    <div
+                      className="core flex h-full flex-col p-6 sm:p-7"
+                      style={c.lime ? { background: "var(--color-lime)" } : undefined}
+                    >
+                      <span className={c.lime ? "num num-ink" : "num num-lime"}>{s.numero}</span>
+                      <h3 className={`h3 mt-5 !text-[23px] ${c.lime ? "text-ink" : ""}`}>
+                        {s.nome}
+                      </h3>
+                      <p
+                        className={`mt-3 flex-1 text-[14.5px] leading-[1.55] ${c.lime ? "" : "text-muted"}`}
+                        style={c.lime ? { color: SU_LIME } : undefined}
+                      >
+                        {c.riga}
+                      </p>
+
+                      <div className="mt-6">
+                        <PrezzoBreve prezzo={s.prezzo} suLime={c.lime} />
+                      </div>
+                      {/* Non e' un <button>: sta dentro un link, e un
+                          interattivo dentro un interattivo non e' markup
+                          valido. E' la stessa pillola, disegnata. */}
+                      <span className="btn btn-p btn-sm mt-5 self-start">
+                        {c.azione}
+                        <span className="dot" aria-hidden="true">
+                          &rarr;
+                        </span>
+                      </span>
+                    </div>
+                  </Link>
+                </Reveal>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ===================== 3. COMPONI LA SETTIMANA ====================
+          Il meccanismo del sito in una figura sola: sette giorni per due
+          pasti, due caselle piene e dodici da riempire. Si capisce guardando,
+          non leggendo. Tutta l'anteprima e' cliccabile e porta dove porta il
+          bottone: un'azione sola, due superfici. */}
+      <section className="fascia fascia-corta fascia-carta">
+        <div className="wrap">
+          <Reveal className="shell">
+            <div className="core p-5 sm:p-7 md:p-9">
+              <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-5">
+                <div>
+                  <h2 className="h2">Componi la tua settimana.</h2>
+                  <p className="note mt-4">
+                    Sette giorni, quattordici caselle: un primo, un secondo e gli extra in ognuna
+                  </p>
+                </div>
+                <Link href="/settimana" className="btn btn-p">
+                  Vai alla tua settimana
                   <span className="dot" aria-hidden="true">
                     &rarr;
                   </span>
                 </Link>
-              }
-            />
-          </Reveal>
+              </div>
 
-          {/* role="list": il reset di Tailwind toglie i marcatori e con essi, su
-              Safari, la semantica di lista. I quattro passi sono una sequenza,
-              chi ascolta deve poterla contare. */}
-          <ol role="list" className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 lg:gap-[22px]">
-            {PASSI.map((p, i) => (
-              <Reveal as="li" key={p.n} delay={i * 90} className={p.su}>
-                <div className={`${stili.rotto} h-full`} style={vars({ "--gr": p.gr })}>
-                  {p.lime ? (
-                    <div className="h-full rounded-[26px] bg-lime p-7 text-ink sm:p-8">
-                      <p
-                        className="font-mono text-[42px] leading-none"
-                        style={{ fontVariationSettings: '"wdth" 84' }}
-                      >
-                        {p.n}
-                      </p>
-                      <h3 className="h3 mt-6 !text-[25px] text-ink">{p.titolo}</h3>
-                      <p className="mt-3.5 text-[14.5px] leading-relaxed text-ink/75">{p.testo}</p>
+              <Link
+                href="/settimana"
+                aria-label="Apri la tua settimana e riempi le caselle"
+                className="mt-7 block"
+              >
+                {/* Sotto md restano due giorni, non sette: a sette colonne
+                    su 390px una casella varrebbe 44px e i nomi andrebbero a
+                    capo cinque volte. La colonna delle etichette invece resta
+                    a ogni larghezza - senza, le due righe sono due file di
+                    scatole e nessuno sa che sono pranzo e cena. */}
+                <div className="grid grid-cols-[46px_repeat(2,minmax(0,1fr))] gap-2 md:grid-cols-[58px_repeat(7,minmax(0,1fr))]">
+                  <span aria-hidden="true" />
+                  {GIORNI.map((g, i) => (
+                    <span key={g} className={`dayhead ${i > 1 ? "hidden md:block" : ""}`}>
+                      {NOMI_GIORNO[g]}
+                    </span>
+                  ))}
+
+                  <span className="rowlab">Pranzo</span>
+                  {GIORNI.map((g, i) => (
+                    <div key={g} className={i > 1 ? "hidden md:flex" : "flex"}>
+                      <CasellaEsempio dentro={CASELLE[i][0]} />
                     </div>
-                  ) : (
-                    <div className="shell h-full">
-                      <div className="core h-full p-6 sm:p-7">
-                        <p
-                          className="font-mono text-[42px] leading-none text-ink"
-                          style={{ fontVariationSettings: '"wdth" 84' }}
-                        >
-                          {p.n}
-                        </p>
-                        <h3 className="h3 mt-6 !text-[25px]">{p.titolo}</h3>
-                        <p className="mt-3.5 text-[14.5px] leading-relaxed text-muted">
-                          {p.testo}
-                        </p>
-                      </div>
+                  ))}
+
+                  <span className="rowlab">Cena</span>
+                  {GIORNI.map((g, i) => (
+                    <div key={g} className={i > 1 ? "hidden md:flex" : "flex"}>
+                      <CasellaEsempio dentro={CASELLE[i][1]} />
                     </div>
-                  )}
+                  ))}
                 </div>
-              </Reveal>
-            ))}
-          </ol>
+              </Link>
+            </div>
+          </Reveal>
         </div>
       </section>
 
-      {/* ============================== CHIUSURA ========================== */}
-      <Reveal as="section" className="bg-lime text-ink">
-        <div className="wrap flex flex-wrap items-end justify-between gap-9 py-[92px] md:py-[124px]">
+      {/* ======================= 4. SCRIVI A MATTEO =======================
+          Chiusura su fascia INCHIOSTRO, corta: lo stacco forte prima del
+          footer e l'unica azione che al committente serve davvero, perche'
+          /richiesta raccoglie nome, telefono e comune prima di aprire
+          WhatsApp. Il testo sta direttamente sullo scuro, quindi la sezione
+          porta .on-ink: i colori li ribalta la marcatura, non il markup. Il
+          bottone e' .btn-s, bianco pieno con testo inchiostro; .btn-p qui
+          sarebbe inchiostro su inchiostro. */}
+      <Reveal as="section" className="fascia fascia-corta fascia-ink on-ink">
+        <div className="wrap flex flex-wrap items-end justify-between gap-x-10 gap-y-8">
           <div>
-            {/* .note porta di default var(--color-muted), tarato su paper/card/cell:
-                sopra il lime pieno va sovrascritto. rgba(18,48,31,.65) (ink base)
-                comporrebbe a 4.45:1, sotto soglia: SU_LIME e' il verde piu scuro
-                gia' in uso in SezioneServizi.tsx per lo stesso identico problema. */}
-            <p className="note" style={{ color: SU_LIME }}>
-              Pescara e provincia &middot; Consegna il luned&igrave; e il gioved&igrave;
+            <p className="note">
+              Pescara e provincia &middot; consegna il luned&igrave; e il gioved&igrave;
             </p>
-            <h2 className="h2 mt-6 text-ink">
-              Mangia come
+            <h2 className="h2 mt-5">
+              Il prezzo esatto
               <br />
-              ti alleni.
+              te lo dice Matteo.
             </h2>
+            <p className="lead mt-5">
+              Lasci nome, telefono e comune: ti risponde lui su WhatsApp, con il piano della
+              settimana e il preventivo.
+            </p>
           </div>
-          <Link href="/settimana" className={`btn ${stili.btnScuro}`}>
-            Componi la tua settimana
-            <span className="dot" aria-hidden="true">
-              &rarr;
-            </span>
-          </Link>
+
+          <div className="flex flex-col items-start gap-5">
+            <Link href="/richiesta" className="btn btn-s">
+              Scrivi a Matteo
+              <span className="dot" aria-hidden="true">
+                &rarr;
+              </span>
+            </Link>
+            {/* Il rimando breve alle due pagine che dalla home sono uscite. */}
+            <p className="note">
+              Prima:{" "}
+              <Link href="/come-funziona" className="underline underline-offset-4">
+                come funziona
+              </Link>{" "}
+              &middot;{" "}
+              <Link href="/chi-e-matteo" className="underline underline-offset-4">
+                chi &egrave; Matteo
+              </Link>
+            </p>
+          </div>
         </div>
       </Reveal>
     </>
