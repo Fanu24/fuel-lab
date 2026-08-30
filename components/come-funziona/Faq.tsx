@@ -70,8 +70,12 @@ const CSS = `
 @keyframes cf-apri{ from{ opacity:0; transform:translateY(-9px); } to{ opacity:1; transform:none; } }
 
 @media (max-width:768px){
-  .cf-t{ font-size:16.5px; }
-  .cf-q > summary{ gap:14px; padding:20px 0; }
+  .cf-t{ font-size:16px; line-height:1.3; }
+  /* 15px sopra e sotto + la riga del titolo fanno comunque un bersaglio da
+     una cinquantina di pixel, sopra i 44 che il dito chiede: qui si toglie
+     aria, non superficie da toccare. */
+  .cf-q > summary{ gap:12px; padding:15px 0; }
+  .cf-a{ padding:0 0 19px; font-size:15px; line-height:1.6; }
 }
 `;
 

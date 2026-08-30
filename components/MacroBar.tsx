@@ -93,10 +93,15 @@ export function MacroSplit({
   );
 }
 
+/* L'iniziale accanto al binario, il nome per esteso nell'aria-label del meter:
+   sulla scheda del catalogo la parola "Carboidrati" era larga quanto la
+   colonna che doveva etichettare, e ripetuta 54 volte su /menu costava piu'
+   spazio del dato. Chi legge con lo schermo continua a sentire il nome
+   intero, che e' dove la parola serve davvero. */
 const RIGHE = [
-  { k: "proteine", l: "Proteine" },
-  { k: "carboidrati", l: "Carboidrati" },
-  { k: "grassi", l: "Grassi" },
+  { k: "proteine", l: "Proteine", i: "P" },
+  { k: "carboidrati", l: "Carboidrati", i: "C" },
+  { k: "grassi", l: "Grassi", i: "G" },
 ] as const;
 
 /**
@@ -153,19 +158,21 @@ export function MacroAnimate({ elemento }: { elemento: Elemento }) {
   }, []);
 
   return (
-    <div ref={ref}>
+    /* Tre COLONNE pari, non tre righe impilate: stessa informazione e stessa
+       scala comune, un quarto dell'altezza. Vedi .macro-3 in globals.css per
+       il difetto che il cambio di forma chiude (125px a scheda per 54 schede
+       su /menu, cioe' otto schermate di telefono di sole barre). */
+    <div ref={ref} className="macro-3">
       {RIGHE.map((r, i) => {
         const valore = elemento[r.k];
         const massimo = MAX_MACRO[r.k];
         const quota = massimo > 0 ? Math.min(1, valore / massimo) : 0;
         return (
-          <div key={r.k} className="mb-3 last:mb-0">
-            <div className="mb-[6px] flex items-baseline justify-between gap-3">
-              <span className="bar-l">{r.l}</span>
-              <span className="bar-v">
-                <b>{valore}</b> g
-              </span>
-            </div>
+          <div key={r.k}>
+            <p className="macro-3-v">
+              <span aria-hidden="true">{r.i}</span>
+              <b>{valore}</b>
+            </p>
             <div
               className="bar-track"
               role="meter"

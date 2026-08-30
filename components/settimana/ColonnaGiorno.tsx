@@ -38,9 +38,9 @@ export default function ColonnaGiorno({
 
   return (
     <article className="shell">
-      <div className="core p-4 sm:p-6">
+      <div className="core p-3.5 sm:p-6">
         <header
-          className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 border-b pb-4"
+          className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1.5 border-b pb-3"
           style={{ borderColor: "var(--hair-soft)" }}
         >
           {/* .h3 adesso e' clamp(17px, 3.6vw, 30px): a 390px vale 17px, cioe' meno
@@ -58,16 +58,16 @@ export default function ColonnaGiorno({
               carboidrati={macro.carboidrati}
               grassi={macro.grassi}
             />
-            <p className="mono mt-2 text-[10px] font-medium text-muted">
+            <p className="mono mt-1.5 text-[10px] font-medium text-muted">
               P {macro.proteine} g · C {macro.carboidrati} g · G {macro.grassi} g
             </p>
           </div>
         </header>
 
-        <div className="mt-4 flex flex-col gap-4">
+        <div className="mt-3 flex flex-col gap-3">
           {PASTI.map((m) => (
             <div key={m}>
-              <span className="rowlab mb-2">{NOMI_PASTO[m]}</span>
+              <span className="rowlab mb-1.5">{NOMI_PASTO[m]}</span>
               <CasellaBottone
                 giorno={giorno}
                 pasto={m}

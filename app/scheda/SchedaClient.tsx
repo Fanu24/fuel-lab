@@ -129,7 +129,7 @@ function Caricamento({
   );
 
   return (
-    <div className="grid items-start gap-12 lg:grid-cols-[1fr_368px]">
+    <div className="grid items-start gap-7 lg:grid-cols-[1fr_368px] lg:gap-12">
       {/* ---------- zona di rilascio ---------- */}
       <div
         onDragEnter={(e) => {
@@ -152,7 +152,7 @@ function Caricamento({
           setCaldo(false);
           accetta(e.dataTransfer.files?.[0]);
         }}
-        className="relative flex flex-col items-start justify-center px-7 py-12 sm:px-11 sm:py-[54px]"
+        className="relative flex flex-col items-start justify-center px-5 py-8 sm:px-11 sm:py-[54px]"
         style={{
           borderRadius: "var(--shell)",
           border: "1px dashed " + (caldo ? "var(--color-lime)" : "rgba(223,255,62,.34)"),
@@ -180,16 +180,16 @@ function Caricamento({
           <h2
             ref={headingRef}
             tabIndex={-1}
-            className="h3 mt-4 max-w-[380px] !text-[clamp(19px,3vw,26px)] outline-none"
+            className="h3 mt-3 max-w-[380px] !text-[clamp(19px,3vw,26px)] outline-none md:mt-4"
           >
             Trascina qui la scheda del tuo nutrizionista
           </h2>
-          <p className="mt-4 max-w-[430px] text-[15px] leading-relaxed text-ink">
+          <p className="mt-3 max-w-[430px] text-[14.5px] leading-[1.5] text-ink md:mt-4 md:text-[15px] md:leading-relaxed">
             PDF, foto, screenshot: quello che hai. Il file resta sul tuo computer, non lo
             carichiamo da nessuna parte.
           </p>
 
-          <div className="mt-8 flex flex-wrap items-center gap-4">
+          <div className="mt-5 flex flex-wrap items-center gap-3 md:mt-8 md:gap-4">
             <input
               id="scheda-file"
               type="file"
@@ -220,7 +220,7 @@ function Caricamento({
             <p className="note">o trascinalo qui dentro</p>
           </div>
 
-          <div className="mt-7 min-h-[36px]">
+          <div className="mt-4 min-h-[36px] md:mt-7">
             {accettato !== null ? (
               <p
                 className="inline-block max-w-full overflow-hidden rounded-full bg-lime px-4 py-[7px] font-mono text-[12px] text-ellipsis whitespace-nowrap text-ink"
@@ -243,11 +243,11 @@ function Caricamento({
             ) : null}
           </div>
 
-          <p className="mt-8 border-t pt-6" style={{ borderColor: "var(--hair-soft)" }}>
+          <p className="mt-5 border-t pt-4 md:mt-8 md:pt-6" style={{ borderColor: "var(--hair-soft)" }}>
             <button
               type="button"
               onClick={onMano}
-              className="text-[14px] text-ink underline decoration-ink decoration-2 underline-offset-[6px] transition-colors duration-400 ease-[var(--e-out)] hover:text-ink"
+              className="inline-flex min-h-[44px] items-center text-[14px] text-ink underline decoration-ink decoration-2 underline-offset-[6px] transition-colors duration-400 ease-[var(--e-out)] hover:text-ink"
             >
               Non ho una scheda, inserisco i valori a mano
             </button>
@@ -266,7 +266,7 @@ function Caricamento({
               loading="lazy"
               className="aspect-[4/3] w-full object-cover"
             />
-            <figcaption className="p-6">
+            <figcaption className="p-5 md:p-6">
               <p className="note text-ink">Il box della settimana</p>
               <p className="mt-3 text-[14px] leading-relaxed text-ink">
                 Da qui escono schiscette porzionate al grammo, non consigli generici.
@@ -275,7 +275,7 @@ function Caricamento({
           </div>
         </figure>
 
-        <ul className="mt-8 grid gap-3">
+        <ul className="mt-5 grid gap-2.5 md:mt-8 md:gap-3">
           {[
             "I macro giornalieri della tua scheda",
             "Quanti pasti al giorno vuoi coprire",
@@ -337,10 +337,10 @@ function Scansione({
   }, [onFine]);
 
   return (
-    <div className="grid items-center gap-12 lg:grid-cols-[336px_1fr]">
+    <div className="grid items-center gap-7 lg:grid-cols-[336px_1fr] lg:gap-12">
       {/* ---------- il documento sotto la linea ---------- */}
       <div className="shell mx-auto w-full max-w-[336px] lg:-rotate-[2.4deg]">
-        <div className="core relative overflow-hidden p-7" style={{ background: "#0a1f17" }}>
+        <div className="core relative overflow-hidden p-5 sm:p-7" style={{ background: "#0a1f17" }}>
           {/* La linea e' alta un quarto del documento: fuel-scan la porta da
               -100% a 400%, cioe' una spazzata completa piu' l'uscita in basso. */}
           <span
@@ -383,12 +383,12 @@ function Scansione({
         <h2
           ref={headingRef}
           tabIndex={-1}
-          className="h2 mt-4 !text-[clamp(24px,3.6vw,38px)] outline-none"
+          className="h2 mt-3 !text-[clamp(24px,3.6vw,38px)] outline-none md:mt-4"
         >
           Un attimo.
         </h2>
 
-        <ol className="mt-9 grid gap-[14px]" aria-label="Avanzamento della lettura" aria-live="polite">
+        <ol className="mt-5 grid gap-2.5 md:mt-9 md:gap-[14px]" aria-label="Avanzamento della lettura" aria-live="polite">
           {PASSI.map((p, i) => {
             const fatto = i < passo;
             const corrente = i === passo;
@@ -436,7 +436,7 @@ function Scansione({
           })}
         </ol>
 
-        <p className="note mt-9 border-t pt-6" style={{ borderColor: "var(--hair-soft)" }}>
+        <p className="note mt-5 border-t pt-4 md:mt-9 md:pt-6" style={{ borderColor: "var(--hair-soft)" }}>
           Simulazione: il file non viene aperto n&eacute; caricato
         </p>
       </div>
@@ -562,14 +562,14 @@ export default function SchedaClient() {
       {/* ========================= TESTATA ========================= */}
       <section className="fascia fascia-t fascia-carta">
         <div className="wrap">
-          <Eyebrow className="mb-6">Personalizzato sui tuoi macro</Eyebrow>
+          <Eyebrow className="mb-3 md:mb-6">Personalizzato sui tuoi macro</Eyebrow>
           <h1 className="h1 max-w-[15ch]">
             <Rise i={0}>La tua scheda</Rise>
             <Rise i={1}>
               diventa <span className="hl hl-on"><i className="hl-bar" aria-hidden="true" /><span className="hl-tx">il tuo menu.</span></span>
             </Rise>
           </h1>
-          <div className="mt-8 flex flex-wrap items-end justify-between gap-x-12 gap-y-8">
+          <div className="mt-5 flex flex-wrap items-end justify-between gap-x-12 gap-y-5 md:mt-8 md:gap-y-8">
             <p className="lead">
               Carichi la scheda, controlli i numeri, il matcher abbina primi e secondi che chiudono i
               tuoi macro dentro le {CASELLE_TOTALI} caselle della settimana. Poi cucina Matteo.
@@ -642,14 +642,14 @@ export default function SchedaClient() {
       {/* Torna sulla carta dopo il ticker lime. */}
       <section className="fascia fascia-carta">
         <div className="wrap">
-          <div className="grid items-start gap-14 lg:grid-cols-[1fr_388px]">
+          <div className="grid items-start gap-7 lg:grid-cols-[1fr_388px] lg:gap-14">
             <div>
               <Reveal>
-                <Eyebrow className="mb-5">Come funziona davvero</Eyebrow>
+                <Eyebrow className="mb-3 md:mb-5">Come funziona davvero</Eyebrow>
                 <h2 className="h2 max-w-[13ch]">Cosa succede al tuo file.</h2>
               </Reveal>
 
-              <div className="mt-9 grid gap-5">
+              <div className="mt-5 grid gap-3 md:mt-9 md:gap-5">
                 {[
                   {
                     n: "01",
@@ -673,7 +673,7 @@ export default function SchedaClient() {
                 ].map((b, i) => (
                   <Reveal key={b.n} delay={i * 110}>
                     <article className={"shell " + b.sposta}>
-                      <div className="core flex flex-col gap-2 p-7 sm:flex-row sm:gap-7">
+                      <div className="core flex flex-col gap-2 p-5 sm:flex-row sm:gap-7 sm:p-7">
                         <p
                           className="font-mono text-[13px] text-ink"
                           style={{ fontVariationSettings: '"wdth" 84' }}
@@ -682,7 +682,7 @@ export default function SchedaClient() {
                         </p>
                         <div>
                           <h3 className="h3 !text-[19px]">{b.t}</h3>
-                          <p className="mt-3 max-w-[54ch] text-[14.5px] leading-relaxed text-muted">
+                          <p className="mt-2 max-w-[54ch] text-[14px] leading-[1.5] text-muted md:mt-3 md:text-[14.5px] md:leading-relaxed">
                             {b.d}
                           </p>
                         </div>
@@ -705,7 +705,7 @@ export default function SchedaClient() {
                   />
                 </div>
               </figure>
-              <p className="note mt-6 px-2">Pescara — cottura del luned&igrave; e del gioved&igrave;</p>
+              <p className="note mt-4 px-2 md:mt-6">Pescara — cottura del luned&igrave; e del gioved&igrave;</p>
             </Reveal>
           </div>
         </div>
@@ -718,12 +718,12 @@ export default function SchedaClient() {
         <div className="wrap">
           <Reveal>
             <div className="shell">
-              <div className="core flex flex-wrap items-center justify-between gap-8 p-9 sm:p-12">
+              <div className="core flex flex-wrap items-center justify-between gap-6 p-6 sm:p-12 md:gap-8">
                 <div>
                   <h2 className="h2 !text-[clamp(22px,3.2vw,32px)]">
                     Vuoi prima vedere cosa si mangia?
                   </h2>
-                  <p className="mt-4 max-w-[46ch] text-[15px] text-muted">
+                  <p className="mt-3 max-w-[46ch] text-[14.5px] text-muted md:mt-4 md:text-[15px]">
                     I {PRIMI.length} primi e i {SECONDI.length} secondi del catalogo, con i macro di
                     ognuno.
                   </p>

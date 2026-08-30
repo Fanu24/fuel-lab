@@ -35,12 +35,24 @@ export function SectionHead({
   return (
     /* Le tre misure qui sotto sono scese con la scala tipografica: erano
        tarate su un h2 da 72px e attorno a un titolo da 48 diventavano vuoti
-       senza motivo. Il rapporto fra occhiello, titolo e lead e' lo stesso. */
-    <div className="mb-8 flex flex-wrap items-end justify-between gap-7">
+       senza motivo. Il rapporto fra occhiello, titolo e lead e' lo stesso.
+
+       E SONO SCESE DI NUOVO SUL TELEFONO, dove il difetto era piu' grosso di
+       quanto le misure lascino pensare. Su /menu a 390px l'intestazione
+       "LA BASE GLUCIDICA." - occhiello, titolo su due righe, lead su tre,
+       conteggio - occupava UNA SCHERMATA INTERA prima che si vedesse un solo
+       piatto: chi arriva sul catalogo trova l'introduzione al catalogo. Il
+       colpevole non era una misura sola ma la loro somma - 18 sotto
+       l'occhiello, 20 sopra il lead, 28 di gap prima del conteggio, 32 sotto
+       il blocco - piu' un lead da 17,5px che a quella larghezza va a capo tre
+       volte. A 390 diventano 10, 10, 14 e 18; da 768 in su restano quelle di
+       prima, perche' li' la testata sta in un quarto di schermo e l'aria e'
+       aria, non vuoto. */
+    <div className="mb-[18px] flex flex-wrap items-end justify-between gap-x-7 gap-y-3.5 md:mb-8 md:gap-y-7">
       <div>
-        <Eyebrow className="mb-[18px]">{occhiello}</Eyebrow>
+        <Eyebrow className="mb-2.5 md:mb-[18px]">{occhiello}</Eyebrow>
         <h2 className="h2">{titolo}</h2>
-        {testo ? <p className="lead mt-5">{testo}</p> : null}
+        {testo ? <p className="lead mt-2.5 md:mt-5">{testo}</p> : null}
       </div>
       {azione}
     </div>

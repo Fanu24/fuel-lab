@@ -197,7 +197,7 @@ export default function Nav() {
             aria-expanded={aperto}
             aria-controls="menu-mobile"
             aria-label={aperto ? "Chiudi il menu" : "Apri il menu"}
-            className="relative grid h-[42px] w-[42px] place-items-center rounded-full border lg:hidden"
+            className="relative grid h-[44px] w-[44px] place-items-center rounded-full border lg:hidden"
             style={{ borderColor: "var(--hair)", background: "rgba(223,255,62,.06)" }}
           >
             <span

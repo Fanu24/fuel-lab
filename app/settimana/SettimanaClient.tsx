@@ -256,7 +256,7 @@ export default function SettimanaClient() {
           visibile invece di quaranta pixel di vuoto. */}
       <section className="fascia fascia-t fascia-carta">
         <div className="wrap">
-          <Eyebrow className="mb-[20px]">La tua settimana</Eyebrow>
+          <Eyebrow className="mb-3 md:mb-[20px]">La tua settimana</Eyebrow>
           <h1 className="h1">
             <Rise i={0}>Sette giorni,</Rise>
             <Rise i={1}>
@@ -264,14 +264,14 @@ export default function SettimanaClient() {
             </Rise>
           </h1>
 
-          <div className="mt-8 grid gap-9 lg:grid-cols-[minmax(0,1fr)_minmax(0,400px)] lg:items-end">
+          <div className="mt-5 grid gap-6 md:mt-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,400px)] lg:items-end lg:gap-9">
             <div>
               <p className="lead">
                 Non &egrave; un carrello, &egrave; una scheda: pranzo e cena di ogni giorno, con i
                 macro della giornata sotto la sua colonna. Si riempie una casella alla volta e i
                 numeri si muovono mentre scegli.
               </p>
-              <div className="mt-7 flex flex-wrap items-center gap-2.5">
+              <div className="mt-5 flex flex-wrap items-center gap-2 md:mt-7 md:gap-2.5">
                 <Chip>14 caselle</Chip>
                 <Chip accento>Primo, secondo, extra</Chip>
                 <Chip>Resta in questo browser</Chip>
@@ -379,9 +379,9 @@ export default function SettimanaClient() {
 
           {/* La domanda che salva il lavoro di chi la settimana l'aveva gia' fatta. */}
           {chiedeConferma && dalLink ? (
-            <div className="shell mt-10">
-              <div className="core p-6 md:p-8">
-                <Eyebrow className="mb-6">Un link ti porta una settimana</Eyebrow>
+            <div className="shell mt-6 md:mt-10">
+              <div className="core p-5 md:p-8">
+                <Eyebrow className="mb-4 md:mb-6">Un link ti porta una settimana</Eyebrow>
                 <h2
                   ref={titoloArrivo}
                   tabIndex={-1}
@@ -389,12 +389,12 @@ export default function SettimanaClient() {
                 >
                   Sostituisco la tua settimana con quella del link?
                 </h2>
-                <p className="lead mt-5 max-w-[64ch]">
+                <p className="lead mt-3.5 max-w-[64ch] md:mt-5">
                   Il link porta {contaCaselle(dalLink)} caselle su {CASELLE_TOTALI}. Nel tuo browser
                   ce ne sono gi&agrave; {pasti}: se sostituisci, le tue non tornano indietro. Il
                   link invece resta valido, puoi aprirlo anche dopo.
                 </p>
-                <div className="mt-8 flex flex-wrap gap-3">
+                <div className="mt-5 flex flex-wrap gap-2.5 md:mt-8 md:gap-3">
                   <button type="button" className="btn btn-p" onClick={accetta}>
                     Sostituisci con quella del link
                     <span className="dot" aria-hidden="true">
@@ -443,7 +443,7 @@ export default function SettimanaClient() {
         <div className="wrap">
           {!pronto ? (
             <div className="shell">
-              <div className="core grid min-h-[340px] place-items-center p-10">
+              <div className="core grid min-h-[220px] place-items-center p-8 md:min-h-[340px] md:p-10">
                 <p className="note">Carico la tua settimana...</p>
               </div>
             </div>
@@ -452,15 +452,15 @@ export default function SettimanaClient() {
               {pasti === 0 && !importaOra ? (
                 <Reveal className="mb-8">
                   <div className="shell">
-                    <div className="core p-8 text-center md:p-14">
+                    <div className="core p-6 text-center md:p-14">
                       <p className="h3 text-[22px] md:text-[28px]">
                         Quattordici caselle, ancora tutte vuote.
                       </p>
-                      <p className="lead mx-auto mt-6">
+                      <p className="lead mx-auto mt-4 md:mt-6">
                         Due strade per riempirle, pi&ugrave; una terza: toccare una casella qui
                         sotto e scegliere a mano.
                       </p>
-                      <div className="mt-9 flex flex-wrap justify-center gap-3">
+                      <div className="mt-6 flex flex-wrap justify-center gap-2.5 md:mt-9 md:gap-3">
                         <Link href="/menu" className="btn btn-p">
                           Sfoglia il menu
                           <span className="dot" aria-hidden="true">
@@ -484,14 +484,14 @@ export default function SettimanaClient() {
                   interruttore sta in Griglia.tsx, con il conto delle larghezze. */}
               <Griglia apri={apri} aperta={aperta} />
 
-              <div className="flex flex-col gap-4 lg:hidden">
+              <div className="flex flex-col gap-3 lg:hidden">
                 {GIORNI.map((g) => (
                   <ColonnaGiorno key={g} giorno={g} apri={apri} aperta={aperta} />
                 ))}
               </div>
 
               {/* ---------------- totali: macro, mai un importo ---------------- */}
-              <div className="total on-ink mt-8 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
+              <div className="total on-ink mt-5 grid-cols-2 sm:grid-cols-3 md:mt-8 lg:grid-cols-6">
                 <div className="total-l col-span-2 flex flex-col justify-center gap-1.5 sm:col-span-3 lg:col-span-1">
                   <span>La tua settimana</span>
                   <span className="note">Aggiornata mentre scegli</span>
@@ -504,7 +504,7 @@ export default function SettimanaClient() {
               </div>
 
               {pasti > 0 ? (
-                <div className="mt-6 flex flex-wrap items-center gap-3">
+                <div className="mt-4 flex flex-wrap items-center gap-2.5 md:mt-6 md:gap-3">
                   {confermaSvuota ? (
                     <>
                       <p className="text-[14px] font-bold">

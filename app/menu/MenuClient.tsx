@@ -75,7 +75,7 @@ function Pill({
       aria-pressed={attivo}
       data-on={attivo ? "true" : "false"}
       style={{ fontVariationSettings: '"wdth" 110, "wght" 700' }}
-      className="group inline-flex shrink-0 items-center gap-2 rounded-full border border-[color:var(--hair-soft)] bg-[rgba(201,224,205,.045)] px-[15px] py-[7px] text-[11px] tracking-[.1em] whitespace-nowrap text-ink uppercase transition-[color,background-color,border-color,transform] duration-400 ease-[var(--e-out)] hover:border-[color:var(--hair)] hover:bg-[rgba(223,255,62,.11)] hover:text-ink active:scale-[.96] data-[on=true]:border-transparent data-[on=true]:bg-lime data-[on=true]:text-ink data-[on=true]:hover:bg-white data-[on=true]:hover:text-ink"
+      className="group inline-flex min-h-[44px] shrink-0 items-center gap-2 rounded-full border border-[color:var(--hair-soft)] bg-[rgba(201,224,205,.045)] px-[15px] py-[7px] text-[11px] md:min-h-0 tracking-[.1em] whitespace-nowrap text-ink uppercase transition-[color,background-color,border-color,transform] duration-400 ease-[var(--e-out)] hover:border-[color:var(--hair)] hover:bg-[rgba(223,255,62,.11)] hover:text-ink active:scale-[.96] data-[on=true]:border-transparent data-[on=true]:bg-lime data-[on=true]:text-ink data-[on=true]:hover:bg-white data-[on=true]:hover:text-ink"
     >
       {/* Il rombo ha una transizione PROPRIA: transition-timing-function non si eredita,
           quindi senza questa easing esplicita il quadratino tornava alla curva di default
@@ -272,9 +272,9 @@ export default function MenuClient() {
       {/* ---------------------------------------------------------- testata */}
       <section className="fascia fascia-t fascia-carta">
         <div className="wrap">
-          <div className="grid items-center gap-16 lg:grid-cols-[1fr_366px]">
+          <div className="grid items-center gap-8 lg:grid-cols-[1fr_366px] lg:gap-16">
             <div>
-              <Eyebrow className="mb-[20px]">Il catalogo della settimana</Eyebrow>
+              <Eyebrow className="mb-3 md:mb-[20px]">Il catalogo della settimana</Eyebrow>
               <h1 className="h1">
                 {/* I numeri li conta il catalogo: cambia ogni settimana e una
                     testata scritta a mano prima o poi mentirebbe. */}
@@ -285,12 +285,12 @@ export default function MenuClient() {
                   <span className="hl hl-on"><i className="hl-bar" aria-hidden="true" /><span className="hl-tx">componi il pasto.</span></span>
                 </Rise>
               </h1>
-              <p className="lead mt-7">
+              <p className="lead mt-4 md:mt-7">
                 Matteo cucina il luned&igrave; e il gioved&igrave; e consegna il giorno dopo. Scegli un primo, un
                 secondo e gli extra che ti servono: quello che leggi qui &egrave; quello che trovi nel
                 box, senza surgelati e senza scorte di magazzino.
               </p>
-              <div className="mt-7 flex flex-wrap items-center gap-2.5">
+              <div className="mt-5 flex flex-wrap items-center gap-2 md:mt-7 md:gap-2.5">
                 <Chip accento>Porzioni pesate</Chip>
                 <Chip>Macro dichiarati</Chip>
                 <Chip>Consegna a Pescara</Chip>
@@ -302,7 +302,7 @@ export default function MenuClient() {
                 className="shell transition-transform duration-700 md:rotate-[-2.4deg] md:hover:rotate-0"
                 style={{ transitionTimingFunction: "var(--e-over)" }}
               >
-                <figure className="core aspect-[4/5] bg-tray">
+                <figure className="core aspect-[5/4] bg-tray sm:aspect-[4/5]">
                   {COPERTINA ? (
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img
@@ -429,7 +429,7 @@ export default function MenuClient() {
                           if (scelto) setOrdine(scelto.id);
                         }}
                         style={{ fontVariationSettings: '"wdth" 84' }}
-                        className="appearance-none rounded-full border border-[color:var(--hair-soft)] bg-[rgba(201,224,205,.045)] py-[7px] pr-9 pl-[15px] font-mono text-[10.5px] tracking-[.06em] text-ink uppercase transition-colors duration-400 ease-[var(--e-out)] hover:border-[color:var(--hair)]"
+                        className="h-[44px] appearance-none rounded-full border border-[color:var(--hair-soft)] bg-[rgba(201,224,205,.045)] py-[7px] pr-9 pl-[15px] font-mono text-[10.5px] md:h-auto tracking-[.06em] text-ink uppercase transition-colors duration-400 ease-[var(--e-out)] hover:border-[color:var(--hair)]"
                       >
                         {ORDINI.map((o) => (
                           <option key={o.id} value={o.id} className="bg-tray text-ink">
@@ -470,7 +470,7 @@ export default function MenuClient() {
           {totaleVisibile > 0 ? (
             <>
               {primiAttiva ? (
-                <div className="mt-14">
+                <div className="mt-8 md:mt-14">
                   <SectionHead
                     occhiello="Primi · le basi"
                     titolo={
@@ -482,7 +482,7 @@ export default function MenuClient() {
                     azione={<Contatore n={primiVisibili.length} tot={PRIMI.length} etichetta="primi" />}
                   />
                   {primiVisibili.length > 0 ? (
-                    <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                    <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-6 xl:grid-cols-3">
                       {primiVisibili.map((e, i) => (
                         // Chiave sul solo id: cosi le schede che restano non si smontano a
                         // ogni click sui filtri (niente foto che sbattono) e a entrare in
@@ -506,7 +506,7 @@ export default function MenuClient() {
               ) : null}
 
               {secondiAttiva ? (
-                <div className="mt-16">
+                <div className="mt-9 md:mt-16">
                   <SectionHead
                     occhiello="Secondi · le proteine"
                     titolo={
@@ -520,7 +520,7 @@ export default function MenuClient() {
                     }
                   />
                   {secondiVisibili.length > 0 ? (
-                    <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                    <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-6 xl:grid-cols-3">
                       {secondiVisibili.map((e, i) => (
                         <Reveal key={e.id} delay={(i % CICLO) * 80}>
                           <div
@@ -574,7 +574,7 @@ export default function MenuClient() {
               Fascia sempre presente, non filtrata: gli extra non hanno tag ne
               giorno di cottura, non c'e' niente su cui i filtri sopra possano
               lavorare. Il conteggio resta comunque letto dal catalogo. */}
-          <div className="mt-12">
+          <div className="mt-9 md:mt-12">
             <SectionHead
               occhiello="Extra"
               titolo={

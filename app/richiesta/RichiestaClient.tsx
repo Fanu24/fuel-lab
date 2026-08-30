@@ -227,7 +227,7 @@ function RiepilogoSettimana({
 
   return (
     <div className="shell">
-      <div className="core p-[24px] md:p-[26px]">
+      <div className="core p-5 md:p-[26px]">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="eyebrow">
             <b aria-hidden="true" />
@@ -238,7 +238,7 @@ function RiepilogoSettimana({
           </Chip>
         </div>
 
-        <ul className="mt-[20px] flex flex-col gap-[10px]">
+        <ul className="mt-4 flex flex-col gap-2 md:mt-[20px] md:gap-[10px]">
           {giorniPieni.map((g: GiornoSettimana) => {
             const scelti = PASTI.filter((m: Pasto) => piano[g]?.[m]);
             return (
@@ -251,7 +251,7 @@ function RiepilogoSettimana({
         </ul>
 
         <div
-          className="mt-[20px] grid grid-cols-2 gap-[14px] border-t pt-[18px]"
+          className="mt-4 grid grid-cols-2 gap-3 border-t pt-4 md:mt-[20px] md:gap-[14px] md:pt-[18px]"
           style={{ borderColor: "var(--hair-soft)" }}
         >
           <VoceMacro etichetta="kcal" valore={`${Math.round(macro.kcal)}`} />
@@ -280,15 +280,15 @@ function VoceMacro({ etichetta, valore }: { etichetta: string; valore: string })
 function RiepilogoServizio({ servizio }: { servizio: Servizio }) {
   return (
     <div className="shell">
-      <div className="core p-[24px] md:p-[26px]">
+      <div className="core p-5 md:p-[26px]">
         <h2 className="eyebrow">
           <b aria-hidden="true" />
           Il tuo servizio
         </h2>
-        <p className="h3 mt-[16px]" style={{ fontSize: 25 }}>
+        <p className="h3 mt-3 md:mt-[16px]" style={{ fontSize: 25 }}>
           {servizio.nome}
         </p>
-        <p className="mt-[12px] text-[14px] leading-relaxed text-muted">{servizio.descrizione}</p>
+        <p className="mt-2.5 text-[14px] leading-[1.5] text-muted md:mt-[12px] md:leading-relaxed">{servizio.descrizione}</p>
       </div>
     </div>
   );
@@ -302,16 +302,16 @@ function ServizioSenzaPiano({ servizio }: { servizio: Servizio }) {
   return (
     <Reveal>
       <div className="shell">
-        <div className="core p-[32px] text-center md:p-[46px]">
+        <div className="core p-6 text-center md:p-[46px]">
           <h2 className="h2 max-w-[20ch] mx-auto" style={{ fontSize: "min(48px, 8vw)" }}>
             La tua settimana &egrave; ancora vuota.
           </h2>
-          <p className="lead mx-auto mt-5">
+          <p className="lead mx-auto mt-3.5 md:mt-5">
             Per {servizio.nome.toLowerCase()} Matteo ha bisogno di una settimana composta: &egrave;
             quello che il messaggio gli racconta. Componila e poi torna qui, ci vogliono due
             minuti.
           </p>
-          <div className="mt-9 flex flex-wrap justify-center gap-3">
+          <div className="mt-6 flex flex-wrap justify-center gap-2.5 md:mt-9 md:gap-3">
             <Link href="/menu" className="btn btn-p">
               Sfoglia il menu
               <span className="dot" aria-hidden="true">
@@ -325,7 +325,7 @@ function ServizioSenzaPiano({ servizio }: { servizio: Servizio }) {
               </span>
             </Link>
           </div>
-          <p className="note mt-8">
+          <p className="note mt-5 md:mt-8">
             Cerchi invece l&apos;home cooking? Scegli quel servizio qui sopra: non serve nessuna
             settimana.
           </p>
@@ -344,7 +344,7 @@ function Scheletro() {
           Sto rileggendo la tua settimana.
         </p>
         <div aria-hidden="true" className="shell">
-          <div className="core relative overflow-hidden p-[30px]">
+          <div className="core relative overflow-hidden p-6 md:p-[30px]">
             {[92, 68, 80, 54].map((w, i) => (
               <span
                 key={i}
@@ -440,25 +440,25 @@ export default function RichiestaClient() {
           e comincia la cosa da compilare. */}
       <section className="fascia fascia-t fascia-carta">
         <div className="wrap">
-          <Eyebrow className="mb-[18px]">Scrivi a Matteo</Eyebrow>
+          <Eyebrow className="mb-3 md:mb-[18px]">Scrivi a Matteo</Eyebrow>
           <h1 className="h1 max-w-[19ch]">
             <Rise i={0}>Due minuti di form,</Rise>
             <Rise i={1}>
               <span className="hl hl-on"><i className="hl-bar" aria-hidden="true" /><span className="hl-tx">poi parli con Matteo.</span></span>
             </Rise>
           </h1>
-          <p className="lead mt-7">
+          <p className="lead mt-4 md:mt-7">
             Nome, telefono e comune: cos&igrave; Matteo sa chi gli scrive. Poi si apre WhatsApp col
             messaggio gi&agrave; pronto, settimana compresa se ne hai gi&agrave; composta una.
           </p>
-          <div className="mt-7 flex flex-wrap items-center gap-2.5">
+          <div className="mt-5 flex flex-wrap items-center gap-2 md:mt-7 md:gap-2.5">
             <Chip>Form breve</Chip>
             <Chip accento>Niente salvato, per ora</Chip>
             <Chip>Poi parli tu con Matteo</Chip>
           </div>
 
           <div
-            className="mt-[32px] flex flex-wrap items-center gap-x-5 gap-y-3 rounded-[var(--shell)] border px-[22px] py-[16px]"
+            className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3 rounded-[var(--shell)] border px-[18px] py-[14px] md:mt-[32px] md:px-[22px] md:py-[16px]"
             style={{ borderColor: "var(--hair)", background: "rgba(223,255,62,.06)" }}
           >
             <Chip accento>Fase A</Chip>
@@ -479,8 +479,8 @@ export default function RichiestaClient() {
           <div className="wrap">
             <Reveal>
               <div className="shell">
-                <div className="core p-[24px] md:p-[32px]">
-                  <h2 className="eyebrow mb-[22px]">
+                <div className="core p-5 md:p-[32px]">
+                  <h2 className="eyebrow mb-4 md:mb-[22px]">
                     <b aria-hidden="true" />
                     Per quale servizio scrivi
                   </h2>
@@ -490,20 +490,20 @@ export default function RichiestaClient() {
             </Reveal>
 
             {bisognoDiPiano ? (
-              <div className="mt-[22px]">
+              <div className="mt-4 md:mt-[22px]">
                 <ServizioSenzaPiano servizio={servizio} />
               </div>
             ) : (
-              <div className="mt-[22px] grid items-start gap-[34px] lg:grid-cols-[1fr_388px] lg:gap-[42px]">
+              <div className="mt-4 grid items-start gap-5 md:mt-[22px] lg:grid-cols-[1fr_388px] lg:gap-[42px]">
                 {/* ------------------------------------------------ i dati */}
                 <Reveal delay={80}>
                   <div className="shell">
-                    <div className="core p-[24px] md:p-[32px]">
-                      <h2 className="eyebrow mb-[26px]">
+                    <div className="core p-5 md:p-[32px]">
+                      <h2 className="eyebrow mb-4 md:mb-[26px]">
                         <b aria-hidden="true" />I tuoi dati
                       </h2>
 
-                      <div className="grid gap-[18px] sm:grid-cols-2">
+                      <div className="grid gap-4 sm:grid-cols-2 md:gap-[18px]">
                         <Campo
                           id="nome"
                           etichetta="Nome"

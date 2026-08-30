@@ -35,7 +35,7 @@ function Blocco({
 }) {
   return (
     <div className={className}>
-      <div className="mb-5 flex items-center gap-3">
+      <div className="mb-3 flex items-center gap-3 md:mb-5">
         <span
           className="font-mono text-[11px] tracking-[.06em] text-ink"
           style={{ fontVariationSettings: '"wdth" 84' }}
@@ -49,7 +49,7 @@ function Blocco({
         />
         <span className="note">{occhiello}</span>
       </div>
-      <p className="max-w-[56ch] text-[17px] leading-[1.74] text-ink">{children}</p>
+      <p className="max-w-[56ch] text-[15.5px] leading-[1.6] text-ink md:text-[17px] md:leading-[1.74]">{children}</p>
     </div>
   );
 }
@@ -97,7 +97,7 @@ function Numero({
         }}
       >
         <div
-          className="core h-full px-[26px] pt-[22px] pb-[26px] md:px-[30px] md:pt-[26px] md:pb-[30px]"
+          className="core h-full px-[20px] pt-[18px] pb-[20px] md:px-[30px] md:pt-[26px] md:pb-[30px]"
           style={lime ? { background: "var(--color-lime)" } : undefined}
         >
           {/* I numeri di questo sito stanno in mono, sempre: sono dati, non insegne.
@@ -118,13 +118,13 @@ function Numero({
             {cifra}
           </span>
           <span
-            className="note mt-5 block"
+            className="note mt-3 block md:mt-5"
             style={lime ? { color: "rgba(6,23,16,.68)" } : undefined}
           >
             {etichetta}
           </span>
           <p
-            className="mt-3 max-w-[34ch] text-[14.5px] leading-[1.6]"
+            className="mt-2 max-w-[34ch] text-[14px] leading-[1.5] md:mt-3 md:text-[14.5px] md:leading-[1.6]"
             style={{ color: lime ? "rgba(6,23,16,.78)" : "var(--color-muted)" }}
           >
             {testo}
@@ -140,7 +140,7 @@ function Nega({ children }: { children: ReactNode }) {
   return (
     <li className="flex items-start gap-[14px]">
       <i className="mt-[9px] block h-[7px] w-[7px] flex-none rotate-45 bg-lime" aria-hidden="true" />
-      <span className="max-w-[52ch] text-[16px] leading-[1.62] text-ink">{children}</span>
+      <span className="max-w-[52ch] text-[15px] leading-[1.55] text-ink md:text-[16px] md:leading-[1.62]">{children}</span>
     </li>
   );
 }
@@ -151,9 +151,9 @@ export default function ChiEMatteo() {
       {/* ---------------- testata editoriale ---------------- */}
       <section className="fascia fascia-t fascia-carta relative overflow-x-clip">
         <div className="wrap">
-          <div className="grid items-start gap-16 lg:grid-cols-[minmax(0,1fr)_386px] lg:gap-20">
+          <div className="grid items-start gap-9 lg:grid-cols-[minmax(0,1fr)_386px] lg:gap-20">
             <div>
-              <Eyebrow className="mb-[28px]">Il cuoco</Eyebrow>
+              <Eyebrow className="mb-3 md:mb-[28px]">Il cuoco</Eyebrow>
               <h1 className="h1">
                 <Rise i={0}>Matteo</Rise>
                 <Rise i={1}>
@@ -165,12 +165,12 @@ export default function ChiEMatteo() {
                   insieme: fuel-rise qui non va, perche senza la maschera di .ln
                   il paragrafo slitterebbe sopra il titolo */}
               <Reveal delay={420}>
-                <p className="lead mt-8">
+                <p className="lead mt-4 md:mt-8">
                   Dodici anni di cucina professionale, un furgone e due cotture a settimana. FUEL
                   LAB &egrave; la risposta a un problema che ho visto in palestra, non un piano
                   industriale.
                 </p>
-                <div className="mt-7 flex flex-wrap gap-[10px]">
+                <div className="mt-5 flex flex-wrap gap-2 md:mt-7 md:gap-[10px]">
                   <Chip accento>Pescara e provincia</Chip>
                   <Chip>In cucina dal 2014</Chip>
                   <Chip>Cuoco, non nutrizionista</Chip>
@@ -227,10 +227,10 @@ export default function ChiEMatteo() {
           cambio di superficie si saldava alla testata in un unico foglio. */}
       <section className="fascia fascia-guscio">
         <div className="wrap">
-          <div className="grid gap-14 lg:grid-cols-[286px_minmax(0,1fr)] lg:gap-20">
+          <div className="grid gap-7 lg:grid-cols-[286px_minmax(0,1fr)] lg:gap-20">
             <div className="lg:sticky lg:top-[132px] lg:self-start">
               <Reveal>
-                <Eyebrow className="mb-[18px]">Il racconto</Eyebrow>
+                <Eyebrow className="mb-3 md:mb-[18px]">Il racconto</Eyebrow>
                 <h2 className="h2">
                   Come &egrave;
                   <br />
@@ -239,7 +239,7 @@ export default function ChiEMatteo() {
               </Reveal>
             </div>
 
-            <div className="flex flex-col gap-[38px]">
+            <div className="flex flex-col gap-6 md:gap-[38px]">
               <Reveal>
                 <Blocco indice="01" occhiello="Dodici anni di servizi">
                   Ho cominciato a sedici anni lavando pentole in un ristorante sul lungomare e non
@@ -281,9 +281,9 @@ export default function ChiEMatteo() {
                   che rende credibile tutto il resto della pagina */}
               <Reveal delay={160}>
                 <div className="shell md:rotate-[1.2deg]">
-                  <div className="core px-[26px] pt-[24px] pb-[28px] md:px-[34px] md:pt-[30px] md:pb-[34px]">
+                  <div className="core px-[20px] pt-[20px] pb-[22px] md:px-[34px] md:pt-[30px] md:pb-[34px]">
                     <span className="note">Quello che FUEL LAB non &egrave;</span>
-                    <ul className="mt-6 flex flex-col gap-[14px]">
+                    <ul className="mt-4 flex flex-col gap-3 md:mt-6 md:gap-[14px]">
                       <Nega>
                         Non &egrave; una dieta. I numeri li decide il tuo nutrizionista, io li
                         cucino.
@@ -310,8 +310,8 @@ export default function ChiEMatteo() {
       <section className="fascia fascia-carta overflow-x-clip">
         <div className="wrap">
           <Reveal>
-            <div className="mb-9 max-w-[620px]">
-              <Eyebrow className="mb-[18px]">In numeri</Eyebrow>
+            <div className="mb-5 max-w-[620px] md:mb-9">
+              <Eyebrow className="mb-3 md:mb-[18px]">In numeri</Eyebrow>
               <h2 className="h2">
                 Quattro numeri,
                 <br />
@@ -320,7 +320,7 @@ export default function ChiEMatteo() {
             </div>
           </Reveal>
 
-          <div className="grid gap-6 md:grid-cols-12 md:items-start md:gap-7">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-12 md:items-start md:gap-7">
             <Numero
               cifra="12"
               etichetta="Anni in cucina"
@@ -371,9 +371,9 @@ export default function ChiEMatteo() {
       <section className="fascia fascia-guscio overflow-x-clip">
         <div className="wrap">
           <Reveal>
-            <div className="mb-10 flex flex-wrap items-end justify-between gap-8">
+            <div className="mb-6 flex flex-wrap items-end justify-between gap-5 md:mb-10 md:gap-8">
               <div>
-                <Eyebrow className="mb-[18px]">La cucina</Eyebrow>
+                <Eyebrow className="mb-3 md:mb-[18px]">La cucina</Eyebrow>
                 <h2 className="h2">
                   Dove
                   <br />
@@ -406,7 +406,7 @@ export default function ChiEMatteo() {
             className="w-full bg-lime md:-ml-[6%] md:w-[112%] md:rotate-[-1.15deg]"
             style={{ boxShadow: "0 40px 80px -46px rgba(223,255,62,.4)" }}
           >
-            <figure className="mx-auto w-[1180px] max-w-[calc(100%-40px)] py-[46px] md:max-w-[calc(100%/1.12_-_40px)] md:rotate-[1.15deg] md:py-[64px]">
+            <figure className="mx-auto w-[1180px] max-w-[calc(100%-40px)] py-[30px] md:max-w-[calc(100%/1.12_-_40px)] md:rotate-[1.15deg] md:py-[64px]">
               <blockquote>
                 <p
                   className="font-disp text-[clamp(27px,4.3vw,58px)] leading-[.92] uppercase"
@@ -415,7 +415,7 @@ export default function ChiEMatteo() {
                   Non vendo diete. Cucino quello che il tuo nutrizionista ha gi&agrave; deciso.
                 </p>
               </blockquote>
-              <figcaption className="mt-7 flex items-center gap-3">
+              <figcaption className="mt-4 flex items-center gap-3 md:mt-7">
                 <i
                   className="block h-[9px] w-[9px] rotate-45"
                   style={{ background: "var(--color-ink)" }}
@@ -440,7 +440,7 @@ export default function ChiEMatteo() {
               {/* La colonna dei bottoni parte da lg, non da md, e li impila: con
                   'auto' su due pill affiancate quella traccia si prendeva meta
                   blocco e il titolo finiva tagliato dall'overflow del nucleo. */}
-              <div className="core relative grid gap-12 px-[28px] py-[38px] md:px-[54px] md:py-[54px] lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+              <div className="core relative grid gap-7 px-[22px] py-[28px] md:gap-12 md:px-[54px] md:py-[54px] lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
                 {/* stessa trama a 115 gradi delle barre macro, tenuta bassissima */}
                 <span
                   className="pointer-events-none absolute inset-0"
@@ -451,13 +451,13 @@ export default function ChiEMatteo() {
                   }}
                 />
                 <div className="relative">
-                  <Eyebrow className="mb-[18px]">Il passo dopo</Eyebrow>
+                  <Eyebrow className="mb-3 md:mb-[18px]">Il passo dopo</Eyebrow>
                   <h2 className="h2">
                     La tua scheda
                     <br />
                     diventa il tuo menu.
                   </h2>
-                  <p className="lead mt-6">
+                  <p className="lead mt-4 md:mt-6">
                     Carica il PDF del nutrizionista o scrivi i numeri a mano. La tua settimana si
                     compone sui tuoi macro, poi la cucino io il luned&igrave; o il gioved&igrave;.
                   </p>

@@ -194,12 +194,12 @@ export default function SezioneServizi({
           <h2 className="sr-only">I nostri servizi</h2>
         )}
 
-        <div className="grid gap-6 md:grid-cols-12">
+        <div className="grid gap-4 md:grid-cols-12 md:gap-6">
           {/* ---------------- 01: il menu della settimana ---------------- */}
           <Reveal className="md:col-span-5" delay={0}>
             <article className="shell h-full md:rotate-[-1.1deg]">
               <div className="core flex h-full flex-col">
-                <figure className="relative aspect-[16/11] overflow-hidden bg-tray">
+                <figure className="relative aspect-[16/8] overflow-hidden bg-tray md:aspect-[16/11]">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={menu.img}
@@ -208,19 +208,19 @@ export default function SezioneServizi({
                     decoding="async"
                     className="h-full w-full object-cover"
                   />
-                  <span className="num num-lime absolute top-5 left-5">{menu.numero}</span>
+                  <span className="num num-lime absolute top-3 left-3 md:top-5 md:left-5">{menu.numero}</span>
                 </figure>
 
-                <div className="flex flex-1 flex-col p-8">
+                <div className="flex flex-1 flex-col p-5 md:p-8">
                   <h3 className="h3">{menu.nome}</h3>
-                  <p className="mt-4 flex-1 text-[15px] leading-[1.6] text-muted">
+                  <p className="mt-2.5 flex-1 text-[14px] leading-[1.5] text-muted md:mt-4 md:text-[15px] md:leading-[1.6]">
                     {menu.descrizione}
                   </p>
 
-                  <div className="mt-7">
+                  <div className="mt-4 md:mt-6">
                     <PrezzoServizio prezzo={menu.prezzo} />
                   </div>
-                  <div className="mt-6 flex flex-wrap gap-3">
+                  <div className="mt-4 flex flex-wrap gap-2.5 md:mt-5 md:gap-3">
                     <CtaServizio servizio={menu} />
                     <LinkServizio servizio={menu} />
                   </div>
@@ -236,23 +236,23 @@ export default function SezioneServizi({
               style={{ background: "var(--color-lime)", borderColor: "transparent" }}
             >
               <div
-                className="core flex h-full flex-col justify-between p-8 md:p-11"
+                className="core flex h-full flex-col justify-between p-5 md:p-11"
                 style={{ background: "var(--color-lime)" }}
               >
                 <div>
                   <span className="num num-ink">{macro.numero}</span>
-                  <h3 className="h3 mt-6 text-ink">{macro.nome}</h3>
+                  <h3 className="h3 mt-4 text-ink md:mt-6">{macro.nome}</h3>
                   <p
-                    className="mt-4 max-w-[46ch] text-[15.5px] leading-[1.6]"
+                    className="mt-2.5 max-w-[46ch] text-[14px] leading-[1.5] md:mt-4 md:text-[15.5px] md:leading-[1.6]"
                     style={{ color: INK_70 }}
                   >
                     {macro.descrizione}
                   </p>
                 </div>
 
-                <div className="mt-10">
+                <div className="mt-5 md:mt-9">
                   <PrezzoServizio prezzo={macro.prezzo} scuro />
-                  <div className="mt-6 flex flex-wrap gap-3">
+                  <div className="mt-4 flex flex-wrap gap-2.5 md:mt-5 md:gap-3">
                     <CtaServizio servizio={macro} />
                     <LinkServizio servizio={macro} />
                   </div>
@@ -268,27 +268,27 @@ export default function SezioneServizi({
           <Reveal className="md:col-span-12" delay={190}>
             <article className="shell md:rotate-[-.5deg]">
               <div className="core grid md:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
-                <div className="flex flex-col justify-center p-8 md:p-12">
+                <div className="flex flex-col justify-center p-5 md:p-12">
                   <span className="num num-lime">{homeCooking.numero}</span>
-                  <h3 className="h3 mt-6">{homeCooking.nome}</h3>
-                  <p className="mt-4 max-w-[48ch] text-[15.5px] leading-[1.6] text-muted">
+                  <h3 className="h3 mt-4 md:mt-6">{homeCooking.nome}</h3>
+                  <p className="mt-2.5 max-w-[48ch] text-[14px] leading-[1.5] text-muted md:mt-4 md:text-[15.5px] md:leading-[1.6]">
                     {homeCooking.descrizione}
                   </p>
-                  <p className="note mt-6 max-w-[44ch]">
+                  <p className="note mt-4 max-w-[44ch] md:mt-6">
                     Vende il tempo di Matteo, non la produzione in serie: l&apos;unico esito
                     possibile &egrave; una conversazione.
                   </p>
 
-                  <div className="mt-7">
+                  <div className="mt-4 md:mt-6">
                     <PrezzoServizio prezzo={homeCooking.prezzo} />
                   </div>
-                  <div className="mt-6 flex flex-wrap gap-3">
+                  <div className="mt-4 flex flex-wrap gap-2.5 md:mt-5 md:gap-3">
                     <CtaServizio servizio={homeCooking} />
                     <LinkServizio servizio={homeCooking} />
                   </div>
                 </div>
 
-                <figure className="relative min-h-[240px] md:min-h-0">
+                <figure className="relative min-h-[168px] md:min-h-0">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={homeCooking.img}

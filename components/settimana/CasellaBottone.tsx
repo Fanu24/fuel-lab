@@ -98,7 +98,7 @@ export default function CasellaBottone({
    * troppo largo per una misura sola: a sm prende piu' respiro.
    */
   const forma = riga
-    ? "min-h-[92px] p-4 sm:p-5"
+    ? "min-h-[72px] p-3.5 sm:p-5"
     : "min-h-[112px] p-2 xl:min-h-[132px] xl:p-3";
 
   return (

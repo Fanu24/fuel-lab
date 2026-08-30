@@ -2,10 +2,10 @@ import Link from "next/link";
 
 export default function Footer() {
   return (
-    <footer className="pb-10">
+    <footer className="pb-6 md:pb-10">
       <div className="wrap">
         <div
-          className="flex flex-wrap items-end justify-between gap-10 border-t pt-10"
+          className="flex flex-wrap items-end justify-between gap-6 border-t pt-6 md:gap-10 md:pt-10"
           style={{ borderColor: "var(--hair-soft)" }}
         >
           <Link href="/" aria-label="FUEL LAB, home" className="block transition-opacity duration-700 hover:opacity-80">
@@ -18,12 +18,12 @@ export default function Footer() {
               alt="Logo FUEL LAB"
               loading="lazy"
               width={220}
-              className="h-auto w-[220px]"
+              className="h-auto w-[150px] md:w-[220px]"
             />
           </Link>
 
-          <div className="flex flex-col items-start gap-4 pb-3 sm:items-end">
-            <nav className="flex flex-wrap gap-x-7 gap-y-2">
+          <div className="flex flex-col items-start gap-3 pb-0 sm:items-end md:gap-4 md:pb-3">
+            <nav className="flex flex-wrap gap-x-6 gap-y-0.5 md:gap-x-7 md:gap-y-2">
               {[
                 { href: "/menu", label: "Menu" },
                 { href: "/come-funziona", label: "Come funziona" },
@@ -34,7 +34,7 @@ export default function Footer() {
                 <Link
                   key={v.href}
                   href={v.href}
-                  className="text-[12px] tracking-[.13em] uppercase transition-colors duration-400 hover:text-ink"
+                  className="inline-flex min-h-[44px] items-center text-[12px] tracking-[.13em] uppercase transition-colors duration-400 hover:text-ink md:min-h-0"
                   style={{ fontVariationSettings: '"wdth" 108, "wght" 600' }}
                 >
                   {v.label}

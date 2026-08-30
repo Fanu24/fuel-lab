@@ -96,9 +96,21 @@
      I titoli sono scesi di circa un terzo: le spaziature tarate sui titoli
      vecchi, lasciate dov'erano, diventavano vuoti senza motivo. Qui il passo
      di una fascia e quello di una testata si ritarano insieme, e le pagine
-     chiedono .fascia invece di scrivere py-[110px] a mano. */
-  --y-fascia: 68px;
-  --y-testata: 122px;
+     chiedono .fascia invece di scrivere py-[110px] a mano.
+
+     I VALORI QUI SOTTO SONO QUELLI DEL TELEFONO, e il desktop e' l'eccezione
+     (vedi il @media subito dopo questo blocco). Prima era il contrario: 68px
+     nascevano tarati su 1440 e scendevano intatti fino a 390, dove un passo
+     di 68 sopra e 68 sotto vale 136px di vuoto su 844 di schermo - un sesto
+     di schermata per ogni confine fra due sezioni, ripetuto quattro o cinque
+     volte a pagina. A 44 il confine si legge lo stesso (a farlo vedere e' il
+     cambio di superficie della fascia, non la quantita' di aria) e la pagina
+     restituisce un centinaio di pixel per sezione.
+     --y-testata schiva la nav flottante, che sta a 22px dall'alto ed e' alta
+     72: sotto i 94px il titolo finirebbe dietro la barra. 106 e' quel limite
+     piu' un filo d'aria, non un numero scelto a occhio. */
+  --y-fascia: 44px;
+  --y-testata: 106px;
 
   /* Il secondario sul GUSCIO.
      muted #5b6b5f su tray fa 4.45:1 - sotto AA - ed e' il confine scritto in
@@ -309,12 +321,22 @@
     line-height: 1;
   }
   /* sceso con i titoli: a 19px accanto a un h2 da 48 il lead pesava quanto il
-     titolo e la gerarchia si appiattiva */
+     titolo e la gerarchia si appiattiva.
+     Sul telefono scende ancora di un gradino e mezzo: 17.5px con interlinea
+     1.56 fa righe da 27px, e su una colonna larga 44 caratteri un lead di
+     quattro righe vale 110px prima ancora del contenuto. A 16/1.5 le righe
+     sono 24px e il paragrafo resta un paragrafo, non un blocco. */
   .lead {
-    font-size: 17.5px;
-    line-height: 1.56;
+    font-size: 16px;
+    line-height: 1.5;
     color: var(--color-muted);
     max-width: 44ch;
+  }
+  @media (min-width: 768px) {
+    .lead {
+      font-size: 17.5px;
+      line-height: 1.56;
+    }
   }
   .label {
     font-family: var(--font-mono);
@@ -442,6 +464,58 @@
     height: 34px;
     font-size: 13px;
   }
+  /* ---------- il bottone tondo sopra la foto -------------------------------
+     Nasce per la scheda del catalogo, dove la pillola "Aggiungi" occupava una
+     riga intera in fondo alla card (bordo, 15px di stacco, 46px di pillola:
+     una settantina di pixel) e su due colonne a 390px non ci stava nemmeno in
+     larghezza. Qui l'azione sale sulla foto, dove di spazio ce n'e' gia': la
+     card ci guadagna una settantina di pixel e la foto un punto di lettura.
+
+     44x44 esatti, che e' il minimo per il dito, e il lime come SUPERFICIE con
+     il segno a inchiostro sopra (12.61:1): la regola dell'accento, non
+     un'eccezione. Da aggiunto i due colori si scambiano - inchiostro pieno,
+     segno lime - cosi' lo stato si vede senza leggere; da settimana piena
+     diventa carta con l'anello, perche' non e' un successo. */
+  .btn-tondo {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 999px;
+    flex: 0 0 auto;
+    background: var(--color-lime);
+    color: var(--color-ink);
+    font-family: var(--font-mono);
+    font-variation-settings: "wdth" 84;
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1;
+    box-shadow:
+      0 2px 6px rgba(18, 48, 31, 0.2),
+      0 12px 26px -14px rgba(18, 48, 31, 0.6);
+    transition: transform 0.34s var(--e-over), background-color 0.3s var(--e-mech),
+      color 0.3s var(--e-mech);
+  }
+  .btn-tondo:hover:not(:disabled) {
+    transform: scale(1.09);
+  }
+  .btn-tondo:active:not(:disabled) {
+    transform: scale(0.93);
+  }
+  .btn-tondo:disabled {
+    opacity: 0.42;
+    cursor: not-allowed;
+  }
+  .btn-tondo[data-stato="aggiunto"] {
+    background: var(--color-ink);
+    color: var(--color-lime);
+  }
+  .btn-tondo[data-stato="pieno"] {
+    background: var(--color-card);
+    color: var(--color-ink);
+    box-shadow: inset 0 0 0 1.5px var(--color-ink), 0 2px 6px rgba(18, 48, 31, 0.2);
+  }
+
   /* Le etichette italiane sono lunghe: sotto i 640px un pill che non va a capo
      diventa una larghezza MINIMA che fa sfondare la griglia. */
   @media (max-width: 639px) {
@@ -496,32 +570,52 @@
 
   /* ---------- prezzo "a partire da" ---------------------------------------
      Il prezzo esatto non si mostra: si mostra la soglia di ingresso e si
-     manda la conversazione su WhatsApp. */
+     manda la conversazione su WhatsApp.
+
+     IL DIFETTO CHE QUESTE RIGHE CHIUDONO. La riga era composta con TRE
+     trattamenti diversi in tre parole consecutive: "A PARTIRE DA" in mono
+     10px spaziata .16em, "8,90 €" in mono 25px, "a pasto" in SANS 13px
+     minuscolo. Tre famiglie/dimensioni/casi che si scontrano dentro una riga
+     sola: a video non sembra progettata, sembra rotta - e su una card stretta
+     andava pure a capo in tre punti diversi.
+
+     Adesso i trattamenti sono DUE, ed e' la coppia che ogni dato del sito usa
+     gia' ovunque (readout, chip, dayhead): ETICHETTA e CIFRA.
+       etichetta  .price-da e .price-u, identiche fra loro - stessa famiglia
+                  mono, stesso corpo, stesso maiuscoletto, stessa spaziatura,
+                  stesso muted. Le due parole che stanno ai lati della cifra
+                  ora sono la stessa cosa, perche' fanno lo stesso lavoro.
+       cifra      .price-n, mono come le etichette: cambia SOLO il peso e il
+                  corpo. Un gradino, non un salto.
+     La cifra non dichiara nessun colore, ed e' voluto: eredita quello del
+     testo attorno, cosi' resta leggibile sul chiaro, sul lime e dentro un
+     blocco .on-ink senza una riga in piu' per ogni caso. */
   .price {
     display: flex;
     align-items: baseline;
-    gap: 9px;
+    gap: 7px;
     flex-wrap: wrap;
-  }
-  .price-da {
     font-family: var(--font-mono);
     font-variation-settings: "wdth" 84;
+  }
+  .price-da,
+  .price-u {
     font-size: 10px;
     font-weight: 500;
-    letter-spacing: 0.16em;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
     color: var(--color-muted);
   }
   .price-n {
-    font-family: var(--font-mono);
-    font-variation-settings: "wdth" 84;
-    font-size: 25px;
+    font-size: 20px;
     font-weight: 700;
     letter-spacing: -0.02em;
+    line-height: 1;
   }
-  .price-u {
-    font-size: 13px;
-    color: var(--color-muted);
+  @media (min-width: 768px) {
+    .price-n {
+      font-size: 23px;
+    }
   }
 
   /* ---------- barre macro --------------------------------------------------
@@ -576,6 +670,63 @@
     opacity: 0.45;
     border-radius: 2px;
     pointer-events: none;
+  }
+
+  /* ---------- le tre macro in una riga sola --------------------------------
+     IL DIFETTO CHE QUESTA CLASSE CHIUDE. Sulla scheda del catalogo le tre
+     macro erano tre righe impilate a tutta larghezza - etichetta e valore
+     sopra, binario da 10px sotto, 12px di stacco fra una e l'altra: circa
+     125px per scheda. Su /menu le schede sono 54, quindi erano quasi 7000px
+     di sole barre, cioe' otto schermate di telefono per un dato che si legge
+     in un colpo d'occhio.
+
+     Stessa informazione, stessa scala comune (il fondo resta MAX_MACRO, vedi
+     MacroAnimate), stesso ruolo di confronto fra un primo e un secondo: solo
+     messa in orizzontale, tre colonne pari. 28px invece di 125, e come
+     immagine e' PIU' densa - tre binari affiancati si confrontano fra loro a
+     vista, tre righe impilate no. Le etichette diventano l'iniziale, perche'
+     accanto al binario che riempie non serve la parola per intero: il nome
+     esteso resta nell'aria-label del meter, dove serve davvero. */
+  .macro-3 {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 9px;
+  }
+  .macro-3-v {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 3px;
+    margin-bottom: 5px;
+    font-family: var(--font-mono);
+    font-variation-settings: "wdth" 84;
+    font-size: 9.5px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+    line-height: 1;
+  }
+  .macro-3-v b {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--color-ink);
+  }
+  .macro-3 .bar-track {
+    height: 6px;
+  }
+  .on-ink .macro-3-v {
+    color: var(--color-mink);
+  }
+  .on-ink .macro-3-v b {
+    color: #fff;
+  }
+  .on-ink .core .macro-3-v {
+    color: var(--color-muted);
+  }
+  .on-ink .core .macro-3-v b {
+    color: var(--color-ink);
   }
 
   /* barra proporzionale P/C/G del singolo piatto */
@@ -877,10 +1028,12 @@
      Il passo verticale sta in --y-fascia, cioe' in :root: cambiare la scala
      tipografica non deve voler dire rincorrere trenta py-[110px] nel JSX.
      Tre gradini, e si combinano con la superficie:
-       .fascia          il passo normale     68 / 92
-       .fascia-corta    respiro breve        44 / 60
-       .fascia-alta     sezione che pesa     88 / 118
-       .fascia-t        testata di pagina   122 / 148 (solo in alto)
+       .fascia          il passo normale     44 / 92
+       .fascia-corta    respiro breve        30 / 60
+       .fascia-alta     sezione che pesa     58 / 118
+       .fascia-t        testata di pagina   106 / 148 (solo in alto)
+     Il primo numero e' il TELEFONO, il secondo il desktop: la scala nasce a
+     390 e cresce, non il contrario.
      .fascia-corta oggi non la usa nessuna rotta: sta qui perche' la scala sia
      completa quando la home verra' ricostruita su queste classi. */
   .fascia {
@@ -894,10 +1047,10 @@
     padding-top: var(--y-testata);
   }
   .fascia-corta {
-    --y-fascia: 44px;
+    --y-fascia: 30px;
   }
   .fascia-alta {
-    --y-fascia: 88px;
+    --y-fascia: 58px;
   }
   @media (min-width: 768px) {
     .fascia-corta {

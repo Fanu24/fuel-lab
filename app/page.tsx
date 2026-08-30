@@ -124,6 +124,25 @@ const CARTE: {
   },
 ];
 
+/* L'inclinazione leggera e' una delle quattro cose che fanno il linguaggio di
+   questo sito (con la doppia scocca, la fotografia e i dati in mono), e dalle
+   tre carte era sparita. Torna solo da 768px in su: a 390 una carta ruotata
+   dentro una colonna larga quanto lo schermo sporge dai bordi e apre lo scorri
+   mento orizzontale, che sul telefono e' un difetto vero, non un dettaglio.
+   I tre valori non sono uguali fra loro di proposito: tre carte inclinate
+   dello stesso angolo sembrano una pagina storta, non tre oggetti appoggiati. */
+const INCLINA = ["md:rotate-[-1.1deg]", "md:rotate-[.9deg]", "md:rotate-[-.5deg]"];
+
+/* Il testo alternativo della foto di ogni servizio. Sta qui e non in
+   lib/servizi.ts perche' descrive QUESTA immagine in QUESTO contesto: la
+   stessa foto su /servizi e' incorniciata diversamente e si racconta con
+   parole sue. */
+const ALT_CARTA: Record<ServizioId, string> = {
+  "menu-settimana": "Contenitori di meal prep pronti, il menu della settimana già composto",
+  "sui-tuoi-macro": "Piatto pesato e porzionato sui macro della scheda",
+  "home-cooking": "Mani che completano un piatto in cucina, il gesto di chi cucina per te",
+};
+
 /** "8,90 €": la virgola italiana e il simbolo, mai un totale. */
 function soglia(valore: number): string {
   return `${valore.toFixed(2).replace(".", ",")} €`;
@@ -199,11 +218,11 @@ export default function Home() {
           subito sotto il cibo vero del catalogo. Nessun occhiello, nessun
           titolo e nessun paragrafo davanti alle foto: la riga in mono sopra
           la vetrina e' un'etichetta, non un'introduzione. */}
-      <section className="relative overflow-x-clip pt-[122px] pb-14 md:pt-[136px] md:pb-16">
+      <section className="relative overflow-x-clip pt-[106px] pb-9 md:pt-[136px] md:pb-16">
         <div className="wrap">
-          <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-16">
+          <div className="grid items-center gap-7 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-16">
             <div>
-              <div className={`${stili.salita} mb-8`} style={{ animationDelay: "150ms" }}>
+              <div className={`${stili.salita} mb-5 md:mb-8`} style={{ animationDelay: "150ms" }}>
                 <Eyebrow>Pescara e provincia &mdash; consegna fresca 2 volte a settimana</Eyebrow>
               </div>
 
@@ -219,14 +238,14 @@ export default function Home() {
               </h1>
 
               <p
-                className={`lead ${stili.salita} mt-8 max-w-[46ch]`}
+                className={`lead ${stili.salita} mt-5 max-w-[46ch] md:mt-8`}
                 style={{ animationDelay: "900ms" }}
               >
                 Primi e secondi cucinati freschi sui tuoi macro, a casa tua il luned&igrave; e il
                 gioved&igrave;. Mai surgelati.
               </p>
 
-              <div className={`${stili.salita} mt-8`} style={{ animationDelay: "1020ms" }}>
+              <div className={`${stili.salita} mt-6 md:mt-8`} style={{ animationDelay: "1020ms" }}>
                 <Link href="/menu" className="btn btn-p">
                   Sfoglia il menu
                   <span className="dot" aria-hidden="true">
@@ -238,9 +257,9 @@ export default function Home() {
 
             {eroe ? (
               <figure
-                className={`shell ${stili.scatto} relative mx-auto w-[280px] max-w-full sm:w-[340px] lg:mx-0 lg:h-[384px] lg:w-full`}
+                className={`shell ${stili.scatto} relative mx-auto w-full max-w-[440px] sm:w-[340px] lg:mx-0 lg:h-[384px] lg:w-full`}
               >
-                <div className="core aspect-[4/5] lg:aspect-auto lg:h-full">
+                <div className="core aspect-[16/11] sm:aspect-[4/5] lg:aspect-auto lg:h-full">
                   {/* Unica immagine non lazy della pagina, ed e' voluto: e'
                       l'LCP. Mandarla in lazy sposterebbe in avanti il primo
                       contenuto utile invece di alleggerire la pagina. */}
@@ -312,7 +331,7 @@ export default function Home() {
 
           {/* ---- la vetrina: quattro elementi veri, nella stessa schermata ---- */}
           {VETRINA.length > 0 ? (
-            <div className="mt-12 md:mt-14">
+            <div className="mt-6 md:mt-14">
               <Reveal className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
                 <p className="note">
                   Questa settimana in cucina &middot; {PRIMI.length} primi &middot;{" "}
@@ -321,7 +340,7 @@ export default function Home() {
                 <p className="note">Mai un piatto gi&agrave; chiuso</p>
               </Reveal>
 
-              <div className="mt-5 grid grid-cols-2 gap-4 md:gap-5 lg:grid-cols-4">
+              <div className="mt-4 grid grid-cols-2 gap-3 sm:gap-4 md:gap-5 lg:grid-cols-4">
                 {VETRINA.map((e, i) => (
                   <Reveal key={e.id} delay={i * 80} className="h-full">
                     <Link
@@ -341,15 +360,20 @@ export default function Home() {
                             className="h-full w-full object-cover transition-transform duration-[1.2s] group-hover:scale-[1.06]"
                             style={{ transitionTimingFunction: "var(--e-out)" }}
                           />
-                          <span className="chip chip-k absolute top-3 left-3 uppercase">
+                          <span className="chip chip-k absolute top-2.5 left-2.5 uppercase sm:top-3 sm:left-3">
                             {e.categoria === "primo" ? "Primo" : "Secondo"}
                           </span>
+                          {/* Le calorie salgono sulla foto: nella riga sotto
+                              facevano andare a capo i macro, e due righe di
+                              mono per quattro card sono trenta pixel buttati. */}
+                          <span className="chip absolute right-2.5 bottom-2.5 sm:right-3 sm:bottom-3">
+                            {e.kcal} kcal
+                          </span>
                         </figure>
-                        <div className="flex flex-1 flex-col p-4 sm:p-5">
+                        <div className="flex flex-1 flex-col p-3.5 sm:p-5">
                           <p className="h3 !text-[17px] sm:!text-[19px]">{e.nome}</p>
-                          <p className="mono mt-auto pt-3 text-[10.5px] text-muted">
-                            {e.kcal} kcal &middot; P {e.proteine} &middot; C {e.carboidrati}{" "}
-                            &middot; G {e.grassi}
+                          <p className="mono mt-auto pt-2.5 text-[9.5px] text-muted sm:pt-3 sm:text-[10.5px]">
+                            P {e.proteine} &middot; C {e.carboidrati} &middot; G {e.grassi}
                           </p>
                         </div>
                       </div>
@@ -375,7 +399,7 @@ export default function Home() {
       >
         <div className={`${stili.fascia} bg-lime text-ink`}>
           <div
-            className={`${stili.fasciaIn} grid gap-3 py-7 md:grid-cols-[1fr_auto_1fr_auto_1fr] md:items-center md:gap-[26px] md:py-8`}
+            className={`${stili.fasciaIn} grid gap-2 py-5 md:grid-cols-[1fr_auto_1fr_auto_1fr] md:items-center md:gap-[26px] md:py-8`}
           >
             <p className="font-disp text-[21px] leading-[1.02] uppercase md:text-[26px]">
               Fresco, mai surgelato
@@ -400,12 +424,12 @@ export default function Home() {
           per carta, nessun paragrafo introduttivo. */}
       <section className="fascia fascia-guscio">
         <div className="wrap">
-          <Reveal className="mb-9 flex flex-wrap items-end justify-between gap-x-8 gap-y-3">
+          <Reveal className="mb-5 flex flex-wrap items-end justify-between gap-x-8 gap-y-2 md:mb-9 md:gap-y-3">
             <h2 className="h2">Tre modi di mangiare bene.</h2>
             <p className="note">Il prezzo esatto lo definiamo insieme su WhatsApp</p>
           </Reveal>
 
-          <div className="grid gap-5 md:grid-cols-3 md:gap-6">
+          <div className="grid gap-4 md:grid-cols-3 md:gap-6">
             {CARTE.map((c, i) => {
               const s = getServizio(c.id);
               return (
@@ -413,39 +437,75 @@ export default function Home() {
                   <Link
                     href={c.href}
                     aria-label={`${s.nome}: ${c.azione}`}
-                    className="shell block h-full transition-transform duration-500 hover:-translate-y-1.5"
+                    className={`shell block h-full transition-transform duration-500 hover:-translate-y-1.5 ${INCLINA[i]}`}
                     style={{
                       transitionTimingFunction: "var(--e-over)",
                       ...(c.lime ? { background: "var(--color-lime)" } : null),
                     }}
                   >
                     <div
-                      className="core flex h-full flex-col p-6 sm:p-7"
+                      className="core flex h-full flex-col"
                       style={c.lime ? { background: "var(--color-lime)" } : undefined}
                     >
-                      <span className={c.lime ? "num num-ink" : "num num-lime"}>{s.numero}</span>
-                      <h3 className={`h3 mt-5 !text-[23px] ${c.lime ? "text-ink" : ""}`}>
-                        {s.nome}
-                      </h3>
-                      <p
-                        className={`mt-3 flex-1 text-[14.5px] leading-[1.55] ${c.lime ? "" : "text-muted"}`}
-                        style={c.lime ? { color: SU_LIME } : undefined}
-                      >
-                        {c.riga}
-                      </p>
+                      {c.lime ? (
+                        /* La carta al centro non porta una foto, e non e' una
+                           dimenticanza: e' la superficie lime a fare il lavoro
+                           che sulle altre due fa il piatto. Al posto della
+                           fascia fotografica ci sono i tre modi veri di dare a
+                           Matteo la tua scheda - il PDF, la foto, i valori
+                           digitati - in chip a inchiostro (lime su ink =
+                           12.61:1, l'unico posto in cui il lime e' testo). */
+                        <div className="flex flex-wrap items-center gap-2 px-4 pt-4 sm:px-6 sm:pt-6">
+                          <span className="num num-ink">{s.numero}</span>
+                          <span className="chip chip-ink uppercase">PDF</span>
+                          <span className="chip chip-ink uppercase">Foto</span>
+                          <span className="chip chip-ink uppercase">Valori a mano</span>
+                        </div>
+                      ) : (
+                        /* LE FOTO SONO TORNATE. Nel giro precedente le tre
+                           carte erano diventate rettangoli colorati con dentro
+                           del testo: chiare, ma senza piu' niente del
+                           linguaggio del sito. Qui la fascia fotografica e' la
+                           stessa della vetrina qui sopra e delle schede del
+                           catalogo, e il numero di servizio ci sale sopra
+                           invece di occupare una riga per conto suo. */
+                        <figure className="relative aspect-[16/6] overflow-hidden bg-tray md:aspect-[16/10]">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={s.img}
+                            alt={ALT_CARTA[c.id]}
+                            loading="lazy"
+                            decoding="async"
+                            className="h-full w-full object-cover"
+                          />
+                          <span className="num num-lime absolute top-3 left-3">{s.numero}</span>
+                        </figure>
+                      )}
 
-                      <div className="mt-6">
-                        <PrezzoBreve prezzo={s.prezzo} suLime={c.lime} />
-                      </div>
-                      {/* Non e' un <button>: sta dentro un link, e un
-                          interattivo dentro un interattivo non e' markup
-                          valido. E' la stessa pillola, disegnata. */}
-                      <span className="btn btn-p btn-sm mt-5 self-start">
-                        {c.azione}
-                        <span className="dot" aria-hidden="true">
-                          &rarr;
+                      <div className="flex flex-1 flex-col p-4 sm:p-6">
+                        <h3 className={`h3 !text-[20px] sm:!text-[23px] ${c.lime ? "text-ink" : ""}`}>
+                          {s.nome}
+                        </h3>
+                        <p
+                          className={`mt-2.5 flex-1 text-[14px] leading-[1.5] sm:text-[14.5px] sm:leading-[1.55] ${c.lime ? "" : "text-muted"}`}
+                          style={c.lime ? { color: SU_LIME } : undefined}
+                        >
+                          {c.riga}
+                        </p>
+
+                        <div className="mt-4">
+                          <PrezzoBreve prezzo={s.prezzo} suLime={c.lime} />
+                        </div>
+                        {/* Non e' un <button>: sta dentro un link, e un
+                            interattivo dentro un interattivo non e' markup
+                            valido. E' la stessa pillola, disegnata. */}
+                        <span className="btn btn-p btn-sm mt-4 self-start">
+                          {c.azione}
+                          <span className="dot" aria-hidden="true">
+                            &rarr;
+                          </span>
                         </span>
-                      </span>
+                      </div>
                     </div>
                   </Link>
                 </Reveal>
@@ -463,11 +523,11 @@ export default function Home() {
       <section className="fascia fascia-corta fascia-carta">
         <div className="wrap">
           <Reveal className="shell">
-            <div className="core p-5 sm:p-7 md:p-9">
-              <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-5">
+            <div className="core p-4 sm:p-7 md:p-9">
+              <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4 md:gap-y-5">
                 <div>
                   <h2 className="h2">Componi la tua settimana.</h2>
-                  <p className="note mt-4">
+                  <p className="note mt-2.5 md:mt-4">
                     Sette giorni, quattordici caselle: un primo, un secondo e gli extra in ognuna
                   </p>
                 </div>
@@ -482,7 +542,7 @@ export default function Home() {
               <Link
                 href="/settimana"
                 aria-label="Apri la tua settimana e riempi le caselle"
-                className="mt-7 block"
+                className="mt-5 block md:mt-7"
               >
                 {/* Sotto md restano due giorni, non sette: a sette colonne
                     su 390px una casella varrebbe 44px e i nomi andrebbero a
@@ -526,37 +586,47 @@ export default function Home() {
           bottone e' .btn-s, bianco pieno con testo inchiostro; .btn-p qui
           sarebbe inchiostro su inchiostro. */}
       <Reveal as="section" className="fascia fascia-corta fascia-ink on-ink">
-        <div className="wrap flex flex-wrap items-end justify-between gap-x-10 gap-y-8">
+        <div className="wrap flex flex-wrap items-end justify-between gap-x-10 gap-y-6 md:gap-y-8">
           <div>
             <p className="note">
               Pescara e provincia &middot; consegna il luned&igrave; e il gioved&igrave;
             </p>
-            <h2 className="h2 mt-5">
+            <h2 className="h2 mt-3.5 md:mt-5">
               Il prezzo esatto
               <br />
               te lo dice Matteo.
             </h2>
-            <p className="lead mt-5">
+            <p className="lead mt-3.5 md:mt-5">
               Lasci nome, telefono e comune: ti risponde lui su WhatsApp, con il piano della
               settimana e il preventivo.
             </p>
           </div>
 
-          <div className="flex flex-col items-start gap-5">
+          <div className="flex flex-col items-start gap-4 md:gap-5">
             <Link href="/richiesta" className="btn btn-s">
               Scrivi a Matteo
               <span className="dot" aria-hidden="true">
                 &rarr;
               </span>
             </Link>
-            {/* Il rimando breve alle due pagine che dalla home sono uscite. */}
-            <p className="note">
-              Prima:{" "}
-              <Link href="/come-funziona" className="underline underline-offset-4">
+            {/* Il rimando breve alle due pagine che dalla home sono uscite.
+                I due link sono in linea nella frase ma portano il loro
+                bersaglio: da testo puro erano alti 13px, cioe' un terzo di
+                dito. min-h-[44px] con inline-flex li porta alla misura giusta
+                senza toglierli dalla riga. */}
+            <p className="note flex flex-wrap items-center gap-x-2">
+              <span>Prima:</span>
+              <Link
+                href="/come-funziona"
+                className="inline-flex min-h-[44px] items-center underline underline-offset-4"
+              >
                 come funziona
-              </Link>{" "}
-              &middot;{" "}
-              <Link href="/chi-e-matteo" className="underline underline-offset-4">
+              </Link>
+              <span aria-hidden="true">&middot;</span>
+              <Link
+                href="/chi-e-matteo"
+                className="inline-flex min-h-[44px] items-center underline underline-offset-4"
+              >
                 chi &egrave; Matteo
               </Link>
             </p>
