@@ -31,8 +31,8 @@ const martian = Martian_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "FUEL LAB — Mangia come ti alleni",
-    template: "%s — FUEL LAB",
+    default: "FUEL LAB · Mangia come ti alleni",
+    template: "%s · FUEL LAB",
   },
   description:
     "Meal prep fresco a Pescara, mai surgelato. Schiscette costruite sui macro della tua scheda, cucinate il lunedì e il giovedì. Menu della settimana, piano sui tuoi macro, home cooking.",
@@ -47,7 +47,11 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="it" className={`${anton.variable} ${archivo.variable} ${martian.variable}`}>
+    <html
+      lang="it"
+      className={`${anton.variable} ${archivo.variable} ${martian.variable}`}
+      suppressHydrationWarning
+    >
       <head>
         {/*
           Marca la pagina come "JS vivo" prima del primo paint. Le rivelazioni in
@@ -59,6 +63,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
+        <a href="#contenuto" className="skip">
+          Vai al contenuto
+        </a>
+        <span className="grain" aria-hidden="true" />
         <PianoProvider>
           <Nav />
           <main id="contenuto">{children}</main>

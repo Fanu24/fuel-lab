@@ -20,7 +20,7 @@ import { TAGS, type Tag, type Target } from "@/lib/types";
  */
 
 /**
- * Quanti abbinamenti primo+secondo esistono in totale, senza vincoli.
+ * Quanti piatti restano in catalogo senza vincoli.
  * Calcolato dal catalogo, non scritto a mano: se il catalogo cambia il numero
  * mostrato in pagina resta vero da solo.
  */
@@ -108,7 +108,7 @@ export default function Valori({
     giorni,
   };
 
-  // Quanti abbinamenti primo+secondo restano davvero dopo le esclusioni: se la
+  // Quanti piatti restano davvero dopo le esclusioni: se la
   // risposta e' zero il matcher non ha niente da comporre, e va detto prima
   // del click, non dopo.
   const disponibili = useMemo(
@@ -153,7 +153,7 @@ export default function Valori({
           </div>
           {nomeFile !== null ? (
             <p
-              className="max-w-full overflow-hidden rounded-full px-4 py-[7px] font-mono text-[11.5px] text-ellipsis whitespace-nowrap text-ink"
+              className="max-w-full overflow-hidden rounded-full px-4 py-2 font-mono text-[13px] text-ellipsis whitespace-nowrap text-ink"
               style={{
                 fontVariationSettings: '"wdth" 84',
                 border: "1px solid var(--hair)",
@@ -355,8 +355,8 @@ export default function Valori({
                 role="status"
               >
                 {disponibili === 0
-                  ? "Con questi vincoli non resta nessun abbinamento"
-                  : disponibili + ` abbinamenti su ${TOTALE_ABBINAMENTI} restano in gioco`}
+                  ? "Con questi vincoli non resta nessun piatto"
+                  : disponibili + ` piatti su ${TOTALE_ABBINAMENTI} restano in gioco`}
               </p>
             </fieldset>
           </div>

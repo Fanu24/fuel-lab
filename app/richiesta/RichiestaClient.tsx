@@ -288,7 +288,7 @@ function RiepilogoServizio({ servizio }: { servizio: Servizio }) {
         <p className="h3 mt-3 md:mt-[16px]" style={{ fontSize: 25 }}>
           {servizio.nome}
         </p>
-        <p className="mt-2.5 text-[14px] leading-[1.5] text-muted md:mt-[12px] md:leading-relaxed">{servizio.descrizione}</p>
+        <p className="mt-3 text-[16px] leading-[1.5] text-muted md:mt-4 md:leading-relaxed">{servizio.descrizione}</p>
       </div>
     </div>
   );

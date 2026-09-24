@@ -103,14 +103,14 @@
      nascevano tarati su 1440 e scendevano intatti fino a 390, dove un passo
      di 68 sopra e 68 sotto vale 136px di vuoto su 844 di schermo - un sesto
      di schermata per ogni confine fra due sezioni, ripetuto quattro o cinque
-     volte a pagina. A 44 il confine si legge lo stesso (a farlo vedere e' il
-     cambio di superficie della fascia, non la quantita' di aria) e la pagina
-     restituisce un centinaio di pixel per sezione.
+     volte a pagina. A 56 il confine si legge (a farlo vedere e' il
+     cambio di superficie della fascia, non la quantita' di aria) e il testo
+     piu' grande ha un filo di respiro senza tornare al vuoto da desktop.
      --y-testata schiva la nav flottante, che sta a 22px dall'alto ed e' alta
      72: sotto i 94px il titolo finirebbe dietro la barra. 106 e' quel limite
      piu' un filo d'aria, non un numero scelto a occhio. */
-  --y-fascia: 44px;
-  --y-testata: 106px;
+  --y-fascia: 56px;
+     --y-testata: 100px;
 
   /* Il secondario sul GUSCIO.
      muted #5b6b5f su tray fa 4.45:1 - sotto AA - ed e' il confine scritto in
@@ -257,10 +257,10 @@
     box-shadow: inset 0 0 0 1px var(--hair);
     color: var(--color-ink);
     font-family: var(--font-ui);
-    font-size: 10.5px;
-    font-weight: 600;
-    font-variation-settings: "wdth" 116;
-    letter-spacing: 0.26em;
+    font-size: 12px;
+    font-weight: 650;
+    font-variation-settings: "wdth" 112;
+    letter-spacing: 0.16em;
     text-transform: uppercase;
     line-height: 1;
   }
@@ -277,7 +277,7 @@
     .eyebrow {
       line-height: 1.4;
       padding: 8px 15px;
-      letter-spacing: 0.19em;
+      letter-spacing: 0.12em;
       align-items: flex-start;
     }
     .eyebrow b {
@@ -308,42 +308,40 @@
      vero dove il difetto c'era davvero, cioe' sul desktop. */
   .h1 {
     font-size: clamp(30px, 5.6vw, 68px);
-    line-height: 0.88;
+    line-height: 0.92;
     letter-spacing: -0.012em;
   }
   .h2 {
     font-size: clamp(22px, 4vw, 48px);
-    line-height: 0.9;
+    line-height: 0.94;
     letter-spacing: -0.01em;
   }
   .h3 {
     font-size: clamp(17px, 3.6vw, 30px);
-    line-height: 1;
+    line-height: 1.08;
   }
-  /* sceso con i titoli: a 19px accanto a un h2 da 48 il lead pesava quanto il
-     titolo e la gerarchia si appiattiva.
-     Sul telefono scende ancora di un gradino e mezzo: 17.5px con interlinea
-     1.56 fa righe da 27px, e su una colonna larga 44 caratteri un lead di
-     quattro righe vale 110px prima ancora del contenuto. A 16/1.5 le righe
-     sono 24px e il paragrafo resta un paragrafo, non un blocco. */
+  /* Il corpo segue il default di lettura da telefono: 17px, non 16.
+     typography.md › Ensuring legibility: default iOS 17 pt, minimo 11 pt.
+     Il lead resta sotto il titolo Anton, con un'interlinea che tiene il segno
+     su piu' di due righe. */
   .lead {
-    font-size: 16px;
-    line-height: 1.5;
+    font-size: 17px;
+    line-height: 1.47;
     color: var(--color-muted);
-    max-width: 44ch;
+    max-width: 42ch;
   }
   @media (min-width: 768px) {
     .lead {
-      font-size: 17.5px;
-      line-height: 1.56;
+      font-size: 18px;
+      line-height: 1.5;
     }
   }
   .label {
     font-family: var(--font-mono);
     font-variation-settings: "wdth" 84;
-    font-size: 10px;
-    font-weight: 500;
-    letter-spacing: 0.18em;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--color-muted);
   }
@@ -389,7 +387,7 @@
     height: 54px;
     padding: 0 8px 0 22px;
     border-radius: 999px;
-    font-size: 14.5px;
+    font-size: 16px;
     font-weight: 700;
     letter-spacing: -0.005em;
     white-space: nowrap;
@@ -536,7 +534,10 @@
     padding: var(--pad);
     border-radius: var(--shell);
     background: var(--color-tray);
-    box-shadow: 0 2px 6px rgba(18, 48, 31, 0.04), 0 40px 80px -46px rgba(18, 48, 31, 0.28);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.55),
+      0 2px 8px rgba(18, 48, 31, 0.06),
+      0 32px 68px -36px rgba(18, 48, 31, 0.4);
   }
   .core {
     border-radius: var(--core-r);
@@ -551,8 +552,8 @@
     gap: 6px;
     font-family: var(--font-mono);
     font-variation-settings: "wdth" 85;
-    font-size: 11px;
-    font-weight: 500;
+    font-size: 12px;
+    font-weight: 600;
     letter-spacing: 0.02em;
     padding: 6px 11px;
     border-radius: var(--chip-r);
@@ -566,6 +567,110 @@
   .chip-ink {
     background: var(--color-ink);
     color: var(--color-lime);
+  }
+
+  /* ---------- topping -----------------------------------------------------
+     Chip con foto: 44px di altezza minima per il dito, testo inchiostro anche
+     quando e' acceso (lime e' superficie, non testo). */
+  .topping {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 44px;
+    max-width: 100%;
+    padding: 4px 10px 4px 4px;
+    border-radius: var(--chip-r);
+    background: var(--color-cell);
+    color: var(--color-ink);
+    text-align: left;
+    transition: background-color 0.28s var(--e-mech), transform 0.28s var(--e-out);
+  }
+  .topping img {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    object-fit: cover;
+    flex: 0 0 auto;
+    background: var(--color-tray);
+  }
+  .topping-n {
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    min-width: 0;
+  }
+  .topping-k {
+    font-family: var(--font-mono);
+    font-variation-settings: "wdth" 84;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-muted);
+    flex: 0 0 auto;
+  }
+  .topping[data-compatto="true"] {
+    min-height: 40px;
+    gap: 6px;
+    padding: 6px 10px;
+  }
+  .topping[data-compatto="true"] .topping-n {
+    font-size: 12px;
+  }
+  .topping[data-compatto="true"] .topping-k {
+    font-size: 12px;
+  }
+
+  .topping[data-on="true"] {
+    background: var(--color-lime);
+  }
+  .topping[data-on="true"] .topping-k {
+    color: var(--color-ink);
+  }
+  .topping:hover:not(:disabled) {
+    transform: translateY(-1px);
+  }
+  .topping:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+  .topping:disabled {
+    opacity: 0.42;
+    cursor: not-allowed;
+  }
+
+  .foto-profondita {
+    position: relative;
+  }
+  .foto-profondita::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(
+      180deg,
+      rgba(18, 48, 31, 0.12) 0%,
+      transparent 34%,
+      transparent 62%,
+      rgba(18, 48, 31, 0.28) 100%
+    );
+  }
+
+  .skip {
+    position: absolute;
+    left: 16px;
+    top: 12px;
+    z-index: 90;
+    padding: 12px 18px;
+    border-radius: 999px;
+    background: var(--color-ink);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    transform: translateY(-160%);
+    transition: transform 0.28s var(--e-out);
+  }
+  .skip:focus {
+    transform: none;
+    outline-color: var(--color-lime);
   }
 
   /* ---------- prezzo "a partire da" ---------------------------------------
@@ -600,9 +705,9 @@
   }
   .price-da,
   .price-u {
-    font-size: 10px;
-    font-weight: 500;
-    letter-spacing: 0.14em;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--color-muted);
   }
@@ -700,15 +805,15 @@
     margin-bottom: 5px;
     font-family: var(--font-mono);
     font-variation-settings: "wdth" 84;
-    font-size: 9.5px;
-    font-weight: 500;
-    letter-spacing: 0.08em;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
     color: var(--color-muted);
     line-height: 1;
   }
   .macro-3-v b {
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 700;
     letter-spacing: -0.02em;
     color: var(--color-ink);
@@ -782,9 +887,9 @@
     margin-top: 6px;
     font-family: var(--font-mono);
     font-variation-settings: "wdth" 84;
-    font-size: 9.5px;
-    font-weight: 500;
-    letter-spacing: 0.16em;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--color-muted);
   }
@@ -818,9 +923,9 @@
   .dayhead {
     font-family: var(--font-mono);
     font-variation-settings: "wdth" 84;
-    font-size: 10.5px;
-    font-weight: 500;
-    letter-spacing: 0.14em;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--color-muted);
     text-align: center;
@@ -829,9 +934,9 @@
   .rowlab {
     font-family: var(--font-mono);
     font-variation-settings: "wdth" 84;
-    font-size: 10px;
-    font-weight: 500;
-    letter-spacing: 0.16em;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--color-muted);
     display: flex;
@@ -862,14 +967,14 @@
     justify-content: center;
     color: var(--color-muted);
     font-size: 22px;
-    font-weight: 300;
+    font-weight: 500;
   }
   .cell-empty:hover {
     background: var(--color-lime);
     color: var(--color-ink);
   }
   .cell-d {
-    font-size: 12.5px;
+    font-size: 13.5px;
     font-weight: 700;
     line-height: 1.22;
     letter-spacing: -0.012em;
@@ -878,8 +983,8 @@
     margin-top: auto;
     font-family: var(--font-mono);
     font-variation-settings: "wdth" 84;
-    font-size: 10.5px;
-    font-weight: 500;
+    font-size: 12px;
+    font-weight: 600;
     color: var(--color-muted);
     padding-top: 8px;
   }
@@ -928,9 +1033,9 @@
   .tk-w {
     font-family: var(--font-mono);
     font-variation-settings: "wdth" 84;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
-    letter-spacing: 0.16em;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--color-ink);
     padding: 0 22px;
@@ -955,7 +1060,7 @@
     color: var(--color-ink);
     font-family: var(--font-mono);
     font-variation-settings: "wdth" 84;
-    font-size: 13.5px;
+    font-size: 16px;
     transition: box-shadow 0.28s var(--e-mech);
   }
   textarea.field {
@@ -979,9 +1084,10 @@
   .note {
     font-family: var(--font-mono);
     font-variation-settings: "wdth" 84;
-    font-size: 10.5px;
-    font-weight: 500;
-    letter-spacing: 0.14em;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    line-height: 1.4;
     text-transform: uppercase;
     color: var(--color-muted);
   }
@@ -1214,8 +1320,14 @@
    Su fondo scuro la grana si sommava in schiarita. Su chiaro deve sottrarre:
    in screen o in normal sporcherebbe di grigio invece di dare texture. */
 .grain {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  pointer-events: none;
   mix-blend-mode: multiply;
-  opacity: 0.04;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
 }
 
 /* ---------- rivelazione in scroll ----------------------------------------
@@ -1223,13 +1335,31 @@
    guardia, con JavaScript disattivato la pagina resterebbe invisibile.      */
 .js .reveal {
   opacity: 0;
-  transform: translateY(18px);
+  transform: translate3d(0, 28px, 0);
 }
 .js .reveal.in {
-  opacity: 1;
-  transform: none;
-  transition: opacity 0.7s var(--e-out), transform 0.7s var(--e-out);
-  transition-delay: var(--d, 0ms);
+  animation: fuel-in 0.9s var(--e-out) both;
+  animation-delay: var(--d, 0ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .js .reveal,
+  .js .reveal.in {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+}
+
+@keyframes fuel-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 28px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 @keyframes fuel-marquee {

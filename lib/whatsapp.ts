@@ -1,6 +1,6 @@
 import { GIORNI, NOMI_GIORNO, PASTI } from "./settimana";
 import type { Casella, GiornoSettimana, Piano } from "./settimana";
-import { getElemento, getExtra } from "./catalogo";
+import { getPiatto, getExtra, etichettaPrezzo } from "./catalogo";
 import type { Macros } from "./types";
 
 /* =========================================================================
@@ -86,23 +86,28 @@ export function messaggioServizio(servizioId: string): string {
   return TESTI_SERVIZIO[servizioId] ?? TESTO_SERVIZIO_GENERICO;
 }
 
-/** Nome di un elemento del catalogo, o undefined se l'id non c'e' (piu') nel menu. */
-function nomeElemento(id: string | undefined): string | undefined {
-  return id ? getElemento(id)?.nome : undefined;
+function nomePiatto(id: string | undefined): string | undefined {
+  return id ? getPiatto(id)?.nome : undefined;
+}
+
+function nomeExtra(id: string): string | undefined {
+  const e = getExtra(id);
+  if (!e) return undefined;
+  if (e.prezzoEuro != null) return `${e.nome} (${etichettaPrezzo(e, true)})`;
+  return e.nome;
 }
 
 /**
- * Primo ed extra di una casella in un'unica frase leggibile. Il caso
- * "solo extra" (nessun primo ne' secondo) e' raro ma valido secondo
- * lib/piano.tsx: una casella non e' vuota se ha almeno un extra dentro,
- * quindi va descritta lo stesso invece di sparire dal messaggio.
+ * Piatto ed extra di una casella in un'unica frase leggibile. Il caso
+ * "solo extra" e' raro ma valido: una casella non e' vuota se ha almeno
+ * un extra dentro, quindi va descritta invece di sparire dal messaggio.
  */
 function descrizioneCasella(c: Casella): string {
-  const principali = [nomeElemento(c.primo), nomeElemento(c.secondo)].filter(
-    (n): n is string => !!n,
-  );
-  if (principali.length > 0) return principali.join(" + ");
-  const extra = c.extra.map((id) => getExtra(id)?.nome).filter((n): n is string => !!n);
+  const piatto = nomePiatto(c.piatto);
+  const extra = c.extra.map(nomeExtra).filter((n): n is string => !!n);
+  if (piatto) {
+    return extra.length > 0 ? `${piatto} + ${extra.join(", ")}` : piatto;
+  }
   return extra.length > 0 ? extra.join(" + ") : "casella vuota";
 }
 
@@ -118,7 +123,7 @@ function rigaGiorno(g: GiornoSettimana, p: Piano): string | undefined {
 
 /**
  * Il messaggio che Matteo legge quando arriva dalla richiesta legata a una
- * settimana: chi manda, i giorni con dentro primo e secondo, e la riga finale
+ * settimana: chi manda, i giorni con il piatto e le aggiunte, e la riga finale
  * dei macro totali. I ritorni a capo sono `\n` veri: e' compito di
  * linkWhatsApp codificarli nell'URL, non di questa funzione.
  */

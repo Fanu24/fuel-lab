@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { IMPRONTA_CATALOGO, codificaPiano, decodificaPiano, linkPiano } from "./condivisione";
-import { PRIMI, SECONDI, EXTRA } from "./catalogo";
+import { PIATTI, EXTRA } from "./catalogo";
 import type { Piano } from "./piano";
 
 const pieno: Piano = {
-  lun: { pranzo: { primo: PRIMI[0].id, secondo: SECONDI[0].id, extra: [EXTRA[0].id] },
-         cena: { secondo: SECONDI[1].id, extra: [] } },
-  gio: { pranzo: { primo: PRIMI[1].id, extra: [] } },
+  lun: { pranzo: { piatto: PIATTI[0].id, extra: [EXTRA[0].id] },
+         cena: { piatto: PIATTI[1].id, extra: [] } },
+  gio: { pranzo: { piatto: PIATTI[2].id, extra: [] } },
 };
 
 describe("condivisione", () => {
@@ -14,9 +14,6 @@ describe("condivisione", () => {
     expect(decodificaPiano(codificaPiano(pieno))).toEqual(pieno);
   });
 
-  // Il piano vuoto ha bisogno di un sentinella: se codificasse nella stringa
-  // vuota entrerebbe in conflitto con il test sulla stringa malformata qui sotto,
-  // che pretende null. "-" significa "vuoto ma valido".
   it("gestisce il piano vuoto con il sentinella", () => {
     expect(codificaPiano({})).toBe("-");
     expect(decodificaPiano("-")).toEqual({});
@@ -28,38 +25,30 @@ describe("condivisione", () => {
   });
 
   it("scarta gli id non piu in catalogo", () => {
-    const s = codificaPiano({ lun: { pranzo: { primo: "sparito", extra: [] } } });
+    const s = codificaPiano({ lun: { pranzo: { piatto: "sparito", extra: [] } } });
     expect(decodificaPiano(s)).toEqual({});
   });
 
   it("resta sotto i 2000 caratteri con la settimana piena", () => {
     const max: Piano = {};
     for (const g of ["lun","mar","mer","gio","ven","sab","dom"] as const)
-      max[g] = { pranzo: { primo: PRIMI[0].id, secondo: SECONDI[0].id, extra: EXTRA.map(e => e.id) },
-                 cena:   { primo: PRIMI[1].id, secondo: SECONDI[1].id, extra: EXTRA.map(e => e.id) } };
+      max[g] = { pranzo: { piatto: PIATTI[0].id, extra: EXTRA.map(e => e.id) },
+                 cena:   { piatto: PIATTI[1].id, extra: EXTRA.map(e => e.id) } };
     expect(linkPiano(max, "https://fuellab.vercel.app").length).toBeLessThan(2000);
   });
 });
 
-/* -------------------------------------------------------------------------
-   Da qui in poi: l'impronta del catalogo e i modi in cui una query string puo
-   arrivare rotta. Il menu cambia ogni settimana, quindi il caso "link vecchio,
-   catalogo nuovo" non e' teorico: e' la settimana prossima.
-   ------------------------------------------------------------------------- */
-
-/** La settimana piena, il caso peggiore reale per la lunghezza. */
 function settimanaPiena(): Piano {
   const max: Piano = {};
   for (const g of ["lun", "mar", "mer", "gio", "ven", "sab", "dom"] as const) {
     max[g] = {
-      pranzo: { primo: PRIMI[0].id, secondo: SECONDI[0].id, extra: EXTRA.map((e) => e.id) },
-      cena: { primo: PRIMI[1].id, secondo: SECONDI[1].id, extra: EXTRA.map((e) => e.id) },
+      pranzo: { piatto: PIATTI[0].id, extra: EXTRA.map((e) => e.id) },
+      cena: { piatto: PIATTI[1].id, extra: EXTRA.map((e) => e.id) },
     };
   }
   return max;
 }
 
-/** Il corpo di un link, senza l'impronta davanti. */
 function corpoDi(s: string): string {
   return s.slice(s.indexOf("~") + 1);
 }
@@ -72,9 +61,6 @@ describe("impronta del catalogo", () => {
   it("rifiuta un link nato da un catalogo diverso invece di interpretarlo", () => {
     const buono = codificaPiano(pieno);
     const manomesso = `1z-altromenu~${corpoDi(buono)}`;
-
-    // Stesso identico corpo: l'unica differenza e' l'impronta. Senza il controllo
-    // questi indici decodificherebbero in piatti che l'utente non ha mai scelto.
     expect(decodificaPiano(manomesso)).toBeNull();
     expect(decodificaPiano(buono)).toEqual(pieno);
   });
@@ -99,13 +85,13 @@ describe("input malformato", () => {
       "-x",
       "~",
       "~~~",
-      corpo, // corpo senza impronta
-      `${IMPRONTA_CATALOGO}~`, // impronta senza corpo
-      `${IMPRONTA_CATALOGO}~${corpo.slice(1)}`, // corpo troncato
-      `${IMPRONTA_CATALOGO}~${corpo}0`, // corpo piu lungo del dovuto
-      `${IMPRONTA_CATALOGO}~${corpo}~${corpo}`, // due separatori
-      `${IMPRONTA_CATALOGO}~${"*".repeat(corpo.length)}`, // fuori alfabeto
-      `${IMPRONTA_CATALOGO}~${"%".repeat(corpo.length)}`, // percent-encoding rotto
+      corpo,
+      `${IMPRONTA_CATALOGO}~`,
+      `${IMPRONTA_CATALOGO}~${corpo.slice(1)}`,
+      `${IMPRONTA_CATALOGO}~${corpo}0`,
+      `${IMPRONTA_CATALOGO}~${corpo}~${corpo}`,
+      `${IMPRONTA_CATALOGO}~${"*".repeat(corpo.length)}`,
+      `${IMPRONTA_CATALOGO}~${"%".repeat(corpo.length)}`,
     ];
     for (const s of casi) expect(decodificaPiano(s)).toBeNull();
   });
@@ -121,13 +107,10 @@ describe("input malformato", () => {
   it("scarta in silenzio un indice fuori intervallo invece di rifiutare il link", () => {
     const buono = codificaPiano(pieno);
     const taglio = buono.indexOf("~") + 1;
-    // "z" vale 35 in base36 e nessuna lista del catalogo arriva cosi in alto: il primo
-    // di lunedi punta fuori. Il resto della settimana deve sopravvivere lo stesso.
     const storto = `${buono.slice(0, taglio)}z${buono.slice(taglio + 1)}`;
     const p = decodificaPiano(storto);
     expect(p).not.toBeNull();
-    expect(p?.lun?.pranzo?.primo).toBeUndefined();
-    expect(p?.lun?.pranzo?.secondo).toBe(SECONDI[0].id);
+    expect(p?.lun?.pranzo?.piatto).toBeUndefined();
   });
 
   it("sopravvive agli spazi che un client di posta puo aggiungere attorno al link", () => {
@@ -150,8 +133,6 @@ describe("forma del link", () => {
   });
 
   it("non ha bisogno di percent-encoding nemmeno nel caso peggiore", () => {
-    // Se l'alfabeto uscisse dai caratteri non riservati, ogni carattere ne costerebbe
-    // tre e il conto dei 2000 caratteri andrebbe rifatto senza accorgersene.
     const s = codificaPiano(settimanaPiena());
     expect(encodeURIComponent(s)).toBe(s);
   });
@@ -159,7 +140,7 @@ describe("forma del link", () => {
   it("lo stesso piano da sempre lo stesso link, anche con dentro id morti", () => {
     const conMorto: Piano = {
       ...pieno,
-      ven: { cena: { primo: "primo-sparito", secondo: "secondo-sparito", extra: ["boh"] } },
+      ven: { cena: { piatto: "piatto-sparito", extra: ["boh"] } },
     };
     expect(codificaPiano(conMorto)).toBe(codificaPiano(pieno));
   });
@@ -172,32 +153,22 @@ describe("forma del link", () => {
 
 describe("maschera degli extra", () => {
   it("ignora i bit oltre l'ultimo extra invece di inventare un id", () => {
-    // La maschera sta in coda alla casella, ma la sua larghezza si ricava dal catalogo:
-    // la trovo per differenza invece di scriverla a mano, cosi' il test non va rifatto
-    // il giorno in cui gli extra diventano nove.
-    const spento = corpoDi(codificaPiano({ lun: { pranzo: { primo: PRIMI[0].id, extra: [] } } }));
+    const spento = corpoDi(codificaPiano({ lun: { pranzo: { piatto: PIATTI[0].id, extra: [] } } }));
     const acceso = corpoDi(
-      codificaPiano({ lun: { pranzo: { primo: PRIMI[0].id, extra: EXTRA.map((e) => e.id) } } }),
+      codificaPiano({ lun: { pranzo: { piatto: PIATTI[0].id, extra: EXTRA.map((e) => e.id) } } }),
     );
     const diversi = [...spento].map((c, i) => (c === acceso[i] ? -1 : i)).filter((i) => i >= 0);
     expect(diversi.length).toBeGreaterThan(0);
 
     const inizio = diversi[0];
     const fine = diversi[diversi.length - 1];
-    // Tutti i bit che il campo puo' contenere accesi insieme: con 8 extra la maschera
-    // valida arriva a 255, ma "zz" vale 1295, quindi i bit alti puntano a extra che
-    // non esistono.
     const zeta = "z".repeat(fine - inizio + 1);
     const gonfia =
       IMPRONTA_CATALOGO + "~" + spento.slice(0, inizio) + zeta + spento.slice(fine + 1);
 
     const p = decodificaPiano(gonfia);
     expect(p).not.toBeNull();
-
-    // Il resto della casella non deve risentirne, e la lista di extra deve contenere
-    // solo id veri: un bit alto letto come EXTRA[i] inesistente farebbe uscire di qui
-    // un undefined travestito da id.
-    expect(p?.lun?.pranzo?.primo).toBe(PRIMI[0].id);
+    expect(p?.lun?.pranzo?.piatto).toBe(PIATTI[0].id);
     const ids = p?.lun?.pranzo?.extra ?? [];
     expect(ids.length).toBeGreaterThan(0);
     const veri = new Set(EXTRA.map((e) => e.id));

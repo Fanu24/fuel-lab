@@ -2,8 +2,8 @@
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { KeyboardEvent as KeyboardEventReact, MouseEvent as MouseEventReact } from "react";
-import { EXTRA, PRIMI, SECONDI } from "@/lib/catalogo";
-import type { Elemento, Extra } from "@/lib/catalogo";
+import { EXTRA, PIATTI, etichettaAllenamento, etichettaPrezzo } from "@/lib/catalogo";
+import type { Extra, Piatto } from "@/lib/catalogo";
 import { usePiano } from "@/lib/piano";
 import { NOMI_GIORNO, macroCasella } from "@/lib/settimana";
 import type { GiornoSettimana, Pasto } from "@/lib/settimana";
@@ -27,16 +27,16 @@ import { NOMI_PASTO } from "./CasellaBottone";
       alla casella da cui si e' partiti - lo fa il chiamante, che sa quale nodo
       e' stato cliccato: qui dentro non lo sapremmo.
 
-   3. NIENTE PREZZI. Da nessuna parte, nemmeno di sfuggita: la settimana si
-      misura in macro, il preventivo nasce nella conversazione WhatsApp.
+   3. I PREZZI DELLA BOX. Sulle aggiunte si vede il supplemento del PDF,
+      o "incluso" / "su richiesta" quando la cifra manca. Il piatto non ha
+      un prezzo in chiaro: la soglia del servizio resta nella conversazione.
    ========================================================================= */
 
-type Scheda = "primo" | "secondo" | "extra";
+type Scheda = "piatto" | "extra";
 
 const SCHEDE: { id: Scheda; label: string }[] = [
-  { id: "primo", label: "Primi" },
-  { id: "secondo", label: "Secondi" },
-  { id: "extra", label: "Extra" },
+  { id: "piatto", label: "Piatti" },
+  { id: "extra", label: "Aggiunte" },
 ];
 
 /**
@@ -51,9 +51,9 @@ function normalizza(s: string): string {
     .toLowerCase();
 }
 
-function corrispondeElemento(e: Elemento, q: string): boolean {
+function corrispondePiatto(e: Piatto, q: string): boolean {
   if (q === "") return true;
-  return normalizza(`${e.nome} ${e.descrizione} ${e.tag.join(" ")}`).includes(q);
+  return normalizza(`${e.nome} ${e.motivo} ${e.tag.join(" ")}`).includes(q);
 }
 
 /* Tutto cio' che il browser mette nel giro di Tab. Le schede non selezionate
@@ -71,8 +71,8 @@ export default function SelettoreCasella({
   pasto: Pasto;
   onChiudi: () => void;
 }) {
-  const { casella, metti, togliElemento, alternaExtra, svuotaCasella } = usePiano();
-  const [scheda, setScheda] = useState<Scheda>("primo");
+  const { casella, metti, togliPiatto, alternaExtra, svuotaCasella } = usePiano();
+  const [scheda, setScheda] = useState<Scheda>("piatto");
   const [cerca, setCerca] = useState("");
 
   const pannello = useRef<HTMLDivElement>(null);
@@ -86,9 +86,9 @@ export default function SelettoreCasella({
   const vuota = !contenuto;
 
   const q = normalizza(cerca.trim());
-  const elenco: Elemento[] = useMemo(() => {
+  const elenco: Piatto[] = useMemo(() => {
     if (scheda === "extra") return [];
-    return (scheda === "primo" ? PRIMI : SECONDI).filter((e) => corrispondeElemento(e, q));
+    return PIATTI.filter((e) => corrispondePiatto(e, q));
   }, [scheda, q]);
   const elencoExtra: Extra[] = useMemo(
     () =>
@@ -96,10 +96,9 @@ export default function SelettoreCasella({
     [scheda, q],
   );
 
-  const totali =
-    scheda === "extra" ? EXTRA.length : scheda === "primo" ? PRIMI.length : SECONDI.length;
+  const totali = scheda === "extra" ? EXTRA.length : PIATTI.length;
   const trovati = scheda === "extra" ? elencoExtra.length : elenco.length;
-  const nomeScheda = scheda === "extra" ? "extra" : scheda === "primo" ? "primi" : "secondi";
+  const nomeScheda = scheda === "extra" ? "aggiunte" : "piatti";
 
   /*
    * Il focus entra nel pannello all'apertura - cosi' lo screen reader annuncia il
@@ -208,15 +207,14 @@ export default function SelettoreCasella({
     if (e.target === e.currentTarget) onChiudi();
   }
 
-  function scegliElemento(e: Elemento) {
-    const gia = e.categoria === "primo" ? contenuto?.primo : contenuto?.secondo;
-    if (gia === e.id) togliElemento(giorno, pasto, e.categoria);
-    else metti(giorno, pasto, e.categoria, e.id);
+  function scegliPiatto(e: Piatto) {
+    if (contenuto?.piatto === e.id) togliPiatto(giorno, pasto);
+    else metti(giorno, pasto, e.id);
   }
 
   function contaScheda(s: Scheda): number {
     if (s === "extra") return contenuto?.extra.length ?? 0;
-    return contenuto?.[s] ? 1 : 0;
+    return contenuto?.piatto ? 1 : 0;
   }
 
   return (
@@ -326,7 +324,7 @@ export default function SelettoreCasella({
                   {s.label}
                   {n > 0 ? (
                     <span
-                      className="mono rounded-full px-1.5 py-[1px] text-[10px] font-bold"
+                      className="mono rounded-full px-2 py-0.5 text-[12px] font-bold"
                       style={{
                         background: attiva ? "rgba(223, 255, 62, .2)" : "rgba(18, 48, 31, .12)",
                       }}
@@ -347,7 +345,7 @@ export default function SelettoreCasella({
           >
             <div className="px-4 pt-4 sm:px-5">
               <label htmlFor={idCerca} className="sr-only">
-                Cerca fra i {nomeScheda}
+                Cerca fra {scheda === "extra" ? "le aggiunte" : "i piatti"}
               </label>
               <input
                 id={idCerca}
@@ -360,9 +358,30 @@ export default function SelettoreCasella({
               />
               <p className="note mt-3">
                 {trovati} su {totali} {nomeScheda}
-                {scheda === "extra" ? " · si sommano" : " · tocca di nuovo per togliere"}
+                {scheda === "extra" ? " · si attaccano al piatto" : " · tocca di nuovo per togliere"}
               </p>
             </div>
+
+            {scheda === "piatto" && contenuto?.piatto ? (
+              <div className="px-4 pt-3 sm:px-5">
+                <button
+                  type="button"
+                  className="note flex min-h-[44px] w-full items-center justify-between gap-3 rounded-full border px-4 text-left"
+                  style={{ borderColor: "var(--hair)" }}
+                  onClick={() => {
+                    setCerca("");
+                    setScheda("extra");
+                  }}
+                >
+                  <span className="!normal-case !tracking-normal">
+                    {contenuto.extra.length === 0
+                      ? "Nessuna aggiunta in questa casella"
+                      : `${contenuto.extra.length} ${contenuto.extra.length === 1 ? "aggiunta" : "aggiunte"} in questa casella`}
+                  </span>
+                  <span>Scegli</span>
+                </button>
+              </div>
+            ) : null}
 
             <ul className="mt-3 flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overscroll-contain px-4 pb-4 sm:px-5">
               {scheda !== "extra"
@@ -370,12 +389,10 @@ export default function SelettoreCasella({
                     <li key={e.id}>
                       <RigaScelta
                         nome={e.nome}
-                        dettaglio={`${e.kcal} kcal · P ${e.proteine} · C ${e.carboidrati} · G ${e.grassi} · ${e.grammi} g`}
+                        dettaglio={`${e.kcal} kcal · ${etichettaAllenamento(e.allenamento)} · P ${e.proteine} · C ${e.carboidrati} · G ${e.grassi}`}
                         allergeni={e.allergeni}
-                        scelto={
-                          (e.categoria === "primo" ? contenuto?.primo : contenuto?.secondo) === e.id
-                        }
-                        onClick={() => scegliElemento(e)}
+                        scelto={contenuto?.piatto === e.id}
+                        onClick={() => scegliPiatto(e)}
                       />
                     </li>
                   ))
@@ -383,7 +400,7 @@ export default function SelettoreCasella({
                     <li key={e.id}>
                       <RigaScelta
                         nome={e.nome}
-                        dettaglio={`${e.kcal} kcal · P ${e.proteine} · C ${e.carboidrati} · G ${e.grassi} · ${e.grammi} g`}
+                        dettaglio={`${e.kcal} kcal · ${etichettaPrezzo(e, e.prezzoEuro != null)} · ${e.grammi} g`}
                         allergeni={e.allergeni}
                         scelto={contenuto?.extra.includes(e.id) ?? false}
                         onClick={() => alternaExtra(giorno, pasto, e.id)}
@@ -472,10 +489,10 @@ function RigaScelta({
             A 10px e 9.5px il margine non c'e': vanno a inchiostro, 12.00:1 su
             cell e 12.61:1 sul lime della riga scelta. La gerarchia con il nome
             la fanno gia' corpo e peso, non serve spegnere il colore. */}
-        <span className="mono mt-1.5 block text-[10px] font-medium text-ink">{dettaglio}</span>
+        <span className="mono mt-2 block text-[13px] font-medium text-ink">{dettaglio}</span>
         {/* Allergeni sempre in chiaro, anche quando non ce ne sono: e' un obbligo
             di legge, e "nessuno dichiarato" e' un dato, non un buco. */}
-        <span className="mono mt-1 block text-[9.5px] font-medium tracking-[.12em] text-ink uppercase">
+        <span className="mono mt-1.5 block text-[12px] font-medium tracking-[.08em] text-ink uppercase">
           Allergeni: {allergeni.length > 0 ? allergeni.join(", ") : "nessuno dichiarato"}
         </span>
       </span>

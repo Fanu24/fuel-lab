@@ -3,7 +3,7 @@ import { componiMessaggio, messaggioServizio, senzaDomandaFinale, senzaSaluto } 
 import type { DatiContatto } from "./whatsapp";
 import { GIORNI } from "./settimana";
 import type { Piano } from "./settimana";
-import { PRIMI, SECONDI } from "./catalogo";
+import { PIATTI } from "./catalogo";
 import type { Macros } from "./types";
 
 describe("whatsapp", () => {
@@ -80,22 +80,21 @@ describe("whatsapp", () => {
 
   // --- messaggioPiano: leggibile su un telefono ----------------------------
 
-  it("messaggioPiano elenca i giorni pieni con primo e secondo e chiude con i macro", async () => {
+  it("messaggioPiano elenca i giorni pieni con il piatto e chiude con i macro", async () => {
     vi.resetModules();
     const { messaggioPiano } = await import("./whatsapp");
-    const { PRIMI, SECONDI } = await import("./catalogo");
+    const { PIATTI } = await import("./catalogo");
     const { GIORNI } = await import("./settimana");
     const piano: import("./settimana").Piano = {
       [GIORNI[0]]: {
-        pranzo: { primo: PRIMI[0].id, secondo: SECONDI[0].id, extra: [] },
+        pranzo: { piatto: PIATTI[0].id, extra: [] },
       },
     };
     const macro = { kcal: 1500, proteine: 120, carboidrati: 150, grassi: 40 };
     const testo = messaggioPiano(piano, macro, "Luca");
 
     expect(testo).toContain("Luca");
-    expect(testo).toContain(PRIMI[0].nome);
-    expect(testo).toContain(SECONDI[0].nome);
+    expect(testo).toContain(PIATTI[0].nome);
     expect(testo).toContain("1500");
     expect(testo).toContain("120");
   });
@@ -134,7 +133,7 @@ const MACRO_PIENO: Macros = { kcal: 1850, proteine: 140, carboidrati: 180, grass
 const PIANO_VUOTO: Piano = {};
 const PIANO_PIENO: Piano = {
   [GIORNI[0]]: {
-    pranzo: { primo: PRIMI[0].id, secondo: SECONDI[0].id, extra: [] },
+        pranzo: { piatto: PIATTI[0].id, extra: [] },
   },
 };
 

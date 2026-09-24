@@ -1,31 +1,40 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Fragment, useMemo, useState, type ReactNode } from "react";
-import ElementCard from "@/components/ElementCard";
-import { MacroSplit } from "@/components/MacroBar";
+import ExtraCard from "@/components/ExtraCard";
+import PiattoCard from "@/components/PiattoCard";
 import Reveal from "@/components/Reveal";
 import Ticker from "@/components/Ticker";
 import { Chip, Eyebrow, Rise, SectionHead } from "@/components/ui";
-import { EXTRA, PRIMI, SECONDI, elementoImg, getElemento } from "@/lib/catalogo";
-import type { Categoria, Elemento } from "@/lib/catalogo";
+import {
+  EXTRA,
+  PIATTI,
+  REPARTI,
+  extraPerReparto,
+  piattoImg,
+  type Allenamento,
+  type Piatto,
+} from "@/lib/catalogo";
 import { usePiano } from "@/lib/piano";
 import { TAGS, type Giorno, type Tag } from "@/lib/types";
 
-type FiltroCategoria = Categoria | "tutti";
 type FiltroGiorno = Giorno | "tutti";
+type FiltroAllenamento = Allenamento | "tutti";
 type Ordine = "consigliati" | "proteine" | "kcal-su" | "kcal-giu";
-
-const CATEGORIE: { id: FiltroCategoria; label: string }[] = [
-  { id: "tutti", label: "Tutti" },
-  { id: "primo", label: "Primi" },
-  { id: "secondo", label: "Secondi" },
-];
 
 const GIORNI_COTTURA: { id: FiltroGiorno; label: string }[] = [
   { id: "tutti", label: "Tutti" },
   { id: "lunedi", label: "Lunedì" },
   { id: "giovedi", label: "Giovedì" },
+];
+
+const ALLENAMENTO: { id: FiltroAllenamento; label: string }[] = [
+  { id: "tutti", label: "Tutti" },
+  { id: "cardio", label: "Cardio" },
+  { id: "pesi", label: "Pesistica" },
+  { id: "entrambi", label: "Entrambi" },
 ];
 
 const ORDINI: { id: Ordine; label: string }[] = [
@@ -37,24 +46,10 @@ const ORDINI: { id: Ordine; label: string }[] = [
 
 const RITMO = ["Cotto il lunedì", "Consegnato il martedì", "Cotto il giovedì", "Consegnato il venerdì"];
 
-/**
- * Leggera rotazione alternata sulle schede, ciclo di quattro: la griglia non
- * sembra un listino stampato. Solo da xl in su: sotto, la rotazione si
- * mangia il gutter fra colonne strette.
- */
 const CICLO = 4;
 const INCLINA = ["", "xl:rotate-[1deg]", "", "xl:rotate-[-1deg]"];
 
-/**
- * La foto della testata e' un elemento vero del catalogo, non uno stock
- * generico: la pagina promette "quello che leggi qui e' quello che trovi nel
- * box" e non puo' aprirsi con una foto che nel box non c'e'. Tipizzata come
- * opzionale di proposito, cosi' un catalogo senza questo id non manda in
- * errore la testata.
- */
-const COPERTINA: Elemento | undefined = getElemento("secondo-pollo-piastra") ?? SECONDI[0] ?? PRIMI[0];
-
-/* ------------------------------------------------------------------ filtri */
+const COPERTINA: Piatto | undefined = PIATTI[0];
 
 function Pill({
   attivo,
@@ -64,7 +59,6 @@ function Pill({
 }: {
   attivo: boolean;
   onClick: () => void;
-  /** i tag sono a interruttore: il rombo dice "ne puoi accendere piu di uno" */
   multi?: boolean;
   children: ReactNode;
 }) {
@@ -75,11 +69,8 @@ function Pill({
       aria-pressed={attivo}
       data-on={attivo ? "true" : "false"}
       style={{ fontVariationSettings: '"wdth" 110, "wght" 700' }}
-      className="group inline-flex min-h-[44px] shrink-0 items-center gap-2 rounded-full border border-[color:var(--hair-soft)] bg-[rgba(201,224,205,.045)] px-[15px] py-[7px] text-[11px] md:min-h-0 tracking-[.1em] whitespace-nowrap text-ink uppercase transition-[color,background-color,border-color,transform] duration-400 ease-[var(--e-out)] hover:border-[color:var(--hair)] hover:bg-[rgba(223,255,62,.11)] hover:text-ink active:scale-[.96] data-[on=true]:border-transparent data-[on=true]:bg-lime data-[on=true]:text-ink data-[on=true]:hover:bg-white data-[on=true]:hover:text-ink"
+      className="group inline-flex min-h-[44px] shrink-0 items-center gap-2 rounded-full border border-[color:var(--hair-soft)] bg-[rgba(201,224,205,.045)] px-[15px] py-[8px] text-[12px] md:min-h-[36px] tracking-[.06em] whitespace-nowrap text-ink uppercase transition-[color,background-color,border-color,transform] duration-400 ease-[var(--e-out)] hover:border-[color:var(--hair)] hover:bg-[rgba(223,255,62,.11)] hover:text-ink active:scale-[.96] data-[on=true]:border-transparent data-[on=true]:bg-lime data-[on=true]:text-ink data-[on=true]:hover:bg-white data-[on=true]:hover:text-ink"
     >
-      {/* Il rombo ha una transizione PROPRIA: transition-timing-function non si eredita,
-          quindi senza questa easing esplicita il quadratino tornava alla curva di default
-          di Tailwind mentre la pill sotto viaggiava su --e-out. Si vedeva. */}
       {multi ? (
         <i
           aria-hidden="true"
@@ -94,9 +85,7 @@ function Pill({
 function Gruppo({ etichetta, children }: { etichetta: string; children: ReactNode }) {
   return (
     <div role="group" aria-label={etichetta} className="flex items-center gap-3">
-      {/* aria-hidden: il gruppo porta gia' questo stesso testo come aria-label, senza
-          la marcatura uno screen reader leggerebbe l'etichetta due volte di fila. */}
-      <span aria-hidden="true" className="note shrink-0 text-[9.5px]">
+      <span aria-hidden="true" className="note shrink-0">
         {etichetta}
       </span>
       <div className="flex flex-wrap items-center gap-1.5">{children}</div>
@@ -108,111 +97,40 @@ function Separatore() {
   return <span aria-hidden="true" className="hidden h-6 w-px bg-[var(--hair-soft)] xl:block" />;
 }
 
-/**
- * Sintesi nella barra filtri, sempre in due numeri: primi e secondi non si
- * sommano in un unico totale, perche' e' esattamente la distinzione che la
- * pagina deve mantenere visibile. Compatto sotto md, dove non c'e' spazio
- * per la coppia di conteggi.
- */
-function Riepilogo({
-  primi,
-  secondi,
-  compatto = false,
-  className = "",
-}: {
-  primi: number;
-  secondi: number;
-  compatto?: boolean;
-  className?: string;
-}) {
-  return (
-    <p
-      aria-live="polite"
-      style={{ fontVariationSettings: '"wdth" 84' }}
-      className={`font-mono text-[10.5px] tracking-[.14em] whitespace-nowrap text-muted uppercase ${className}`}
-    >
-      {compatto ? (
-        <>
-          <b className="text-[15px] font-normal text-ink">{primi + secondi}</b> su{" "}
-          {PRIMI.length + SECONDI.length}
-        </>
-      ) : (
-        <>
-          <b className="text-[15px] font-normal text-ink">{primi}</b> primi su {PRIMI.length}
-          {/* niente opacity qui: su muted valeva 2.10:1 su bianco, misurato nel
-              browser. Il separatore e' gia' leggero di suo a 10.5px. */}
-          <span aria-hidden="true" className="mx-2">
-            &middot;
-          </span>
-          <b className="text-[15px] font-normal text-ink">{secondi}</b> secondi su {SECONDI.length}
-        </>
-      )}
-    </p>
-  );
-}
-
-/** Il numero deve coincidere sempre con le schede a video: e' l'unica prova che i filtri funzionano. */
-function Contatore({
-  n,
-  tot,
-  etichetta,
-  className = "",
-}: {
-  n: number;
-  tot: number;
-  etichetta: string;
-  className?: string;
-}) {
+function Contatore({ n, tot, etichetta, className = "" }: { n: number; tot: number; etichetta: string; className?: string }) {
   return (
     <p
       style={{ fontVariationSettings: '"wdth" 84' }}
-      className={`font-mono text-[10.5px] tracking-[.14em] whitespace-nowrap text-muted uppercase ${className}`}
+      className={`font-mono text-[12px] tracking-[.08em] whitespace-nowrap text-muted uppercase ${className}`}
     >
       <b className="text-[15px] font-normal text-ink">{n}</b> {etichetta} su {tot}
     </p>
   );
 }
 
-/**
- * Riga per la sezione che i filtri hanno svuotato (non la categoria: quella
- * smonta la sezione del tutto, un caso diverso e gia' corretto). Senza
- * questa riga la sezione sparisce in silenzio quando l'altra ha ancora
- * risultati - l'utente vede meta pagina scomparire e non sa se ha filtrato
- * troppo o se il sito e' rotto. Stessa spiegazione dello stato vuoto
- * generale, in scala ridotta: non serve un blocco grande, basta la frase.
- */
-function SezioneVuota({ etichetta, onAzzera }: { etichetta: string; onAzzera: () => void }) {
-  return (
-    <p className="lead !max-w-none">
-      Con questi filtri non ci sono {etichetta}.{" "}
-      <button
-        type="button"
-        onClick={onAzzera}
-        className="text-ink underline decoration-[var(--hair)] underline-offset-4 transition-colors duration-300 hover:decoration-current"
-      >
-        Azzera i filtri
-      </button>
-    </p>
-  );
-}
-
-/* ------------------------------------------------------------------ dati */
-
-function filtra(lista: Elemento[], giorno: FiltroGiorno, tag: Tag[]): Elemento[] {
-  // OR dentro i tag: chi accende Carne e Pesce vuole vedere entrambi, non
-  // l'insieme vuoto degli elementi che sono carne E pesce insieme.
+function filtra(
+  lista: Piatto[],
+  giorno: FiltroGiorno,
+  tag: Tag[],
+  allenamento: FiltroAllenamento,
+): Piatto[] {
   return lista.filter(
-    (e) => (giorno === "tutti" || e.giorno === giorno) && (tag.length === 0 || tag.some((t) => e.tag.includes(t))),
+    (e) =>
+      (giorno === "tutti" || e.giorno === giorno) &&
+      (tag.length === 0 || tag.some((t) => e.tag.includes(t))) &&
+      (allenamento === "tutti" || e.allenamento === allenamento || e.allenamento === "entrambi"),
   );
 }
 
-function ordina(lista: Elemento[], ordine: Ordine): Elemento[] {
+function allenamentoDaQuery(raw: string | null): FiltroAllenamento {
+  if (raw === "cardio" || raw === "pesi" || raw === "entrambi") return raw;
+  return "tutti";
+}
+
+function ordina(lista: Piatto[], ordine: Ordine): Piatto[] {
   if (ordine === "consigliati") return lista;
-  const copia = lista.slice(); // mai in place: PRIMI e SECONDI sono condivisi con tutto il sito
+  const copia = lista.slice();
   copia.sort((a, b) => {
-    // Il secondo criterio non e' decorativo: fra due elementi da 52 g di
-    // proteine chi sta in definizione vuole vedere prima quello che costa
-    // meno calorie.
     if (ordine === "proteine") return b.proteine - a.proteine || a.kcal - b.kcal;
     if (ordine === "kcal-su") return a.kcal - b.kcal || b.proteine - a.proteine;
     return b.kcal - a.kcal || b.proteine - a.proteine;
@@ -220,46 +138,40 @@ function ordina(lista: Elemento[], ordine: Ordine): Elemento[] {
   return copia;
 }
 
-/* ------------------------------------------------------------------ pagina */
-
 export default function MenuClient() {
-  const [categoria, setCategoria] = useState<FiltroCategoria>("tutti");
+  const params = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
   const [giorno, setGiorno] = useState<FiltroGiorno>("tutti");
   const [tag, setTag] = useState<Tag[]>([]);
+  const allenamento = allenamentoDaQuery(params.get("allenamento"));
   const [ordine, setOrdine] = useState<Ordine>("consigliati");
   const [pannello, setPannello] = useState(false);
   const { pronto, pasti } = usePiano();
 
-  // AND fra i gruppi di filtro (categoria, giorno, tag), OR dentro il gruppo
-  // tag. La categoria non filtra dentro una lista unica: decide quale delle
-  // due sezioni resta montata, perche' primi e secondi sono gia' due
-  // cataloghi separati a monte. "Attiva" e' la stessa domanda posta due
-  // volte - qui per azzerare la lista, sotto nel JSX per decidere se la
-  // sezione compare - cosi' non puo' rispondere in modo diverso nei due posti.
-  const primiAttiva = categoria !== "secondo";
-  const secondiAttiva = categoria !== "primo";
+  function setAllenamento(id: FiltroAllenamento) {
+    const next = new URLSearchParams(params.toString());
+    if (id === "tutti") next.delete("allenamento");
+    else next.set("allenamento", id);
+    const q = next.toString();
+    router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false });
+  }
 
-  const primiVisibili = useMemo(() => {
-    if (!primiAttiva) return [];
-    return ordina(filtra(PRIMI, giorno, tag), ordine);
-  }, [primiAttiva, giorno, tag, ordine]);
+  const visibili = useMemo(
+    () => ordina(filtra(PIATTI, giorno, tag, allenamento), ordine),
+    [giorno, tag, allenamento, ordine],
+  );
 
-  const secondiVisibili = useMemo(() => {
-    if (!secondiAttiva) return [];
-    return ordina(filtra(SECONDI, giorno, tag), ordine);
-  }, [secondiAttiva, giorno, tag, ordine]);
-
-  const totaleVisibile = primiVisibili.length + secondiVisibili.length;
-
-  // L'ordinamento conta come filtro attivo: se ho spostato qualcosa, "Azzera"
-  // deve riportarmi al catalogo com'era, non a meta strada.
-  const attivi =
-    (categoria !== "tutti" ? 1 : 0) + (giorno !== "tutti" ? 1 : 0) + tag.length + (ordine !== "consigliati" ? 1 : 0);
+  const extraAttivi =
+    (giorno !== "tutti" ? 1 : 0) +
+    tag.length +
+    (ordine !== "consigliati" ? 1 : 0) +
+    (allenamento !== "tutti" ? 1 : 0);
 
   function azzera() {
-    setCategoria("tutti");
     setGiorno("tutti");
     setTag([]);
+    setAllenamento("tutti");
     setOrdine("consigliati");
   }
 
@@ -269,44 +181,56 @@ export default function MenuClient() {
 
   return (
     <>
-      {/* ---------------------------------------------------------- testata */}
-      <section className="fascia fascia-t fascia-carta">
+      <section className="fascia fascia-t fascia-carta !pt-[76px] !pb-3 md:!pt-[var(--y-testata)] md:!pb-[var(--y-fascia)]">
         <div className="wrap">
           <div className="grid items-center gap-8 lg:grid-cols-[1fr_366px] lg:gap-16">
             <div>
-              <Eyebrow className="mb-3 md:mb-[20px]">Il catalogo della settimana</Eyebrow>
-              <h1 className="h1">
-                {/* I numeri li conta il catalogo: cambia ogni settimana e una
-                    testata scritta a mano prima o poi mentirebbe. */}
-                <Rise i={0}>
-                  {PRIMI.length} primi, {SECONDI.length} secondi,
-                </Rise>
-                <Rise i={1}>
-                  <span className="hl hl-on"><i className="hl-bar" aria-hidden="true" /><span className="hl-tx">componi il pasto.</span></span>
-                </Rise>
-              </h1>
-              <p className="lead mt-4 md:mt-7">
-                Matteo cucina il luned&igrave; e il gioved&igrave; e consegna il giorno dopo. Scegli un primo, un
-                secondo e gli extra che ti servono: quello che leggi qui &egrave; quello che trovi nel
-                box, senza surgelati e senza scorte di magazzino.
+              <Eyebrow className="mb-3 hidden lg:mb-[20px] lg:block">Il menu della settimana</Eyebrow>
+              <p className="note mb-2.5 lg:hidden">
+                {PIATTI.length} piatti &middot; aggiunte per la box
               </p>
-              <div className="mt-5 flex flex-wrap items-center gap-2 md:mt-7 md:gap-2.5">
-                <Chip accento>Porzioni pesate</Chip>
-                <Chip>Macro dichiarati</Chip>
+              <h1 className="h1">
+                <span className="lg:hidden">
+                  <Rise i={0}>Piatti</Rise>
+                  <Rise i={1}>
+                    <span className="hl hl-on">
+                      <i className="hl-bar" aria-hidden="true" />
+                      <span className="hl-tx">già composti.</span>
+                    </span>
+                  </Rise>
+                </span>
+                <span className="hidden lg:block">
+                  <Rise i={0}>{PIATTI.length} piatti già composti,</Rise>
+                  <Rise i={1}>
+                    <span className="hl hl-on">
+                      <i className="hl-bar" aria-hidden="true" />
+                      <span className="hl-tx">poi le aggiunte.</span>
+                    </span>
+                  </Rise>
+                </span>
+              </h1>
+              <p className="lead mt-4 hidden lg:mt-7 lg:block">
+                Matteo cucina il luned&igrave; e il gioved&igrave; e consegna il giorno dopo. Ogni
+                piatto ha ingredienti, macro e il motivo dell&apos;abbinamento. Le aggiunte della box
+                si attaccano dopo, se ti servono.
+              </p>
+              <div className="mt-5 hidden flex-wrap items-center gap-2 lg:mt-7 lg:flex lg:gap-2.5">
+                <Chip accento>Scheda nutrizionale</Chip>
+                <Chip>Abbinamento all&apos;allenamento</Chip>
                 <Chip>Consegna a Pescara</Chip>
               </div>
             </div>
 
-            <div className="relative mx-auto w-full max-w-[366px] lg:mx-0">
+            <div className="relative mx-auto hidden w-full max-w-[366px] lg:mx-0 lg:block">
               <div
                 className="shell transition-transform duration-700 md:rotate-[-2.4deg] md:hover:rotate-0"
                 style={{ transitionTimingFunction: "var(--e-over)" }}
               >
-                <figure className="core aspect-[5/4] bg-tray sm:aspect-[4/5]">
+                <figure className="core foto-profondita aspect-[4/5] bg-tray">
                   {COPERTINA ? (
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img
-                      src={elementoImg(COPERTINA, 760)}
+                      src={piattoImg(COPERTINA, 760)}
                       alt={`${COPERTINA.nome}, porzione pesata da ${COPERTINA.grammi} grammi`}
                       loading="lazy"
                       className="h-full w-full object-cover"
@@ -319,7 +243,7 @@ export default function MenuClient() {
                 aria-hidden="true"
               >
                 <p className="font-disp text-[24px] leading-none uppercase">Lun / Gio</p>
-                <p className="mt-1.5 font-mono text-[9px] tracking-[.2em] uppercase">
+                <p className="mt-2 font-mono text-[12px] tracking-[.08em] uppercase">
                   le due cotture
                 </p>
               </div>
@@ -328,66 +252,59 @@ export default function MenuClient() {
         </div>
       </section>
 
-      <Ticker
-        parole={["Cotto il lunedì", "Cotto il giovedì", "Mai surgelato", "Pescara e provincia"]}
-        durata={38}
-      />
+      <div className="hidden md:block">
+        <Ticker
+          parole={["Cotto il lunedì", "Cotto il giovedì", "Mai surgelato", "Pescara e provincia"]}
+          durata={38}
+        />
+      </div>
 
-      {/* ------------------------------------------- filtri + catalogo
-          Barra e griglie stanno nella STESSA sezione: e' l'unico modo perche la
-          sticky resti agganciata per tutta la lettura del catalogo.           */}
-      {/* Il catalogo e' la zona di lavoro: sta sul GUSCIO, cosi si stacca dalla
-          testata e dalla chiusura senza che serva vuoto in mezzo. Le card sono
-          .shell e sulla fascia guscio salgono a carta da sole, quindi la doppia
-          scocca resta leggibile card per card. */}
-      <section className="fascia fascia-guscio">
+      <section
+        className={`fascia fascia-guscio !pt-4 md:!pt-[var(--y-fascia)] ${pronto && pasti > 0 ? "!pb-32" : ""}`}
+      >
         <div className="wrap">
           <h2 className="sr-only">Filtra il catalogo</h2>
 
-          {/* z-30: sotto al pannello a schermo pieno del Nav (z-50) e sotto alla barra
-              del piano (z-40), che deve poter scavalcare i filtri su schermi corti. */}
-          <div className="shell sticky top-[100px] z-30">
+          <div className="shell sticky top-[76px] z-30 md:top-[100px]">
             <div className="core p-3 sm:p-4">
-              {/* Sotto md la barra intera mangerebbe mezzo schermo: resta una riga
-                  compatta e i gruppi si aprono a richiesta. */}
-              <div className="flex items-center justify-between gap-3 md:hidden">
-                <button
-                  type="button"
-                  onClick={() => setPannello((p) => !p)}
-                  aria-expanded={pannello}
-                  aria-controls="pannello-filtri"
-                  className="btn btn-s btn-sm"
-                >
-                  Filtri
-                  {attivi > 0 ? (
-                    <span
-                      style={{ fontVariationSettings: '"wdth" 84' }}
-                      className="font-mono text-[11px] text-ink"
-                    >
-                      {attivi}
+              <div className="md:hidden">
+                <div className="flex items-center justify-between gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setPannello((p) => !p)}
+                    aria-expanded={pannello}
+                    aria-controls="pannello-filtri"
+                    className="btn btn-s btn-sm"
+                  >
+                    Filtri
+                    {extraAttivi > 0 ? (
+                      <span
+                        style={{ fontVariationSettings: '"wdth" 84' }}
+                        className="font-mono text-[13px] text-ink"
+                      >
+                        {extraAttivi}
+                      </span>
+                    ) : null}
+                    <span className="dot" aria-hidden="true">
+                      {pannello ? "−" : "+"}
                     </span>
-                  ) : null}
-                  <span className="dot" aria-hidden="true">
-                    {pannello ? "−" : "+"}
-                  </span>
-                </button>
-                <Riepilogo primi={primiVisibili.length} secondi={secondiVisibili.length} compatto />
+                  </button>
+                  <Contatore n={visibili.length} tot={PIATTI.length} etichetta="piatti" />
+                </div>
               </div>
 
               <div
                 id="pannello-filtri"
                 className={`${pannello ? "flex" : "hidden"} mt-3 flex-col gap-3 md:mt-0 md:flex md:flex-row md:flex-wrap md:items-center md:gap-x-6 md:gap-y-3`}
               >
-                <Gruppo etichetta="Categoria">
-                  {CATEGORIE.map((c) => (
-                    <Pill key={c.id} attivo={categoria === c.id} onClick={() => setCategoria(c.id)}>
-                      {c.label}
+                <Gruppo etichetta="Allenamento">
+                  {ALLENAMENTO.map((a) => (
+                    <Pill key={a.id} attivo={allenamento === a.id} onClick={() => setAllenamento(a.id)}>
+                      {a.label}
                     </Pill>
                   ))}
                 </Gruppo>
-
                 <Separatore />
-
                 <Gruppo etichetta="Tag">
                   {TAGS.map((t) => (
                     <Pill
@@ -400,9 +317,7 @@ export default function MenuClient() {
                     </Pill>
                   ))}
                 </Gruppo>
-
                 <Separatore />
-
                 <Gruppo etichetta="Giorno">
                   {GIORNI_COTTURA.map((g) => (
                     <Pill key={g.id} attivo={giorno === g.id} onClick={() => setGiorno(g.id)}>
@@ -413,23 +328,19 @@ export default function MenuClient() {
 
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-3 md:ml-auto">
                   <div className="flex items-center gap-2.5">
-                    <label htmlFor="ordina" className="note text-[9.5px]">
+                    <label htmlFor="ordina" className="note">
                       Ordina
                     </label>
                     <div className="relative">
                       <select
                         id="ordina"
                         value={ordine}
-                        // Niente "as Ordine": l'asserzione avrebbe zittito il compilatore
-                        // su un valore che arriva dal DOM come stringa qualunque. La
-                        // lista e' la sola fonte di verita', e se non c'e' non si tocca
-                        // lo stato.
                         onChange={(e) => {
                           const scelto = ORDINI.find((o) => o.id === e.target.value);
                           if (scelto) setOrdine(scelto.id);
                         }}
                         style={{ fontVariationSettings: '"wdth" 84' }}
-                        className="h-[44px] appearance-none rounded-full border border-[color:var(--hair-soft)] bg-[rgba(201,224,205,.045)] py-[7px] pr-9 pl-[15px] font-mono text-[10.5px] md:h-auto tracking-[.06em] text-ink uppercase transition-colors duration-400 ease-[var(--e-out)] hover:border-[color:var(--hair)]"
+                        className="h-[44px] appearance-none rounded-full border border-[color:var(--hair-soft)] bg-[rgba(201,224,205,.045)] py-[7px] pr-9 pl-[15px] font-mono text-[13px] md:h-11 tracking-[.04em] text-ink uppercase transition-colors duration-400 ease-[var(--e-out)] hover:border-[color:var(--hair)]"
                       >
                         {ORDINI.map((o) => (
                           <option key={o.id} value={o.id} className="bg-tray text-ink">
@@ -439,20 +350,21 @@ export default function MenuClient() {
                       </select>
                       <span
                         aria-hidden="true"
-                        className="pointer-events-none absolute top-1/2 right-3.5 -translate-y-1/2 text-[9px] text-ink"
+                        className="pointer-events-none absolute top-1/2 right-3.5 -translate-y-1/2 text-[12px] text-ink"
                       >
                         &#9660;
                       </span>
                     </div>
                   </div>
 
-                  <Riepilogo
-                    primi={primiVisibili.length}
-                    secondi={secondiVisibili.length}
+                  <Contatore
+                    n={visibili.length}
+                    tot={PIATTI.length}
+                    etichetta="piatti"
                     className="hidden md:block"
                   />
 
-                  {attivi > 0 ? (
+                  {extraAttivi > 0 ? (
                     <button type="button" onClick={azzera} className="btn btn-s btn-sm">
                       Azzera
                       <span className="dot" aria-hidden="true">
@@ -465,99 +377,50 @@ export default function MenuClient() {
             </div>
           </div>
 
-          <h2 className="sr-only">Il catalogo</h2>
+          <h2 className="sr-only">I piatti</h2>
 
-          {totaleVisibile > 0 ? (
-            <>
-              {primiAttiva ? (
-                <div className="mt-8 md:mt-14">
-                  <SectionHead
-                    occhiello="Primi · le basi"
-                    titolo={
-                      <>
-                        La base <span className="hl hl-on"><i className="hl-bar" aria-hidden="true" /><span className="hl-tx">glucidica.</span></span>
-                      </>
-                    }
-                    testo="Carboidrati e verdura: la parte del pasto che rifornisce l'allenamento."
-                    azione={<Contatore n={primiVisibili.length} tot={PRIMI.length} etichetta="primi" />}
-                  />
-                  {primiVisibili.length > 0 ? (
-                    <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-6 xl:grid-cols-3">
-                      {primiVisibili.map((e, i) => (
-                        // Chiave sul solo id: cosi le schede che restano non si smontano a
-                        // ogni click sui filtri (niente foto che sbattono) e a entrare in
-                        // cascata sono davvero solo quelle nuove.
-                        <Reveal key={e.id} delay={(i % CICLO) * 80}>
-                          <div
-                            className={`h-full transition-transform duration-700 ${INCLINA[i % CICLO]}`}
-                            style={{ transitionTimingFunction: "var(--e-over)" }}
-                          >
-                            <ElementCard elemento={e} />
-                          </div>
-                        </Reveal>
-                      ))}
+          {visibili.length > 0 ? (
+            <div className="mt-5 md:mt-14">
+              <SectionHead
+                compatto
+                occhiello="Piatti già composti"
+                titolo={
+                  <>
+                    Scheda, motivo,{" "}
+                    <span className="hl hl-on">
+                      <i className="hl-bar" aria-hidden="true" />
+                      <span className="hl-tx">abbinamento.</span>
+                    </span>
+                  </>
+                }
+                testo="Ogni piatto è chiuso: ingredienti, macro e perché sta insieme. Scegli in base all'allenamento, poi aggiungi alla settimana."
+                azione={<Contatore n={visibili.length} tot={PIATTI.length} etichetta="piatti" />}
+              />
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 md:gap-6 xl:grid-cols-3">
+                {visibili.map((e, i) => (
+                  <Reveal key={e.id} delay={(i % CICLO) * 80}>
+                    <div
+                      className={`h-full transition-transform duration-700 ${INCLINA[i % CICLO]}`}
+                      style={{ transitionTimingFunction: "var(--e-over)" }}
+                    >
+                      <PiattoCard piatto={e} />
                     </div>
-                  ) : (
-                    // Il tag/giorno ha svuotato SOLO questa sezione: i secondi restano
-                    // (siamo qui, totaleVisibile > 0). Il silenzio va spiegato, non lasciato.
-                    <SezioneVuota etichetta="primi" onAzzera={azzera} />
-                  )}
-                </div>
-              ) : null}
-
-              {secondiAttiva ? (
-                <div className="mt-9 md:mt-16">
-                  <SectionHead
-                    occhiello="Secondi · le proteine"
-                    titolo={
-                      <>
-                        Proteina e <span className="hl hl-on"><i className="hl-bar" aria-hidden="true" /><span className="hl-tx">sostanza.</span></span>
-                      </>
-                    }
-                    testo="Carne, pesce o alternative vegetali: la parte del pasto che ricostruisce."
-                    azione={
-                      <Contatore n={secondiVisibili.length} tot={SECONDI.length} etichetta="secondi" />
-                    }
-                  />
-                  {secondiVisibili.length > 0 ? (
-                    <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-6 xl:grid-cols-3">
-                      {secondiVisibili.map((e, i) => (
-                        <Reveal key={e.id} delay={(i % CICLO) * 80}>
-                          <div
-                            className={`h-full transition-transform duration-700 ${INCLINA[i % CICLO]}`}
-                            style={{ transitionTimingFunction: "var(--e-over)" }}
-                          >
-                            <ElementCard elemento={e} />
-                          </div>
-                        </Reveal>
-                      ))}
-                    </div>
-                  ) : (
-                    <SezioneVuota etichetta="secondi" onAzzera={azzera} />
-                  )}
-                </div>
-              ) : null}
-            </>
+                  </Reveal>
+                ))}
+              </div>
+            </div>
           ) : (
-            /* ---------------------------------------------- nessun risultato */
             <Reveal className="mt-14">
               <div className="shell mx-auto max-w-[760px] md:rotate-[-1.4deg]">
                 <div className="core relative overflow-hidden px-8 py-14 text-center sm:px-14 sm:py-16">
-                  <span
-                    aria-hidden="true"
-                    className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 font-mono text-[140px] leading-none text-ink opacity-[.05]"
-                  >
-                    0
-                  </span>
                   <p className="h2 relative">
-                    Nessun primo o secondo
+                    Nessun piatto
                     <br />
                     con questi filtri
                   </p>
                   <p className="lead relative mx-auto mt-6">
-                    Hai stretto troppo la maglia. Togli un tag o cambia categoria: i{" "}
-                    {PRIMI.length + SECONDI.length} elementi del catalogo sono tutti qui, nessuno &egrave;
-                    finito.
+                    Hai stretto troppo la maglia. Togli un tag o cambia allenamento: i {PIATTI.length}{" "}
+                    piatti del catalogo sono tutti qui.
                   </p>
                   <button type="button" onClick={azzera} className="btn btn-p relative mt-9">
                     Azzera i filtri
@@ -570,50 +433,41 @@ export default function MenuClient() {
             </Reveal>
           )}
 
-          {/* ---------------------------------------------------- gli extra
-              Fascia sempre presente, non filtrata: gli extra non hanno tag ne
-              giorno di cottura, non c'e' niente su cui i filtri sopra possano
-              lavorare. Il conteggio resta comunque letto dal catalogo. */}
-          <div className="mt-9 md:mt-12">
+          <div className="mt-7 md:mt-16">
             <SectionHead
-              occhiello="Extra"
+              compatto
+              occhiello="Alimenti per la tua box"
               titolo={
                 <>
-                  Il di pi&ugrave;, <span className="hl hl-on"><i className="hl-bar" aria-hidden="true" /><span className="hl-tx">se serve.</span></span>
+                  Aggiunte,{" "}
+                  <span className="hl hl-on">
+                    <i className="hl-bar" aria-hidden="true" />
+                    <span className="hl-tx">se servono.</span>
+                  </span>
                 </>
               }
-              testo={`${EXTRA.length} aggiunte per completare il pasto, sempre a catalogo.`}
+              testo={`${EXTRA.length} alimenti per personalizzare la box. I prezzi sono supplementi, dove il listino li dichiara. Dove non c'e' un numero, e incluso o su richiesta.`}
             />
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-8">
-              {EXTRA.map((x, i) => (
-                <Reveal key={x.id} delay={(i % 8) * 45}>
-                  <div className="shell h-full">
-                    <div className="core flex h-full flex-col p-4">
-                      <p className="h3 !text-[16px] leading-tight">{x.nome}</p>
-                      <div className="mt-2.5 flex flex-wrap gap-1.5">
-                        <Chip>{x.grammi} g</Chip>
-                        <Chip>{x.kcal} kcal</Chip>
-                      </div>
-                      <div className="mt-3">
-                        <MacroSplit proteine={x.proteine} carboidrati={x.carboidrati} grassi={x.grassi} />
-                      </div>
-                      {/* Allergeni Reg. UE 1169/2011: campo obbligatorio, mostrato sempre,
-                          anche quando l'elenco e' vuoto - "nessuno" e' un dato, non un buco. */}
-                      <p className="note mt-3 flex-1 !text-[8.5px] leading-relaxed">
-                        {x.allergeni.length > 0 ? x.allergeni.join(", ") : "nessun allergene dichiarato"}
-                      </p>
-                    </div>
+            {REPARTI.map((r) => {
+              const lista = extraPerReparto(r.id);
+              if (lista.length === 0) return null;
+              return (
+                <div key={r.id} className="mt-6 md:mt-10">
+                  <h3 className="h3 mb-3 !text-[18px] md:mb-5 md:!text-[22px]">{r.label}</h3>
+                  <div className="grid grid-cols-2 gap-2.5 sm:gap-4 md:grid-cols-3 xl:grid-cols-5">
+                    {lista.map((x, i) => (
+                      <Reveal key={x.id} delay={(i % 5) * 50}>
+                        <ExtraCard extra={x} />
+                      </Reveal>
+                    ))}
                   </div>
-                </Reveal>
-              ))}
-            </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
 
-      {/* ------------------------------------------- il ritmo della settimana */}
-      {/* La lastra lime chiude la pagina: la sezione che la porta torna carta,
-          altrimenti sarebbero due stacchi uno dentro l'altro. */}
       <section className="fascia fascia-carta relative overflow-x-clip">
         <div className="-ml-[6%] w-[112%] bg-lime text-ink shadow-[0_36px_74px_-48px_rgba(2,11,7,.9)] md:rotate-[-1.15deg]">
           <div className="mx-auto flex w-[1180px] max-w-[calc(100%/1.12-40px)] flex-wrap items-center justify-center gap-x-6 gap-y-2 py-8 md:rotate-[1.15deg]">
@@ -631,13 +485,11 @@ export default function MenuClient() {
         </div>
       </section>
 
-      {/* ------------------------------------------------------ barra del piano
-          Solo a piano riletto: i numeri del piano non esistono al primo render
-          sul server e stamparli qui vorrebbe dire un mismatch di idratazione.  */}
       {pronto && pasti > 0 ? (
-        /* z-40, non 50: il pannello a schermo pieno del Nav sta a z-50 ma viene PRIMA
-           nel DOM, quindi a parita' di z-index questa barra gli restava sopra e la pill
-           "Vai alla settimana" galleggiava in mezzo al menu mobile aperto. */
+        <div aria-hidden="true" className="h-[120px]" />
+      ) : null}
+
+      {pronto && pasti > 0 ? (
         <div className="pointer-events-none fixed inset-x-0 bottom-[22px] z-40 flex justify-center px-5">
           <div
             className="shell pointer-events-auto rounded-full"
@@ -647,9 +499,10 @@ export default function MenuClient() {
               <p
                 aria-live="polite"
                 style={{ fontVariationSettings: '"wdth" 84' }}
-                className="font-mono text-[10.5px] tracking-[.12em] whitespace-nowrap text-ink uppercase"
+                className="font-mono text-[12px] tracking-[.08em] whitespace-nowrap text-ink uppercase"
               >
-                <b className="text-[15px] font-normal text-ink">{pasti}</b> pasti nella settimana
+                <b className="text-[15px] font-normal text-ink">{pasti}</b>{" "}
+                {pasti === 1 ? "pasto" : "pasti"} nella settimana
               </p>
               <Link href="/settimana" className="btn btn-p btn-sm">
                 Vai alla settimana

@@ -2,10 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, type Ref } from "react";
-import ElementCard from "@/components/ElementCard";
+import PiattoCard from "@/components/PiattoCard";
 import { MacroBar } from "@/components/MacroBar";
 import Reveal from "@/components/Reveal";
-import { getElemento, type Elemento } from "@/lib/catalogo";
+import { getPiatto, type Piatto } from "@/lib/catalogo";
 import type { EsitoPiano } from "@/lib/matcher";
 import { usePiano } from "@/lib/piano";
 import { CASELLE_TOTALI, GIORNI, PASTI } from "@/lib/settimana";
@@ -14,8 +14,7 @@ import type { Target } from "@/lib/types";
 /**
  * STATO 4 — la settimana composta.
  *
- * Qui il giudizio deve essere onesto: anche con l'unita di scelta piu fine
- * (l'abbinamento primo+secondo al posto del piatto intero) certi target
+ * Qui il giudizio deve essere onesto: con sei piatti interi certi target
  * restano fuori tiro. Se un macro e' fuori si dice quale e di quanto, invece
  * di mostrare tre barre piene e sperare che nessuno guardi.
  */
@@ -66,19 +65,16 @@ export default function Risultato({
   // Il piano tiene un elemento per casella: per la griglia sotto serve il
   // contrario, un elemento per riga con quante volte compare nella settimana.
   const elementi = useMemo(() => {
-    const mappa = new Map<string, { elemento: Elemento; qta: number }>();
+    const mappa = new Map<string, { elemento: Piatto; qta: number }>();
     for (const g of GIORNI) {
       for (const m of PASTI) {
         const c = esito.piano[g]?.[m];
-        if (!c) continue;
-        for (const id of [c.primo, c.secondo]) {
-          if (!id) continue;
-          const e = getElemento(id);
-          if (!e) continue;
-          const r = mappa.get(id);
-          if (r) r.qta += 1;
-          else mappa.set(id, { elemento: e, qta: 1 });
-        }
+        if (!c?.piatto) continue;
+        const e = getPiatto(c.piatto);
+        if (!e) continue;
+        const r = mappa.get(e.id);
+        if (r) r.qta += 1;
+        else mappa.set(e.id, { elemento: e, qta: 1 });
       }
     }
     return Array.from(mappa.values());
@@ -185,9 +181,9 @@ export default function Risultato({
                   ))}
                 </ul>
                 <p className="mt-6 max-w-[52ch] text-[14px] leading-relaxed text-muted">
-                  Le caselle si riempiono con abbinamenti primo+secondo, non piatti interi: pi&ugrave;
-                  vicino di cos&igrave;, con questi vincoli, non si arriva. Rigenera per un&apos;altra
-                  combinazione oppure allarga i valori.
+                  Le caselle si riempiono con i sei piatti del menu, non con coppie da assemblare:
+                  pi&ugrave; vicino di cos&igrave;, con questi vincoli, non si arriva. Rigenera per
+                  un&apos;altra combinazione oppure allarga i valori.
                 </p>
               </div>
             </div>
@@ -202,7 +198,7 @@ export default function Risultato({
               </span>
             </button>
             <button type="button" className="btn btn-s" onClick={onRigenera}>
-              Rigenera con altri abbinamenti
+              Rigenera con altri piatti
               <span className="dot" aria-hidden="true">
                 &#8635;
               </span>
@@ -225,7 +221,7 @@ export default function Risultato({
             {giro > 0 ? (
               <p className="note">
                 Giro {giro + 1} — al massimo {maxRipetizioni}{" "}
-                {maxRipetizioni === 1 ? "porzione" : "porzioni"} per elemento
+                {maxRipetizioni === 1 ? "porzione" : "porzioni"} per piatto
               </p>
             ) : null}
           </div>
@@ -283,7 +279,7 @@ export default function Risultato({
         <div className="mb-2 flex flex-wrap items-end justify-between gap-6">
           <h3 className="h3">Cosa mangi</h3>
           <p className="note">
-            {elementi.length} elementi diversi — {totalePasti} caselle su {CASELLE_TOTALI}
+            {elementi.length} piatti diversi — {totalePasti} caselle su {CASELLE_TOTALI}
           </p>
         </div>
         {/* anteprima, non catalogo: niente bottone "Aggiungi" per card, sennò un
@@ -302,7 +298,7 @@ export default function Risultato({
               {/* La pastiglia sta dentro la rotazione, non fuori: agganciata al
                   riquadro dritto si staccherebbe dall'angolo della card inclinata. */}
               <div className={"relative h-full " + ROTAZIONI[i % ROTAZIONI.length]}>
-                <ElementCard elemento={r.elemento} anteprima />
+                <PiattoCard piatto={r.elemento} anteprima />
                 {r.qta > 1 ? (
                   <span
                     className="pointer-events-none absolute -top-3 right-4 z-10 rounded-full bg-lime px-[13px] py-[6px] font-mono text-[12px] text-ink transition-transform duration-700 group-hover:-translate-y-2.5"

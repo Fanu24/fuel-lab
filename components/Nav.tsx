@@ -15,7 +15,7 @@ const VOCI = [
   { href: "/servizi", label: "Servizi" },
   { href: "/settimana", label: "La tua settimana" },
   { href: "/scheda", label: "La tua scheda" },
-  { href: "/chi-e-matteo", label: "Chi è Matteo" },
+  { href: "/chi-e-matteo", label: "Chi siamo" },
 ];
 
 /**
@@ -122,9 +122,13 @@ export default function Nav() {
 
   return (
     <>
-      <header className="fixed inset-x-0 top-0 z-60 flex justify-center pt-[22px]">
+      <header className="fixed inset-x-0 top-0 z-60 flex justify-center pt-3 md:pt-[22px]">
         <div
-          className="flex h-[72px] w-[1180px] max-w-[calc(100%-40px)] items-center gap-[38px] rounded-full border pr-3 pl-[26px]"
+          className="pointer-events-none absolute inset-x-0 top-0 h-[76px] bg-gradient-to-b from-paper from-70% to-transparent md:hidden"
+          aria-hidden="true"
+        />
+        <div
+          className="flex h-14 w-[1180px] max-w-[calc(100%-20px)] items-center gap-3 rounded-full border pr-2 pl-4 md:h-[72px] md:max-w-[calc(100%-40px)] md:gap-4 md:pr-3 md:pl-[22px] xl:gap-[38px] xl:pl-[26px]"
           style={{
             // Vetro CHIARO, non piu' scuro: il fondo del sito e' chiaro adesso,
             // e la nav a vetro si inverte insieme (spec sezione 5, punto 2).
@@ -139,8 +143,8 @@ export default function Nav() {
           }}
         >
           {/* Il logo del committente, non piu una ricostruzione a testo. La barra e
-              cresciuta apposta per ospitarlo: sotto i ~44px la faccia del cuoco dentro
-              la parola FUEL smette di leggersi e il marchio diventa una macchia nera.
+              cresciuta apposta per ospitarlo: il marchio geometrico resta
+              leggibile anche a 44px.
               Niente piu trattino lime accanto: con un logo figurativo era un secondo
               segno che diceva la stessa cosa.
               alt vuoto perche il nome accessibile lo da gia aria-label sul link: due
@@ -150,22 +154,22 @@ export default function Nav() {
             <img
               src="/logo-fuellab.png"
               alt=""
-              width={1001}
-              height={704}
+              width={1095}
+              height={360}
               loading="eager"
               fetchPriority="high"
               decoding="async"
-              className="h-[44px] w-auto lg:h-[54px]"
+              className="h-9 w-auto md:h-[44px] lg:h-10 xl:h-[54px]"
             />
           </Link>
 
-          <nav className="hidden items-center gap-8 lg:flex">
+          <nav className="hidden items-center gap-4 lg:flex xl:gap-8">
             {VOCI.map((v) => (
               <Link
                 key={v.href}
                 href={v.href}
                 aria-current={percorso === v.href ? "page" : undefined}
-                className="group relative py-[7px] text-[12px] tracking-[.13em] uppercase transition-colors duration-400"
+                className="group relative py-2 text-[13px] tracking-[.08em] uppercase transition-colors duration-400"
                 style={{
                   fontVariationSettings: '"wdth" 108, "wght" 600',
                   color: "var(--color-ink)",
@@ -185,7 +189,8 @@ export default function Nav() {
           </nav>
 
           <CtaWhatsApp className="btn btn-p btn-sm hidden sm:inline-flex">
-            Scrivici su WhatsApp
+            <span className="lg:hidden xl:inline">Scrivici su WhatsApp</span>
+            <span className="hidden lg:inline xl:hidden">WhatsApp</span>
             <span className="dot" aria-hidden="true">
               ↗
             </span>
@@ -234,17 +239,22 @@ export default function Nav() {
         }}
       >
         <nav className="flex flex-col gap-2">
-          {VOCI.map((v, i) => (
+            {VOCI.map((v, i) => (
             <Link
               key={v.href}
               href={v.href}
               onClick={chiudi}
               className="h3 py-2 transition-colors duration-500"
-              style={{
-                animation: aperto ? `fuel-rise .7s var(--e-out) both ${90 + i * 60}ms` : undefined,
-              }}
             >
-              {v.label}
+              <span className="ln">
+                <i
+                  style={{
+                    animation: aperto ? `fuel-rise .7s var(--e-out) both ${90 + i * 60}ms` : undefined,
+                  }}
+                >
+                  {v.label}
+                </i>
+              </span>
             </Link>
           ))}
         </nav>

@@ -3,298 +3,167 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import Reveal from "@/components/Reveal";
 import Ticker from "@/components/Ticker";
-import { Chip, Eyebrow, Rise } from "@/components/ui";
+import { Chip } from "@/components/ui";
 import StrisciaCucina from "@/components/chi-e-matteo/StrisciaCucina";
-import { PRIMI, SECONDI } from "@/lib/catalogo";
+import { PIATTI } from "@/lib/catalogo";
 
 export const metadata: Metadata = {
-  title: "Matteo Pantanè, il cuoco",
+  title: "Chi siamo",
   description:
-    "Matteo Pantanè, cuoco a Pescara. La storia di FUEL LAB, la scelta del fresco contro il surgelato e i numeri della cucina che prepara ogni settimana.",
+    "FUEL LAB, fondata da Matteo Pantanè a Pescara. Meal prep fresco due volte a settimana, mai surgelato, cucinato sui macro della tua scheda.",
 };
 
-/** Le foto non legate a un elemento. Stessa firma di elementoImg(), id gia verificati altrove. */
-function foto(id: string, w = 1000): string {
+function foto(id: string, w = 1200): string {
   return `https://images.unsplash.com/${id}?w=${w}&q=80&auto=format&fit=crop`;
 }
 
-/* -------------------------------------------------------------------------
-   Blocco di racconto. La misura resta bloccata a 56ch: piu larga di cosi
-   il testo smette di essere leggibile e diventa un muro.
-   ------------------------------------------------------------------------- */
-function Blocco({
-  indice,
-  occhiello,
-  className = "",
-  children,
+const CIFRE: { cifra: string; etichetta: string; testo: string }[] = [
+  {
+    cifra: "12",
+    etichetta: "Anni in cucina",
+    testo: "Dal lavaggio pentole al pass, senza uscire dalla cucina vera.",
+  },
+  {
+    cifra: "2",
+    etichetta: "Cotture a settimana",
+    testo: "Lunedì e giovedì. Il calendario non cambia, nemmeno ad agosto.",
+  },
+  {
+    cifra: String(PIATTI.length),
+    etichetta: "Piatti in rotazione",
+    testo: "Sei piatti già composti. Il menu si muove con la stagione, i macro della scheda no.",
+  },
+  {
+    cifra: "4",
+    etichetta: "Giorni di freschezza",
+    testo: "Dal nostro frigo al tuo. Il quinto giorno non esiste.",
+  },
+];
+
+function Cifra({
+  cifra,
+  etichetta,
+  testo,
+  lime = false,
 }: {
-  indice: string;
-  occhiello: string;
-  className?: string;
-  children: ReactNode;
+  cifra: string;
+  etichetta: string;
+  testo: string;
+  lime?: boolean;
 }) {
   return (
-    <div className={className}>
-      <div className="mb-3 flex items-center gap-3 md:mb-5">
-        <span
-          className="font-mono text-[11px] tracking-[.06em] text-ink"
-          style={{ fontVariationSettings: '"wdth" 84' }}
-        >
-          {indice}
-        </span>
-        <span
-          className="block h-px w-[38px]"
-          style={{ background: "var(--hair)" }}
-          aria-hidden="true"
-        />
-        <span className="note">{occhiello}</span>
-      </div>
-      <p className="max-w-[56ch] text-[15.5px] leading-[1.6] text-ink md:text-[17px] md:leading-[1.74]">{children}</p>
+    <div
+      className="flex h-full flex-col p-5 md:p-7"
+      style={lime ? { background: "var(--color-lime)" } : { background: "var(--color-card)" }}
+    >
+      <span
+        className="block font-mono leading-[.82] text-[clamp(40px,8vw,64px)]"
+        style={{ fontVariationSettings: '"wdth" 75, "wght" 700', color: "var(--color-ink)" }}
+      >
+        {cifra}
+      </span>
+      <span className="note mt-3 block" style={lime ? { color: "rgba(6,23,16,.68)" } : undefined}>
+        {etichetta}
+      </span>
+      <p
+        className="mt-3 max-w-[28ch] text-[16px] leading-[1.5]"
+        style={{ color: lime ? "rgba(6,23,16,.78)" : "var(--color-muted)" }}
+      >
+        {testo}
+      </p>
     </div>
   );
 }
 
-/* -------------------------------------------------------------------------
-   Cella numerica. Quando e' lime lo sono fondo E nucleo: l'accento vive in
-   blocchi pieni, mai come bordino.
-   ------------------------------------------------------------------------- */
-function Numero({
-  cifra,
-  etichetta,
-  testo,
-  posizione = "",
-  rotazione = "",
-  lime = false,
-  grande = false,
-  ritardo = 0,
-}: {
-  cifra: string;
-  etichetta: string;
-  testo: ReactNode;
-  posizione?: string;
-  rotazione?: string;
-  lime?: boolean;
-  grande?: boolean;
-  ritardo?: number;
-}) {
-  return (
-    <Reveal className={posizione} delay={ritardo}>
-      {/* la rotazione sta qui dentro e non su Reveal: la rivelazione azzera il
-          transform dell'elemento che anima, e si porterebbe via l'inclinazione */}
-      <div
-        className={`shell h-full transition-transform duration-700 md:hover:rotate-0 ${rotazione}`}
-        style={{
-          transitionTimingFunction: "var(--e-over)",
-          // Sotto un blocco lime l'ombra nera del guscio sporca l'accento: in questo
-          // sistema il pieno lime irradia lime (come .btn-p), non proietta buio.
-          ...(lime
-            ? {
-                background: "var(--color-lime)",
-                borderColor: "transparent",
-                boxShadow: "0 38px 76px -42px rgba(223,255,62,.42)",
-              }
-            : null),
-        }}
-      >
-        <div
-          className="core h-full px-[20px] pt-[18px] pb-[20px] md:px-[30px] md:pt-[26px] md:pb-[30px]"
-          style={lime ? { background: "var(--color-lime)" } : undefined}
-        >
-          {/* I numeri di questo sito stanno in mono, sempre: sono dati, non insegne.
-              Anton li faceva leggere come un titolo e staccava questa pagina da tutte
-              le altre. Le misure sono ricalate: il mono e' molto piu largo del display. */}
-          <span
-            className={`block font-mono leading-[.82] ${
-              grande ? "text-[clamp(46px,6.6vw,86px)]" : "text-[clamp(38px,4.8vw,60px)]"
-            }`}
-            style={{
-              fontVariationSettings: '"wdth" 75, "wght" 700',
-              // .core e' sempre card (bianco) fuori dalla variante lime: il bianco
-              // era testo su fondo bianco, 1.00:1. ink su lime e su card sono
-              // entrambi ben sopra AA (12.61:1 e 14.30:1).
-              color: "var(--color-ink)",
-            }}
-          >
-            {cifra}
-          </span>
-          <span
-            className="note mt-3 block md:mt-5"
-            style={lime ? { color: "rgba(6,23,16,.68)" } : undefined}
-          >
-            {etichetta}
-          </span>
-          <p
-            className="mt-2 max-w-[34ch] text-[14px] leading-[1.5] md:mt-3 md:text-[14.5px] md:leading-[1.6]"
-            style={{ color: lime ? "rgba(6,23,16,.78)" : "var(--color-muted)" }}
-          >
-            {testo}
-          </p>
-        </div>
-      </div>
-    </Reveal>
-  );
-}
-
-/** Riga della lista "quello che FUEL LAB non e'": rombo lime + misura corta. */
 function Nega({ children }: { children: ReactNode }) {
   return (
-    <li className="flex items-start gap-[14px]">
+    <li className="flex items-start gap-3">
       <i className="mt-[9px] block h-[7px] w-[7px] flex-none rotate-45 bg-lime" aria-hidden="true" />
-      <span className="max-w-[52ch] text-[15px] leading-[1.55] text-ink md:text-[16px] md:leading-[1.62]">{children}</span>
+      <span className="max-w-[52ch] text-[16px] leading-[1.5] text-ink md:text-[17px]">{children}</span>
     </li>
   );
 }
 
-export default function ChiEMatteo() {
+export default function ChiSiamo() {
   return (
     <>
-      {/* ---------------- testata editoriale ---------------- */}
-      <section className="fascia fascia-t fascia-carta relative overflow-x-clip">
+      <section className="fascia fascia-t fascia-carta">
         <div className="wrap">
-          <div className="grid items-start gap-9 lg:grid-cols-[minmax(0,1fr)_386px] lg:gap-20">
+          <div className="grid items-end gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-16">
             <div>
-              <Eyebrow className="mb-3 md:mb-[28px]">Il cuoco</Eyebrow>
-              <h1 className="h1">
-                <Rise i={0}>Matteo</Rise>
-                <Rise i={1}>
-                  <span className="hl hl-on"><i className="hl-bar" aria-hidden="true" /><span className="hl-tx">Pantan&egrave;.</span></span>
-                </Rise>
-              </h1>
-
-              {/* il lead entra dopo che le due righe del titolo sono salite, non
-                  insieme: fuel-rise qui non va, perche senza la maschera di .ln
-                  il paragrafo slitterebbe sopra il titolo */}
-              <Reveal delay={420}>
-                <p className="lead mt-4 md:mt-8">
-                  Dodici anni di cucina professionale, un furgone e due cotture a settimana. FUEL
-                  LAB &egrave; la risposta a un problema che ho visto in palestra, non un piano
-                  industriale.
-                </p>
-                <div className="mt-5 flex flex-wrap gap-2 md:mt-7 md:gap-[10px]">
-                  <Chip accento>Pescara e provincia</Chip>
-                  <Chip>In cucina dal 2014</Chip>
-                  <Chip>Cuoco, non nutrizionista</Chip>
-                </div>
-              </Reveal>
+              <p className="note mb-4">Pescara e provincia</p>
+              <h1 className="h1">Chi siamo</h1>
+              <p className="mt-4 font-disp text-[clamp(22px,4.2vw,36px)] leading-[1.05] uppercase text-ink md:mt-5">
+                Fondata da Matteo
+              </p>
+              <p className="lead mt-5 md:mt-7">
+                Laboratorio di meal prep a Pescara. Cuciniamo freschi due volte a settimana, sui
+                macro della tua scheda. Mai surgelati.
+              </p>
+              <div className="mt-5 flex flex-wrap gap-2 md:mt-7">
+                <Chip accento>Fondata da Matteo Pantan&egrave;</Chip>
+                <Chip>In cucina dal 2014</Chip>
+                <Chip>Cuochi, non nutrizionisti</Chip>
+              </div>
             </div>
 
-            <figure className="relative mx-auto w-full max-w-[386px] lg:mt-3">
-              <div
-                className="shell transition-transform duration-700 md:rotate-[-2.4deg] md:hover:rotate-0 md:hover:scale-[1.015]"
-                style={{ transitionTimingFunction: "var(--e-over)" }}
-              >
-                <div className="core aspect-[4/5]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={foto("photo-1414235077428-338989a2e8c0", 860)}
-                    alt="Matteo al passo di una cucina professionale mentre impiatta"
-                    loading="lazy"
-                    decoding="async"
-                    className="h-full w-full object-cover"
-                    style={{ objectPosition: "center 42%" }}
-                  />
-                </div>
+            <figure className="shell">
+              <div className="core foto-profondita aspect-[4/5] sm:aspect-[5/4] lg:aspect-[4/5]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={foto("photo-1556910103-1c02745aae4d", 1100)}
+                  alt="Cucina di FUEL LAB durante la preparazione dei pasti"
+                  fetchPriority="high"
+                  decoding="async"
+                  className="h-full w-full object-cover"
+                  style={{ objectPosition: "center 40%" }}
+                />
               </div>
-
-              {/* Il cartellino esce dal guscio: e' l'elemento che rompe la griglia.
-                  Il raggio e' quello del nucleo, non un 14px inventato: lo shape
-                  lock vale anche per i pezzi che stanno fuori dalla scocca. */}
-              <figcaption
-                className="absolute -bottom-7 left-2 px-[18px] pt-[14px] pb-[12px] md:-left-9 md:rotate-[-6deg]"
-                style={{ background: "var(--color-lime)", borderRadius: "var(--core-r)" }}
-              >
-                <span
-                  className="block font-disp text-[21px] leading-none uppercase"
-                  style={{ color: "var(--color-ink)" }}
-                >
-                  Pescara
-                </span>
-                <span className="note mt-[7px] block" style={{ color: "rgba(6,23,16,.66)" }}>
-                  Consegna in giornata
-                </span>
-              </figcaption>
             </figure>
           </div>
         </div>
       </section>
 
-      {/* ---------------- il racconto ----------------
-          NOTA REDAZIONALE (non va in pagina): i tre blocchi qui sotto e la lista
-          "quello che FUEL LAB non e'" sono segnaposto. Vanno riscritti con Matteo,
-          numeri e date compresi, prima di andare online. Un cliente che apre il
-          sito non deve leggere gli appunti di lavorazione. */}
-      {/* Guscio: il racconto e' testo lungo, ed e' la sezione che senza un
-          cambio di superficie si saldava alla testata in un unico foglio. */}
       <section className="fascia fascia-guscio">
         <div className="wrap">
-          <div className="grid gap-7 lg:grid-cols-[286px_minmax(0,1fr)] lg:gap-20">
-            <div className="lg:sticky lg:top-[132px] lg:self-start">
+          <div className="grid gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-16">
+            <Reveal>
+              <h2 className="h2">
+                Un laboratorio,
+                <br />
+                non un brand.
+              </h2>
+            </Reveal>
+            <div className="flex flex-col gap-6 md:gap-8">
               <Reveal>
-                <Eyebrow className="mb-3 md:mb-[18px]">Il racconto</Eyebrow>
-                <h2 className="h2">
-                  Come &egrave;
-                  <br />
-                  nato FUEL LAB.
-                </h2>
+                <p className="max-w-[56ch] text-[16px] leading-[1.6] text-ink md:text-[17.5px] md:leading-[1.7]">
+                  FUEL LAB nasce da Matteo Pantan&egrave;, cuoco a Pescara da dodici anni. L&rsquo;idea
+                  non &egrave; arrivata da un piano industriale: &egrave; arrivata in palestra, davanti a un
+                  contenitore di pollo lesso e riso in bianco seguito alla lettera. I numeri c&rsquo;erano.
+                  Il mestiere no.
+                </p>
               </Reveal>
-            </div>
-
-            <div className="flex flex-col gap-6 md:gap-[38px]">
-              <Reveal>
-                <Blocco indice="01" occhiello="Dodici anni di servizi">
-                  Ho cominciato a sedici anni lavando pentole in un ristorante sul lungomare e non
-                  ne sono pi&ugrave; uscito. Dodici anni tra cucina d&rsquo;albergo, bistrot e
-                  banqueting: turni doppi, servizi da centocinquanta coperti, la mano che deve
-                  restare identica dal primo piatto all&rsquo;ultimo. Non &egrave; un mestiere
-                  romantico. Per&ograve; insegna le due cose che qui servono davvero: cucinare in
-                  quantit&agrave; senza perdere il gusto e rispettare un peso al grammo,
-                  perch&eacute; il piatto deve uscire sempre uguale.
-                </Blocco>
-              </Reveal>
-
               <Reveal delay={80}>
-                <Blocco indice="02" occhiello="Il contenitore in palestra" className="lg:pl-[9%]">
-                  L&rsquo;idea &egrave; arrivata in sala pesi, verso le sette di sera. Un amico
-                  apriva il contenitore sulla panca: petto di pollo bollito, cento grammi di riso in
-                  bianco, zucchine lesse. La stessa identica cosa da due mesi. La scheda del
-                  nutrizionista ce l&rsquo;aveva attaccata al frigo e la seguiva alla lettera,
-                  questo va detto. Solo che aveva smesso di mangiare per piacere e mangiava per
-                  obbligo. Mi &egrave; sembrato uno spreco: il pezzo che gli mancava era esattamente
-                  il mio mestiere.
-                </Blocco>
+                <p className="max-w-[56ch] text-[16px] leading-[1.6] text-ink md:text-[17.5px] md:leading-[1.7]">
+                  Cuciniamo il luned&igrave; e il gioved&igrave; e consegniamo in giornata. Niente
+                  abbattitore, niente scorte da tre mesi: quello che esce dalla cucina ha quattro
+                  giorni di frigo davanti, poi finisce. Resta su Pescara e provincia perch&eacute; oltre
+                  i quaranta minuti di furgone il vantaggio sparisce.
+                </p>
               </Reveal>
-
               <Reveal delay={120}>
-                <Blocco indice="03" occhiello="Fresco, e quindi locale" className="lg:pl-[4%]">
-                  Cucino il luned&igrave; e il gioved&igrave; e consegno in giornata. Niente
-                  abbattitore, niente magazzino, niente scorte da tre mesi: quello che esce dalla
-                  cucina ha quattro giorni di frigo davanti, poi finisce. &Egrave; una scelta scomoda
-                  &mdash; mi obbliga a fare la spesa due volte a settimana e a buttare quello che
-                  avanza &mdash; ma &egrave; l&rsquo;unica ragione per cui un contenitore FUEL LAB
-                  sa di cibo cucinato e non di cibo scongelato. &Egrave; anche il motivo per cui non
-                  spedisco: oltre i quaranta minuti di furgone il vantaggio sparisce. Quindi resto su
-                  Pescara e provincia, e va bene cos&igrave;.
-                </Blocco>
-              </Reveal>
-
-              {/* questo blocco toglie promesse invece di aggiungerne: e' il pezzo
-                  che rende credibile tutto il resto della pagina */}
-              <Reveal delay={160}>
-                <div className="shell md:rotate-[1.2deg]">
-                  <div className="core px-[20px] pt-[20px] pb-[22px] md:px-[34px] md:pt-[30px] md:pb-[34px]">
-                    <span className="note">Quello che FUEL LAB non &egrave;</span>
-                    <ul className="mt-4 flex flex-col gap-3 md:mt-6 md:gap-[14px]">
+                <div className="shell">
+                  <div className="core px-5 py-6 md:px-8 md:py-8">
+                    <p className="note">Quello che FUEL LAB non &egrave;</p>
+                    <ul className="mt-4 flex flex-col gap-3 md:mt-5">
                       <Nega>
-                        Non &egrave; una dieta. I numeri li decide il tuo nutrizionista, io li
-                        cucino.
+                        Non &egrave; una dieta. I numeri li decide il tuo nutrizionista, noi li cuciniamo.
                       </Nega>
                       <Nega>Non &egrave; un percorso, un integratore o una consulenza.</Nega>
+                      <Nega>Non &egrave; un servizio nazionale: fuori dalla provincia non arriviamo.</Nega>
                       <Nega>
-                        Non &egrave; un servizio nazionale: fuori dalla provincia non arrivo.
-                      </Nega>
-                      <Nega>
-                        Non &egrave; cibo da palestra triste. Se non lo mangeresti a cena, ho
-                        sbagliato io.
+                        Non &egrave; cibo da palestra triste. Se non lo mangeresti a cena, abbiamo sbagliato
+                        noi.
                       </Nega>
                     </ul>
                   </div>
@@ -305,58 +174,24 @@ export default function ChiEMatteo() {
         </div>
       </section>
 
-      {/* ---------------- i numeri ---------------- */}
-      {/* Carta: le quattro celle sono .shell, e il guscio se le mangerebbe. */}
-      <section className="fascia fascia-carta overflow-x-clip">
+      <section className="fascia fascia-carta">
         <div className="wrap">
           <Reveal>
-            <div className="mb-5 max-w-[620px] md:mb-9">
-              <Eyebrow className="mb-3 md:mb-[18px]">In numeri</Eyebrow>
-              <h2 className="h2">
-                Quattro numeri,
-                <br />
-                nient&rsquo;altro.
-              </h2>
+            <h2 className="h2 mb-6 max-w-[16ch] md:mb-9">Quattro numeri, nient&rsquo;altro.</h2>
+          </Reveal>
+          <Reveal delay={60}>
+            <div className="grid grid-cols-2 gap-2.5 md:gap-4 lg:grid-cols-4">
+              {CIFRE.map((c, i) => (
+                <div
+                  key={c.etichetta}
+                  className="overflow-hidden rounded-[var(--core-r)]"
+                  style={{ boxShadow: "inset 0 0 0 1px var(--hair-soft)" }}
+                >
+                  <Cifra {...c} lime={i === 1} />
+                </div>
+              ))}
             </div>
           </Reveal>
-
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-12 md:items-start md:gap-7">
-            <Numero
-              cifra="12"
-              etichetta="Anni in cucina"
-              testo="Dal primo lavaggio pentole al pass, senza mai uscire dalla cucina vera."
-              posizione="md:col-span-5"
-              rotazione="md:rotate-[-1.6deg]"
-              grande
-            />
-            <Numero
-              cifra="2"
-              etichetta="Cotture a settimana"
-              testo={
-                <>Luned&igrave; e gioved&igrave;. Il calendario non cambia mai, nemmeno ad agosto.</>
-              }
-              posizione="md:col-span-4 md:col-start-8 md:mt-[62px]"
-              rotazione="md:rotate-[2.1deg]"
-              lime
-              ritardo={90}
-            />
-            <Numero
-              cifra={String(PRIMI.length + SECONDI.length)}
-              etichetta="Elementi in rotazione"
-              testo="Il menu si muove con la stagione, i macro della tua scheda no."
-              posizione="md:col-span-4 md:col-start-2 md:-mt-[26px]"
-              rotazione="md:rotate-[1.4deg]"
-              ritardo={140}
-            />
-            <Numero
-              cifra="4"
-              etichetta="Giorni di freschezza"
-              testo="Dal mio frigo al tuo senza passare per il congelatore. Il quinto giorno non esiste: quello che avanza lo butto io."
-              posizione="md:col-span-5 md:col-start-7 md:mt-[12px]"
-              rotazione="md:rotate-[-2.2deg] md:translate-x-[18px]"
-              ritardo={190}
-            />
-          </div>
         </div>
       </section>
 
@@ -365,64 +200,35 @@ export default function ChiEMatteo() {
         durata={38}
       />
 
-      {/* ---------------- la cucina ---------------- */}
-      {/* Guscio: solo foto e didascalie. Le .shell delle foto salgono a carta
-          da sole (vedi .fascia-guscio .shell in globals.css). */}
       <section className="fascia fascia-guscio overflow-x-clip">
         <div className="wrap">
           <Reveal>
-            <div className="mb-6 flex flex-wrap items-end justify-between gap-5 md:mb-10 md:gap-8">
-              <div>
-                <Eyebrow className="mb-3 md:mb-[18px]">La cucina</Eyebrow>
-                <h2 className="h2">
-                  Dove
-                  <br />
-                  succede.
-                </h2>
-              </div>
-              <p className="note max-w-[290px] leading-[1.7]">
-                Laboratorio a Pescara &middot; spesa il luned&igrave; mattina &middot; consegna nelle
-                ventiquattr&rsquo;ore
+            <div className="mb-6 md:mb-10">
+              <h2 className="h2">Dove succede.</h2>
+              <p className="note mt-3 max-w-[42ch] leading-[1.7]">
+                Laboratorio a Pescara, spesa il luned&igrave; mattina, consegna nelle ventiquattr&rsquo;ore
               </p>
             </div>
           </Reveal>
-
-          <Reveal delay={90}>
+          <Reveal delay={80}>
             <StrisciaCucina />
           </Reveal>
         </div>
       </section>
 
-      {/* ---------------- la citazione ---------------- */}
-      {/* La lastra lime e' gia' una fascia per conto suo: la sezione che la
-          contiene resta carta, altrimenti sarebbero due stacchi uno dentro
-          l'altro. */}
       <section className="fascia fascia-carta fascia-alta overflow-x-clip">
         <Reveal>
-          {/* lastra piu larga della pagina e ruotata, con il contenuto contro-ruotato:
-              inclina il blocco senza inclinare la lettura. L'alone e' lime, non nero:
-              un pieno d'accento irradia il proprio colore, non proietta buio. */}
-          <div
-            className="w-full bg-lime md:-ml-[6%] md:w-[112%] md:rotate-[-1.15deg]"
-            style={{ boxShadow: "0 40px 80px -46px rgba(223,255,62,.4)" }}
-          >
-            <figure className="mx-auto w-[1180px] max-w-[calc(100%-40px)] py-[30px] md:max-w-[calc(100%/1.12_-_40px)] md:rotate-[1.15deg] md:py-[64px]">
+          <div className="w-full bg-lime" style={{ boxShadow: "0 40px 80px -46px rgba(223,255,62,.4)" }}>
+            <figure className="wrap py-10 md:py-16">
               <blockquote>
-                <p
-                  className="font-disp text-[clamp(27px,4.3vw,58px)] leading-[.92] uppercase"
-                  style={{ color: "var(--color-ink)", letterSpacing: "-.01em" }}
-                >
-                  Non vendo diete. Cucino quello che il tuo nutrizionista ha gi&agrave; deciso.
+                <p className="font-disp text-[clamp(26px,4.2vw,52px)] leading-[.94] uppercase text-ink">
+                  Non vendiamo diete. Cuciniamo quello che il tuo nutrizionista ha gi&agrave; deciso.
                 </p>
               </blockquote>
-              <figcaption className="mt-4 flex items-center gap-3 md:mt-7">
-                <i
-                  className="block h-[9px] w-[9px] rotate-45"
-                  style={{ background: "var(--color-ink)" }}
-                  aria-hidden="true"
-                />
+              <figcaption className="mt-5 flex items-center gap-3 md:mt-7">
+                <i className="block h-[9px] w-[9px] rotate-45 bg-ink" aria-hidden="true" />
                 <span className="note" style={{ color: "rgba(6,23,16,.66)" }}>
-                  Matteo Pantan&egrave; &middot; cuoco
+                  Matteo Pantan&egrave;, fondatore
                 </span>
               </figcaption>
             </figure>
@@ -430,36 +236,20 @@ export default function ChiEMatteo() {
         </Reveal>
       </section>
 
-      {/* ---------------- chiusura ---------------- */}
-      {/* Chiusura su fascia INCHIOSTRO, come su /come-funziona e /scheda: la
-          firma di fine pagina. Tutto il testo sta dentro il nucleo bianco. */}
       <section className="fascia fascia-ink">
         <div className="wrap">
           <Reveal>
             <div className="shell">
-              {/* La colonna dei bottoni parte da lg, non da md, e li impila: con
-                  'auto' su due pill affiancate quella traccia si prendeva meta
-                  blocco e il titolo finiva tagliato dall'overflow del nucleo. */}
               <div className="core relative grid gap-7 px-[22px] py-[28px] md:gap-12 md:px-[54px] md:py-[54px] lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
-                {/* stessa trama a 115 gradi delle barre macro, tenuta bassissima */}
-                <span
-                  className="pointer-events-none absolute inset-0"
-                  aria-hidden="true"
-                  style={{
-                    background:
-                      "repeating-linear-gradient(115deg, rgba(223,255,62,.07) 0 6px, rgba(223,255,62,0) 6px 15px)",
-                  }}
-                />
                 <div className="relative">
-                  <Eyebrow className="mb-3 md:mb-[18px]">Il passo dopo</Eyebrow>
                   <h2 className="h2">
                     La tua scheda
                     <br />
                     diventa il tuo menu.
                   </h2>
                   <p className="lead mt-4 md:mt-6">
-                    Carica il PDF del nutrizionista o scrivi i numeri a mano. La tua settimana si
-                    compone sui tuoi macro, poi la cucino io il luned&igrave; o il gioved&igrave;.
+                    Carica il PDF del nutrizionista o scrivi i numeri a mano. La settimana si
+                    compone sui tuoi macro, poi la cuciniamo il luned&igrave; o il gioved&igrave;.
                   </p>
                 </div>
                 <div className="relative flex flex-wrap gap-3 lg:flex-col lg:items-end">
@@ -470,7 +260,7 @@ export default function ChiEMatteo() {
                     </span>
                   </Link>
                   <Link href="/menu" className="btn btn-s">
-                    Guarda i {PRIMI.length + SECONDI.length} elementi
+                    Guarda il menu
                     <span className="dot" aria-hidden="true">
                       &#8599;
                     </span>

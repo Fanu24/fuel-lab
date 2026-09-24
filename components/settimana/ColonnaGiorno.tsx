@@ -58,7 +58,7 @@ export default function ColonnaGiorno({
               carboidrati={macro.carboidrati}
               grassi={macro.grassi}
             />
-            <p className="mono mt-1.5 text-[10px] font-medium text-muted">
+            <p className="mono mt-2 text-[12px] font-medium text-muted">
               P {macro.proteine} g · C {macro.carboidrati} g · G {macro.grassi} g
             </p>
           </div>

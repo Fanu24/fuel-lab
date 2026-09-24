@@ -2,17 +2,17 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Reveal from "@/components/Reveal";
 import { Eyebrow, Rise } from "@/components/ui";
-import { PRIMI, SECONDI, elementoImg } from "@/lib/catalogo";
-import type { Elemento } from "@/lib/catalogo";
+import { PIATTI, etichettaAllenamento, piattoImg } from "@/lib/catalogo";
+import type { Piatto } from "@/lib/catalogo";
 import { getServizio } from "@/lib/servizi";
 import type { Prezzo, ServizioId } from "@/lib/servizi";
 import { GIORNI, NOMI_GIORNO } from "@/lib/settimana";
 import stili from "@/components/home/home.module.css";
 
 export const metadata: Metadata = {
-  title: "Mangia come ti alleni",
+  title: "Pasti pronti tutti i giorni",
   description:
-    "Meal prep fresco a Pescara, mai surgelato. Primi, secondi ed extra con i macro dichiarati su ogni elemento, cucinati il lunedì e il giovedì. Il menu della settimana, il piano sui tuoi macro, o Matteo che cucina dentro casa tua.",
+    "Meal prep fresco a Pescara. Cuciniamo noi, tu trovi i pasti in frigo tutti i giorni. Sei piatti già composti sui tuoi macro, mai surgelati. Menu della settimana, piano sulla scheda, o Matteo in casa tua.",
 };
 
 /* =========================================================================
@@ -63,30 +63,40 @@ export const metadata: Metadata = {
    5.69:1: margine vero. */
 const SU_LIME = "rgba(6,23,16,.66)";
 
-/* La home non conosce nessun URL di immagine: pesca dal catalogo e basta. Il
-   menu cambia ogni settimana, quindi tutto quello che segue regge anche se il
-   catalogo si accorcia. */
-const eroe: Elemento | undefined = SECONDI[0];
+/* La home non conosce nessun URL di immagine: pesca dal catalogo e basta. */
+const eroe: Piatto | undefined = PIATTI[0];
+const VETRINA = PIATTI;
+const PIATTO_CARDIO = PIATTI.find((p) => p.allenamento === "cardio") ?? PIATTI[0];
+const PIATTO_PESI = PIATTI.find((p) => p.allenamento === "pesi") ?? PIATTI[3];
 
-/* LE FOTO NON SONO UNICHE PER ELEMENTO, ed e' il tranello del catalogo:
-   PRIMI[i] e SECONDI[i] ereditano la stessa foto dai 27 piatti di partenza.
-   L'anteprima vecchia prendeva PRIMI[0] accanto a SECONDI[0] e mostrava due
-   volte la stessa scodella, una nell'eroe e una nella card grande. Qui la
-   vetrina si costruisce scartando le foto gia' in pagina invece di fidarsi
-   degli indici; la coda sul catalogo intero e' la rete di sicurezza per il
-   giorno in cui i primi quattro nomi non bastassero piu'. */
-function vetrina(quanti: number, gia: string[]): Elemento[] {
-  const viste = new Set(gia);
-  const scelti: Elemento[] = [];
-  for (const e of [PRIMI[1], SECONDI[2], PRIMI[3], SECONDI[4], ...PRIMI, ...SECONDI]) {
-    if (!e || viste.has(e.img)) continue;
-    viste.add(e.img);
-    scelti.push(e);
-    if (scelti.length === quanti) break;
-  }
-  return scelti;
+function fotoSport(id: string, w = 1200): string {
+  return `https://images.unsplash.com/${id}?w=${w}&q=80&auto=format&fit=crop`;
 }
-const VETRINA = vetrina(4, eroe ? [eroe.img] : []);
+
+const CORSIE = [
+  {
+    num: "01",
+    titolo: "Cardio",
+    testo: "Quando fai cardio, il pasto porta più carboidrati.",
+    azione: "Vedi i piatti cardio",
+    href: "/menu?allenamento=cardio",
+    id: "photo-1461897104016-0b3b00cc81ee",
+    alt: "Sprinters che esplodono dai blocchi su una pista di atletica",
+    pos: "50% 58%",
+    piatto: PIATTO_CARDIO,
+  },
+  {
+    num: "02",
+    titolo: "Pesistica",
+    testo: "Quando fai pesi, il pasto privilegia le proteine e tiene i carboidrati ridotti.",
+    azione: "Vedi i piatti pesistica",
+    href: "/menu?allenamento=pesi",
+    id: "photo-1541534741688-6078c6bfb5c5",
+    alt: "Atleta in spinta sopra la testa con il bilanciere",
+    pos: "50% 28%",
+    piatto: PIATTO_PESI,
+  },
+] as const;
 
 /* I tre servizi come SCELTA, non come racconto: una riga sola per servizio,
    la soglia, un'azione. Le descrizioni per esteso stanno in lib/servizi.ts e
@@ -105,7 +115,7 @@ const CARTE: {
 }[] = [
   {
     id: "menu-settimana",
-    riga: "Primi, secondi ed extra con i macro scritti sopra ognuno: il pasto lo componi tu.",
+    riga: "Sei piatti già composti, con ingredienti e macro. Le aggiunte della box le scegli tu.",
     href: "/menu",
     azione: "Sfoglia il menu",
   },
@@ -148,9 +158,6 @@ function soglia(valore: number): string {
   return `${valore.toFixed(2).replace(".", ",")} €`;
 }
 
-/* Il prezzo nella stessa scocca .price del resto del sito. E' l'unico posto
-   della home in cui compare un numero in euro, ed e' la soglia d'ingresso:
-   l'home cooking non ne ha una e dice "Su preventivo", senza nessuna cifra. */
 function PrezzoBreve({ prezzo, suLime = false }: { prezzo: Prezzo; suLime?: boolean }) {
   if (prezzo.tipo === "preventivo") {
     return (
@@ -173,38 +180,26 @@ function PrezzoBreve({ prezzo, suLime = false }: { prezzo: Prezzo; suLime?: bool
 }
 
 /* La settimana d'esempio: due caselle piene su quattordici. Il vuoto e' il
-   punto - la griglia si legge come una scheda da riempire, non come un
-   listino - e i nomi dentro le due caselle piene sono elementi veri del
-   catalogo, non testo finto. */
-function cella(...e: (Elemento | undefined)[]): Elemento[] {
-  return e.filter((x): x is Elemento => x !== undefined);
-}
-const CASELLE: [Elemento[], Elemento[]][] = GIORNI.map((_, i) => {
-  if (i === 0) return [cella(PRIMI[5], SECONDI[0]), []];
-  if (i === 3) return [[], cella(PRIMI[3], SECONDI[2])];
-  return [[], []];
+   punto: la griglia si legge come una scheda da riempire, non come un listino. */
+const CASELLE: [Piatto | undefined, Piatto | undefined][] = GIORNI.map((_, i) => {
+  if (i === 0) return [PIATTI[0], undefined];
+  if (i === 3) return [undefined, PIATTI[3]];
+  return [undefined, undefined];
 });
 
-function CasellaEsempio({ dentro }: { dentro: Elemento[] }) {
-  if (dentro.length === 0) {
-    /* Niente .cell-empty: quella classe accende il lime al passaggio del
-       mouse, e qui prometterebbe un bottone dove c'e' un'anteprima. */
+function CasellaEsempio({ dentro }: { dentro: Piatto | undefined }) {
+  if (!dentro) {
     return (
-      <div className="cell w-full items-center justify-center text-[20px] font-light text-muted">
+      <div className="cell w-full items-center justify-center text-[20px] font-medium text-muted">
         <span aria-hidden="true">+</span>
         <span className="sr-only">casella libera</span>
       </div>
     );
   }
-  const kcal = dentro.reduce((s, e) => s + e.kcal, 0);
   return (
     <div className="cell cell-full w-full">
-      {dentro.map((e) => (
-        <p key={e.id} className="cell-d">
-          {e.nome}
-        </p>
-      ))}
-      <p className="cell-k">{kcal} kcal</p>
+      <p className="cell-d">{dentro.nome}</p>
+      <p className="cell-k">{dentro.kcal} kcal</p>
     </div>
   );
 }
@@ -213,39 +208,63 @@ export default function Home() {
   return (
     <>
       {/* ==================== 1. HERO + IL CIBO SUBITO ====================
-          Una schermata sola per dire cosa si vende e a chi (occhiello: dove e
-          ogni quanto; titolo: a chi si allena; riga sotto: cosa arriva), e
-          subito sotto il cibo vero del catalogo. Nessun occhiello, nessun
-          titolo e nessun paragrafo davanti alle foto: la riga in mono sopra
-          la vetrina e' un'etichetta, non un'introduzione. */}
-      <section className="relative overflow-x-clip pt-[106px] pb-9 md:pt-[136px] md:pb-16">
-        <div className="wrap">
-          <div className="grid items-center gap-7 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-16">
-            <div>
-              <div className={`${stili.salita} mb-5 md:mb-8`} style={{ animationDelay: "150ms" }}>
-                <Eyebrow>Pescara e provincia &mdash; consegna fresca 2 volte a settimana</Eyebrow>
+          Promessa: i pasti sono pronti tutti i giorni. Il campo da pista sta
+          sotto, cosi lo hero non e' un foglio crema. Su telefono la foto
+          eroe sparisce: la vetrina sotto e' gia' cibo, e una seconda scodella
+          prima di quella ritardava i quattro piatti. */}
+      <section className="overflow-x-clip">
+        <div className={`relative pt-[80px] pb-5 md:pt-[128px] md:pb-8 ${stili.campo}`}>
+        <svg
+          className={stili.pista}
+          viewBox="0 0 800 900"
+          preserveAspectRatio="xMaxYMin slice"
+          aria-hidden="true"
+          focusable="false"
+        >
+          <g fill="none" stroke="var(--color-ink)" strokeOpacity="0.18" strokeWidth="26">
+            <ellipse cx="840" cy="20" rx="430" ry="370" />
+            <ellipse cx="840" cy="20" rx="368" ry="314" />
+            <ellipse cx="840" cy="20" rx="306" ry="258" />
+          </g>
+          <ellipse
+            cx="840"
+            cy="20"
+            rx="244"
+            ry="202"
+            fill="none"
+            stroke="var(--color-lime)"
+            strokeOpacity="1"
+            strokeWidth="14"
+          />
+        </svg>
+        <div className="relative z-[1] wrap">
+          <div className="grid items-center gap-5 lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-16">
+            <div className={stili.col}>
+              <span className={stili.maglia} aria-hidden="true" />
+              <div className="relative z-[1]">
+              <div className={`${stili.salita} mb-4 md:mb-7`} style={{ animationDelay: "150ms" }}>
+                <Eyebrow>Il frigo &egrave; gi&agrave; fatto.</Eyebrow>
               </div>
 
-              <h1 className="h1">
-                <Rise i={0}>Mangia come</Rise>
+              <h1 className={`h1 ${stili.titolo}`}>
+                <Rise i={0}>Pasti pronti.</Rise>
                 <Rise i={1}>
-                  ti{" "}
                   <Reveal as="span" delay={260} className="hl">
                     <i className="hl-bar" aria-hidden="true" />
-                    <span className="hl-tx">alleni.</span>
+                    <span className="hl-tx">Tutti i giorni.</span>
                   </Reveal>
                 </Rise>
               </h1>
 
               <p
-                className={`lead ${stili.salita} mt-5 max-w-[46ch] md:mt-8`}
+                className={`lead ${stili.salita} mt-4 max-w-[38ch] md:mt-7`}
                 style={{ animationDelay: "900ms" }}
               >
-                Primi e secondi cucinati freschi sui tuoi macro, a casa tua il luned&igrave; e il
-                gioved&igrave;. Mai surgelati.
+                Cuciniamo noi. Tu apri il frigo e mangi, sette giorni su sette. Fresco, sui tuoi
+                macro.
               </p>
 
-              <div className={`${stili.salita} mt-6 md:mt-8`} style={{ animationDelay: "1020ms" }}>
+              <div className={`${stili.salita} mt-5 md:mt-8`} style={{ animationDelay: "1020ms" }}>
                 <Link href="/menu" className="btn btn-p">
                   Sfoglia il menu
                   <span className="dot" aria-hidden="true">
@@ -253,33 +272,33 @@ export default function Home() {
                   </span>
                 </Link>
               </div>
+              </div>
             </div>
 
             {eroe ? (
-              <figure
-                className={`shell ${stili.scatto} relative mx-auto w-full max-w-[440px] sm:w-[340px] lg:mx-0 lg:h-[384px] lg:w-full`}
-              >
-                <div className="core aspect-[16/11] sm:aspect-[4/5] lg:aspect-auto lg:h-full">
+              <figure className={`shell ${stili.scatto} relative hidden w-full lg:mx-0 lg:block lg:h-[400px] lg:w-full`}>
+                <div className="core foto-profondita aspect-[5/4] sm:aspect-[4/5] lg:aspect-auto lg:h-full">
                   {/* Unica immagine non lazy della pagina, ed e' voluto: e'
                       l'LCP. Mandarla in lazy sposterebbe in avanti il primo
                       contenuto utile invece di alleggerire la pagina. */}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={elementoImg(eroe, 900)}
+                    src={piattoImg(eroe, 900)}
                     alt={`${eroe.nome}, porzionato e pesato per la consegna`}
                     loading="eager"
                     fetchPriority="high"
                     decoding="async"
-                    className="h-full w-full object-cover object-[center_42%]"
+                    className="h-full w-full object-cover object-[center_78%]"
                   />
                 </div>
 
-                {/* Timbro circolare: l'anello di testo gira, il marchio al centro sta fermo. */}
+                {/* Timbro solo da md: a 390px sbordava dalla foto e copriva
+                    il tasto. L'anello gira, il marchio sta fermo. */}
                 <svg
                   viewBox="0 0 120 120"
                   role="img"
-                  aria-label="FUEL LAB — fresco, mai surgelato, Pescara"
-                  className={`${stili.timbro} absolute right-[-18px] bottom-[-24px] h-[104px] w-[104px] lg:right-auto lg:bottom-[-32px] lg:left-[-42px] lg:h-[122px] lg:w-[122px]`}
+                  aria-label="FUEL LAB, pasti pronti tutti i giorni, Pescara"
+                  className={`${stili.timbro} absolute right-[-18px] bottom-[-24px] hidden h-[104px] w-[104px] md:block lg:right-auto lg:bottom-[-32px] lg:left-[-42px] lg:h-[122px] lg:w-[122px]`}
                 >
                   <defs>
                     <path
@@ -293,14 +312,14 @@ export default function Home() {
                     <text
                       style={{
                         fontFamily: "var(--font-mono)",
-                        fontSize: "9.4px",
+                        fontSize: "8.2px",
                         fontWeight: 600,
-                        letterSpacing: "0.14em",
+                        letterSpacing: "0.1em",
                         fill: "var(--color-ink)",
                       }}
                     >
                       <textPath href="#fuel-anello" startOffset="0">
-                        {"FRESCO + MAI SURGELATO + PESCARA + "}
+                        {"PASTI PRONTI + TUTTI I GIORNI + PESCARA + "}
                       </textPath>
                     </text>
                   </g>
@@ -329,39 +348,41 @@ export default function Home() {
             ) : null}
           </div>
 
-          {/* ---- la vetrina: quattro elementi veri, nella stessa schermata ---- */}
+          <span className={stili.partenza} aria-hidden="true" />
+        </div>
+        </div>
+
+          {/* ---- la vetrina: quattro elementi veri, sotto lo hero ---- */}
           {VETRINA.length > 0 ? (
-            <div className="mt-6 md:mt-14">
-              <Reveal className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
-                <p className="note">
-                  Questa settimana in cucina &middot; {PRIMI.length} primi &middot;{" "}
-                  {SECONDI.length} secondi
-                </p>
-                <p className="note">Mai un piatto gi&agrave; chiuso</p>
+            <div className="wrap pb-8 md:pb-16">
+            <div className="mt-5 md:mt-14">
+              <Reveal>
+                <p className="note">Questa settimana in cucina</p>
               </Reveal>
 
-              <div className="mt-4 grid grid-cols-2 gap-3 sm:gap-4 md:gap-5 lg:grid-cols-4">
+              <div className="mt-4 grid grid-cols-2 gap-3 sm:gap-4 md:gap-5 lg:grid-cols-3">
                 {VETRINA.map((e, i) => (
                   <Reveal key={e.id} delay={i * 80} className="h-full">
                     <Link
                       href="/menu"
-                      aria-label={`${e.nome}, ${e.categoria === "primo" ? "primo" : "secondo"} da ${e.kcal} kcal: sfoglia il menu`}
+                      aria-label={`${e.nome}, ${etichettaAllenamento(e.allenamento)}, ${e.kcal} kcal: sfoglia il menu`}
                       className="shell group block h-full transition-transform duration-500 hover:-translate-y-1.5"
                       style={{ transitionTimingFunction: "var(--e-over)" }}
                     >
                       <div className="core flex h-full flex-col">
-                        <figure className="relative aspect-[3/2] overflow-hidden bg-tray">
+                        <figure className="foto-profondita relative aspect-[3/2] overflow-hidden bg-tray">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
-                            src={elementoImg(e, 640)}
+                            src={piattoImg(e, 640)}
                             alt={e.nome}
-                            loading="lazy"
+                            loading={i === 0 ? "eager" : "lazy"}
+                            fetchPriority={i === 0 ? "high" : undefined}
                             decoding="async"
                             className="h-full w-full object-cover transition-transform duration-[1.2s] group-hover:scale-[1.06]"
                             style={{ transitionTimingFunction: "var(--e-out)" }}
                           />
                           <span className="chip chip-k absolute top-2.5 left-2.5 uppercase sm:top-3 sm:left-3">
-                            {e.categoria === "primo" ? "Primo" : "Secondo"}
+                            {etichettaAllenamento(e.allenamento)}
                           </span>
                           {/* Le calorie salgono sulla foto: nella riga sotto
                               facevano andare a capo i macro, e due righe di
@@ -372,7 +393,7 @@ export default function Home() {
                         </figure>
                         <div className="flex flex-1 flex-col p-3.5 sm:p-5">
                           <p className="h3 !text-[17px] sm:!text-[19px]">{e.nome}</p>
-                          <p className="mono mt-auto pt-2.5 text-[9.5px] text-muted sm:pt-3 sm:text-[10.5px]">
+                          <p className="mono mt-auto pt-3 text-[12px] text-muted sm:pt-3.5">
                             P {e.proteine} &middot; C {e.carboidrati} &middot; G {e.grassi}
                           </p>
                         </div>
@@ -382,8 +403,8 @@ export default function Home() {
                 ))}
               </div>
             </div>
+            </div>
           ) : null}
-        </div>
       </section>
 
       {/* ========================= FASCIA FIDUCIA =========================
@@ -412,8 +433,60 @@ export default function Home() {
             <i className="hidden h-[9px] w-[9px] rotate-45 bg-ink md:block" aria-hidden="true" />
             <p className="font-disp text-[21px] leading-[1.02] uppercase md:text-right md:text-[26px]">
               Macro certificati
-              <br className="hidden md:block" /> su primi e secondi
+              <br className="hidden md:block" /> su ogni piatto
             </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ===================== ALLENAMENTO + PASTO ===================== */}
+      <section
+        className={`fascia fascia-carta ${stili.fit}`}
+        aria-label="Allenamento e abbinamento del pasto"
+      >
+        <div className="wrap">
+          <Reveal className="mb-5 md:mb-8">
+            <h2 className="h2">Mangia come ti alleni.</h2>
+          </Reveal>
+
+          <div className={stili.corsie}>
+            {CORSIE.map((c, i) => (
+              <Reveal key={c.num} delay={i * 90} className="min-w-0">
+                <Link
+                  href={c.href}
+                  aria-label={`${c.titolo}: ${c.piatto.nome}. Vedi i piatti ${c.titolo.toLowerCase()}`}
+                  className={`shell ${stili.corsia}`}
+                >
+                  <div className={`core ${stili.corsiaCore}`}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={fotoSport(c.id)}
+                      alt={c.alt}
+                      loading="lazy"
+                      decoding="async"
+                      className={stili.corsiaFoto}
+                      style={{ objectPosition: c.pos }}
+                    />
+                    <span className={stili.corsiaVelo} aria-hidden="true" />
+                    <span className={stili.corsiaPartenza} aria-hidden="true" />
+                    <span className={stili.corsiaNum} aria-hidden="true">
+                      {c.num}
+                    </span>
+                    <div className={stili.corsiaCorpo}>
+                      <h3 className="h3">{c.titolo}</h3>
+                      <p className={stili.corsiaTesto}>{c.testo}</p>
+                      <span className={`chip chip-k ${stili.corsiaPiatto}`}>{c.piatto.nome}</span>
+                      <span className={`btn btn-sm ${stili.corsiaCta}`}>
+                        {c.azione}
+                        <span className="dot" aria-hidden="true">
+                          &rarr;
+                        </span>
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              </Reveal>
+            ))}
           </div>
         </div>
       </section>
@@ -424,9 +497,8 @@ export default function Home() {
           per carta, nessun paragrafo introduttivo. */}
       <section className="fascia fascia-guscio">
         <div className="wrap">
-          <Reveal className="mb-5 flex flex-wrap items-end justify-between gap-x-8 gap-y-2 md:mb-9 md:gap-y-3">
+          <Reveal className="mb-5 md:mb-9">
             <h2 className="h2">Tre modi di mangiare bene.</h2>
-            <p className="note">Il prezzo esatto lo definiamo insieme su WhatsApp</p>
           </Reveal>
 
           <div className="grid gap-4 md:grid-cols-3 md:gap-6">
@@ -437,7 +509,7 @@ export default function Home() {
                   <Link
                     href={c.href}
                     aria-label={`${s.nome}: ${c.azione}`}
-                    className={`shell block h-full transition-transform duration-500 hover:-translate-y-1.5 ${INCLINA[i]}`}
+                    className={`shell group block h-full transition-transform duration-500 hover:-translate-y-1.5 ${INCLINA[i]}`}
                     style={{
                       transitionTimingFunction: "var(--e-over)",
                       ...(c.lime ? { background: "var(--color-lime)" } : null),
@@ -476,7 +548,8 @@ export default function Home() {
                             alt={ALT_CARTA[c.id]}
                             loading="lazy"
                             decoding="async"
-                            className="h-full w-full object-cover"
+                            className="h-full w-full object-cover transition-transform duration-[1.2s] group-hover:scale-[1.05]"
+                            style={{ transitionTimingFunction: "var(--e-out)" }}
                           />
                           <span className="num num-lime absolute top-3 left-3">{s.numero}</span>
                         </figure>
@@ -487,7 +560,7 @@ export default function Home() {
                           {s.nome}
                         </h3>
                         <p
-                          className={`mt-2.5 flex-1 text-[14px] leading-[1.5] sm:text-[14.5px] sm:leading-[1.55] ${c.lime ? "" : "text-muted"}`}
+                          className={`mt-3 flex-1 text-[16px] leading-[1.5] sm:text-[17px] ${c.lime ? "" : "text-muted"}`}
                           style={c.lime ? { color: SU_LIME } : undefined}
                         >
                           {c.riga}
@@ -527,9 +600,6 @@ export default function Home() {
               <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4 md:gap-y-5">
                 <div>
                   <h2 className="h2">Componi la tua settimana.</h2>
-                  <p className="note mt-2.5 md:mt-4">
-                    Sette giorni, quattordici caselle: un primo, un secondo e gli extra in ognuna
-                  </p>
                 </div>
                 <Link href="/settimana" className="btn btn-p">
                   Vai alla tua settimana
@@ -588,17 +658,9 @@ export default function Home() {
       <Reveal as="section" className="fascia fascia-corta fascia-ink on-ink">
         <div className="wrap flex flex-wrap items-end justify-between gap-x-10 gap-y-6 md:gap-y-8">
           <div>
-            <p className="note">
-              Pescara e provincia &middot; consegna il luned&igrave; e il gioved&igrave;
-            </p>
-            <h2 className="h2 mt-3.5 md:mt-5">
-              Il prezzo esatto
-              <br />
-              te lo dice Matteo.
-            </h2>
-            <p className="lead mt-3.5 md:mt-5">
-              Lasci nome, telefono e comune: ti risponde lui su WhatsApp, con il piano della
-              settimana e il preventivo.
+            <h2 className="h2">Ti risponde Matteo.</h2>
+            <p className="lead mt-3.5 max-w-[28ch] md:mt-5">
+              Nome, telefono e comune. Poi si apre la chat.
             </p>
           </div>
 
@@ -627,7 +689,7 @@ export default function Home() {
                 href="/chi-e-matteo"
                 className="inline-flex min-h-[44px] items-center underline underline-offset-4"
               >
-                chi &egrave; Matteo
+                chi siamo
               </Link>
             </p>
           </div>

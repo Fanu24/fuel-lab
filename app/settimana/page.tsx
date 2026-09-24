@@ -8,7 +8,7 @@ import SettimanaClient from "./SettimanaClient";
 export const metadata: Metadata = {
   title: "La tua settimana",
   description:
-    "Sette giorni per due pasti: componi pranzo e cena con primi, secondi ed extra, guarda i macro di ogni giornata e manda la settimana al tuo nutrizionista con un link.",
+    "Sette giorni per due pasti: un piatto e le aggiunte della box in ogni casella, i macro di ogni giornata in vista, e un link da mandare al tuo nutrizionista.",
 };
 
 /**

@@ -5,7 +5,7 @@ import Reveal from "@/components/Reveal";
 import Ticker from "@/components/Ticker";
 import { Eyebrow, SectionHead, Rise } from "@/components/ui";
 import Faq, { type Domanda } from "@/components/come-funziona/Faq";
-import { PRIMI, SECONDI } from "@/lib/catalogo";
+import { PIATTI } from "@/lib/catalogo";
 
 export const metadata: Metadata = {
   title: "Come funziona",
@@ -21,11 +21,11 @@ export const metadata: Metadata = {
  */
 
 /**
- * Le foto non legate a un elemento del catalogo. Stessa firma di elementoImg(),
+ * Le foto non legate a un piatto del catalogo. Stessa firma di piattoImg(),
  * ma il tipo tiene la lista chiusa ai soli id gia in uso altrove nel sito: un
  * refuso si ferma alla compilazione invece di diventare un riquadro vuoto in
- * produzione. Le foto degli elementi non passano da qui, quelle hanno
- * elementoImg().
+ * produzione. Le foto dei piatti non passano da qui, quelle hanno
+ * piattoImg().
  */
 type IdFoto =
   | "photo-1466637574441-749b8f19452f"
@@ -58,8 +58,8 @@ const PASSI: Passo[] = [
     n: "01",
     titolo: "Scegli il menu o carica la scheda",
     testo:
-      `${PRIMI.length} primi e ${SECONDI.length} secondi online, con grammi e macro scritti sopra ognuno: puoi comporre la tua settimana a mano in cinque minuti. Se hai una scheda del nutrizionista la carichi e ci pensa il matcher, che sceglie gli abbinamenti più vicini ai tuoi numeri. Quello che non ti va lo sostituisci, e i totali si ricalcolano davanti a te.`,
-    dati: [`${PRIMI.length + SECONDI.length} elementi`, "PDF o foto"],
+      `${PIATTI.length} piatti già composti online, con ingredienti, grammi e macro scritti sopra ognuno: puoi comporre la tua settimana a mano in cinque minuti. Se hai una scheda del nutrizionista la carichi e ci pensa il matcher, che sceglie i piatti più vicini ai tuoi numeri. Quello che non ti va lo sostituisci, e i totali si ricalcolano davanti a te.`,
+    dati: [`${PIATTI.length} piatti`, "PDF o foto"],
     img: "photo-1466637574441-749b8f19452f",
     alt: "Tagliere di legno con uova, avocado e pomodori, gli ingredienti di partenza",
     rot: "md:rotate-[-2.4deg]",
@@ -204,10 +204,10 @@ const DOMANDE: Domanda[] = [
     ),
   },
   {
-    q: "Dove trovo gli allergeni di ogni primo e secondo?",
+    q: "Dove trovo gli allergeni di ogni piatto?",
     a: (
       <>
-        Ogni primo, secondo ed extra del catalogo dichiara i suoi allergeni: &egrave; un campo
+        Ogni piatto e ogni alimento della box dichiara i suoi allergeni: &egrave; un campo
         obbligatorio, come impone il{" "}
         <strong>Regolamento UE 1169/2011</strong>, e non un&apos;etichetta aggiunta dopo. Li vedi
         mentre componi la tua settimana, prima ancora di ordinare, non solo sul contenitore alla
@@ -223,7 +223,7 @@ const DOMANDE: Domanda[] = [
         sostituzioni accetta e dove c&apos;&egrave; margine di manovra sui contorni. Chiedi al tuo
         professionista di scriverci: rispondiamo entro il giorno lavorativo successivo. Quello che
         non facciamo mai &egrave; toccare la tua dieta di nostra iniziativa: noi la traduciamo in
-        una settimana di primi e secondi, non la correggiamo.
+        una settimana di piatti, non la correggiamo.
       </>
     ),
   },
@@ -232,7 +232,7 @@ const DOMANDE: Domanda[] = [
     a: (
       <>
         Quando componi la tua settimana ottieni un link: lo mandi al tuo nutrizionista su WhatsApp
-        o via mail, e lui lo apre e vede esattamente i primi, i secondi e i macro che hai scelto,
+        o via mail, e lui lo apre e vede esattamente i piatti e i macro che hai scelto,
         senza doversi registrare da nessuna parte. Pu&ograve; approvarla cos&igrave; com&apos;&egrave; o segnarti
         cosa cambiare, e tu aggiorni la settimana di conseguenza.
       </>
@@ -369,7 +369,7 @@ export default function ComeFunziona() {
                 </span>
                 <span className="pb-1">
                   <span
-                    className="block font-mono text-[11px] leading-tight uppercase"
+                    className="block font-mono text-[12px] leading-snug uppercase"
                     style={{
                       fontVariationSettings: '"wdth" 84',
                       letterSpacing: ".2em",
@@ -379,7 +379,7 @@ export default function ComeFunziona() {
                     Giorni in frigo
                   </span>
                   <span
-                    className="block text-[14px] leading-tight"
+                    className="block text-[16px] leading-snug"
                     style={{ fontVariationSettings: '"wdth" 106, "wght" 700' }}
                   >
                     poi si butta
@@ -491,7 +491,7 @@ export default function ComeFunziona() {
                       {p.n}
                     </p>
                     <h3 className="h3 mt-4 md:mt-6">{p.titolo}</h3>
-                    <p className="mt-3 max-w-[46ch] text-[15px] leading-[1.55] md:mt-5 md:text-[16.5px] md:leading-[1.66]">{p.testo}</p>
+                    <p className="mt-3 max-w-[46ch] text-[16px] leading-[1.5] md:mt-5 md:text-[17px] md:leading-[1.55]">{p.testo}</p>
                     <div className="mt-4 flex flex-wrap gap-2 md:mt-7">
                       {p.dati.map((d) => (
                         <span key={d} className="chip chip-k">
@@ -535,12 +535,12 @@ export default function ComeFunziona() {
                 {/* h4 e non p: sono i due titoli che dividono la scheda, e da tastiera
                     o da screen reader si salta per intestazioni, non per paragrafi */}
                 <h4
-                  className="mt-6 mb-3 text-[11.5px] md:mt-9 md:mb-4 font-normal tracking-[.24em] text-ink uppercase"
+                  className="mt-6 mb-3 text-[12px] md:mt-9 md:mb-4 font-medium tracking-[.12em] text-ink uppercase"
                   style={{ fontVariationSettings: '"wdth" 112, "wght" 700' }}
                 >
                   Dove vince
                 </h4>
-                <ul className="flex flex-col gap-2.5 text-[15px] leading-[1.5] md:gap-3 md:text-[15.5px] md:leading-[1.6]">
+                <ul className="flex flex-col gap-2.5 text-[16px] leading-[1.5] md:gap-3 md:text-[17px] md:leading-[1.55]">
                   <Voce>Dura sei mesi nel congelatore. Ne compri dodici e te ne dimentichi.</Voce>
                   <Voce>Si spedisce in tutta Italia: funziona anche se abiti a Bolzano.</Voce>
                   <Voce>Costa meno, perch&eacute; la produzione &egrave; su scala industriale.</Voce>
@@ -548,7 +548,7 @@ export default function ComeFunziona() {
                 </ul>
 
                 <h4
-                  className="mt-7 mb-3 text-[11.5px] md:mt-10 md:mb-4 font-normal tracking-[.24em] uppercase"
+                  className="mt-7 mb-3 text-[12px] md:mt-10 md:mb-4 font-medium tracking-[.12em] uppercase"
                   style={{
                     fontVariationSettings: '"wdth" 112, "wght" 700',
                     color: "var(--color-muted)",
@@ -557,7 +557,7 @@ export default function ComeFunziona() {
                   Dove perde
                 </h4>
                 <ul
-                  className="flex flex-col gap-2.5 text-[15px] leading-[1.5] md:gap-3 md:text-[15.5px] md:leading-[1.6]"
+                  className="flex flex-col gap-2.5 text-[16px] leading-[1.5] md:gap-3 md:text-[17px] md:leading-[1.55]"
                   style={{ color: "var(--color-muted)" }}
                 >
                   <Voce>
@@ -586,7 +586,7 @@ export default function ComeFunziona() {
                   style={{ background: "var(--color-lime)" }}
                 >
                   <p
-                    className="font-mono text-[11px] tracking-[.22em] uppercase"
+                    className="font-mono text-[12px] tracking-[.1em] uppercase"
                     style={{ fontVariationSettings: '"wdth" 84', color: "rgba(6,23,16,.6)" }}
                   >
                     Opzione B
@@ -594,12 +594,12 @@ export default function ComeFunziona() {
                   <h3 className="h3 mt-3 text-ink">Il fresco / FUEL LAB</h3>
 
                   <h4
-                    className="mt-6 mb-3 text-[11.5px] md:mt-9 md:mb-4 font-normal tracking-[.24em] uppercase"
+                    className="mt-6 mb-3 text-[12px] md:mt-9 md:mb-4 font-medium tracking-[.12em] uppercase"
                     style={{ fontVariationSettings: '"wdth" 112, "wght" 700' }}
                   >
                     Dove vince
                   </h4>
-                  <ul className="flex flex-col gap-2.5 text-[15px] leading-[1.5] md:gap-3 md:text-[15.5px] md:leading-[1.6]">
+                  <ul className="flex flex-col gap-2.5 text-[16px] leading-[1.5] md:gap-3 md:text-[17px] md:leading-[1.55]">
                     <Voce scuro>
                       Cotto il giorno stesso: consistenza e sapore sono quelli di un piatto appena
                       fatto, non di un piatto risorto.
@@ -618,7 +618,7 @@ export default function ComeFunziona() {
                   </ul>
 
                   <h4
-                    className="mt-7 mb-3 text-[11.5px] md:mt-10 md:mb-4 font-normal tracking-[.24em] uppercase"
+                    className="mt-7 mb-3 text-[12px] md:mt-10 md:mb-4 font-medium tracking-[.12em] uppercase"
                     style={{
                       fontVariationSettings: '"wdth" 112, "wght" 700',
                       color: "rgba(6,23,16,.62)",
@@ -627,7 +627,7 @@ export default function ComeFunziona() {
                     Il prezzo da pagare
                   </h4>
                   <ul
-                    className="flex flex-col gap-2.5 text-[15px] leading-[1.5] md:gap-3 md:text-[15.5px] md:leading-[1.6]"
+                    className="flex flex-col gap-2.5 text-[16px] leading-[1.5] md:gap-3 md:text-[17px] md:leading-[1.55]"
                     style={{ color: "rgba(6,23,16,.72)" }}
                   >
                     <Voce scuro>
@@ -680,7 +680,7 @@ export default function ComeFunziona() {
                 </h2>
                 {/* il conteggio esce dall'elenco: aggiungere una domanda non lascia
                     indietro un numero scritto a mano nel paragrafo accanto */}
-                <p className="mt-4 max-w-[38ch] text-[15px] leading-[1.55] md:mt-6 md:text-[15.5px] md:leading-[1.66]">
+                <p className="mt-4 max-w-[38ch] text-[16px] leading-[1.5] md:mt-6 md:text-[17px] md:leading-[1.55]">
                   {DOMANDE.length} risposte scritte come le daremmo al telefono, comprese quelle che
                   non ci fanno bella figura.
                 </p>
@@ -718,7 +718,7 @@ export default function ComeFunziona() {
                   online.
                 </h2>
                 <p className="lead mt-4 md:mt-6">
-                  {PRIMI.length} primi e {SECONDI.length} secondi con grammi e macro alla luce del
+                  {PIATTI.length} piatti gi&agrave; composti con grammi e macro alla luce del
                   sole. Guardali, oppure salta la scelta e lascia che sia la tua scheda a comporre
                   la tua settimana.
                 </p>

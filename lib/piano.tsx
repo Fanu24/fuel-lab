@@ -1,8 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useMemo, useSyncExternalStore } from "react";
-import { getElemento, getExtra } from "./catalogo";
-import type { Categoria } from "./catalogo";
+import { getPiatto, getExtra } from "./catalogo";
 import type { Macros } from "./types";
 import {
   GIORNI,
@@ -69,7 +68,7 @@ function conCasella(p: Piano, g: GiornoSettimana, m: Pasto, c: Casella | undefin
   return out;
 }
 
-const CHIAVE = "fuellab.piano.v1";
+const CHIAVE = "fuellab.piano.v2";
 const VUOTO_SSR: Piano = Object.freeze({}) as Piano;
 
 let piano: Piano = {};
@@ -152,13 +151,15 @@ export interface CtxPiano {
   macroSettimana: Macros;
   macroGiorno: (g: GiornoSettimana) => Macros;
   casella: (g: GiornoSettimana, m: Pasto) => Casella | undefined;
-  metti: (g: GiornoSettimana, m: Pasto, categoria: Categoria, id: string) => void;
-  togliElemento: (g: GiornoSettimana, m: Pasto, categoria: Categoria) => void;
+  metti: (g: GiornoSettimana, m: Pasto, id: string) => void;
+  togliPiatto: (g: GiornoSettimana, m: Pasto) => void;
   /** aggiunge l'extra se manca, lo toglie se c'e' gia' */
   alternaExtra: (g: GiornoSettimana, m: Pasto, extraId: string) => void;
+  /** accende o spegne un extra senza invertire: serve quando la scheda del piatto scrive un insieme, non un click */
+  impostaExtra: (g: GiornoSettimana, m: Pasto, extraId: string, acceso: boolean) => void;
   svuotaCasella: (g: GiornoSettimana, m: Pasto) => void;
-  /** prima casella in cui QUELLA categoria e' libera, non la prima casella vuota */
-  primaLibera: (categoria: Categoria) => { g: GiornoSettimana; m: Pasto } | null;
+  /** prima casella senza piatto: una casella di soli extra ha ancora posto */
+  primaLibera: () => { g: GiornoSettimana; m: Pasto } | null;
   /** il piano in ingresso viene potato: puo' arrivare da un link condiviso */
   sostituisciPiano: (p: Piano) => void;
   svuota: () => void;
@@ -172,20 +173,32 @@ export function PianoProvider({ children }: { children: React.ReactNode }) {
 
   // Le mutazioni partono dal modulo e non da `corrente`: restano stabili fra i render
   // e due click ravvicinati non ripartono entrambi dallo stesso snapshot vecchio.
-  const metti = useCallback((g: GiornoSettimana, m: Pasto, categoria: Categoria, id: string) => {
-    const e = getElemento(id);
-    if (!e || e.categoria !== categoria) return;
+  const metti = useCallback((g: GiornoSettimana, m: Pasto, id: string) => {
+    if (!getPiatto(id)) return;
     const attuale = piano[g]?.[m] ?? { extra: [] };
-    scrivi(conCasella(piano, g, m, { ...attuale, [categoria]: id }));
+    scrivi(conCasella(piano, g, m, { ...attuale, piatto: id }));
   }, []);
 
-  const togliElemento = useCallback((g: GiornoSettimana, m: Pasto, categoria: Categoria) => {
+  const togliPiatto = useCallback((g: GiornoSettimana, m: Pasto) => {
     const attuale = piano[g]?.[m];
     if (!attuale) return;
-    const prossima: Casella = { ...attuale };
-    delete prossima[categoria];
+    const prossima: Casella = { extra: attuale.extra };
     scrivi(conCasella(piano, g, m, prossima));
   }, []);
+
+  const impostaExtra = useCallback(
+    (g: GiornoSettimana, m: Pasto, extraId: string, acceso: boolean) => {
+      if (!getExtra(extraId)) return;
+      const attuale = piano[g]?.[m] ?? { extra: [] };
+      const gia = attuale.extra.includes(extraId);
+      if (gia === acceso) return;
+      const extra = acceso
+        ? [...attuale.extra, extraId]
+        : attuale.extra.filter((x) => x !== extraId);
+      scrivi(conCasella(piano, g, m, { ...attuale, extra }));
+    },
+    [],
+  );
 
   const alternaExtra = useCallback((g: GiornoSettimana, m: Pasto, extraId: string) => {
     if (!getExtra(extraId)) return;
@@ -223,18 +236,17 @@ export function PianoProvider({ children }: { children: React.ReactNode }) {
       macroGiorno,
       casella,
       metti,
-      togliElemento,
+      togliPiatto,
       alternaExtra,
+      impostaExtra,
       svuotaCasella,
-      primaLibera: (categoria) => {
+      primaLibera: () => {
         for (const g of GIORNI) {
           for (const m of PASTI) {
-            // Un primo cerca una casella senza primo, non una casella vuota:
-            // il secondo gia' scelto la' dentro non e' un ostacolo.
-            if (!casella(g, m)?.[categoria]) return { g, m };
+            if (!casella(g, m)?.piatto) return { g, m };
           }
         }
-        return null; // settimana piena per questa categoria
+        return null;
       },
       sostituisciPiano,
       svuota,
@@ -243,8 +255,9 @@ export function PianoProvider({ children }: { children: React.ReactNode }) {
     corrente,
     pronto,
     metti,
-    togliElemento,
+    togliPiatto,
     alternaExtra,
+    impostaExtra,
     svuotaCasella,
     sostituisciPiano,
     svuota,

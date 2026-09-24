@@ -44,7 +44,7 @@ export interface Servizio {
 /** Soglia unica dei due servizi di meal prep, in euro a pasto. Un solo posto da cui dipende tutto il sito. */
 export const SOGLIA_PREZZO = 8.9;
 
-/** Stesso pattern di elementoImg() in lib/catalogo.ts: id Unsplash + larghezza esplicita, mai la foto intera. */
+/** Stesso pattern di piattoImg() in lib/catalogo.ts: id Unsplash + larghezza esplicita, mai la foto intera. */
 function foto(id: string, w = 1000): string {
   return `https://images.unsplash.com/${id}?w=${w}&q=80&auto=format&fit=crop`;
 }
@@ -55,7 +55,7 @@ export const SERVIZI: Servizio[] = [
     numero: "01",
     nome: "Il menu della settimana",
     descrizione:
-      "Primi, secondi ed extra con i macro dichiarati su ogni piatto. Componi la settimana schiscetta per schiscetta: i numeri tornano sempre, perché li vedi prima di scegliere.",
+      "Sei piatti già composti, con ingredienti, macro e motivo dell'abbinamento. Le aggiunte della box le scegli tu: i numeri tornano sempre, perché li vedi prima di scegliere.",
     prezzo: { tipo: "soglia", valore: SOGLIA_PREZZO, unita: "a pasto" },
     img: foto("photo-1505576399279-565b52d4ac71", 900),
     href: "/menu",
@@ -65,7 +65,7 @@ export const SERVIZI: Servizio[] = [
     numero: "02",
     nome: "Sui macro della tua scheda",
     descrizione:
-      "Carichi il PDF o i numeri del tuo nutrizionista, il piano si compone da solo sui tuoi target: il matcher sceglie le schiscette più vicine ai tuoi macro, tu confermi.",
+      "Carichi il PDF o i numeri del tuo nutrizionista, il piano si compone da solo sui tuoi target: il matcher sceglie i piatti più vicini ai tuoi macro, tu confermi.",
     prezzo: { tipo: "soglia", valore: SOGLIA_PREZZO, unita: "a pasto" },
     img: foto("photo-1512058564366-18510be2db19", 900),
     href: "/scheda",
@@ -77,7 +77,7 @@ export const SERVIZI: Servizio[] = [
     descrizione:
       "Matteo viene a casa tua: fa la spesa, cucina e porziona nella tua cucina. Non è produzione in serie, è il suo tempo dedicato solo a te, e per questo ha un'economia sua.",
     prezzo: { tipo: "preventivo" },
-    img: foto("photo-1414235077428-338989a2e8c0", 1000),
+    img: foto("photo-1556910103-1c02745aae4d", 1000),
     // non e' una pagina che spiega il servizio (non esiste ancora): e' un posizionamento
     // deliberato, "conosci Matteo prima di farlo entrare in casa tua". Vedi il commento
     // di LinkServizio in components/servizi/SezioneServizi.tsx per il dettaglio.

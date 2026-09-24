@@ -98,7 +98,7 @@ function PrezzoServizio({ prezzo, scuro = false }: { prezzo: Prezzo; scuro?: boo
  * aria-label distinto per servizio: senza, tre link nella stessa sezione si
  * chiamerebbero tutti "Scrivi a Matteo" e chi naviga per elenco di link non
  * saprebbe quale sceglie (stesso difetto, stessa correzione, del bottone
- * "Aggiungi" in components/ElementCard.tsx).
+ * "Aggiungi" in components/PiattoCard.tsx).
  */
 function CtaServizio({ servizio }: { servizio: Servizio }) {
   return (
@@ -181,7 +181,7 @@ export default function SezioneServizi({
                   di mangiare bene.
                 </>
               }
-              testo="Il menu già pronto, il piano sui macro della tua scheda, oppure Matteo che cucina dentro casa tua. Il prezzo esatto lo definiamo insieme su WhatsApp."
+              testo="Il menu già pronto, il piano sui macro della tua scheda, oppure Matteo che cucina dentro casa tua."
             />
           </Reveal>
         ) : (
@@ -213,7 +213,7 @@ export default function SezioneServizi({
 
                 <div className="flex flex-1 flex-col p-5 md:p-8">
                   <h3 className="h3">{menu.nome}</h3>
-                  <p className="mt-2.5 flex-1 text-[14px] leading-[1.5] text-muted md:mt-4 md:text-[15px] md:leading-[1.6]">
+                  <p className="mt-3 flex-1 text-[16px] leading-[1.5] text-muted md:mt-4 md:text-[17px] md:leading-[1.55]">
                     {menu.descrizione}
                   </p>
 
@@ -243,7 +243,7 @@ export default function SezioneServizi({
                   <span className="num num-ink">{macro.numero}</span>
                   <h3 className="h3 mt-4 text-ink md:mt-6">{macro.nome}</h3>
                   <p
-                    className="mt-2.5 max-w-[46ch] text-[14px] leading-[1.5] md:mt-4 md:text-[15.5px] md:leading-[1.6]"
+                    className="mt-3 max-w-[46ch] text-[16px] leading-[1.5] md:mt-4 md:text-[17px] md:leading-[1.55]"
                     style={{ color: INK_70 }}
                   >
                     {macro.descrizione}
@@ -271,7 +271,7 @@ export default function SezioneServizi({
                 <div className="flex flex-col justify-center p-5 md:p-12">
                   <span className="num num-lime">{homeCooking.numero}</span>
                   <h3 className="h3 mt-4 md:mt-6">{homeCooking.nome}</h3>
-                  <p className="mt-2.5 max-w-[48ch] text-[14px] leading-[1.5] text-muted md:mt-4 md:text-[15.5px] md:leading-[1.6]">
+                  <p className="mt-3 max-w-[48ch] text-[16px] leading-[1.5] text-muted md:mt-4 md:text-[17px] md:leading-[1.55]">
                     {homeCooking.descrizione}
                   </p>
                   <p className="note mt-4 max-w-[44ch] md:mt-6">

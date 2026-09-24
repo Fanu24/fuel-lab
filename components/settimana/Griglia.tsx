@@ -82,7 +82,7 @@ export default function Griglia({
                 className="mt-2 border-t px-1 pt-3"
                 style={{ borderColor: "var(--hair-soft)" }}
               >
-                <p className="mono text-[11px] leading-none font-bold xl:text-[12px]">
+                <p className="mono text-[12px] leading-none font-bold">
                   {Math.round(macro.kcal)}
                   <span className="font-medium text-muted"> kcal</span>
                 </p>
@@ -92,7 +92,7 @@ export default function Griglia({
                   carboidrati={macro.carboidrati}
                   grassi={macro.grassi}
                 />
-                <p className="mono mt-2 text-[9px] leading-none font-medium text-muted xl:text-[9.5px]">
+                <p className="mono mt-2 text-[12px] leading-none font-medium text-muted">
                   P{macro.proteine} C{macro.carboidrati} G{macro.grassi}
                 </p>
               </div>

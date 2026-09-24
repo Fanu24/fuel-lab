@@ -42,8 +42,7 @@ export default function Servizi() {
           <Reveal delay={480}>
             <p className="lead mt-4 max-w-[54ch] md:mt-7">
               Il menu gi&agrave; pronto, il piano che si costruisce sui macro della tua scheda,
-              oppure Matteo che cucina dentro la tua cucina. Qui sotto trovi solo la soglia
-              d&apos;ingresso: il prezzo esatto lo definiamo insieme, su WhatsApp.
+              oppure Matteo che cucina dentro la tua cucina.
             </p>
             <p className="note mt-4 md:mt-7">Menu e scheda / a partire da 8,90 &euro; a pasto</p>
           </Reveal>

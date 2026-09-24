@@ -273,7 +273,7 @@ export default function SettimanaClient() {
               </p>
               <div className="mt-5 flex flex-wrap items-center gap-2 md:mt-7 md:gap-2.5">
                 <Chip>14 caselle</Chip>
-                <Chip accento>Primo, secondo, extra</Chip>
+                <Chip accento>Piatto e aggiunte</Chip>
                 <Chip>Resta in questo browser</Chip>
               </div>
             </div>
@@ -420,7 +420,7 @@ export default function SettimanaClient() {
                   <Chip accento={avviso.tono === "attenzione"} className="mb-3">
                     {avviso.tono === "attenzione" ? "Link non leggibile" : "Fatto"}
                   </Chip>
-                  <p className="max-w-[74ch] text-[14px] leading-relaxed">{avviso.testo}</p>
+                  <p className="max-w-[74ch] text-[16px] leading-relaxed">{avviso.testo}</p>
                 </div>
                 <button
                   type="button"
@@ -507,7 +507,7 @@ export default function SettimanaClient() {
                 <div className="mt-4 flex flex-wrap items-center gap-2.5 md:mt-6 md:gap-3">
                   {confermaSvuota ? (
                     <>
-                      <p className="text-[14px] font-bold">
+                      <p className="text-[16px] font-bold">
                         Svuoto tutte e {CASELLE_TOTALI} le caselle?
                       </p>
                       <button
@@ -555,7 +555,7 @@ export default function SettimanaClient() {
       </section>
 
       {/* Montato per chiave: cambiando casella il pannello riparte pulito, con la
-          ricerca azzerata e la scheda dei primi in cima. */}
+          ricerca azzerata e la scheda dei piatti in cima. */}
       {aperta ? (
         <SelettoreCasella
           key={`${aperta.giorno}-${aperta.pasto}`}

@@ -46,3 +46,7 @@ next-env.d.ts
 
 # screenshot prodotti da scripts/verifica.mjs --scatti
 .verifica-scatti/
+
+# prove foto e materiali del committente, non vanno online
+.tmp-img/
+DIRETTIVE CLIENTE/

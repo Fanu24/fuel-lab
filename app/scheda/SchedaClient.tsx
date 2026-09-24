@@ -12,7 +12,7 @@ import {
   type EsitoPiano,
   type Vincoli,
 } from "@/lib/matcher";
-import { PRIMI, SECONDI } from "@/lib/catalogo";
+import { PIATTI } from "@/lib/catalogo";
 import { CASELLE_TOTALI } from "@/lib/settimana";
 import type { Target } from "@/lib/types";
 import Risultato from "./Risultato";
@@ -24,8 +24,8 @@ import Valori from "./Valori";
  * L'onesta della pagina e' anche la sua regola di scrittura: l'upload e'
  * scenografico (senza backend nessuno puo leggere davvero un PDF) e ogni stato
  * lo dice. Da qui in poi pero' lavora il matcher vero: componiPiano() gira in
- * questo browser e riempie le caselle della settimana con abbinamenti
- * primo+secondo. Quello non lo fingiamo, e infatti dopo "Componi la mia
+ * questo browser e riempie le caselle della settimana con i piatti
+ * del catalogo. Quello non lo fingiamo, e infatti dopo "Componi la mia
  * settimana" non c'e' nessuna finta attesa.
  */
 
@@ -184,7 +184,7 @@ function Caricamento({
           >
             Trascina qui la scheda del tuo nutrizionista
           </h2>
-          <p className="mt-3 max-w-[430px] text-[14.5px] leading-[1.5] text-ink md:mt-4 md:text-[15px] md:leading-relaxed">
+          <p className="mt-3 max-w-[430px] text-[16px] leading-[1.5] text-ink md:mt-4 md:text-[17px]">
             PDF, foto, screenshot: quello che hai. Il file resta sul tuo computer, non lo
             carichiamo da nessuna parte.
           </p>
@@ -268,7 +268,7 @@ function Caricamento({
             />
             <figcaption className="p-5 md:p-6">
               <p className="note text-ink">Il box della settimana</p>
-              <p className="mt-3 text-[14px] leading-relaxed text-ink">
+              <p className="mt-3 text-[16px] leading-relaxed text-ink">
                 Da qui escono schiscette porzionate al grammo, non consigli generici.
               </p>
             </figcaption>
@@ -287,7 +287,7 @@ function Caricamento({
                 aria-hidden="true"
                 style={{ opacity: 1 - i * 0.24 }}
               />
-              <span className="text-[14px] text-muted">{v}</span>
+              <span className="text-[16px] text-muted">{v}</span>
             </li>
           ))}
         </ul>
@@ -354,12 +354,12 @@ function Scansione({
             }}
           />
           <p
-            className="font-mono text-[10.5px] tracking-[.2em] text-lime uppercase"
+            className="font-mono text-[12px] tracking-[.1em] text-lime uppercase"
             style={{ fontVariationSettings: '"wdth" 84' }}
           >
             Scheda
           </p>
-          <p className="mt-2 overflow-hidden text-[15px] text-ellipsis whitespace-nowrap text-white">
+          <p className="mt-2 overflow-hidden text-[16px] text-ellipsis whitespace-nowrap text-white">
             {nomeFile ?? "valori inseriti a mano"}
           </p>
           <div className="mt-6 grid gap-[10px]">
@@ -418,7 +418,7 @@ function Scansione({
                   {p}
                 </span>
                 <span
-                  className="ml-auto font-mono text-[11px] tracking-[.2em] uppercase"
+                  className="ml-auto font-mono text-[12px] tracking-[.1em] uppercase"
                   style={{
                     fontVariationSettings: '"wdth" 84',
                     // Questa colonna sta su CARTA, non dentro il documento scuro qui
@@ -459,7 +459,7 @@ function Tappe({ fase }: { fase: Fase }) {
           <li key={t.fase} className="flex items-center gap-3">
             <span
               aria-current={qui ? "step" : undefined}
-              className="flex items-center gap-[9px] rounded-full px-[14px] py-[7px] font-mono text-[11px] tracking-[.14em] uppercase"
+              className="flex min-h-[44px] items-center gap-[9px] rounded-full px-[14px] py-2 font-mono text-[12px] tracking-[.08em] uppercase"
               style={{
                 fontVariationSettings: '"wdth" 84',
                 background: qui ? "var(--color-lime)" : "rgba(201,224,205,.05)",
@@ -571,7 +571,7 @@ export default function SchedaClient() {
           </h1>
           <div className="mt-5 flex flex-wrap items-end justify-between gap-x-12 gap-y-5 md:mt-8 md:gap-y-8">
             <p className="lead">
-              Carichi la scheda, controlli i numeri, il matcher abbina primi e secondi che chiudono i
+              Carichi la scheda, controlli i numeri, il matcher sceglie i piatti che chiudono i
               tuoi macro dentro le {CASELLE_TOTALI} caselle della settimana. Poi cucina Matteo.
             </p>
             <Tappe fase={fase} />
@@ -682,7 +682,7 @@ export default function SchedaClient() {
                         </p>
                         <div>
                           <h3 className="h3 !text-[19px]">{b.t}</h3>
-                          <p className="mt-2 max-w-[54ch] text-[14px] leading-[1.5] text-muted md:mt-3 md:text-[14.5px] md:leading-relaxed">
+                          <p className="mt-2 max-w-[54ch] text-[16px] leading-[1.5] text-muted md:mt-3 md:text-[17px]">
                             {b.d}
                           </p>
                         </div>
@@ -723,9 +723,9 @@ export default function SchedaClient() {
                   <h2 className="h2 !text-[clamp(22px,3.2vw,32px)]">
                     Vuoi prima vedere cosa si mangia?
                   </h2>
-                  <p className="mt-3 max-w-[46ch] text-[14.5px] text-muted md:mt-4 md:text-[15px]">
-                    I {PRIMI.length} primi e i {SECONDI.length} secondi del catalogo, con i macro di
-                    ognuno.
+                  <p className="mt-3 max-w-[46ch] text-[16px] text-muted md:mt-4 md:text-[17px]">
+                    I {PIATTI.length} piatti del catalogo, con ingredienti, macro e motivo
+                    dell&apos;abbinamento.
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-4">

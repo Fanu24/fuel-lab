@@ -9,15 +9,15 @@ export default function Footer() {
           style={{ borderColor: "var(--hair-soft)" }}
         >
           <Link href="/" aria-label="FUEL LAB, home" className="block transition-opacity duration-700 hover:opacity-80">
-            {/* Il PNG intero (1001x704, trasparente) compare qui perche' il footer ha
-                spazio: sotto i ~90px la faccia del cuoco dentro il logo diventa
-                illeggibile, ed e' per questo che in nav il marchio e' a testo. */}
+            {/* Il lockup intero (FUEL, AB, YOUR PERSONAL CHEF) sta qui perche' il
+                footer ha lo spazio che in nav non c'e'. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/logo-fuellab.png"
               alt="Logo FUEL LAB"
               loading="lazy"
-              width={220}
+              width={1095}
+              height={360}
               className="h-auto w-[150px] md:w-[220px]"
             />
           </Link>
@@ -28,13 +28,13 @@ export default function Footer() {
                 { href: "/menu", label: "Menu" },
                 { href: "/come-funziona", label: "Come funziona" },
                 { href: "/scheda", label: "La tua scheda" },
-                { href: "/chi-e-matteo", label: "Chi è Matteo" },
+                { href: "/chi-e-matteo", label: "Chi siamo" },
                 { href: "/settimana", label: "Componi la settimana" },
               ].map((v) => (
                 <Link
                   key={v.href}
                   href={v.href}
-                  className="inline-flex min-h-[44px] items-center text-[12px] tracking-[.13em] uppercase transition-colors duration-400 hover:text-ink md:min-h-0"
+                  className="inline-flex min-h-[44px] items-center text-[13px] tracking-[.08em] uppercase transition-colors duration-400 hover:text-ink"
                   style={{ fontVariationSettings: '"wdth" 108, "wght" 600' }}
                 >
                   {v.label}
@@ -43,7 +43,7 @@ export default function Footer() {
             </nav>
             <p className="note">Matteo Pantan&egrave; &middot; Pescara &middot; Cucinato il luned&igrave; e il gioved&igrave;</p>
             <p className="note" style={{ letterSpacing: ".12em" }}>
-              Demo dimostrativa &mdash; nessun ordine viene registrato
+              Demo dimostrativa. Nessun ordine viene registrato
             </p>
           </div>
         </div>

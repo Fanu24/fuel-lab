@@ -3,7 +3,8 @@
 import { useEffect, useRef } from "react";
 
 /**
- * Le quattro foto della cucina.
+ * Due foto di cucina e due di allenamento: il pasto e il lavoro in palestra
+ * stanno sulla stessa striscia.
  * 'spinta' e' l'ampiezza in px della parallasse: segni alternati, cosi la striscia
  * si apre e si chiude mentre scorre invece di traslare tutta insieme.
  */
@@ -25,17 +26,17 @@ const FOTO = [
     forma: "md:rotate-[2.1deg]",
   },
   {
-    id: "photo-1615937691194-97dbd3f3dc29",
-    alt: "Filetti di manzo crudi su un tagliere, la materia prima dei piatti",
-    didascalia: "Materia prima",
+    id: "photo-1541534741688-6078c6bfb5c5",
+    alt: "Atleta in spinta sopra la testa con il bilanciere",
+    didascalia: "Il carico in palestra",
     proporzione: "4 / 5",
     spinta: 22,
     forma: "md:rotate-[-1.6deg] md:mt-[86px]",
   },
   {
-    id: "photo-1505576399279-565b52d4ac71",
-    alt: "Insalata composta dentro un barattolo di vetro durante la preparazione",
-    didascalia: "Pronto alle sei",
+    id: "photo-1461897104016-0b3b00cc81ee",
+    alt: "Sprinters che esplodono dai blocchi su una pista di atletica",
+    didascalia: "Il lavoro cardio",
     proporzione: "3 / 4",
     spinta: -26,
     forma: "md:rotate-[1.4deg] md:mt-[22px]",
@@ -104,11 +105,14 @@ export default function StrisciaCucina() {
   }, []);
 
   return (
-    <div ref={box} className="grid grid-cols-2 gap-5 md:grid-cols-4 md:items-start md:gap-7">
+    <div
+      ref={box}
+      className="-mx-5 flex snap-x snap-mandatory gap-4 overflow-x-auto px-5 pb-2 [scrollbar-width:none] md:mx-0 md:grid md:grid-cols-4 md:items-start md:gap-7 md:overflow-visible md:px-0 md:pb-0 [&::-webkit-scrollbar]:hidden"
+    >
       {FOTO.map((f) => (
-        <figure key={f.id} className={f.forma}>
+        <figure key={f.id} className={`w-[78vw] shrink-0 snap-center sm:w-[56vw] md:w-auto md:min-w-0 ${f.forma}`}>
           <div className="shell">
-            <div className="core relative" style={{ aspectRatio: f.proporzione }}>
+            <div className="core foto-profondita relative" style={{ aspectRatio: f.proporzione }}>
               {/* il livello e' piu alto del nucleo: la traslazione non scopre mai il bordo */}
               <span
                 data-plx={f.spinta}

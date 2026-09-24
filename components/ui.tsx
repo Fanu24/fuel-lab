@@ -26,11 +26,14 @@ export function SectionHead({
   titolo,
   testo,
   azione,
+  compatto = false,
 }: {
   occhiello: string;
   titolo: ReactNode;
   testo?: ReactNode;
   azione?: ReactNode;
+  /** Catalogo telefono: occhiello + conteggio, titolo e lead solo da md. */
+  compatto?: boolean;
 }) {
   return (
     /* Le tre misure qui sotto sono scese con la scala tipografica: erano
@@ -47,12 +50,20 @@ export function SectionHead({
        il blocco - piu' un lead da 17,5px che a quella larghezza va a capo tre
        volte. A 390 diventano 10, 10, 14 e 18; da 768 in su restano quelle di
        prima, perche' li' la testata sta in un quarto di schermo e l'aria e'
-       aria, non vuoto. */
-    <div className="mb-[18px] flex flex-wrap items-end justify-between gap-x-7 gap-y-3.5 md:mb-8 md:gap-y-7">
+       aria, non vuoto.
+
+       `compatto` e' il passo dopo: sul catalogo il titolo editoriale e il
+       lead restano da md in su. Sul telefono restano occhiello e conteggio,
+       poi le card. */
+    <div
+      className={`flex flex-wrap items-end justify-between gap-x-7 ${compatto ? "mb-3 gap-y-2 md:mb-8 md:gap-y-7" : "mb-[18px] gap-y-3.5 md:mb-8 md:gap-y-7"}`}
+    >
       <div>
-        <Eyebrow className="mb-2.5 md:mb-[18px]">{occhiello}</Eyebrow>
-        <h2 className="h2">{titolo}</h2>
-        {testo ? <p className="lead mt-2.5 md:mt-5">{testo}</p> : null}
+        <Eyebrow className={compatto ? "mb-0 md:mb-[18px]" : "mb-2.5 md:mb-[18px]"}>{occhiello}</Eyebrow>
+        <h2 className={`h2 ${compatto ? "sr-only md:not-sr-only" : ""}`}>{titolo}</h2>
+        {testo ? (
+          <p className={`lead mt-2.5 md:mt-5 ${compatto ? "hidden md:block" : ""}`}>{testo}</p>
+        ) : null}
       </div>
       {azione}
     </div>

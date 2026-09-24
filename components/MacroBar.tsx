@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { MAX_MACRO } from "@/lib/catalogo";
-import type { Elemento } from "@/lib/catalogo";
+import type { Macros } from "@/lib/types";
 
 /**
  * Barra macro con TACCA DEL TARGET.
@@ -127,7 +127,7 @@ const RIGHE = [
  * in un data-attribute e l'effetto lo scrive sulla custom property al momento
  * giusto, esattamente come fa components/Reveal.tsx con la classe "in".
  */
-export function MacroAnimate({ elemento }: { elemento: Elemento }) {
+export function MacroAnimate({ elemento }: { elemento: Pick<Macros, "proteine" | "carboidrati" | "grassi"> }) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

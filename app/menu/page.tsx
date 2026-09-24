@@ -1,15 +1,31 @@
 import type { Metadata } from "next";
-import { EXTRA, PRIMI, SECONDI } from "@/lib/catalogo";
+import { Suspense } from "react";
+import { EXTRA, PIATTI } from "@/lib/catalogo";
 import MenuClient from "./MenuClient";
 
-// I conteggi li dichiara il catalogo, non una stringa scritta a mano: il menu
-// cambia ogni settimana e una description ferma sui numeri vecchi mentirebbe
-// al primo taglio.
 export const metadata: Metadata = {
   title: "Menu della settimana",
-  description: `${PRIMI.length} primi e ${SECONDI.length} secondi da comporre, più ${EXTRA.length} extra: macro dichiarati e porzioni pesate per ogni elemento. Filtra per categoria, tag e giorno di cottura, poi componi il tuo pasto.`,
+  description: `${PIATTI.length} piatti già composti con scheda nutrizionale e motivo dell'abbinamento, più ${EXTRA.length} alimenti per la tua box. Filtra per allenamento, tag e giorno di cottura.`,
 };
 
+function Attesa() {
+  return (
+    <section className="fascia fascia-t fascia-carta">
+      <div className="wrap">
+        <div className="shell">
+          <div className="core grid min-h-[280px] place-items-center p-10">
+            <p className="note">Apro il menu...</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default function PaginaMenu() {
-  return <MenuClient />;
+  return (
+    <Suspense fallback={<Attesa />}>
+      <MenuClient />
+    </Suspense>
+  );
 }
