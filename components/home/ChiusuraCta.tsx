@@ -11,7 +11,7 @@ export default function ChiusuraCta({
 }) {
   return (
     <section className="notte relative overflow-hidden">
-      <FotoPiena foto="cuoco" />
+      <FotoPiena foto="cuoco" velo="forte" />
       <div className="wrap relative py-[calc(var(--sezione)*1.2)]">
         <Reveal>
           <h2 className="titolo max-w-[15ch]">{titolo}</h2>

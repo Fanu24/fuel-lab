@@ -37,6 +37,9 @@ const ROTTE = [
   "/richiesta",
   "/come-funziona",
   "/chi-e-matteo",
+  "/menu/riso-julien-pollo-teriyaki",
+  "/dashboard",
+  "/dashboard/produzione",
 ];
 
 /** 1440 e' il desktop di riferimento, 390 e' l'iPhone piu' stretto ancora in giro. */
@@ -771,74 +774,61 @@ async function campionaFondiVeri(page, misure) {
    qui.
    ========================================================================= */
 
+/* Le azioni girano DENTRO la pagina (page.evaluate): niente chiusure su
+   funzioni di questo file, ogni azione porta con se' quello che usa. */
+/* La dashboard sta dietro il cancello demo: il PIN si scrive come farebbe Matteo.
+   Il testo del cancello viene misurato prima, al primo fotogramma. */
+const ENTRA = {
+  nome: "dentro il pannello",
+  fai: async () => {
+    const pin = document.querySelector("#pin");
+    if (!pin) return;
+    const imposta = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set;
+    imposta.call(pin, "1234");
+    pin.dispatchEvent(new Event("input", { bubbles: true }));
+    await new Promise((r) => setTimeout(r, 100));
+    pin.form.requestSubmit();
+    await new Promise((r) => setTimeout(r, 800));
+  },
+};
+
 const AZIONI = {
   "/menu": [
-    {
-      nome: "filtri a vuoto",
-      fai: () => {
-        // spingo i filtri su una combinazione senza risultati: mi interessa
-        // il testo della sezione svuotata, che al primo fotogramma non esiste
-        const tag = [...document.querySelectorAll("button")].filter((b) =>
-          /senza glutine|piccante|vegetariano|pesce/i.test(b.textContent || ""),
-        );
-        tag.slice(0, 4).forEach((b) => b.click());
-      },
-    },
-    {
-      nome: "piatto nel piano",
-      fai: () => {
-        const b = [...document.querySelectorAll("button")].find((x) =>
-          /aggiungi|metti|scegli/i.test(x.textContent || ""),
-        );
-        if (b) b.click();
-      },
-    },
+    { nome: "filtro cardio", fai: () => [...document.querySelectorAll("button")].find((x) => /^cardio$/i.test(x.textContent || ""))?.click() },
+    { nome: "filtro pesi", fai: () => [...document.querySelectorAll("button")].find((x) => /^pesi$/i.test(x.textContent || ""))?.click() },
   ],
   "/settimana": [
     {
-      nome: "selettore aperto",
-      fai: () => {
-        const c = document.querySelector("button.cell, .cell");
-        if (c) c.click();
-      },
-    },
-  ],
-  "/scheda": [
-    {
-      nome: "valori a mano",
-      fai: () => {
-        const b = [...document.querySelectorAll("button")].find((x) =>
-          /inserisco i valori a mano/i.test(x.textContent || ""),
-        );
-        if (b) b.click();
+      nome: "settimana riempita",
+      fai: async () => {
+        [...document.querySelectorAll("button")].find((x) => /3 pesi \+ 2 cardio/i.test(x.textContent || ""))?.click();
+        await new Promise((r) => setTimeout(r, 100));
+        [...document.querySelectorAll("button")].find((x) => /riempi/i.test(x.textContent || ""))?.click();
+        await new Promise((r) => setTimeout(r, 400));
       },
     },
     {
-      nome: "risultato",
-      fai: () => {
-        const b = [...document.querySelectorAll("button")].find((x) =>
-          /componi|calcola|vedi il piano|genera/i.test(x.textContent || ""),
-        );
-        if (b) b.click();
+      nome: "piatto preso dal banco",
+      fai: () => document.querySelector(".piatto-banco")?.click(),
+    },
+    {
+      nome: "foglio delle aggiunte",
+      fai: async () => {
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+        document.querySelector(".slot-azioni button")?.click();
+        await new Promise((r) => setTimeout(r, 400));
       },
     },
   ],
+  "/scheda": [{ nome: "risultato", fai: () => [...document.querySelectorAll("button")].find((x) => /componi la settimana/i.test(x.textContent || ""))?.click() }],
   "/richiesta": [
     {
-      nome: "form aperto ed errori di validazione",
+      nome: "errori di validazione",
       fai: async () => {
-        // Il modulo non esiste finche' il servizio scelto pretende una settimana
-        // gia' composta: senza questo click si misura una pagina che il visitatore
-        // vede solo per meta'. Il terzo servizio (home cooking) non la pretende.
         const radio = document.querySelectorAll('input[name="servizio"]');
         if (radio[2]) radio[2].click();
-        await new Promise((r) => setTimeout(r, 500));
-        // gli errori compaiono solo sui campi TOCCATI: focus e blur veri su ognuno
-        for (const el of document.querySelectorAll("input.field, textarea.field")) {
-          el.focus();
-          el.blur();
-          await new Promise((r) => setTimeout(r, 40));
-        }
+        await new Promise((r) => setTimeout(r, 200));
+        document.querySelector("form button[type=submit]")?.click();
         await new Promise((r) => setTimeout(r, 300));
       },
     },
@@ -851,6 +841,8 @@ const AZIONI = {
       },
     },
   ],
+  "/dashboard": [ENTRA],
+  "/dashboard/produzione": [ENTRA],
 };
 
 /* ---------- screenshot a scorrimento ------------------------------------- */

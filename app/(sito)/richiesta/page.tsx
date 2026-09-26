@@ -8,28 +8,29 @@ import RichiestaClient from "./RichiestaClient";
 export const metadata: Metadata = {
   title: "Scrivi a Matteo",
   description:
-    "Nome, telefono e comune, poi WhatsApp con il messaggio già scritto: la tua settimana e il servizio che ti interessa, pronti per Matteo. Nessun pagamento, nessun dato salvato in questa fase.",
+    "Nome, telefono e comune, poi WhatsApp con il messaggio già scritto: la tua settimana e il servizio che ti interessa, pronti per Matteo. Nessun pagamento online.",
 };
 
-/** Il guscio di attesa per il confine di Suspense richiesto da useSearchParams. */
 function Attesa() {
-  return (
-    <section className="fascia fascia-t fascia-carta">
-      <div className="wrap">
-        <div className="shell">
-          <div className="core grid min-h-[280px] place-items-center p-10">
-            <p className="note">Preparo il modulo...</p>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
+  return <div className="wrap min-h-[60vh]" aria-busy="true" />;
 }
 
 export default function RichiestaPage() {
   return (
-    <Suspense fallback={<Attesa />}>
-      <RichiestaClient />
-    </Suspense>
+    <>
+      <section className="testata">
+        <div className="wrap">
+          <p className="occhiello">Scrivi a Matteo</p>
+          <h1 className="titolo-xl mt-6 max-w-[12ch]">Due minuti, poi parli con lui.</h1>
+          <p className="lead mt-6">
+            Nome, telefono e comune. Poi si apre WhatsApp col messaggio già pronto, settimana compresa. Nessun
+            pagamento online.
+          </p>
+        </div>
+      </section>
+      <Suspense fallback={<Attesa />}>
+        <RichiestaClient />
+      </Suspense>
+    </>
   );
 }

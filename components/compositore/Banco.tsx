@@ -47,12 +47,12 @@ export default function Banco({
                 onClick={() => tocca(p.id)}
               >
                 <span className="relative block aspect-square w-14 shrink-0 overflow-hidden bg-paper-2">
-                  <Image src={p.img} alt="" fill sizes="56px" draggable={false} className="object-cover" />
+                  <Image src={p.img} alt="" fill sizes="56px" loading="eager" draggable={false} className="object-cover" />
                 </span>
                 <span className="min-w-0 text-left">
                   <span className="block truncate text-sm font-semibold">{p.nome}</span>
                   <span className="mt-1 flex items-center gap-2">
-                    <TagAllenamento tipo={p.allenamento} className="!h-5 !px-1.5 !text-[9px]" />
+                    <TagAllenamento tipo={p.allenamento} breve className="!h-5 !px-1.5 !text-[9px]" />
                     <span className="num text-xs text-muted">{p.kcal} kcal</span>
                   </span>
                 </span>

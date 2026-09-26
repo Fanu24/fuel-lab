@@ -9,7 +9,22 @@ const ETICHETTE: Record<Tipo, string> = {
   riposo: "Riposo",
 };
 
-/** L'etichetta di allenamento: il pallino e' il cardio, il quadrato sono i pesi. */
-export default function TagAllenamento({ tipo, className = "" }: { tipo: Tipo; className?: string }) {
-  return <span className={`tag tag-${tipo} ${className}`}>{ETICHETTE[tipo]}</span>;
+/** L'etichetta di allenamento: il pallino e' il cardio, il quadrato sono i pesi.
+ *  `breve` per gli spazi stretti (il banco del compositore), dove "Cardio e pesi"
+ *  andrebbe a capo. */
+export default function TagAllenamento({
+  tipo,
+  breve = false,
+  className = "",
+}: {
+  tipo: Tipo;
+  breve?: boolean;
+  className?: string;
+}) {
+  const testo = breve && tipo === "entrambi" ? "Misto" : ETICHETTE[tipo];
+  return (
+    <span className={`tag tag-${tipo} ${className}`} title={ETICHETTE[tipo]}>
+      {testo}
+    </span>
+  );
 }

@@ -12,7 +12,8 @@ export default function FotoPiena({
   sizes = "100vw",
 }: {
   foto: ChiaveFoto;
-  velo?: boolean;
+  /** true: gradiente per il testo in basso; "forte": velo pieno per il testo al centro */
+  velo?: boolean | "forte";
   /** la foto dell'hero: si scarica subito invece che in pigrizia */
   prima?: boolean;
   sizes?: string;
@@ -30,7 +31,7 @@ export default function FotoPiena({
         className="object-cover"
         style={{ objectPosition: "fuoco" in f ? f.fuoco : undefined }}
       />
-      {velo ? <div className="velo absolute inset-0" aria-hidden="true" /> : null}
+      {velo ? <div className={`${velo === "forte" ? "velo-forte" : "velo"} absolute inset-0`} aria-hidden="true" /> : null}
     </>
   );
 }

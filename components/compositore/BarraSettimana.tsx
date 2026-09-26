@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { CASELLE_TOTALI } from "@/lib/settimana";
 import { CONSEGNA_GRATIS_DA, MOSTRA_STIMA_PREZZO, euro } from "@/lib/pricing";
-import type { Riepilogo } from "@/lib/riepilogo";
+import type { RiepilogoSettimana } from "@/lib/riepilogo";
 
 /**
  * La barra in fondo allo schermo: quanti pasti, i macro medi di un giorno,
@@ -12,7 +12,7 @@ import type { Riepilogo } from "@/lib/riepilogo";
  * Il prezzo: il committente non vuole cifre in chiaro, quindi finche'
  * MOSTRA_STIMA_PREZZO e' spento compare solo la soglia d'ingresso.
  */
-export default function BarraSettimana({ r, pronto }: { r: Riepilogo; pronto: boolean }) {
+export default function BarraSettimana({ r, pronto }: { r: RiepilogoSettimana; pronto: boolean }) {
   const vuota = !pronto || r.pasti === 0;
   const m = r.macroMediaGiorno;
   const mancanoConsegna = CONSEGNA_GRATIS_DA - r.pasti;

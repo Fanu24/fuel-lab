@@ -63,6 +63,18 @@ export function linkWhatsApp(testo: string): string | null {
 }
 
 /**
+ * Il verso opposto: Matteo che scrive al cliente dalla dashboard. Un numero
+ * italiano senza prefisso (10 cifre, 3xx) prende il 39 davanti, perche' wa.me
+ * vuole il formato internazionale.
+ */
+export function linkWhatsAppA(telefono: string, testo: string): string | null {
+  const n = normalizzaNumero(telefono);
+  if (!n) return null;
+  const intl = n.length === 10 && n.startsWith("3") ? `39${n}` : n;
+  return `https://wa.me/${intl}?text=${encodeURIComponent(testo)}`;
+}
+
+/**
  * Un testo diverso per ciascuno dei tre servizi: e' cosi' che Matteo capisce
  * da quale pagina arriva il contatto, senza altro tracciamento. `servizioId`
  * e' una stringa e non l'union di lib/servizi.ts di proposito: questo modulo

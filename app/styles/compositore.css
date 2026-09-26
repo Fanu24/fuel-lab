@@ -12,6 +12,11 @@
     user-select: none;
     -webkit-user-select: none;
   }
+  /* Senza, il banco (che scorre di lato) allarga la colonna della griglia fino
+     alla somma dei suoi piatti: 1400px di pagina su un telefono da 390. */
+  .tavolo > * {
+    min-width: 0;
+  }
   @media (min-width: 1024px) {
     .tavolo {
       grid-template-columns: 280px 1fr;

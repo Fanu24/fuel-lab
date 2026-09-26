@@ -54,7 +54,7 @@ export default function ComeFunziona() {
       <TrePassi />
 
       <section className="notte relative overflow-hidden">
-        <FotoPiena foto="schiscette" />
+        <FotoPiena foto="schiscette" velo="forte" />
         <div className="wrap relative grid gap-12 py-[var(--sezione)] md:grid-cols-2">
           <Reveal>
             <p className="occhiello">Fresco contro surgelato</p>

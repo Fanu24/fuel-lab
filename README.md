@@ -29,47 +29,52 @@ npm run build && npm start
 
 | Rotta | Cosa fa |
 |---|---|
-| `/` | Home: hero col timbro, fascia fiducia, come funziona, teaser del configuratore |
-| `/menu` | Il catalogo diviso in **primi**, **secondi** ed extra, con filtri e ordinamenti |
-| `/settimana` | La griglia LUN→DOM × pranzo/cena: si compone la settimana e i macro si sommano |
-| `/servizi` | I tre servizi: menu della settimana, piano sui tuoi macro, home cooking |
-| `/scheda` | Si carica la scheda del nutrizionista → macro modificabili → **il matcher compone** |
-| `/richiesta` | Il modulo che diventa il messaggio WhatsApp |
-| `/come-funziona` | Il servizio, il fresco contro il surgelato, le FAQ |
-| `/chi-e-matteo` | La storia, i numeri, cosa FUEL LAB non è |
+| `/` | Home: hero con l'atleta, tre passi, i consigli cardio/pesi, i piatti, chiusura |
+| `/menu` | I sei piatti con un filtro solo (Tutti / Cardio / Pesi) e gli alimenti per la box |
+| `/menu/[id]` | La scheda del piatto: ingredienti con i grammi, macro, perché funziona, allergeni |
+| `/settimana` | **Il compositore**: scegli come ti alleni giorno per giorno, la settimana si riempie, poi la sistemi trascinando |
+| `/scheda` | Dai tuoi macro: scrivi i numeri del nutrizionista, il matcher compone, apri nel compositore |
+| `/richiesta` | Il modulo: salva la richiesta e apre WhatsApp col messaggio già scritto |
+| `/servizi`, `/come-funziona`, `/chi-e-matteo` | Pagine di contenuto, brevi |
+| `/dashboard` | **Il pannello di Matteo** (demo): richieste, stato, numeri della settimana |
+| `/dashboard/richieste/[id]` | Il dettaglio di una richiesta: contatto, settimana con gli allenamenti, note interne |
+| `/dashboard/produzione` | Quante porzioni cucinare il lunedì e il giovedì, stampabile |
 
-## Cosa è vero e cosa è scenografia
+## Il compositore
 
-Il punto di questa demo è che le parti che il cliente deve poter provare **funzionano davvero**.
-Quelle che richiedono un backend sono dichiarate qui invece di essere nascoste.
+Tre modi di mettere un piatto in una casella, un solo stato (`components/compositore/useTrascina.ts`):
 
-**Vero:**
+- **mouse**: si trascina dal banco alla casella, da una casella all'altra (sposta o scambia), da una
+  casella al banco (toglie);
+- **dito**: si tocca il piatto e poi la casella (o prima la casella vuota e poi il piatto). Niente
+  trascinamento su touch, apposta: il dito serve anche a scorrere;
+- **tastiera**: Invio prende, Invio posa, Esc annulla, Canc toglie. Ogni passo è annunciato agli screen reader.
 
-- **Il catalogo.** 27 primi, 27 secondi e 8 extra costruiti a mano, con allergeni per Reg. UE
-  1169/2011. I macro rispettano l'identità di Atwater: `kcal === P*4 + C*4 + G*9`, verificata dai test.
-- **Il matcher.** Algoritmo reale (goloso più scambi locali) che compone i pasti sui macro
-  obiettivo. Calibrato: su 729 abbinamenti la media è 562,3 kcal contro un bersaglio di 560.
-- **La griglia settimanale.** Le scelte si salvano in `localStorage` e sopravvivono al ricaricamento.
-  Due schede aperte restano sincronizzate.
-- **Il link da mandare al nutrizionista.** La settimana viene codificata nella query string, senza
-  server. Porta con sé un'impronta del catalogo: un link nato da un menu diverso viene **rifiutato**
-  invece di essere decodificato in piatti sbagliati.
-- **Il messaggio WhatsApp.** Composto per intero dai dati inseriti, con un solo saluto e una sola
-  domanda di chiusura qualunque sia il servizio di partenza.
+L'autoriempimento (`lib/autofill.ts`) segue i consigli di Matteo: cardio → più carboidrati, pesi →
+proteine e carboidrati misurati, riposo → più leggero. Mai lo stesso piatto due volte nello stesso
+giorno, al massimo tre volte a settimana.
 
-**Scenografia:**
+Il prezzo non compare: il committente vuole solo la soglia "da 8,90 € a pasto". La stima completa
+c'è già (`lib/riepilogo.ts`) e si accende con `MOSTRA_STIMA_PREZZO` in `lib/pricing.ts`.
 
-- **Il caricamento della scheda del nutrizionista.** Il file non viene letto né interpretato: non
-  c'è OCR e non c'è parsing. L'animazione di caricamento è teatro; i macro che compaiono sono
-  modificabili a mano ed è da lì che parte il matcher, che invece è vero.
-- **Le foto dei piatti.** Sono Unsplash, vanno sostituite con scatti veri.
-- **Alcuni testi editoriali** sono segnaposto, segnalati da un commento nel sorgente.
+## Cosa è vero e cosa è demo
 
-**Non c'è ancora:**
+**Vero:** catalogo con allergeni e macro coerenti (`kcal = P*4 + C*4 + G*9`, verificata dai test),
+matcher, autoriempimento, compositore, link da mandare al nutrizionista (porta anche gli allenamenti),
+messaggio WhatsApp.
 
-- **La dashboard di Matteo** (chi ha scritto, numeri di telefono, storico). È la Fase B: richiede
-  database e autenticazione, e non è stata pianificata in questo giro.
-- **Il numero WhatsApp.** Vedi sotto.
+**Demo:**
+
+- **La dashboard** legge le richieste dal `localStorage` di quel browser, più 12 richieste d'esempio.
+  Tutto passa da un'interfaccia (`lib/richieste/tipi.ts`, `RepositoryRichieste`): per il backend vero
+  si aggiunge un'implementazione Supabase in `lib/richieste/` e `NEXT_PUBLIC_DATA_BACKEND` la accende,
+  senza toccare le pagine. A quel punto il controllo d'accesso va sul server (`proxy.ts`).
+- **Il PIN** del pannello (`NEXT_PUBLIC_DEMO_PIN`, predefinito `1234`) **non è sicurezza**: sta nel
+  codice del browser. Serve solo a separare il pannello dal sito. Niente dati veri di clienti finché
+  non c'è il backend.
+- **Le foto** sono Unsplash scelte a mano. Si cambiano tutte da `lib/immagini/index.ts` (foto del sito)
+  e dal campo `img` in `lib/catalogo.ts` (piatti); un percorso locale in `/public` al posto dell'id
+  funziona senza toccare altro. Il ritratto di Matteo va in `RITRATTO_MATTEO`.
 
 ## Il numero WhatsApp
 
@@ -91,7 +96,7 @@ vercel --prod
 ## Test
 
 ```bash
-npx vitest run        # 102 test sul dominio: catalogo, piano, matcher, link, messaggio
+npx vitest run        # 180 test: catalogo, piano, autofill, riepilogo, link, messaggio, richieste
 npx tsc --noEmit
 npx eslint app components lib
 ```
@@ -119,5 +124,6 @@ node scripts/verifica.mjs
 - [ ] **Il logo vettoriale** con la tagline giusta, al posto del ritaglio provvisorio
 - [ ] **Il raggio di consegna**: le pagine dicono "Pescara e provincia, entro venti
       chilometri". Da confermare, perche e scritto nella copy in piu punti
-- [ ] **La dashboard** (Fase B): decidere se serve davvero un pannello o se basta che i messaggi
-      WhatsApp arrivino ordinati
+- [ ] **La dashboard**: la demo c'è; per usarla davvero serve il backend (Supabase) e una privacy policy
+- [ ] **I piatti cucinati il lunedì** vanno serviti solo a inizio settimana? L'autoriempimento oggi non lo considera
+- [ ] **Il ritratto di Matteo** e una foto vera della cucina

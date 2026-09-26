@@ -50,3 +50,15 @@ describe("gli allenamenti nel messaggio", () => {
     expect(msg.match(/\?/g)).toHaveLength(1);
   });
 });
+
+describe("linkWhatsAppA", () => {
+  it("aggiunge il prefisso italiano ai cellulari senza prefisso", async () => {
+    const { linkWhatsAppA } = await import("./whatsapp");
+    expect(linkWhatsAppA("333 000 0001", "ciao")).toBe("https://wa.me/393330000001?text=ciao");
+  });
+  it("lascia stare un numero gia' internazionale e rifiuta le lettere", async () => {
+    const { linkWhatsAppA } = await import("./whatsapp");
+    expect(linkWhatsAppA("+39 333 0000001", "x")).toBe("https://wa.me/393330000001?text=x");
+    expect(linkWhatsAppA("33a", "x")).toBeNull();
+  });
+});

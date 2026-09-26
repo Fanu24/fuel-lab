@@ -19,7 +19,12 @@ export default function PiattiScelti() {
           </Link>
         </Reveal>
       </div>
-      <ul className="wrap mt-12 flex snap-x snap-mandatory gap-5 overflow-x-auto pb-4 md:grid md:grid-cols-3 md:gap-8 md:overflow-visible">
+      {/* scroll-padding: senza, lo scatto allinea la carta al bordo dello schermo e
+          non al margine della pagina */}
+      <ul
+        style={{ scrollPaddingInline: "var(--gut)" }}
+        className="wrap mt-12 flex snap-x snap-mandatory gap-5 overflow-x-auto pb-4 md:grid md:grid-cols-3 md:gap-8 md:overflow-visible"
+      >
         {PIATTI.map((p, i) => (
           <Reveal as="li" key={p.id} delay={(i % 3) * 80} className="w-[82%] shrink-0 snap-start md:w-auto">
             <CartaPiatto piatto={p} />

@@ -138,7 +138,7 @@ export const PIATTI: Piatto[] = [
       { nome: "Olio d'oliva", grammi: 15 },
     ],
     motivo:
-      "In questo pasto completo abbiamo un'alta quantita di proteine unita alla dose di carboidrati giusta per assimilarle al meglio. Le spezie usate in questo piatto sono ricche di antiossidanti. Gli alimenti vengono trattati con cura per esaltare i valori nutrizionali.",
+      "In questo pasto completo abbiamo un'alta quantità di proteine unita alla dose di carboidrati giusta per assimilarle al meglio. Le spezie usate in questo piatto sono ricche di antiossidanti. Gli alimenti vengono trattati con cura per esaltare i valori nutrizionali.",
   },
   {
     id: "gnocchetti-sugo-ricotta",
@@ -165,7 +165,7 @@ export const PIATTI: Piatto[] = [
       { nome: "Olio d'oliva", grammi: 15 },
     ],
     motivo:
-      "La semplicita del prodotto non significa che in esso non ci sia racchiuso tutto quello di cui hai bisogno. Gli gnocchi fatti a mano sono fatti da patate, poca farina e uova: le patate sono una delle migliori fonti di carboidrati e le uova nell'impasto aggiungono anche proteine. La crema di ricotta e parmigiano non solo rende piu gustoso il piatto, ha anche un fattore proteico non indifferente. Il sugo e fatto direttamente dai pomodorini freschi, cuocendo tutto a bassa temperatura per preservare il piu possibile i suoi valori.",
+      "La semplicità del prodotto non significa che in esso non ci sia racchiuso tutto quello di cui hai bisogno. Gli gnocchi fatti a mano sono fatti da patate, poca farina e uova: le patate sono una delle migliori fonti di carboidrati e le uova nell'impasto aggiungono anche proteine. La crema di ricotta e parmigiano non solo rende più gustoso il piatto, ha anche un fattore proteico non indifferente. Il sugo è fatto direttamente dai pomodorini freschi, cuocendo tutto a bassa temperatura per preservare il più possibile i suoi valori.",
   },
   {
     id: "riso-julien-pollo-teriyaki",
@@ -190,7 +190,7 @@ export const PIATTI: Piatto[] = [
       { nome: "Olio di sesamo", grammi: 6 },
     ],
     motivo:
-      "In un piatto abbiamo tutto quello di cui abbiamo bisogno. L'olio di sesamo e ricco di acidi grassi e di antiossidanti come il sesamolo, che aiutano a combattere i radicali liberi.",
+      "In un piatto abbiamo tutto quello di cui abbiamo bisogno. L'olio di sesamo è ricco di acidi grassi e di antiossidanti come il sesamolo, che aiutano a combattere i radicali liberi.",
   },
   {
     id: "maiale-senape-spinaci",
@@ -223,7 +223,7 @@ export const PIATTI: Piatto[] = [
       { nome: "Olio d'oliva", grammi: 20 },
     ],
     motivo:
-      "Un piatto estremamente gustoso e completo. La carne magra della fesa di maiale si combina perfettamente con la crema di senape. La senape e un condimento ipocalorico che favorisce la digestione, pieno zeppo di antiossidanti.",
+      "Un piatto estremamente gustoso e completo. La carne magra della fesa di maiale si combina perfettamente con la crema di senape. La senape è un condimento ipocalorico che favorisce la digestione, pieno zeppo di antiossidanti.",
   },
   {
     id: "pallotte-cacio-ovo",
@@ -252,7 +252,7 @@ export const PIATTI: Piatto[] = [
       { nome: "Parmigiano", nota: "q.b." },
     ],
     motivo:
-      "Un piatto tipico della tradizione in versione piu light. Pur conosciuto come un piatto della tradizione abruzzese abbastanza pesante, con qualche accorgimento diventa un ottimo pasto completo con anche una buona quantita di proteine.",
+      "Un piatto tipico della tradizione in versione più light. Pur conosciuto come un piatto della tradizione abruzzese abbastanza pesante, con qualche accorgimento diventa un ottimo pasto completo con anche una buona quantità di proteine.",
   },
   {
     id: "uova-purgatorio-peperoni",

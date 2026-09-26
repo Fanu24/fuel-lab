@@ -80,7 +80,7 @@ export default function ChiEMatteo() {
       </section>
 
       <section className="notte relative overflow-hidden">
-        <FotoPiena foto="presa" />
+        <FotoPiena foto="presa" velo="forte" />
         <div className="wrap relative py-[var(--sezione)]">
           <dl className="grid grid-cols-2 gap-x-6 gap-y-12 lg:grid-cols-4">
             {CIFRE.map((c, i) => (

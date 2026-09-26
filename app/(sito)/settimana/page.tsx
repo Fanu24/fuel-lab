@@ -8,28 +8,13 @@ import SettimanaClient from "./SettimanaClient";
 export const metadata: Metadata = {
   title: "La tua settimana",
   description:
-    "Sette giorni per due pasti: un piatto e le aggiunte della box in ogni casella, i macro di ogni giornata in vista, e un link da mandare al tuo nutrizionista.",
+    "Scegli come ti alleni giorno per giorno: la settimana si riempie con i piatti giusti. Poi la sistemi trascinando, e la mandi a Matteo.",
 };
 
-/**
- * Il guscio di attesa.
- *
- * Serve a due cose insieme. Al Suspense di useSearchParams, che senza un confine
- * farebbe fallire la build. E all'utente, che nel frattempo vede il posto della
- * settimana invece di un salto di layout quando i numeri arrivano.
- */
+/* Il confine di Suspense serve a useSearchParams (il link condiviso): senza,
+   la build fallisce. Il segnaposto tiene il posto e non fa saltare il layout. */
 function Attesa() {
-  return (
-    <section className="fascia fascia-t fascia-carta">
-      <div className="wrap">
-        <div className="shell">
-          <div className="core grid min-h-[340px] place-items-center p-10">
-            <p className="note">Carico la tua settimana...</p>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
+  return <div className="testata wrap min-h-[80vh]" aria-busy="true" />;
 }
 
 export default function SettimanaPage() {

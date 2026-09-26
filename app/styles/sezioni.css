@@ -90,6 +90,14 @@
 
   /* ---- foto ---- */
 
+  /* Il velo per il testo che sta A META' della foto (chiusure, numeri): li' il
+     gradiente non basta, perche' il testo attraversa proprio la parte chiara.
+     Misurato con scripts/verifica.mjs sui pixel reali: sotto questo valore le
+     foto del cuoco e delle schiscette scendevano a 2,8:1. */
+  .velo-forte {
+    background: rgba(14, 16, 15, 0.8);
+  }
+
   .smusso {
     clip-path: polygon(
       var(--taglio) 0,
@@ -101,8 +109,9 @@
     );
   }
 
-  /* Velo sulle foto a tutta pagina: il testo sopra resta leggibile anche quando
-     la foto cambia. Calcolato sul caso peggiore, una foto bianca. */
+  /* Velo sulle foto a tutta pagina, per il testo che sta IN BASSO (hero,
+     consigli): il gradiente scurisce dove sta il testo e lascia respirare la foto
+     sopra. */
   .velo {
     background:
       linear-gradient(180deg, rgba(14, 16, 15, 0.55) 0%, rgba(14, 16, 15, 0.2) 35%, rgba(14, 16, 15, 0.88) 100%),
