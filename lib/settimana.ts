@@ -40,6 +40,26 @@ export interface Casella {
 
 export type Piano = Partial<Record<GiornoSettimana, Partial<Record<Pasto, Casella>>>>;
 
+/** Un indirizzo nella griglia: il giorno e il pasto. Serve a trascinare e a scambiare. */
+export type Slot = { g: GiornoSettimana; m: Pasto };
+
+/*
+ * Cosa fa chi mangia quel giorno. Vive accanto al piano ma NON dentro: il Piano
+ * resta identico a prima (nessuna migrazione dei piani salvati) e gli allenamenti
+ * hanno una chiave loro. Un giorno senza tipo non e' "riposo": e' "non l'ho detto",
+ * e l'autoriempimento lo lascia stare.
+ */
+export const TIPI_GIORNATA = ["cardio", "pesi", "riposo"] as const;
+export type TipoGiornata = (typeof TIPI_GIORNATA)[number];
+
+export type Allenamenti = Partial<Record<GiornoSettimana, TipoGiornata>>;
+
+export const NOMI_GIORNATA: Record<TipoGiornata, string> = {
+  cardio: "Cardio",
+  pesi: "Pesi",
+  riposo: "Riposo",
+};
+
 /** Sette giorni per due pasti: il fondo scala di ogni percentuale di riempimento. */
 export const CASELLE_TOTALI = GIORNI.length * PASTI.length; // 14
 
@@ -107,4 +127,55 @@ export function potaPiano(v: unknown): Piano {
     }
   }
   return out;
+}
+
+/** Stesso principio di potaPiano: arriva da localStorage o da un link, quindi non ci si fida. */
+export function potaAllenamenti(v: unknown): Allenamenti {
+  if (!v || typeof v !== "object" || Array.isArray(v)) return {};
+  const o = v as Record<string, unknown>;
+  const out: Allenamenti = {};
+  for (const g of GIORNI) {
+    const t = o[g];
+    if (typeof t === "string" && (TIPI_GIORNATA as readonly string[]).includes(t)) {
+      out[g] = t as TipoGiornata;
+    }
+  }
+  return out;
+}
+
+/**
+ * Riscrive una casella senza mutare il piano corrente. Una casella rimasta vuota
+ * sparisce, e con lei il giorno che non ha piu' pasti: cosi' il conto delle caselle
+ * piene dice la verita' e il JSON salvato non accumula gusci vuoti.
+ */
+export function conCasella(
+  p: Piano,
+  g: GiornoSettimana,
+  m: Pasto,
+  c: Casella | undefined,
+): Piano {
+  const riga: Partial<Record<Pasto, Casella>> = { ...p[g] };
+  if (c && !casellaVuota(c)) riga[m] = c;
+  else delete riga[m];
+  const out: Piano = { ...p, [g]: riga };
+  if (Object.keys(riga).length === 0) delete out[g];
+  return out;
+}
+
+/**
+ * Trascinare una casella su un'altra: si porta dietro piatto E aggiunte, perche'
+ * le aggiunte sono state scelte per quel piatto, non per quell'orario. Se la
+ * destinazione e' piena le due caselle si scambiano: buttare via il piatto che
+ * c'era sarebbe una perdita silenziosa che l'utente non ha chiesto.
+ *
+ * Nei casi in cui non succede niente torna lo STESSO riferimento: chi lo usa con
+ * uno store puo' confrontare per identita' e non scrivere su localStorage a vuoto.
+ */
+export function spostaCasella(p: Piano, da: Slot, a: Slot): Piano {
+  if (da.g === a.g && da.m === a.m) return p;
+  const sorgente = p[da.g]?.[da.m];
+  if (!sorgente) return p;
+  const destinazione = p[a.g]?.[a.m];
+  const senzaSorgente = conCasella(p, da.g, da.m, destinazione);
+  return conCasella(senzaSorgente, a.g, a.m, sorgente);
 }
