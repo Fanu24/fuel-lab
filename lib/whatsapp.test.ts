@@ -289,3 +289,43 @@ describe("i dati di contatto: presenti finiscono nel messaggio, assenti non lasc
     });
   }
 });
+
+describe("gli allenamenti nel messaggio", () => {
+  const piano: Piano = {
+    lun: { pranzo: { piatto: PIATTI[0].id, extra: [] } },
+    mar: { cena: { piatto: PIATTI[1].id, extra: [] } },
+  };
+
+  it("mette l'allenamento accanto al giorno", async () => {
+    const { messaggioPiano } = await import("./whatsapp");
+    const testo = messaggioPiano(piano, MACRO_PIENO, undefined, { lun: "pesi" });
+    expect(testo).toContain(`Lunedì · Pesi: pranzo ${PIATTI[0].nome}`);
+    expect(testo).toContain(`Martedì: cena ${PIATTI[1].nome}`);
+  });
+
+  it("un giorno con allenamento e senza pasti compare lo stesso", async () => {
+    const { messaggioPiano } = await import("./whatsapp");
+    const testo = messaggioPiano(piano, MACRO_PIENO, undefined, { mer: "riposo" });
+    expect(testo).toContain("Mercoledì · Riposo: nessun pasto scelto");
+  });
+
+  it("senza allenamenti il testo e identico a prima", async () => {
+    const { messaggioPiano } = await import("./whatsapp");
+    expect(messaggioPiano(piano, MACRO_PIENO, "Luca", {})).toBe(
+      messaggioPiano(piano, MACRO_PIENO, "Luca"),
+    );
+  });
+
+  it("componiMessaggio passa gli allenamenti alla settimana", () => {
+    const msg = componiMessaggio({
+      servizioId: "menu-settimana",
+      richiedePiano: true,
+      piano,
+      macro: MACRO_PIENO,
+      contatto: CONTATTO_BASE,
+      allenamenti: { lun: "cardio" },
+    });
+    expect(msg).toContain("Lunedì · Cardio: pranzo");
+    expect(msg.match(/\?/g)).toHaveLength(1);
+  });
+});
