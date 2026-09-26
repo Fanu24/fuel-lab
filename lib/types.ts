@@ -17,6 +17,11 @@ export interface Target extends Macros {
   giorni: number;
 }
 
+/** Unica definizione delle kcal del progetto, cosi' non puo' divergere fra due file. */
+export function kcalDa(proteine: number, carboidrati: number, grassi: number): number {
+  return proteine * 4 + carboidrati * 4 + grassi * 9;
+}
+
 export type Formula = "singolo" | "abbonamento";
 
 export const TAGS: { id: Tag; label: string }[] = [
