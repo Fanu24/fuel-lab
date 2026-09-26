@@ -38,7 +38,7 @@ export default async function PaginaPiatto({ params }: Props) {
     <>
       <article className="testata">
         <div className="wrap">
-          <Link href="/menu" className="link text-sm">
+          <Link href="/menu" className="link">
             ← Il menu
           </Link>
           <div className="mt-8 grid gap-10 lg:grid-cols-[1.1fr_1fr] lg:gap-16">

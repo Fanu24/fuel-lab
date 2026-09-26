@@ -34,7 +34,7 @@ export default function BarraSettimana({ r, pronto }: { r: RiepilogoSettimana; p
             { k: "Grassi", v: m.grassi, u: "g" },
           ].map((x) => (
             <div key={x.k}>
-              <dt className="font-disp text-[10px] font-semibold tracking-[.16em] text-steel uppercase">{x.k}</dt>
+              <dt className="font-disp text-[11px] font-semibold tracking-[.12em] text-steel uppercase">{x.k}</dt>
               <dd className="num text-base">
                 {vuota ? "–" : Math.round(x.v)}
                 {x.u && !vuota ? <span className="text-xs text-steel">{x.u}</span> : null}
@@ -43,7 +43,7 @@ export default function BarraSettimana({ r, pronto }: { r: RiepilogoSettimana; p
           ))}
         </dl>
 
-        <p className="min-w-0 flex-1 text-xs text-steel md:flex-none md:text-sm">
+        <p className="hidden min-w-0 flex-1 text-xs text-steel min-[400px]:block md:flex-none md:text-sm">
           {MOSTRA_STIMA_PREZZO && r.preventivo ? (
             <>Stima {euro(r.preventivo.totale)}</>
           ) : (
@@ -60,7 +60,7 @@ export default function BarraSettimana({ r, pronto }: { r: RiepilogoSettimana; p
 
         <Link
           href="/richiesta?servizio=menu-settimana"
-          className={`btn btn-lime shrink-0 ${vuota ? "pointer-events-none opacity-40" : ""}`}
+          className={`btn btn-lime ml-auto shrink-0 ${vuota ? "pointer-events-none opacity-40" : ""}`}
           aria-disabled={vuota}
           tabIndex={vuota ? -1 : undefined}
         >

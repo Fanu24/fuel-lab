@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "postbuild": "node scripts/appiattisci-prefetch.mjs",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run"
@@ -25,5 +26,8 @@
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.11"
+  },
+  "engines": {
+    "node": ">=20.9.0"
   }
 }

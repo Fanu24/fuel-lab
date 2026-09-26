@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Archivo, Martian_Mono, Oxanium } from "next/font/google";
+import { URL_SITO } from "@/lib/sito";
 import "./globals.css";
 
 /* Oxanium per titoli ed etichette: lettere squadrate con gli spigoli tagliati a
@@ -26,12 +27,21 @@ const martian = Martian_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(URL_SITO),
   title: {
     default: "FUEL LAB · Allenati. Al cibo ci pensa Matteo.",
     template: "%s · FUEL LAB",
   },
   description:
     "Meal prep fresco a Pescara, mai surgelato. Dici come ti alleni, la settimana si compone da sola: piatti pensati per il cardio e per i pesi, cucinati il lunedì e il giovedì.",
+  openGraph: {
+    type: "website",
+    locale: "it_IT",
+    siteName: "FUEL LAB",
+    title: "FUEL LAB · Allenati. Al cibo ci pensa Matteo.",
+    description: "Meal prep fresco a Pescara per chi si allena. Piatti per il cardio e per i pesi, cucinati il lunedì e il giovedì.",
+  },
+  twitter: { card: "summary_large_image" },
 };
 
 export const viewport: Viewport = {

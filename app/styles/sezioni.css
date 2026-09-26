@@ -55,8 +55,10 @@
     background: var(--color-lime);
   }
 
+  /* Legato anche all'altezza: col telefono in orizzontale (844x390) 9vw faceva
+     un titolo da 76px che riempiva lo schermo da solo. */
   .titolo-xl {
-    font-size: clamp(44px, 9vw, 128px);
+    font-size: clamp(40px, min(9vw, 15svh), 128px);
     line-height: 0.88;
   }
   .titolo {

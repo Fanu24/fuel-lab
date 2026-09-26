@@ -927,7 +927,9 @@ async function main() {
       for (const im of immagini)
         if (im.completa && im.w === 0)
           esito.problemi.push(`${tag}: immagine non caricata ${String(im.src).slice(0, 90)}`);
-        else if (!im.completa)
+        // un'immagine pigra dentro un contenitore nascosto dal CSS (il riquadro
+        // cucina dell'hero sotto lg) non deve arrivare: il browser fa bene a non scaricarla
+        else if (!im.completa && im.visibile)
           esito.problemi.push(`${tag}: immagine mai arrivata ${String(im.src).slice(0, 90)}`);
       for (const im of immagini)
         if (im.alt === null) esito.problemi.push(`${tag}: <img> senza alt ${String(im.src).slice(0, 90)}`);

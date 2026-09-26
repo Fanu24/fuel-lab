@@ -42,7 +42,8 @@ export default function Panoramica() {
   }
 
   return (
-    <div className="grid gap-12">
+    // min-w-0 sui figli: senza, la fila dei filtri allargava la griglia a 524px su un telefono da 390
+    <div className="grid gap-12 [&>*]:min-w-0">
       <div>
         <p className="occhiello">Pannello</p>
         <h1 className="titolo mt-4">Richieste.</h1>
@@ -100,7 +101,7 @@ export default function Panoramica() {
       <section>
         <div className="flex flex-wrap items-center justify-between gap-4">
           <h2 className="titolo-s">Elenco</h2>
-          <div className="segmenti" role="group" aria-label="Filtra per stato">
+          <div className="segmenti flex-wrap" role="group" aria-label="Filtra per stato">
             {[{ id: "tutte" as const, label: "Tutte" }, ...STATI].map((s) => (
               <button key={s.id} type="button" aria-pressed={filtro === s.id} onClick={() => setFiltro(s.id)}>
                 {s.label}
@@ -113,7 +114,7 @@ export default function Panoramica() {
           {visibili.map((r) => (
             <li key={r.id} className="grid gap-3 border-b border-ink/15 py-4 md:grid-cols-[1.4fr_1fr_1fr_16rem] md:items-center">
               <div>
-                <Link href={`/dashboard/richieste/${r.id}`} className="text-lg font-semibold hover:underline">
+                <Link href={`/dashboard/richiesta?id=${encodeURIComponent(r.id)}`} className="inline-flex min-h-11 items-center text-lg font-semibold hover:underline">
                   {r.contatto.nome}
                 </Link>
                 <p className="text-sm text-muted">

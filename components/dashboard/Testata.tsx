@@ -14,15 +14,15 @@ export default function Testata() {
   return (
     <header className="notte sticky top-0 z-30 print:hidden">
       <div className="wrap flex h-16 items-center gap-6">
-        <Link href="/dashboard" aria-label="Pannello, richieste" className="flex items-center gap-3">
+        <Link href="/dashboard" aria-label="Pannello, richieste" className="flex min-h-11 shrink-0 items-center gap-3">
           <Image src="/logo-fuellab.png" alt="" width={1095} height={360} className="h-7 w-auto invert" />
         </Link>
-        <span className="hidden bg-lime px-2 py-1 font-disp text-[10px] font-bold tracking-[.18em] text-ink uppercase sm:inline">
+        <span className="hidden bg-lime px-2 py-1 font-disp text-[11px] font-bold tracking-[.16em] text-ink uppercase sm:inline">
           Demo
         </span>
         <nav aria-label="Pannello" className="ml-auto flex h-full items-stretch">
           {VOCI.map((v) => {
-            const attiva = v.href === "/dashboard" ? percorso === v.href || percorso.startsWith("/dashboard/richieste") : percorso.startsWith(v.href);
+            const attiva = v.href === "/dashboard" ? percorso === v.href || percorso.startsWith("/dashboard/richiesta") : percorso.startsWith(v.href);
             return (
               <Link
                 key={v.href}
@@ -37,7 +37,7 @@ export default function Testata() {
             );
           })}
         </nav>
-        <Link href="/" className="hidden text-sm text-steel hover:text-paper md:inline">
+        <Link href="/" className="hidden min-h-11 items-center text-sm text-steel hover:text-paper md:inline-flex">
           Torna al sito
         </Link>
       </div>

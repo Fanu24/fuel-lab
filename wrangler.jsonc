@@ -1,0 +1,14 @@
+{
+  // Pubblicazione su Cloudflare Workers (static assets). Il sito e' un export
+  // statico: `npm run build` scrive tutto in out/, e Cloudflare serve quei file.
+  // Nessun codice gira sul server.
+  "name": "fuel-lab",
+  "compatibility_date": "2026-09-01",
+  "assets": {
+    "directory": "./out",
+    // /menu serve out/menu.html (e /menu/ reindirizza a /menu)
+    "html_handling": "auto-trailing-slash",
+    // un indirizzo inesistente riceve out/404.html con stato 404
+    "not_found_handling": "404-page"
+  }
+}

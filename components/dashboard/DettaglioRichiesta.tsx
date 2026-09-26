@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { STATI, getRepository, type Richiesta, type StatoRichiesta } from "@/lib/richieste";
 import { GIORNI, NOMI_GIORNATA, NOMI_GIORNO, PASTI } from "@/lib/settimana";
@@ -10,7 +11,8 @@ import StatoBadge from "./StatoBadge";
 
 const data = new Intl.DateTimeFormat("it-IT", { dateStyle: "full", timeStyle: "short", timeZone: "Europe/Rome" });
 
-export default function DettaglioRichiesta({ id }: { id: string }) {
+export default function DettaglioRichiesta() {
+  const id = useSearchParams().get("id") ?? "";
   const [r, setR] = useState<Richiesta | null | undefined>(undefined);
   const [nota, setNota] = useState("");
   const [salvata, setSalvata] = useState(false);
@@ -55,7 +57,7 @@ export default function DettaglioRichiesta({ id }: { id: string }) {
   return (
     <div className="grid gap-12">
       <div>
-        <Link href="/dashboard" className="link text-sm">
+        <Link href="/dashboard" className="link">
           ← Tutte le richieste
         </Link>
         <div className="mt-6 flex flex-wrap items-center gap-4">
@@ -133,7 +135,7 @@ export default function DettaglioRichiesta({ id }: { id: string }) {
                   <span>
                     <span className="font-disp font-bold tracking-[.1em] uppercase">{NOMI_GIORNO[g]}</span>
                     {r.allenamenti[g] ? (
-                      <span className={`tag tag-${r.allenamenti[g]} mt-1 !h-5 !px-1.5 !text-[9px]`}>
+                      <span className={`tag tag-${r.allenamenti[g]} mt-1 !h-5 !px-1.5 !text-[11px] !tracking-[.06em]`}>
                         {NOMI_GIORNATA[r.allenamenti[g]!]}
                       </span>
                     ) : null}

@@ -7,10 +7,9 @@ nutrizionista.
 Next.js 16 (App Router) · React 19 · TypeScript · Tailwind 4. **Nessun backend: tutto gira nel
 browser.** Il contatto finale non è un pagamento, è un messaggio su WhatsApp già scritto.
 
-**Online:** <https://fuel-lab-cyan.vercel.app>
-
-Verificato sul sito pubblicato, non solo in locale: 4489 nodi di testo misurati su 16
-caricamenti, zero violazioni di contrasto.
+Si pubblica come **export statico** (`output: "export"`): `npm run build` scrive il sito in `out/`
+e quella cartella va su Cloudflare. La guida passo passo è in
+[`docs/HANDOFF-CLOUDFLARE.md`](docs/HANDOFF-CLOUDFLARE.md).
 
 ## Avvio
 
@@ -19,11 +18,14 @@ npm install
 npm run dev          # http://localhost:3000
 ```
 
-Per provarla come sarà in produzione:
+Per provarla come sarà in produzione (i file statici di `out/`, come li serve Cloudflare):
 
 ```bash
-npm run build && npm start
+npm run build            # scrive out/ e sistema i file di prefetch (postbuild)
+npx wrangler dev         # http://localhost:8787, legge wrangler.jsonc
 ```
+
+`npm start` / `next start` **non funziona** con l'export statico: è voluto.
 
 ## Le pagine
 
@@ -88,9 +90,8 @@ Questo è il caso normale della demo, non un caso limite.
 # in locale
 echo "NEXT_PUBLIC_WHATSAPP=39XXXXXXXXXX" >> .env.local
 
-# in produzione, quando arriva il numero di Matteo
-vercel env add NEXT_PUBLIC_WHATSAPP
-vercel --prod
+# in produzione: variabile di BUILD su Cloudflare (Settings → Variables), poi un nuovo deploy.
+# E' letta al build: cambiarla senza ricompilare non ha effetto.
 ```
 
 ## Test
@@ -111,7 +112,8 @@ identica** — 1,00:1 — quindi il lime può fare da fondo, mai da testo. Cerca
 mano ha fallito cinque volte; misurarli tutti no.
 
 ```bash
-npm run build && npx next start -p 4311 &
+npm run build
+npx wrangler dev --port 4311 &     # oppure qualunque server statico su out/ alla porta 4311
 node scripts/verifica.mjs
 ```
 

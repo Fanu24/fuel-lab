@@ -53,7 +53,7 @@ export const FOTO = {
   },
   schiscette: {
     src: "photo-1498837167922-ddd27525d352",
-    alt: "Contenitori di meal prep con le porzioni pesate e divise una per una",
+    alt: "Vaschette di verdure, legumi e cereali freschi divise per ingrediente",
   },
   verdure: {
     src: "photo-1518843875459-f738682238a6",
@@ -61,7 +61,19 @@ export const FOTO = {
   },
   cucina: {
     src: "photo-1556910103-1c02745aae4d",
-    alt: "Piano di lavoro di una cucina durante la preparazione dei pasti",
+    alt: "Persone che cucinano insieme nella cucina di casa",
+  },
+  tagliere: {
+    src: "photo-1466637574441-749b8f19452f",
+    alt: "Tagliere con avocado, uova, pomodorini, funghi e cipollotti, prima della preparazione",
+  },
+  ciotola: {
+    src: "photo-1547496502-affa22d38842",
+    alt: "Ciotola di verdure, avocado e semi su fondo scuro",
+  },
+  bowl: {
+    src: "photo-1512621776951-a57141f2eefd",
+    alt: "Piatto di verdure fresche, ceci, avocado e patata dolce",
   },
 } satisfies Record<string, Foto>;
 

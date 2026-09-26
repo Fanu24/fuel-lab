@@ -47,7 +47,7 @@ export default function Griglia({
                 <span className="lg:hidden">{NOMI_GIORNO[g]}</span>
                 <span className="hidden lg:inline">{NOMI_GIORNO[g].slice(0, 3)}</span>
               </span>
-              {tipo ? <span className={`tag tag-${tipo} !h-5 !px-1.5 !text-[9px]`}>{NOMI_GIORNATA[tipo]}</span> : null}
+              {tipo ? <span className={`tag tag-${tipo} !h-5 !px-1.5 !text-[11px] !tracking-[.06em]`}>{NOMI_GIORNATA[tipo]}</span> : null}
               <span className="num ml-auto text-[11px] text-muted lg:ml-0">{kcal ? `${kcal} kcal` : ""}</span>
             </header>
             <div className="giorno-caselle">

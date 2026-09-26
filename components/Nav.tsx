@@ -80,7 +80,7 @@ export default function Nav() {
         style={{ borderColor: "var(--line)" }}
       >
         <div className="wrap flex items-center gap-6" style={{ height: "var(--nav-h)" }}>
-          <Link href="/" aria-label="FUEL LAB, home" className="mr-auto flex items-center">
+          <Link href="/" aria-label="FUEL LAB, home" className="mr-auto flex min-h-11 items-center">
             <Image
               src="/logo-fuellab.png"
               alt=""

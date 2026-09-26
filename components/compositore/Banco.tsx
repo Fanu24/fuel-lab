@@ -52,7 +52,7 @@ export default function Banco({
                 <span className="min-w-0 text-left">
                   <span className="block truncate text-sm font-semibold">{p.nome}</span>
                   <span className="mt-1 flex items-center gap-2">
-                    <TagAllenamento tipo={p.allenamento} breve className="!h-5 !px-1.5 !text-[9px]" />
+                    <TagAllenamento tipo={p.allenamento} breve className="!h-5 !px-1.5 !text-[11px] !tracking-[.06em]" />
                     <span className="num text-xs text-muted">{p.kcal} kcal</span>
                   </span>
                 </span>

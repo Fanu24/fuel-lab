@@ -83,8 +83,14 @@
     transform: translateX(4px);
   }
 
-  /* Link testuale con sottolineatura spessa. */
+  /* Link testuale con sottolineatura spessa.
+     Padding verticale e margine negativo uguale: l'area da toccare arriva a
+     44px sul telefono senza spostare di un pixel l'impaginazione (su un inline il
+     padding non muove le righe, su un inline-block o un bottone lo compensa il
+     margine). */
   .link {
+    padding-block: 12px;
+    margin-block: -12px;
     font-weight: 700;
     text-decoration: underline;
     text-decoration-thickness: 2px;
