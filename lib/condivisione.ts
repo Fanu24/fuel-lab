@@ -1,6 +1,6 @@
 import { EXTRA, PIATTI } from "./catalogo";
 import { CASELLE_TOTALI, GIORNI, PASTI, potaPiano } from "./settimana";
-import type { Casella, Pasto, Piano } from "./settimana";
+import type { Allenamenti, Casella, Pasto, Piano, TipoGiornata } from "./settimana";
 
 /* =========================================================================
    Il piano della settimana dentro un link.
@@ -135,7 +135,56 @@ export function decodificaPiano(s: string): Piano | null {
   }
 }
 
-export function linkPiano(p: Piano, origine: string): string {
+/* -------------------------------------------------------------------------
+   Gli allenamenti viaggiano in un parametro a parte, `a`: sette caratteri, uno
+   per giorno nell'ordine di GIORNI. Stanno FUORI da `p` apposta: `p` e' firmato
+   con l'impronta del catalogo, gli allenamenti col catalogo non c'entrano, e un
+   link vecchio senza `a` deve continuare a leggersi identico a prima.
+   ------------------------------------------------------------------------- */
+
+const LETTERA: Record<TipoGiornata, string> = { cardio: "c", pesi: "p", riposo: "r" };
+const DA_LETTERA: Record<string, TipoGiornata> = { c: "cardio", p: "pesi", r: "riposo" };
+
+export function codificaAllenamenti(a: Allenamenti): string {
+  return GIORNI.map((g) => {
+    const t = a[g];
+    return t && LETTERA[t] ? LETTERA[t] : VUOTO;
+  }).join("");
+}
+
+/**
+ * Indulgente per carattere, severo sulla lunghezza: una lettera ignota lascia quel
+ * giorno "non detto", ma una stringa lunga sbagliata non si sa a quali giorni
+ * appartenga, quindi si butta tutta. Non lancia mai: il parametro e' opzionale.
+ */
+export function decodificaAllenamenti(s: string | null | undefined): Allenamenti {
+  if (typeof s !== "string") return {};
+  const testo = s.trim().toLowerCase();
+  if (testo.length !== GIORNI.length) return {};
+  const out: Allenamenti = {};
+  GIORNI.forEach((g, i) => {
+    const t = DA_LETTERA[testo[i]];
+    if (t) out[g] = t;
+  });
+  return out;
+}
+
+export function linkPiano(p: Piano, origine: string, allenamenti?: Allenamenti): string {
   const base = origine.replace(/\/+$/, "");
-  return `${base}/settimana?p=${encodeURIComponent(codificaPiano(p))}`;
+  const url = `${base}/settimana?p=${encodeURIComponent(codificaPiano(p))}`;
+  const a = allenamenti ? codificaAllenamenti(allenamenti) : "";
+  // tutto trattini = nessuna informazione: il link resta identico a quello di prima
+  return a && a !== VUOTO.repeat(GIORNI.length) ? `${url}&a=${a}` : url;
+}
+
+/** Rilegge un link intero. `piano` e' null esattamente quando lo sarebbe decodificaPiano. */
+export function leggiLink(params: { get(nome: string): string | null }): {
+  piano: Piano | null;
+  allenamenti: Allenamenti;
+} {
+  const p = params.get("p");
+  return {
+    piano: p === null ? null : decodificaPiano(p),
+    allenamenti: decodificaAllenamenti(params.get("a")),
+  };
 }

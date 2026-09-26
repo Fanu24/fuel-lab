@@ -1,7 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { IMPRONTA_CATALOGO, codificaPiano, decodificaPiano, linkPiano } from "./condivisione";
+import {
+  IMPRONTA_CATALOGO,
+  codificaAllenamenti,
+  codificaPiano,
+  decodificaAllenamenti,
+  decodificaPiano,
+  leggiLink,
+  linkPiano,
+} from "./condivisione";
 import { PIATTI, EXTRA } from "./catalogo";
 import type { Piano } from "./piano";
+import type { Allenamenti } from "./settimana";
 
 const pieno: Piano = {
   lun: { pranzo: { piatto: PIATTI[0].id, extra: [EXTRA[0].id] },
@@ -174,5 +183,50 @@ describe("maschera degli extra", () => {
     const veri = new Set(EXTRA.map((e) => e.id));
     for (const id of ids) expect(veri.has(id)).toBe(true);
     expect(new Set(ids).size).toBe(ids.length);
+  });
+});
+
+describe("allenamenti nel link", () => {
+  const allenamenti: Allenamenti = { lun: "cardio", mer: "pesi", dom: "riposo" };
+
+  it("un carattere per giorno, trattino dove non c'e niente", () => {
+    expect(codificaAllenamenti(allenamenti)).toBe("c-p---r");
+    expect(codificaAllenamenti({})).toBe("-------");
+  });
+
+  it("fa il round trip", () => {
+    expect(decodificaAllenamenti(codificaAllenamenti(allenamenti))).toEqual(allenamenti);
+  });
+
+  it("scarta la spazzatura senza lanciare", () => {
+    for (const s of [null, undefined, "", "cp", "c-p---rx", "%%%%%%%"]) {
+      expect(decodificaAllenamenti(s)).toEqual({});
+    }
+    expect(decodificaAllenamenti("cxP---R")).toEqual({ lun: "cardio", mer: "pesi", dom: "riposo" });
+  });
+
+  it("aggiunge &a= al link solo quando c'e almeno un allenamento", () => {
+    const l = linkPiano(pieno, "https://fuellab.vercel.app", allenamenti);
+    expect(new URL(l).searchParams.get("a")).toBe("c-p---r");
+    expect(linkPiano(pieno, "https://fuellab.vercel.app", {})).toBe(
+      linkPiano(pieno, "https://fuellab.vercel.app"),
+    );
+    expect(linkPiano(pieno, "https://fuellab.vercel.app")).not.toContain("a=");
+  });
+
+  it("leggiLink rilegge piano e allenamenti dalla query string", () => {
+    const l = linkPiano(pieno, "https://fuellab.vercel.app", allenamenti);
+    expect(leggiLink(new URL(l).searchParams)).toEqual({ piano: pieno, allenamenti });
+  });
+
+  it("un link vecchio, senza a, si legge esattamente come prima", () => {
+    const vecchio = `https://fuellab.vercel.app/settimana?p=${codificaPiano(pieno)}`;
+    const letto = leggiLink(new URL(vecchio).searchParams);
+    expect(letto.piano).toEqual(decodificaPiano(codificaPiano(pieno)));
+    expect(letto.allenamenti).toEqual({});
+  });
+
+  it("senza p il piano e null, come decodificaPiano su un link che non e dei suoi", () => {
+    expect(leggiLink(new URLSearchParams("a=c------")).piano).toBeNull();
   });
 });
