@@ -6,91 +6,26 @@ export interface Domanda {
 }
 
 /**
- * Accordion costruito su <details>/<summary> nativi.
- *
- * Nessuna libreria e nessun 'use client': apertura, navigazione da tastiera, ruolo
- * ARIA e la ricerca del browser dentro al testo chiuso arrivano gratis dal markup.
- * Un accordion scritto a mano con useState li perderebbe tutti e quattro.
- *
- * Le domande NON sono a esclusione reciproca (niente attributo name): chi confronta
- * "posso saltare una settimana" con "come disdico" vuole leggerle affiancate.
+ * Accordion su <details>/<summary> nativi: apertura, tastiera, ruolo ARIA e la
+ * ricerca del browser dentro il testo chiuso arrivano gratis dal markup.
+ * Le domande non si escludono a vicenda: chi confronta due risposte vuole
+ * leggerle affiancate.
  */
-
-const CSS = `
-.cf-q{ border-bottom:1px solid var(--hair-soft); }
-.cf-q:first-child{ border-top:1px solid var(--hair-soft); }
-
-.cf-q > summary{
-  display:flex; align-items:flex-start; gap:20px;
-  padding:23px 0; cursor:pointer;
-  list-style:none;
-}
-/* i due marcatori nativi: uno per Safari, uno per il resto */
-.cf-q > summary::-webkit-details-marker{ display:none; }
-.cf-q > summary::marker{ content:""; }
-
-.cf-t{
-  flex:1; margin:0;
-  font-family:var(--font-ui); font-size:17.5px; line-height:1.34; color:var(--color-ink);
-  font-variation-settings:"wdth" 104, "wght" 600;
-  letter-spacing:-.005em;
-  transition:text-decoration-color .4s var(--e-out);
-  text-decoration-line:underline;
-  text-decoration-color:transparent;
-  text-underline-offset:4px;
-  text-decoration-thickness:2px;
-}
-/* Il lime resta una sottolineatura, mai il colore del testo: come testo su
-   fondo chiaro il lime e' indistinguibile dalla carta (1.00:1 misurato). */
-.cf-q > summary:hover .cf-t{ text-decoration-color:var(--color-lime); }
-
-.cf-x{
-  position:relative; flex:0 0 auto; margin-top:1px;
-  width:30px; height:30px; border-radius:999px;
-  border:1px solid var(--hair); background:rgba(223,255,62,.06);
-  transition:transform .55s var(--e-over), background-color .45s var(--e-out), border-color .45s var(--e-out);
-}
-.cf-x::before, .cf-x::after{
-  content:""; position:absolute; left:50%; top:50%;
-  width:11px; height:1.5px; border-radius:2px; background:var(--color-lime);
-  transform:translate(-50%,-50%);
-}
-.cf-x::after{ transform:translate(-50%,-50%) rotate(90deg); }
-/* il piu diventa una x ruotando il cerchio intero, non le due stanghette */
-.cf-q[open] .cf-x{ transform:rotate(135deg); background:var(--color-lime); border-color:var(--color-lime); }
-.cf-q[open] .cf-x::before, .cf-q[open] .cf-x::after{ background:var(--color-ink); }
-
-.cf-a{
-  padding:0 0 27px; max-width:64ch;
-  font-size:15.5px; line-height:1.68; color:var(--color-ink);
-  animation:cf-apri .5s var(--e-out) both;
-}
-.cf-a strong{ color:var(--color-ink); font-variation-settings:"wght" 650; }
-/* sotto prefers-reduced-motion globals.css azzera gia la durata */
-@keyframes cf-apri{ from{ opacity:0; transform:translateY(-9px); } to{ opacity:1; transform:none; } }
-
-@media (max-width:768px){
-  .cf-t{ font-size:16px; line-height:1.3; }
-  /* 15px sopra e sotto + la riga del titolo fanno comunque un bersaglio da
-     una cinquantina di pixel, sopra i 44 che il dito chiede: qui si toglie
-     aria, non superficie da toccare. */
-  .cf-q > summary{ gap:12px; padding:15px 0; }
-  .cf-a{ padding:0 0 19px; font-size:15px; line-height:1.6; }
-}
-`;
-
 export default function Faq({ domande }: { domande: Domanda[] }) {
   return (
-    <div>
-      {/* href + precedence: React 19 lo solleva nel <head> e lo deduplica da solo */}
-      <style href="fuel-faq" precedence="medium" dangerouslySetInnerHTML={{ __html: CSS }} />
+    <div className="border-t-[3px] border-ink">
       {domande.map((d) => (
-        <details key={d.q} className="cf-q">
-          <summary>
-            <h3 className="cf-t">{d.q}</h3>
-            <i className="cf-x" aria-hidden="true" />
+        <details key={d.q} className="group border-b border-ink/15">
+          <summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-6 py-5 [&::-webkit-details-marker]:hidden">
+            <span className="font-disp text-lg font-semibold tracking-[.02em] uppercase md:text-xl">{d.q}</span>
+            <span
+              aria-hidden="true"
+              className="grid h-9 w-9 shrink-0 place-items-center bg-ink text-xl text-paper transition-transform duration-500 group-open:rotate-45 group-open:bg-lime group-open:text-ink"
+            >
+              +
+            </span>
           </summary>
-          <div className="cf-a">{d.a}</div>
+          <div className="max-w-[64ch] pb-7 text-lg leading-relaxed text-muted">{d.a}</div>
         </details>
       ))}
     </div>

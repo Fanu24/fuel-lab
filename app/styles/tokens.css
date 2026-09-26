@@ -1,0 +1,65 @@
+/* =========================================================================
+   FUEL LAB — "spogliatoio e cucina"
+
+   Due terreni che si alternano: la CARTA del logo (crema caldo) per il cibo,
+   la NOTTE (quasi nero) per lo sport. Il marchio e' nero su crema, quindi il
+   sito parte da li' invece che dal verde bosco della demo precedente.
+
+   REGOLA DEL LIME, invariata perche' misurata: il lime ha la stessa luminanza
+   della carta (1.00:1). Sulla carta vive solo come SUPERFICIE (bottone pieno,
+   evidenziatore, riempimento di una barra) con testo nero sopra. Come testo e'
+   legale solo sulla notte.
+
+   CONTRASTI (WCAG 2.x, calcolati):
+     ink   #121412 su paper #f3efe6 = 16.13 : 1
+     muted #585d59 su paper         =  5.86 : 1   (su paper-2: 5.26)
+     paper su night #0e100f         = 16.64 : 1
+     steel #a3aba5 su night         =  8.12 : 1
+     steel su night-2 #1a1d1b       =  7.22 : 1
+     lime  su night                 = 16.83 : 1
+     ink   su lime                  = 16.32 : 1
+     lime  su paper                 =  1.01 : 1   -> mai testo
+   ========================================================================= */
+
+@theme {
+  --color-paper: #f3efe6;
+  --color-paper-2: #e9e3d6;   /* seconda carta: righe, caselle vuote */
+  --color-ink: #121412;
+  --color-muted: #585d59;
+  --color-night: #0e100f;
+  --color-night-2: #1a1d1b;
+  --color-steel: #a3aba5;
+  --color-lime: #dfff3e;
+
+  --font-disp: var(--f-disp), "Arial Narrow", sans-serif;
+  --font-ui: var(--f-ui), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--f-mono), ui-monospace, SFMono-Regular, monospace;
+}
+
+:root {
+  --line: rgba(18, 20, 18, 0.12);
+  --line-night: rgba(243, 239, 230, 0.14);
+
+  /* Il taglio d'angolo del logo: la F e la U di FUEL hanno gli spigoli smussati
+     a 45 gradi. Lo stesso taglio chiude foto e bottoni principali. */
+  --taglio: 14px;
+  --r: 4px;
+
+  --e-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --e-mech: cubic-bezier(0.65, 0, 0.35, 1);
+
+  --wrap: 1240px;
+  --gut: 20px;
+  --nav-h: 64px;
+
+  /* Il passo fra le sezioni. Poche sezioni, molta aria: e' la differenza piu'
+     visibile rispetto alla demo "troppo piena". */
+  --sezione: clamp(64px, 9vw, 144px);
+}
+
+@media (min-width: 768px) {
+  :root {
+    --gut: 40px;
+    --nav-h: 72px;
+  }
+}

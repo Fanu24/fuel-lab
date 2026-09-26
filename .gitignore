@@ -50,3 +50,4 @@ next-env.d.ts
 # prove foto e materiali del committente, non vanno online
 .tmp-img/
 DIRETTIVE CLIENTE/
+.claude/worktrees/

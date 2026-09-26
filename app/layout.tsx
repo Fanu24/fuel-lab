@@ -1,23 +1,19 @@
 import type { Metadata, Viewport } from "next";
-import { Anton, Archivo, Martian_Mono } from "next/font/google";
-import { PianoProvider } from "@/lib/piano";
-import Nav from "@/components/Nav";
-import Footer from "@/components/Footer";
+import { Archivo, Martian_Mono, Oxanium } from "next/font/google";
 import "./globals.css";
 
-/* I tre caratteri dell'identita, che il fondo chiaro non tocca.
-   Anton ha un solo peso disegnato: va chiesto con weight "400", non come
-   variabile. Archivo e Martian Mono sono variabili e portano anche l'asse
-   di larghezza: serve davvero, perche Martian Mono a wdth 100 e troppo largo
-   per le etichette italiane e globals.css lo stringe a 84. */
-const anton = Anton({
-  subsets: ["latin"],
-  weight: "400",
+/* Oxanium per titoli ed etichette: lettere squadrate con gli spigoli tagliati a
+   45 gradi, la stessa geometria del logo FUEL LAB. E' variabile (200-800) e ha
+   latin-ext, quindi gli accenti italiani non cadono su un font di ripiego.
+   Archivo resta per il testo corrente, Martian Mono solo per i numeri: macro,
+   grammi, conteggi. */
+const oxanium = Oxanium({
+  subsets: ["latin", "latin-ext"],
   variable: "--f-disp",
   display: "swap",
 });
 const archivo = Archivo({
-  subsets: ["latin"],
+  subsets: ["latin", "latin-ext"],
   axes: ["wdth"],
   variable: "--f-ui",
   display: "swap",
@@ -31,48 +27,31 @@ const martian = Martian_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "FUEL LAB · Mangia come ti alleni",
+    default: "FUEL LAB · Allenati. Al cibo ci pensa Matteo.",
     template: "%s · FUEL LAB",
   },
   description:
-    "Meal prep fresco a Pescara, mai surgelato. Schiscette costruite sui macro della tua scheda, cucinate il lunedì e il giovedì. Menu della settimana, piano sui tuoi macro, home cooking.",
+    "Meal prep fresco a Pescara, mai surgelato. Dici come ti alleni, la settimana si compone da sola: piatti pensati per il cardio e per i pesi, cucinati il lunedì e il giovedì.",
 };
 
-/* La barra del browser prende il colore della carta: su mobile e la prima
-   cosa che si vede, e una barra chiara sopra una pagina chiara evita lo
-   stacco che tradirebbe il tema vecchio. */
 export const viewport: Viewport = {
-  themeColor: "#f4f1e8",
+  themeColor: "#0e100f",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="it"
-      className={`${anton.variable} ${archivo.variable} ${martian.variable}`}
+      className={`${oxanium.variable} ${archivo.variable} ${martian.variable}`}
       suppressHydrationWarning
     >
       <head>
-        {/*
-          Marca la pagina come "JS vivo" prima del primo paint. Le rivelazioni in
-          scroll partono da opacity:0 solo sotto .js: senza questa riga, con il
-          JavaScript disattivato il sito resterebbe bianco invece che statico.
-        */}
-        <script
-          dangerouslySetInnerHTML={{ __html: `document.documentElement.classList.add('js')` }}
-        />
+        {/* Marca la pagina come "JS vivo" prima del primo paint: le rivelazioni in
+            scroll partono da opacity:0 solo sotto .js, cosi' senza JavaScript il
+            sito resta statico invece che bianco. */}
+        <script dangerouslySetInnerHTML={{ __html: `document.documentElement.classList.add('js')` }} />
       </head>
-      <body>
-        <a href="#contenuto" className="skip">
-          Vai al contenuto
-        </a>
-        <span className="grain" aria-hidden="true" />
-        <PianoProvider>
-          <Nav />
-          <main id="contenuto">{children}</main>
-          <Footer />
-        </PianoProvider>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

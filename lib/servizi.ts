@@ -35,7 +35,7 @@ export interface Servizio {
   nome: string;
   descrizione: string;
   prezzo: Prezzo;
-  /** URL gia' pronta per un tag <img>, larghezza scelta per il contesto in cui il servizio compare */
+  /** id Unsplash: lo ridimensiona il loader di next/image (lib/immagini/loader.ts) */
   img: string;
   /** pagina del sito dove approfondire il servizio, mai un ancora vuota */
   href: string;
@@ -44,30 +44,25 @@ export interface Servizio {
 /** Soglia unica dei due servizi di meal prep, in euro a pasto. Un solo posto da cui dipende tutto il sito. */
 export const SOGLIA_PREZZO = 8.9;
 
-/** Stesso pattern di piattoImg() in lib/catalogo.ts: id Unsplash + larghezza esplicita, mai la foto intera. */
-function foto(id: string, w = 1000): string {
-  return `https://images.unsplash.com/${id}?w=${w}&q=80&auto=format&fit=crop`;
-}
-
 export const SERVIZI: Servizio[] = [
   {
     id: "menu-settimana",
     numero: "01",
     nome: "Il menu della settimana",
     descrizione:
-      "Sei piatti già composti, con ingredienti, macro e motivo dell'abbinamento. Le aggiunte della box le scegli tu: i numeri tornano sempre, perché li vedi prima di scegliere.",
+      "Dici come ti alleni giorno per giorno e la settimana si compone con i sei piatti del menu. La ritocchi trascinando i piatti, aggiungi quello che vuoi alla box.",
     prezzo: { tipo: "soglia", valore: SOGLIA_PREZZO, unita: "a pasto" },
-    img: foto("photo-1505576399279-565b52d4ac71", 900),
-    href: "/menu",
+    img: "photo-1505576399279-565b52d4ac71",
+    href: "/settimana",
   },
   {
     id: "sui-tuoi-macro",
     numero: "02",
     nome: "Sui macro della tua scheda",
     descrizione:
-      "Carichi il PDF o i numeri del tuo nutrizionista, il piano si compone da solo sui tuoi target: il matcher sceglie i piatti più vicini ai tuoi macro, tu confermi.",
+      "Scrivi i numeri della scheda del tuo nutrizionista: il piano si compone sui tuoi target, scegliendo i piatti più vicini ai tuoi macro. Tu confermi.",
     prezzo: { tipo: "soglia", valore: SOGLIA_PREZZO, unita: "a pasto" },
-    img: foto("photo-1512058564366-18510be2db19", 900),
+    img: "photo-1512058564366-18510be2db19",
     href: "/scheda",
   },
   {
@@ -77,7 +72,7 @@ export const SERVIZI: Servizio[] = [
     descrizione:
       "Matteo viene a casa tua: fa la spesa, cucina e porziona nella tua cucina. Non è produzione in serie, è il suo tempo dedicato solo a te, e per questo ha un'economia sua.",
     prezzo: { tipo: "preventivo" },
-    img: foto("photo-1556910103-1c02745aae4d", 1000),
+    img: "photo-1556910103-1c02745aae4d",
     // non e' una pagina che spiega il servizio (non esiste ancora): e' un posizionamento
     // deliberato, "conosci Matteo prima di farlo entrare in casa tua". Vedi il commento
     // di LinkServizio in components/servizi/SezioneServizi.tsx per il dettaglio.

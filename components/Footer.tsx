@@ -1,51 +1,74 @@
+import Image from "next/image";
 import Link from "next/link";
+
+const COLONNE = [
+  {
+    titolo: "Mangia",
+    voci: [
+      { href: "/menu", label: "Il menu" },
+      { href: "/settimana", label: "Componi la settimana" },
+      { href: "/scheda", label: "Dai tuoi macro" },
+    ],
+  },
+  {
+    titolo: "Scopri",
+    voci: [
+      { href: "/come-funziona", label: "Come funziona" },
+      { href: "/servizi", label: "Servizi e prezzi" },
+      { href: "/chi-e-matteo", label: "Chi è Matteo" },
+    ],
+  },
+];
 
 export default function Footer() {
   return (
-    <footer className="pb-6 md:pb-10">
+    <footer className="notte pt-20 pb-10 md:pt-28">
       <div className="wrap">
-        <div
-          className="flex flex-wrap items-end justify-between gap-6 border-t pt-6 md:gap-10 md:pt-10"
-          style={{ borderColor: "var(--hair-soft)" }}
-        >
-          <Link href="/" aria-label="FUEL LAB, home" className="block transition-opacity duration-700 hover:opacity-80">
-            {/* Il lockup intero (FUEL, AB, YOUR PERSONAL CHEF) sta qui perche' il
-                footer ha lo spazio che in nav non c'e'. */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/logo-fuellab.png"
-              alt="Logo FUEL LAB"
-              loading="lazy"
-              width={1095}
-              height={360}
-              className="h-auto w-[150px] md:w-[220px]"
-            />
-          </Link>
-
-          <div className="flex flex-col items-start gap-3 pb-0 sm:items-end md:gap-4 md:pb-3">
-            <nav className="flex flex-wrap gap-x-6 gap-y-0.5 md:gap-x-7 md:gap-y-2">
-              {[
-                { href: "/menu", label: "Menu" },
-                { href: "/come-funziona", label: "Come funziona" },
-                { href: "/scheda", label: "La tua scheda" },
-                { href: "/chi-e-matteo", label: "Chi siamo" },
-                { href: "/settimana", label: "Componi la settimana" },
-              ].map((v) => (
-                <Link
-                  key={v.href}
-                  href={v.href}
-                  className="inline-flex min-h-[44px] items-center text-[13px] tracking-[.08em] uppercase transition-colors duration-400 hover:text-ink"
-                  style={{ fontVariationSettings: '"wdth" 108, "wght" 600' }}
-                >
-                  {v.label}
-                </Link>
-              ))}
-            </nav>
-            <p className="note">Matteo Pantan&egrave; &middot; Pescara &middot; Cucinato il luned&igrave; e il gioved&igrave;</p>
-            <p className="note" style={{ letterSpacing: ".12em" }}>
-              Demo dimostrativa. Nessun ordine viene registrato
+        <div className="grid gap-12 md:grid-cols-[1.4fr_1fr_1fr]">
+          <div>
+            <Link href="/" aria-label="FUEL LAB, home" className="inline-block">
+              <Image
+                src="/logo-fuellab.png"
+                alt=""
+                width={1095}
+                height={360}
+                className="h-auto w-[220px] invert md:w-[300px]"
+              />
+            </Link>
+            <p className="mt-8 max-w-[34ch] text-steel">
+              Cucina fresca per chi si allena. Via del Santuario 14, Pescara. Consegna in zona il lunedì e il
+              giovedì.
             </p>
+            <Link href="/richiesta" className="btn btn-lime mt-8">
+              Scrivi a Matteo <span className="freccia">→</span>
+            </Link>
           </div>
+
+          {COLONNE.map((c) => (
+            <nav key={c.titolo} aria-label={c.titolo}>
+              <p className="occhiello text-steel">{c.titolo}</p>
+              <ul className="mt-6 grid">
+                {c.voci.map((v) => (
+                  <li key={v.href}>
+                    <Link
+                      href={v.href}
+                      className="inline-flex min-h-11 items-center font-disp text-lg font-semibold uppercase tracking-[.06em] hover:text-lime"
+                    >
+                      {v.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          ))}
+        </div>
+
+        <div
+          className="mt-20 flex flex-wrap justify-between gap-4 border-t pt-6 text-sm text-steel"
+          style={{ borderColor: "var(--line)" }}
+        >
+          <p>© FUEL LAB · Matteo Pantanè · Pescara</p>
+          <p>Sito dimostrativo: nessun ordine viene addebitato, la richiesta arriva su WhatsApp.</p>
         </div>
       </div>
     </footer>

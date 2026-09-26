@@ -1,0 +1,190 @@
+/* Bottoni, etichette, campi. Tutto cio' che si tocca ha almeno 44px di lato. */
+
+@layer components {
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    min-height: 52px;
+    padding: 0 26px;
+    font-family: var(--font-disp);
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    transition:
+      background-color 0.35s var(--e-out),
+      color 0.35s var(--e-out),
+      transform 0.35s var(--e-out);
+    clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  }
+  .btn:active {
+    transform: translateY(1px);
+  }
+  .btn:disabled,
+  .btn[aria-disabled="true"] {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  /* clip-path taglia anche l'outline: il fuoco va disegnato dentro. */
+  .btn:focus-visible {
+    outline: none;
+    box-shadow: inset 0 0 0 3px var(--color-lime), inset 0 0 0 6px var(--color-ink);
+  }
+
+  .btn-lime {
+    background: var(--color-lime);
+    color: var(--color-ink);
+  }
+  .btn-lime:hover {
+    background: var(--color-paper);
+  }
+
+  .btn-ink {
+    background: var(--color-ink);
+    color: var(--color-paper);
+  }
+  .btn-ink:hover {
+    background: var(--color-night-2);
+    color: var(--color-lime);
+  }
+
+  .btn-linea {
+    background: transparent;
+    color: inherit;
+    box-shadow: inset 0 0 0 2px currentColor;
+    clip-path: none;
+  }
+  .btn-linea:hover {
+    background: var(--color-ink);
+    color: var(--color-paper);
+    box-shadow: inset 0 0 0 2px var(--color-ink);
+  }
+  .notte .btn-linea:hover {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    box-shadow: inset 0 0 0 2px var(--color-paper);
+  }
+
+  .btn-sm {
+    min-height: 44px;
+    padding: 0 18px;
+    font-size: 12px;
+  }
+
+  .freccia {
+    display: inline-block;
+    transition: transform 0.35s var(--e-out);
+  }
+  .btn:hover .freccia,
+  a:hover > .freccia {
+    transform: translateX(4px);
+  }
+
+  /* Link testuale con sottolineatura spessa. */
+  .link {
+    font-weight: 700;
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 5px;
+  }
+  .link:hover {
+    text-decoration-color: var(--color-lime);
+  }
+
+  /* Etichetta di allenamento: cardio, pesi, riposo. */
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 26px;
+    padding: 0 10px;
+    font-family: var(--font-disp);
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    background: var(--color-ink);
+    color: var(--color-paper);
+  }
+  .tag-cardio::before,
+  .tag-pesi::before,
+  .tag-entrambi::before,
+  .tag-riposo::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    background: var(--color-lime);
+  }
+  .tag-pesi::before {
+    border-radius: 0;
+  }
+  .tag-cardio::before {
+    border-radius: 50%;
+  }
+  .tag-riposo::before {
+    background: var(--color-steel);
+    border-radius: 50%;
+  }
+
+  /* Interruttore a segmenti (Tutti / Cardio / Pesi). */
+  .segmenti {
+    display: inline-flex;
+    padding: 4px;
+    gap: 4px;
+    background: var(--color-paper-2);
+  }
+  .segmenti button {
+    min-height: 44px;
+    padding: 0 18px;
+    font-family: var(--font-disp);
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+    transition: background-color 0.3s var(--e-out), color 0.3s var(--e-out);
+  }
+  .segmenti button[aria-pressed="true"] {
+    background: var(--color-ink);
+    color: var(--color-paper);
+  }
+
+  .campo {
+    display: grid;
+    gap: 8px;
+  }
+  .campo label {
+    font-family: var(--font-disp);
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+  .campo input,
+  .campo textarea,
+  .campo select {
+    min-height: 52px;
+    padding: 12px 16px;
+    background: var(--color-paper);
+    border: 2px solid var(--line);
+    border-radius: 0;
+    font: inherit;
+    color: var(--color-ink);
+    transition: border-color 0.3s var(--e-out);
+  }
+  .campo input:focus,
+  .campo textarea:focus,
+  .campo select:focus {
+    border-color: var(--color-ink);
+    outline: none;
+    box-shadow: 0 0 0 3px var(--color-lime);
+  }
+  .campo .errore {
+    font-size: 14px;
+    font-weight: 600;
+    color: #a3261b; /* 6.6:1 su paper */
+  }
+}

@@ -1,0 +1,366 @@
+/* Il compositore della settimana: banco, griglia, caselle, barra.
+
+   Sul telefono il banco resta appiccicato sotto la nav e scorre di lato: i
+   piatti devono stare a portata di pollice mentre si scorre la settimana.
+   Da lg in su il banco e' una colonna a sinistra e la settimana sono sette
+   colonne. */
+
+@layer components {
+  .tavolo {
+    display: grid;
+    gap: 24px;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  @media (min-width: 1024px) {
+    .tavolo {
+      grid-template-columns: 280px 1fr;
+      gap: 32px;
+      align-items: start;
+    }
+  }
+
+  /* ---- il banco ---- */
+
+  .banco {
+    position: sticky;
+    top: var(--nav-h);
+    z-index: 20;
+    margin-inline: calc(var(--gut) * -1);
+    padding: 12px var(--gut);
+    background: var(--color-paper);
+    border-bottom: 1px solid var(--line);
+    transition: background-color 0.3s var(--e-out), box-shadow 0.3s var(--e-out);
+  }
+  @media (min-width: 1024px) {
+    .banco {
+      top: calc(var(--nav-h) + 24px);
+      margin: 0;
+      padding: 18px;
+      background: var(--color-paper-2);
+      border: 0;
+    }
+  }
+  .banco-togli {
+    background: var(--color-ink);
+    color: var(--color-paper);
+    --color-muted: var(--color-steel);
+  }
+  .banco-togli.is-sopra {
+    box-shadow: inset 0 0 0 3px var(--color-lime);
+  }
+  .banco-cerca .piatto-banco {
+    box-shadow: inset 0 0 0 2px var(--color-ink);
+  }
+
+  .banco-lista {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  @media (min-width: 1024px) {
+    .banco-lista {
+      flex-direction: column;
+      overflow: visible;
+    }
+  }
+
+  .piatto-banco {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 220px;
+    padding: 6px;
+    background: var(--color-paper);
+    color: var(--color-ink);
+    cursor: grab;
+    touch-action: manipulation;
+    transition: transform 0.25s var(--e-out), box-shadow 0.25s var(--e-out);
+  }
+  @media (min-width: 1024px) {
+    .piatto-banco {
+      width: 100%;
+    }
+    .piatto-banco:hover {
+      transform: translateX(3px);
+      box-shadow: -3px 0 0 var(--color-ink);
+    }
+  }
+  .piatto-banco.is-preso {
+    box-shadow: inset 0 0 0 3px var(--color-ink), 0 0 0 3px var(--color-lime);
+  }
+
+  /* ---- la settimana ---- */
+
+  .griglia {
+    display: grid;
+    gap: 10px;
+  }
+  @media (min-width: 1024px) {
+    .griglia {
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 8px;
+    }
+  }
+
+  .giorno {
+    display: grid;
+    gap: 8px;
+    padding-top: 10px;
+    border-top: 3px solid var(--color-ink);
+  }
+  .giorno-testa {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 24px;
+  }
+  @media (min-width: 1024px) {
+    .giorno-testa {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+      min-height: 64px;
+    }
+  }
+  .giorno-caselle {
+    display: grid;
+    grid-template-columns: repeat(var(--pasti, 2), minmax(0, 1fr));
+    gap: 8px;
+  }
+  @media (min-width: 1024px) {
+    .giorno-caselle {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* ---- la casella ---- */
+
+  .slot {
+    position: relative;
+    min-height: 76px;
+    background: var(--color-paper-2);
+    transition: background-color 0.25s var(--e-out), box-shadow 0.25s var(--e-out), opacity 0.25s;
+  }
+  @media (min-width: 1024px) {
+    .slot {
+      min-height: 168px;
+    }
+  }
+  .slot.is-piena {
+    background: #fff;
+  }
+  .slot.is-bersaglio {
+    box-shadow: inset 0 0 0 2px var(--color-ink);
+  }
+  .slot.is-sopra,
+  .slot.is-cercata {
+    background: var(--color-lime);
+    box-shadow: inset 0 0 0 3px var(--color-ink);
+  }
+  .slot.is-tenuta {
+    opacity: 0.45;
+  }
+
+  .slot-corpo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    height: 100%;
+    min-height: inherit;
+    padding: 6px;
+    text-align: left;
+    touch-action: manipulation;
+  }
+  .is-piena .slot-corpo {
+    cursor: grab;
+  }
+  @media (min-width: 1024px) {
+    .slot-corpo {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  }
+  .slot-foto {
+    position: relative;
+    flex-shrink: 0;
+    width: 56px;
+    aspect-ratio: 1;
+    overflow: hidden;
+    background: var(--color-paper-2);
+  }
+  @media (min-width: 1024px) {
+    .slot-foto {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+    }
+  }
+  .slot-testo {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+    padding-right: 34px;
+  }
+  @media (min-width: 1024px) {
+    .slot-testo {
+      padding-right: 0;
+    }
+  }
+  .slot-nome {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+  .slot-vuota {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    font-family: var(--font-disp);
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+  }
+  .is-sopra .slot-vuota,
+  .is-cercata .slot-vuota {
+    color: var(--color-ink);
+  }
+
+  .slot-azioni {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  @media (min-width: 1024px) {
+    .slot-azioni {
+      flex-direction: row;
+      top: 10px;
+      right: 10px;
+    }
+  }
+  .slot-azioni button {
+    display: grid;
+    place-items: center;
+    min-width: 32px;
+    height: 32px;
+    padding: 0 6px;
+    background: var(--color-ink);
+    color: var(--color-paper);
+    font-size: 16px;
+    line-height: 1;
+  }
+  .slot-azioni button:hover {
+    background: var(--color-lime);
+    color: var(--color-ink);
+  }
+
+  /* ---- passo 1: gli allenamenti ---- */
+
+  .allenamenti {
+    display: grid;
+    gap: 6px;
+  }
+  @media (min-width: 640px) {
+    .allenamenti {
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+    }
+  }
+  .allenamento-giorno {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding-top: 8px;
+    border-top: 1px solid var(--line);
+  }
+  @media (min-width: 640px) {
+    .allenamento-giorno {
+      flex-direction: column;
+      align-items: stretch;
+      border-top: 3px solid var(--color-ink);
+    }
+  }
+  .allenamento-scelte {
+    display: flex;
+    gap: 4px;
+  }
+  @media (min-width: 640px) {
+    .allenamento-scelte {
+      flex-direction: column;
+    }
+  }
+  .scelta {
+    min-height: 44px;
+    min-width: 72px;
+    padding: 0 10px;
+    background: var(--color-paper-2);
+    font-family: var(--font-disp);
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+    transition: background-color 0.25s var(--e-out), color 0.25s var(--e-out);
+  }
+  .scelta:hover {
+    color: var(--color-ink);
+  }
+  .scelta[aria-pressed="true"] {
+    background: var(--color-ink);
+    color: var(--color-paper);
+  }
+  .scelta-cardio[aria-pressed="true"],
+  .scelta-pesi[aria-pressed="true"] {
+    box-shadow: inset 4px 0 0 var(--color-lime);
+  }
+
+  /* ---- barra e fantasma ---- */
+
+  .barra {
+    position: sticky;
+    bottom: 0;
+    z-index: 40;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .fantasma {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 90;
+    pointer-events: none;
+    padding: 8px 12px;
+    background: var(--color-ink);
+    color: var(--color-paper);
+    font-family: var(--font-disp);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    box-shadow: 4px 4px 0 var(--color-lime);
+    white-space: nowrap;
+  }
+
+  .foglio {
+    width: min(760px, calc(100% - 24px));
+    max-height: 90svh;
+    margin: auto;
+    padding: 0;
+    background: var(--color-paper);
+    color: var(--color-ink);
+    border: 0;
+  }
+  .foglio::backdrop {
+    background: rgba(14, 16, 15, 0.7);
+  }
+}

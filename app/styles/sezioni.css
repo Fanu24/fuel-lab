@@ -1,0 +1,158 @@
+/* Impaginazione: contenitore, sezioni, titoli. Le pagine chiedono queste classi
+   invece di riscrivere padding e scale tipografiche a mano in ogni file. */
+
+@layer components {
+  .wrap {
+    width: 100%;
+    max-width: calc(var(--wrap) + var(--gut) * 2);
+    margin-inline: auto;
+    padding-inline: var(--gut);
+  }
+
+  .sezione {
+    padding-block: var(--sezione);
+  }
+
+  /* La prima sezione di una pagina interna deve schivare la nav fissa. */
+  .testata {
+    padding-top: calc(var(--nav-h) + 56px);
+    padding-bottom: calc(var(--sezione) * 0.6);
+  }
+
+  /* LA NOTTE. Ridefinisce muted e line per tutto il sottoalbero: un componente
+     scritto per la carta finisce sulla notte senza diventare illeggibile. */
+  .notte {
+    background: var(--color-night);
+    color: var(--color-paper);
+    --color-muted: var(--color-steel);
+    --line: var(--line-night);
+  }
+
+  .carta-2 {
+    background: var(--color-paper-2);
+  }
+
+  /* ---- tipografia ---- */
+
+  .occhiello {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-disp);
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    line-height: 1;
+  }
+  .occhiello::before {
+    content: "";
+    width: 18px;
+    height: 3px;
+    background: currentColor;
+  }
+  .notte .occhiello::before {
+    background: var(--color-lime);
+  }
+
+  .titolo-xl {
+    font-size: clamp(44px, 9vw, 128px);
+    line-height: 0.88;
+  }
+  .titolo {
+    font-size: clamp(34px, 5.4vw, 72px);
+  }
+  .titolo-s {
+    font-size: clamp(24px, 2.6vw, 34px);
+    line-height: 1;
+  }
+
+  .lead {
+    font-size: clamp(17px, 1.5vw, 20px);
+    line-height: 1.5;
+    color: var(--color-muted);
+    max-width: 56ch;
+  }
+
+  .num {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-variation-settings: "wdth" 84;
+    letter-spacing: -0.02em;
+  }
+
+  /* Evidenziatore lime dietro una parola: il lime come superficie, mai come
+     colore del testo (sulla carta sparirebbe). */
+  .evidenzia {
+    background: linear-gradient(transparent 58%, var(--color-lime) 58%, var(--color-lime) 92%, transparent 92%);
+    padding-inline: 0.06em;
+  }
+
+  /* ---- foto ---- */
+
+  .smusso {
+    clip-path: polygon(
+      var(--taglio) 0,
+      100% 0,
+      100% calc(100% - var(--taglio)),
+      calc(100% - var(--taglio)) 100%,
+      0 100%,
+      0 var(--taglio)
+    );
+  }
+
+  /* Velo sulle foto a tutta pagina: il testo sopra resta leggibile anche quando
+     la foto cambia. Calcolato sul caso peggiore, una foto bianca. */
+  .velo {
+    background:
+      linear-gradient(180deg, rgba(14, 16, 15, 0.55) 0%, rgba(14, 16, 15, 0.2) 35%, rgba(14, 16, 15, 0.88) 100%),
+      linear-gradient(90deg, rgba(14, 16, 15, 0.7) 0%, rgba(14, 16, 15, 0) 70%);
+  }
+
+  .skip {
+    position: fixed;
+    left: 12px;
+    top: -60px;
+    z-index: 100;
+    padding: 12px 18px;
+    background: var(--color-ink);
+    color: var(--color-paper);
+    font-weight: 700;
+  }
+  .skip:focus {
+    top: 12px;
+  }
+}
+
+/* ---- rivelazioni ---- */
+
+.js .reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity 0.9s var(--e-out) var(--d, 0ms),
+    transform 0.9s var(--e-out) var(--d, 0ms);
+}
+.js .reveal.in {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .js .reveal,
+  .js .reveal.in {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fuel-sale {
+  from {
+    opacity: 0;
+    transform: translateY(0.4em);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
