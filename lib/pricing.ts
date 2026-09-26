@@ -18,6 +18,13 @@ export const TAGLIE: Taglia[] = [
   { pasti: 20, prezzoPasto: 8.9, scontoVolume: 18 },
 ];
 
+/**
+ * Interruttore della stima in euro nella barra della settimana. Spento: il committente
+ * per ora non vuole prezzi in chiaro, e la barra mostra solo "da 8,90 € a pasto".
+ * I calcoli qui sotto restano veri e provati, pronti per il giorno in cui si accende.
+ */
+export const MOSTRA_STIMA_PREZZO = false;
+
 /** Sconto dell'abbonamento settimanale, sopra allo sconto di volume. */
 export const SCONTO_ABBONAMENTO = 0.15;
 

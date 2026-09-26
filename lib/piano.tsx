@@ -3,17 +3,23 @@
 import { createContext, useCallback, useContext, useMemo, useSyncExternalStore } from "react";
 import { getPiatto, getExtra } from "./catalogo";
 import type { Macros } from "./types";
+import { creaStore } from "./storeLocale";
 import {
   GIORNI,
   PASTI,
   ZERO_MACRO,
-  casellaVuota,
+  conCasella,
   macroCasella,
+  potaAllenamenti,
   potaPiano,
+  spostaCasella,
+  type Allenamenti,
   type Casella,
   type GiornoSettimana,
   type Pasto,
   type Piano,
+  type Slot,
+  type TipoGiornata,
 } from "./settimana";
 
 /*
@@ -25,14 +31,26 @@ import {
 export {
   CASELLE_TOTALI,
   GIORNI,
+  NOMI_GIORNATA,
   NOMI_GIORNO,
   PASTI,
+  TIPI_GIORNATA,
   ZERO_MACRO,
   leggiCasella,
   macroCasella,
+  potaAllenamenti,
   potaPiano,
+  spostaCasella,
 } from "./settimana";
-export type { Casella, GiornoSettimana, Pasto, Piano } from "./settimana";
+export type {
+  Allenamenti,
+  Casella,
+  GiornoSettimana,
+  Pasto,
+  Piano,
+  Slot,
+  TipoGiornata,
+} from "./settimana";
 
 /* =========================================================================
    Lo store del piano: la parte che ha bisogno di React.
@@ -54,92 +72,26 @@ function sommaMacro(lista: Macros[]): Macros {
   );
 }
 
-/**
- * Riscrive una casella senza mutare il piano corrente. Una casella rimasta vuota
- * sparisce, e con lei il giorno che non ha piu' pasti: cosi' il conto delle caselle
- * piene dice la verita' e il JSON salvato non accumula gusci vuoti.
+/*
+ * Due store e due chiavi: il piano resta sulla sua (nessuna migrazione dei piani
+ * gia' salvati), gli allenamenti ne hanno una nuova. La meccanica - SSR, idratazione,
+ * altre schede, null contro {} - e' in ./storeLocale e vale per entrambi.
  */
-function conCasella(p: Piano, g: GiornoSettimana, m: Pasto, c: Casella | undefined): Piano {
-  const riga: Partial<Record<Pasto, Casella>> = { ...p[g] };
-  if (c && !casellaVuota(c)) riga[m] = c;
-  else delete riga[m];
-  const out: Piano = { ...p, [g]: riga };
-  if (Object.keys(riga).length === 0) delete out[g];
-  return out;
-}
+const storePiano = creaStore<Piano>({
+  chiave: "fuellab.piano.v2",
+  pota: potaPiano,
+  vuoto: () => ({}),
+});
 
-const CHIAVE = "fuellab.piano.v2";
-const VUOTO_SSR: Piano = Object.freeze({}) as Piano;
+const storeAllenamenti = creaStore<Allenamenti>({
+  chiave: "fuellab.allenamenti.v1",
+  pota: potaAllenamenti,
+  vuoto: () => ({}),
+});
 
-let piano: Piano = {};
-let letto = false;
-const ascoltatori = new Set<() => void>();
-
-/**
- * `null` significa una cosa sola: lo storage non e' stato leggibile (negato, o in
- * errore). La chiave assente e il JSON illeggibile tornano `{}`, che vuol dire "letto,
- * e non c'era niente di valido". La distinzione conta perche' assicuraLettura scrive
- * quello che riceve: confondere i due casi farebbe azzerare il piano di questa scheda
- * al primo storage negato, o al contrario lo terrebbe stantio dopo che un'altra scheda
- * ha svuotato la settimana.
- */
-function leggi(): Piano | null {
-  let raw: string | null;
-  try {
-    raw = localStorage.getItem(CHIAVE);
-  } catch {
-    return null; // storage negato: non ho letto, quindi non ho niente da dire
-  }
-  if (!raw) return {}; // chiave assente: letto, e la settimana e' vuota davvero
-  try {
-    return potaPiano(JSON.parse(raw) as unknown);
-  } catch {
-    return {}; // JSON rotto: letto, e non c'era niente di valido da tenere
-  }
-}
-
-function assicuraLettura() {
-  if (letto) return;
-  letto = true;
-  const salvato = leggi();
-  // `??` e non `if (salvato)`: un piano vuoto e' un risultato, non un fallimento.
-  // Con `if` l'utente che svuota la settimana in una scheda se la rivedeva nell'altra.
-  piano = salvato ?? piano;
-}
-
-function scrivi(prossimo: Piano) {
-  piano = prossimo;
-  try {
-    localStorage.setItem(CHIAVE, JSON.stringify(prossimo));
-  } catch {
-    /* storage negato o pieno: il piano resta valido per questa sessione */
-  }
-  for (const f of ascoltatori) f();
-}
-
-function daAltraScheda(e: StorageEvent) {
-  if (e.key !== null && e.key !== CHIAVE) return;
-  letto = false;
-  assicuraLettura();
-  for (const f of ascoltatori) f();
-}
-
-function subscribe(f: () => void): () => void {
-  assicuraLettura();
-  if (ascoltatori.size === 0) window.addEventListener("storage", daAltraScheda);
-  ascoltatori.add(f);
-  return () => {
-    ascoltatori.delete(f);
-    if (ascoltatori.size === 0) window.removeEventListener("storage", daAltraScheda);
-  };
-}
-
-function getSnapshot(): Piano {
-  assicuraLettura();
-  return piano; // riferimento stabile: un oggetto nuovo qui farebbe ciclare React
-}
-function getServerSnapshot(): Piano {
-  return VUOTO_SSR;
+/** Scrive solo se qualcosa e' cambiato: le funzioni pure tornano lo stesso riferimento quando non fanno nulla. */
+function scriviPiano(prossimo: Piano) {
+  if (prossimo !== storePiano.get()) storePiano.scrivi(prossimo);
 }
 
 export interface CtxPiano {
@@ -159,57 +111,75 @@ export interface CtxPiano {
   impostaExtra: (g: GiornoSettimana, m: Pasto, extraId: string, acceso: boolean) => void;
   svuotaCasella: (g: GiornoSettimana, m: Pasto) => void;
   /** prima casella senza piatto: una casella di soli extra ha ancora posto */
-  primaLibera: () => { g: GiornoSettimana; m: Pasto } | null;
+  primaLibera: () => Slot | null;
   /** il piano in ingresso viene potato: puo' arrivare da un link condiviso */
   sostituisciPiano: (p: Piano) => void;
+  /** sposta una casella intera, piatto e aggiunte; se la destinazione e' piena le scambia */
+  sposta: (da: Slot, a: Slot) => void;
+  /** il piano proposto dall'autoriempimento: stessa strada di sostituisciPiano, nome che dice perche' */
+  riempi: (p: Piano) => void;
+  /** svuota solo il piano: gli allenamenti descrivono la settimana di chi mangia, non il carrello */
   svuota: () => void;
+  allenamenti: Allenamenti;
+  /** `null` toglie il giorno: "non l'ho detto" e' diverso da "riposo" */
+  impostaAllenamento: (g: GiornoSettimana, t: TipoGiornata | null) => void;
+  svuotaAllenamenti: () => void;
 }
 
 const Ctx = createContext<CtxPiano | null>(null);
 
 export function PianoProvider({ children }: { children: React.ReactNode }) {
-  const corrente = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
-  const pronto = corrente !== VUOTO_SSR;
+  const corrente = useSyncExternalStore(
+    storePiano.subscribe,
+    storePiano.getSnapshot,
+    storePiano.getServerSnapshot,
+  );
+  const allenamenti = useSyncExternalStore(
+    storeAllenamenti.subscribe,
+    storeAllenamenti.getSnapshot,
+    storeAllenamenti.getServerSnapshot,
+  );
+  const pronto = corrente !== storePiano.VUOTO_SSR;
 
   // Le mutazioni partono dal modulo e non da `corrente`: restano stabili fra i render
   // e due click ravvicinati non ripartono entrambi dallo stesso snapshot vecchio.
   const metti = useCallback((g: GiornoSettimana, m: Pasto, id: string) => {
     if (!getPiatto(id)) return;
-    const attuale = piano[g]?.[m] ?? { extra: [] };
-    scrivi(conCasella(piano, g, m, { ...attuale, piatto: id }));
+    const attuale = storePiano.get()[g]?.[m] ?? { extra: [] };
+    scriviPiano(conCasella(storePiano.get(), g, m, { ...attuale, piatto: id }));
   }, []);
 
   const togliPiatto = useCallback((g: GiornoSettimana, m: Pasto) => {
-    const attuale = piano[g]?.[m];
+    const attuale = storePiano.get()[g]?.[m];
     if (!attuale) return;
     const prossima: Casella = { extra: attuale.extra };
-    scrivi(conCasella(piano, g, m, prossima));
+    scriviPiano(conCasella(storePiano.get(), g, m, prossima));
   }, []);
 
   const impostaExtra = useCallback(
     (g: GiornoSettimana, m: Pasto, extraId: string, acceso: boolean) => {
       if (!getExtra(extraId)) return;
-      const attuale = piano[g]?.[m] ?? { extra: [] };
+      const attuale = storePiano.get()[g]?.[m] ?? { extra: [] };
       const gia = attuale.extra.includes(extraId);
       if (gia === acceso) return;
       const extra = acceso
         ? [...attuale.extra, extraId]
         : attuale.extra.filter((x) => x !== extraId);
-      scrivi(conCasella(piano, g, m, { ...attuale, extra }));
+      scriviPiano(conCasella(storePiano.get(), g, m, { ...attuale, extra }));
     },
     [],
   );
 
   const alternaExtra = useCallback((g: GiornoSettimana, m: Pasto, extraId: string) => {
     if (!getExtra(extraId)) return;
-    const attuale = piano[g]?.[m] ?? { extra: [] };
+    const attuale = storePiano.get()[g]?.[m] ?? { extra: [] };
     const gia = attuale.extra.includes(extraId);
     const extra = gia ? attuale.extra.filter((x) => x !== extraId) : [...attuale.extra, extraId];
-    scrivi(conCasella(piano, g, m, { ...attuale, extra }));
+    scriviPiano(conCasella(storePiano.get(), g, m, { ...attuale, extra }));
   }, []);
 
   const svuotaCasella = useCallback((g: GiornoSettimana, m: Pasto) => {
-    scrivi(conCasella(piano, g, m, undefined));
+    scriviPiano(conCasella(storePiano.get(), g, m, undefined));
   }, []);
 
   // Passa da potaPiano come la lettura da localStorage: al Task 6 il piano arriva
@@ -217,8 +187,22 @@ export function PianoProvider({ children }: { children: React.ReactNode }) {
   // Senza questo, dati malformati resterebbero in memoria E su localStorage per tutta
   // la sessione: assicuraLettura non ripota nulla finche' `letto` e' true, e l'evento
   // `storage` non torna indietro alla scheda che ha scritto.
-  const sostituisciPiano = useCallback((p: Piano) => scrivi(potaPiano(p)), []);
-  const svuota = useCallback(() => scrivi({}), []);
+  const sostituisciPiano = useCallback((p: Piano) => storePiano.scrivi(potaPiano(p)), []);
+  const sposta = useCallback(
+    (da: Slot, a: Slot) => scriviPiano(spostaCasella(storePiano.get(), da, a)),
+    [],
+  );
+  const svuota = useCallback(() => storePiano.scrivi({}), []);
+
+  const impostaAllenamento = useCallback((g: GiornoSettimana, t: TipoGiornata | null) => {
+    const attuali = storeAllenamenti.get();
+    if ((attuali[g] ?? null) === t) return;
+    const prossimi: Allenamenti = { ...attuali };
+    if (t) prossimi[g] = t;
+    else delete prossimi[g];
+    storeAllenamenti.scrivi(prossimi);
+  }, []);
+  const svuotaAllenamenti = useCallback(() => storeAllenamenti.scrivi({}), []);
 
   const valore = useMemo<CtxPiano>(() => {
     const casella = (g: GiornoSettimana, m: Pasto) => corrente[g]?.[m];
@@ -249,7 +233,12 @@ export function PianoProvider({ children }: { children: React.ReactNode }) {
         return null;
       },
       sostituisciPiano,
+      sposta,
+      riempi: sostituisciPiano,
       svuota,
+      allenamenti,
+      impostaAllenamento,
+      svuotaAllenamenti,
     };
   }, [
     corrente,
@@ -260,7 +249,11 @@ export function PianoProvider({ children }: { children: React.ReactNode }) {
     impostaExtra,
     svuotaCasella,
     sostituisciPiano,
+    sposta,
     svuota,
+    allenamenti,
+    impostaAllenamento,
+    svuotaAllenamenti,
   ]);
 
   return <Ctx.Provider value={valore}>{children}</Ctx.Provider>;

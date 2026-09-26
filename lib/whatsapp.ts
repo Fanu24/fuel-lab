@@ -1,5 +1,5 @@
-import { GIORNI, NOMI_GIORNO, PASTI } from "./settimana";
-import type { Casella, GiornoSettimana, Piano } from "./settimana";
+import { GIORNI, NOMI_GIORNATA, NOMI_GIORNO, PASTI } from "./settimana";
+import type { Allenamenti, Casella, GiornoSettimana, Piano } from "./settimana";
 import { getPiatto, getExtra, etichettaPrezzo } from "./catalogo";
 import type { Macros } from "./types";
 
@@ -111,14 +111,21 @@ function descrizioneCasella(c: Casella): string {
   return extra.length > 0 ? extra.join(" + ") : "casella vuota";
 }
 
-/** Una riga per giorno, solo per i giorni che hanno almeno un pasto scelto. */
-function rigaGiorno(g: GiornoSettimana, p: Piano): string | undefined {
+/**
+ * Una riga per giorno, per i giorni con almeno un pasto scelto o con un allenamento.
+ * L'allenamento va accanto al giorno ("Lunedì · Pesi: ...") perche' e' la chiave con
+ * cui Matteo legge la settimana: un giorno di pesi senza pasti e' comunque un'informazione.
+ */
+function rigaGiorno(g: GiornoSettimana, p: Piano, a: Allenamenti): string | undefined {
   const parti: string[] = [];
   for (const m of PASTI) {
     const c = p[g]?.[m];
     if (c) parti.push(`${m} ${descrizioneCasella(c)}`);
   }
-  return parti.length > 0 ? `${NOMI_GIORNO[g]}: ${parti.join(" / ")}` : undefined;
+  const tipo = a[g];
+  if (parti.length === 0 && !tipo) return undefined;
+  const giorno = tipo ? `${NOMI_GIORNO[g]} · ${NOMI_GIORNATA[tipo]}` : NOMI_GIORNO[g];
+  return `${giorno}: ${parti.length > 0 ? parti.join(" / ") : "nessun pasto scelto"}`;
 }
 
 /**
@@ -127,8 +134,15 @@ function rigaGiorno(g: GiornoSettimana, p: Piano): string | undefined {
  * dei macro totali. I ritorni a capo sono `\n` veri: e' compito di
  * linkWhatsApp codificarli nell'URL, non di questa funzione.
  */
-export function messaggioPiano(p: Piano, macro: Macros, nome?: string): string {
-  const righeGiorni = GIORNI.map((g) => rigaGiorno(g, p)).filter((r): r is string => !!r);
+export function messaggioPiano(
+  p: Piano,
+  macro: Macros,
+  nome?: string,
+  allenamenti: Allenamenti = {},
+): string {
+  const righeGiorni = GIORNI.map((g) => rigaGiorno(g, p, allenamenti)).filter(
+    (r): r is string => !!r,
+  );
 
   const blocchi: string[] = [
     nome ? `Ciao Matteo, sono ${nome}!` : "Ciao Matteo!",
@@ -250,8 +264,10 @@ export function componiMessaggio(args: {
   piano: Piano;
   macro: Macros;
   contatto: DatiContatto;
+  /** facoltativo: senza, il messaggio e' identico a quello di prima */
+  allenamenti?: Allenamenti;
 }): string {
-  const { servizioId, richiedePiano, piano, macro, contatto } = args;
+  const { servizioId, richiedePiano, piano, macro, contatto, allenamenti } = args;
   const nome = contatto.nome.trim();
 
   const blocchi: string[] = [nome ? `Ciao Matteo, sono ${nome}!` : "Ciao Matteo!"];
@@ -260,7 +276,7 @@ export function componiMessaggio(args: {
   if (corpoServizio) blocchi.push(corpoServizio);
 
   if (richiedePiano) {
-    const corpoPiano = senzaDomandaFinale(senzaSaluto(messaggioPiano(piano, macro)));
+    const corpoPiano = senzaDomandaFinale(senzaSaluto(messaggioPiano(piano, macro, undefined, allenamenti)));
     if (corpoPiano) blocchi.push(corpoPiano);
   }
 
