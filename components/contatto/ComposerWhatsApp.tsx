@@ -13,14 +13,16 @@ import { componiMessaggio, linkWhatsApp, numeroConfigurato, type DatiContatto } 
    lo mostra solo quando NEXT_PUBLIC_WHATSAPP e' configurata; se il numero
    manca comunque, il bottone resta spento con la spiegazione accanto. */
 
+/* L'abbonamento non chiede la settimana composta: i pranzi li compone Matteo sulla scheda. */
 const RICHIEDE_PIANO: Record<ServizioId, boolean> = {
   "menu-settimana": true,
+  abbonamento: false,
   "sui-tuoi-macro": true,
   "home-cooking": false,
 };
 
 function servizioDaParam(v: string | null): ServizioId {
-  return v === "sui-tuoi-macro" || v === "home-cooking" ? v : "menu-settimana";
+  return v === "abbonamento" || v === "sui-tuoi-macro" || v === "home-cooking" ? v : "menu-settimana";
 }
 
 type Errori = Partial<Record<keyof DatiContatto, string>>;
@@ -121,7 +123,7 @@ export default function ComposerWhatsApp({ servizioIniziale = "menu-settimana" }
       <form onSubmit={invia} noValidate className="grid min-w-0 content-start gap-6">
         <fieldset className="min-w-0">
           <legend className="occhiello">Per cosa scrivi</legend>
-          <div className="mt-4 grid gap-2 sm:grid-cols-3">
+          <div className="mt-4 grid gap-2 sm:grid-cols-2">
             {SERVIZI.map((s) => (
               <label
                 key={s.id}
@@ -155,7 +157,7 @@ export default function ComposerWhatsApp({ servizioIniziale = "menu-settimana" }
             rows={3}
             value={dati.note}
             onChange={(e) => setDati({ ...dati, note: e.target.value })}
-            placeholder="Allergie, orari, domande"
+            placeholder={servizioId === "abbonamento" ? "Da quando vorresti iniziare, come ti alleni, i tuoi obiettivi, allergie" : "Allergie, orari, domande"}
           />
         </div>
 

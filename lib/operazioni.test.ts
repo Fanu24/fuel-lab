@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Ordine } from "./api";
+import type { Chiusura, Ordine } from "./api";
 import {
   azioniDaFare,
   calendario,
@@ -12,6 +12,7 @@ import {
   dateSuggerite,
   eGiornoDiCucina,
   elencoNomi,
+  etichettaStatoOrdine,
   filtraOrdini,
   inRitardo,
   leggiEuro,
@@ -19,15 +20,20 @@ import {
   leggiFiltroStato,
   oggiRoma,
   ordiniCsv,
+  periodoDi,
   prossimaAzione,
+  prossimaAzioneDi,
   prossimiGiorniCucina,
+  scorciatoieDate,
   spostaGiorni,
   testoWhatsApp,
   vociPerGiorno,
 } from "./operazioni";
 
-/* Domenica 27 settembre 2026: il prossimo lunedi e' il 28, il giovedi l'1 ottobre. */
+/* Domenica 27 settembre 2026. */
 const OGGI = "2026-09-27";
+/* Matteo chiuso lunedi' 28 e martedi' 29. */
+const CHIUSO: Chiusura[] = [{ dal: "2026-09-28", al: "2026-09-29", motivo: "ferie" }];
 
 const ordine = (id: string, modifiche: Partial<Ordine> = {}): Ordine => ({
   id,
@@ -70,24 +76,39 @@ describe("date e giorni di cucina", () => {
     expect(spostaGiorni("2026-10-01", -1)).toBe("2026-09-30");
   });
 
-  it("i giorni di cucina sono lunedi e giovedi, oggi compreso", () => {
-    expect(eGiornoDiCucina("2026-09-28")).toBe(true);
-    expect(eGiornoDiCucina("2026-10-01")).toBe(true);
-    expect(eGiornoDiCucina(OGGI)).toBe(false);
-    expect(prossimiGiorniCucina(OGGI, 3)).toEqual(["2026-09-28", "2026-10-01", "2026-10-05"]);
-    expect(prossimiGiorniCucina("2026-09-28", 1)).toEqual(["2026-09-28"]);
+  it("si cucina ogni giorno, tranne i giorni di chiusura", () => {
+    expect(eGiornoDiCucina(OGGI)).toBe(true); // anche la domenica
+    expect(eGiornoDiCucina("2026-09-30")).toBe(true);
+    expect(eGiornoDiCucina("2026-09-28", CHIUSO)).toBe(false);
+    expect(prossimiGiorniCucina(OGGI, 3)).toEqual([OGGI, "2026-09-28", "2026-09-29"]);
+    expect(prossimiGiorniCucina(OGGI, 3, CHIUSO)).toEqual([OGGI, "2026-09-30", "2026-10-01"]);
   });
 
-  it("propone il primo giorno di cucina dopo la data chiesta dal cliente", () => {
+  it("le scorciatoie sono oggi, domani e dopodomani", () => {
+    expect(scorciatoieDate(OGGI)).toEqual([
+      { nome: "Oggi", data: OGGI },
+      { nome: "Domani", data: "2026-09-28" },
+      { nome: "Dopodomani", data: "2026-09-29" },
+    ]);
+  });
+
+  it("propone la data chiesta dal cliente se e' futura, altrimenti domani, cucina e uscita lo stesso giorno", () => {
     expect(dateSuggerite(ordine("a"), OGGI)).toEqual({ produzione: "2026-09-28", uscita: "2026-09-28" });
-    expect(dateSuggerite(ordine("b", { requested_date: "2026-09-30" }), OGGI)).toEqual({ produzione: "2026-10-01", uscita: "2026-10-01" });
-    // una data preferita gia' passata non conta
+    expect(dateSuggerite(ordine("b", { requested_date: "2026-09-30" }), OGGI)).toEqual({ produzione: "2026-09-30", uscita: "2026-09-30" });
+    // una data preferita gia' passata, o di oggi, non conta: domani
     expect(dateSuggerite(ordine("c", { requested_date: "2026-09-20" }), OGGI)).toEqual({ produzione: "2026-09-28", uscita: "2026-09-28" });
+    expect(dateSuggerite(ordine("d", { requested_date: OGGI }), OGGI)).toEqual({ produzione: "2026-09-28", uscita: "2026-09-28" });
+  });
+
+  it("salta i giorni di chiusura", () => {
+    expect(dateSuggerite(ordine("a"), OGGI, CHIUSO)).toEqual({ produzione: "2026-09-30", uscita: "2026-09-30" });
+    expect(dateSuggerite(ordine("b", { requested_date: "2026-09-29" }), OGGI, CHIUSO)).toEqual({ produzione: "2026-09-30", uscita: "2026-09-30" });
   });
 
   it("non tocca le date gia' scritte e non mette la cucina dopo l'uscita", () => {
     expect(dateSuggerite(ordine("a", { production_date: "2026-10-01" }), OGGI)).toEqual({ produzione: "2026-10-01", uscita: "2026-10-01" });
-    expect(dateSuggerite(ordine("b", { fulfillment_date: "2026-09-30" }), OGGI)).toEqual({ produzione: "2026-09-28", uscita: "2026-09-30" });
+    // con la sola uscita, si cucina lo stesso giorno
+    expect(dateSuggerite(ordine("b", { fulfillment_date: "2026-09-30" }), OGGI)).toEqual({ produzione: "2026-09-30", uscita: "2026-09-30" });
     expect(dateSuggerite(ordine("c", { production_date: "2026-10-01", fulfillment_date: "2026-10-02" }), OGGI))
       .toEqual({ produzione: "2026-10-01", uscita: "2026-10-02" });
   });
@@ -102,6 +123,25 @@ describe("prossima azione", () => {
     expect(prossimaAzione("ready", "delivery")).toMatchObject({ stato: "completed", verbo: "Segna consegnato" });
     expect(prossimaAzione("completed")).toBeNull();
     expect(prossimaAzione("cancelled")).toBeNull();
+  });
+
+  it("l'abbonamento si conferma, poi niente da premere fino alla fine del mese, poi si chiude", () => {
+    const abb = (stato: Ordine["status"], inizio: string | null) =>
+      ordine("abb", { service: "abbonamento", status: stato, production_date: inizio, fulfillment_date: inizio });
+    expect(prossimaAzioneDi(abb("requested", null), OGGI)).toMatchObject({ stato: "confirmed", verbo: "Conferma l'abbonamento" });
+    // dal 1 al 31 ottobre: a meta' mese nessun bottone, dal 1 novembre "Segna concluso"
+    expect(prossimaAzioneDi(abb("confirmed", "2026-10-01"), "2026-10-15")).toBeNull();
+    expect(prossimaAzioneDi(abb("confirmed", "2026-10-01"), "2026-10-31")).toBeNull();
+    expect(prossimaAzioneDi(abb("confirmed", "2026-10-01"), "2026-11-01")).toMatchObject({ stato: "completed", verbo: "Segna concluso" });
+    expect(prossimaAzioneDi(abb("completed", "2026-10-01"), "2026-11-01")).toBeNull();
+    // un ordine normale segue il giro di sempre
+    expect(prossimaAzioneDi(ordine("x", { status: "confirmed" }), OGGI)?.stato).toBe("preparing");
+  });
+
+  it("un abbonamento chiuso si dice Concluso, un ritiro fatto Ritirato", () => {
+    expect(etichettaStatoOrdine({ status: "completed", fulfillment: "pickup", service: "abbonamento" })).toBe("Concluso");
+    expect(etichettaStatoOrdine({ status: "completed", fulfillment: "pickup", service: "menu-settimana" })).toBe("Ritirato");
+    expect(etichettaStatoOrdine({ status: "completed", fulfillment: "delivery" })).toBe("Consegnato");
   });
 });
 
@@ -179,6 +219,27 @@ describe("code operative di Matteo", () => {
     expect(inRitardo(ordine("a", { requested_date: "2026-09-26" }), OGGI)).toBe(true);
     expect(inRitardo(ordine("b", { requested_date: OGGI }), OGGI)).toBe(false);
   });
+
+  it("gli abbonamenti non entrano in cucina e uscite come ordini: i loro pranzi di oggi si contano a parte", () => {
+    const lunedi = "2026-09-28";
+    const c = codeOperative([
+      ordine("normale", { status: "confirmed", production_date: lunedi, fulfillment_date: lunedi, meals: 2 }),
+      // inizia oggi: la sua data non e' un giorno di cucina o di uscita
+      ordine("abb", { service: "abbonamento", status: "confirmed", production_date: lunedi, fulfillment_date: lunedi, meals: 0, items: [] }),
+      ordine("abb-vecchio", { service: "abbonamento", status: "confirmed", production_date: "2026-09-14", fulfillment_date: "2026-09-14", meals: 0, items: [] }),
+    ], lunedi);
+    expect(c.cucinaOggi.map((o) => o.id)).toEqual(["normale"]);
+    expect(c.usciteOggi.map((o) => o.id)).toEqual(["normale"]);
+    expect(c.abbonamentiOggi.map((o) => o.id)).toEqual(["abb", "abb-vecchio"]);
+    expect(c.porzioniOggi).toBe(4);
+  });
+
+  it("un abbonamento in corso e' in ritardo solo a mese finito", () => {
+    const abb = ordine("abb", { service: "abbonamento", status: "confirmed", production_date: "2026-09-01", fulfillment_date: "2026-09-01" });
+    expect(inRitardo(abb, "2026-09-30")).toBe(false);
+    expect(inRitardo(abb, "2026-10-01")).toBe(true);
+    expect(inRitardo({ ...abb, status: "completed" }, "2026-10-01")).toBe(false);
+  });
 });
 
 describe("da fare adesso", () => {
@@ -210,6 +271,16 @@ describe("da fare adesso", () => {
     expect(azioni[1].dettaglio).toBe("1 ritiro · 1 consegna a domicilio");
   });
 
+  it("somma i pranzi in abbonamento alle porzioni da cucinare", () => {
+    const lunedi = "2026-09-28";
+    const azioni = azioniDaFare([
+      ordine("a", { status: "confirmed", production_date: lunedi, fulfillment_date: lunedi, meals: 5 }),
+      ordine("abb", { service: "abbonamento", status: "confirmed", production_date: lunedi, fulfillment_date: lunedi, meals: 0, items: [] }),
+    ], lunedi);
+    expect(azioni.map((a) => a.testo)).toEqual(["Cucina 6 porzioni oggi", "Consegna 1 ordine oggi"]);
+    expect(azioni[0].dettaglio).toBe("1 ordine e 1 pranzo in abbonamento · apri il foglio cucina con piatti ed extra.");
+  });
+
   it("niente da fare: lista vuota", () => {
     expect(azioniDaFare([], OGGI)).toEqual([]);
   });
@@ -232,10 +303,22 @@ describe("calendario dei prossimi 7 giorni", () => {
       ordine("d", { status: "cancelled", production_date: "2026-09-28", fulfillment_date: "2026-09-28" }),
     ], OGGI);
     expect(giorni).toHaveLength(7);
-    expect(giorni[0]).toMatchObject({ data: OGGI, oggi: true, cucina: false, porzioni: 0 });
-    expect(giorni[1]).toMatchObject({ data: "2026-09-28", cucina: true, porzioni: 10, ordiniInCucina: 2, uscite: 1, ritiri: 1 });
+    expect(giorni[0]).toMatchObject({ data: OGGI, oggi: true, chiusura: null, porzioni: 0 });
+    expect(giorni[1]).toMatchObject({ data: "2026-09-28", chiusura: null, porzioni: 10, ordiniInCucina: 2, uscite: 1, ritiri: 1 });
     expect(giorni[2]).toMatchObject({ uscite: 1, consegne: 1 });
-    expect(giorni[4]).toMatchObject({ data: "2026-10-01", cucina: true, richieste: 1 });
+    expect(giorni[4]).toMatchObject({ data: "2026-10-01", richieste: 1 });
+  });
+
+  it("segna i giorni di chiusura e conta i pranzi in abbonamento dal lunedi' al venerdi'", () => {
+    const giorni = calendario([
+      ordine("abb", { service: "abbonamento", status: "confirmed", production_date: "2026-09-29", fulfillment_date: "2026-09-29", items: [] }),
+    ], OGGI, 7, CHIUSO);
+    expect(giorni.map((g) => !!g.chiusura)).toEqual([false, true, true, false, false, false, false]);
+    expect(giorni[1].chiusura?.motivo).toBe("ferie");
+    // domenica 27 e lunedi' 28 prima dell'inizio, poi mar-ven, sabato no
+    expect(giorni.map((g) => g.abbonamenti)).toEqual([0, 0, 1, 1, 1, 1, 0]);
+    // l'abbonamento non e' un ordine in cucina il giorno d'inizio
+    expect(giorni[2]).toMatchObject({ porzioni: 0, ordiniInCucina: 0, uscite: 0 });
   });
 });
 
@@ -288,6 +371,12 @@ describe("filtri e ricerca", () => {
     expect(filtraOrdini(lista, { stato: "aperti", speciale: "ritardo", ricerca: "" }, OGGI).map((o) => o.id)).toEqual(["late"]);
   });
 
+  it("il filtro rapido Abbonamenti tiene solo gli abbonamenti", () => {
+    const conAbb = [...lista, ordine("abb", { service: "abbonamento", status: "confirmed", production_date: "2026-10-01", fulfillment_date: "2026-10-01" })];
+    expect(filtraOrdini(conAbb, { stato: "aperti", speciale: "abbonamenti", ricerca: "" }, OGGI).map((o) => o.id)).toEqual(["abb"]);
+    expect(leggiFiltroSpeciale("abbonamenti")).toBe("abbonamenti");
+  });
+
   it("conta ogni chip con la ricerca applicata", () => {
     const conti = contaPerStato(lista, { speciale: null, ricerca: "" }, OGGI);
     expect(conti).toMatchObject({ aperti: 4, requested: 1, confirmed: 2, ready: 1, completed: 1, cancelled: 1, tutti: 6 });
@@ -308,6 +397,14 @@ describe("testi pronti", () => {
       .toBe("Ciao Giulia, sono Matteo di FUEL LAB. Ti scrivo per il tuo ordine di 6 pasti con ritiro giovedì 1 ottobre.");
     expect(testoWhatsApp({ customer_name: "", meals: 0, fulfillment: "delivery", fulfillment_date: null }))
       .toBe("Ciao, sono Matteo di FUEL LAB. Ti scrivo per il tuo ordine.");
+  });
+
+  it("per l'abbonamento dice il periodo, non i pasti", () => {
+    const abb = { customer_name: "Giulia Rossi", meals: 3, fulfillment: "pickup" as const, fulfillment_date: "2026-10-05", service: "abbonamento" as const };
+    expect(testoWhatsApp(abb)).toBe("Ciao Giulia, sono Matteo di FUEL LAB. Ti scrivo per il tuo abbonamento ai pranzi dal 5 ottobre al 4 novembre.");
+    expect(testoWhatsApp({ ...abb, fulfillment_date: null })).toBe("Ciao Giulia, sono Matteo di FUEL LAB. Ti scrivo per il tuo abbonamento ai pranzi.");
+    expect(periodoDi(abb, OGGI)).toBe("dal 5 ottobre al 4 novembre");
+    expect(periodoDi({ ...abb, service: "menu-settimana" }, OGGI)).toBeNull();
   });
 });
 

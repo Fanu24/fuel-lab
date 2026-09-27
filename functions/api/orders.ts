@@ -57,10 +57,11 @@ export const onRequestPost = async ({ env, request, waitUntil }: Context) => {
      da' un errore gentile, ma due invii in parallelo lo passerebbero entrambi.
      L'evento si scrive solo se l'ordine e' entrato davvero. */
   const [inserito] = await env.DB.batch([
-    env.DB.prepare(`INSERT INTO orders (id,user_id,service,fulfillment,requested_date,customer_name,phone,comune,address,notes,plan_json,training_json,items_json,meals)
-      SELECT ?,?,?,?,?,?,?,?,?,?,?,?,?,?
+    // price_cents: solo l'abbonamento parte con un prezzo, ed e' una proposta finche' Matteo non conferma.
+    env.DB.prepare(`INSERT INTO orders (id,user_id,service,fulfillment,requested_date,customer_name,phone,comune,address,notes,plan_json,training_json,items_json,meals,price_cents)
+      SELECT ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
       WHERE (SELECT COUNT(*) FROM orders WHERE user_id=? AND created_at > datetime('now','-1 day')) < 5`)
-      .bind(id, user.id, o.service, o.fulfillment, o.requestedDate, o.name, o.phone, o.comune, o.address, o.notes, JSON.stringify(o.plan), JSON.stringify(o.training), JSON.stringify(o.items), o.items.length, user.id),
+      .bind(id, user.id, o.service, o.fulfillment, o.requestedDate, o.name, o.phone, o.comune, o.address, o.notes, JSON.stringify(o.plan), JSON.stringify(o.training), JSON.stringify(o.items), o.items.length, o.priceCents, user.id),
     env.DB.prepare(`INSERT INTO order_events (order_id,actor,type,from_status,to_status,detail)
       SELECT ?, 'customer', 'created', NULL, 'requested', 'Richiesta inviata dal sito' WHERE EXISTS (SELECT 1 FROM orders WHERE id = ?)`)
       .bind(id, id),
@@ -94,6 +95,7 @@ export const onRequestPost = async ({ env, request, waitUntil }: Context) => {
       notes: o.notes,
       meals: o.items.length,
       items: o.items,
+      price_cents: o.priceCents,
     }),
   });
   return json({ id, status: "requested" }, 201);

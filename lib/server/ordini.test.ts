@@ -78,6 +78,39 @@ describe("nuova richiesta", () => {
     expect(leggiNuovoOrdine({ ...corpo, requestedDate: "2026-09-26" }, "", "2026-09-27").ok).toBe(false);
     expect(leggiNuovoOrdine({ ...corpo, requestedDate: "2027-01-10" }, "", "2026-09-27").ok).toBe(false);
     expect(leggiNuovoOrdine({ ...corpo, plan: {} }, "", "2026-09-27").ok).toBe(false);
+  });
+
+  it("l'abbonamento non vuole piatti, parte con il prezzo proposto e tiene solo i pranzi feriali", () => {
+    const esito = leggiNuovoOrdine({ ...corpo, service: "abbonamento", plan: {} }, "Account", "2026-09-27");
+    expect(esito.ok).toBe(true);
+    if (!esito.ok) return;
+    expect(esito.value).toMatchObject({ service: "abbonamento", requestedDate: "2026-10-01", priceCents: 23900, items: [] });
+    const conPiano = leggiNuovoOrdine({
+      ...corpo,
+      service: "abbonamento",
+      plan: {
+        lun: { pranzo: { piatto: piatto.id, extra: [] }, cena: { piatto: piatto.id, extra: [] } },
+        sab: { pranzo: { piatto: piatto.id, extra: [] } },
+      },
+    }, "Account", "2026-09-27");
+    expect(conPiano.ok && conPiano.value.items.map((v) => `${v.day}-${v.meal}`)).toEqual(["lun-pranzo"]);
+    expect(conPiano.ok && conPiano.value.plan).toEqual({ lun: { pranzo: { piatto: piatto.id, extra: [] } } });
+    // gli altri servizi non partono con un prezzo
+    const normale = leggiNuovoOrdine(corpo, "Account", "2026-09-27");
+    expect(normale.ok && normale.value.priceCents).toBeNull();
+    // un servizio sconosciuto torna al menu della settimana
+    const strano = leggiNuovoOrdine({ ...corpo, service: "boh" }, "Account", "2026-09-27");
+    expect(strano.ok && strano.value.service).toBe("menu-settimana");
+  });
+
+  it("per l'abbonamento la cronologia scrive l'inizio e fin quando vale", () => {
+    const esito = leggiModificaAdmin({ status: "confirmed", productionDate: "2026-10-05", fulfillmentDate: "2026-10-05" }, stato(), "pickup", "abbonamento");
+    expect(esito.ok && esito.value.cambi.find((c) => c.type === "schedule")?.detail)
+      .toBe("Inizio: lunedì 5 ottobre 2026, fino a mercoledì 4 novembre 2026");
+  });
+
+  it("un abbonamento letto dal database resta un abbonamento", () => {
+    expect(ordineDaRiga({ ...riga, service: "abbonamento" }, true).service).toBe("abbonamento");
     expect(leggiNuovoOrdine({ ...corpo, plan: {}, service: "home-cooking" }, "", "2026-09-27").ok).toBe(true);
   });
 

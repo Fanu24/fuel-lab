@@ -9,6 +9,7 @@ import {
   formattaGiornoDa,
   hrefSezione,
   prossimaConsegna,
+  prossimaUscitaDi,
   spostaGiorni,
   traduciErroreAuth,
 } from "@/lib/account";
@@ -174,7 +175,9 @@ function ProssimaConsegna({ ordini, oggi }: Pick<PropsArea, "ordini" | "oggi">) 
   }
 
   const ritiro = prossima.fulfillment === "pickup";
-  const data = prossima.fulfillment_date;
+  const abbonamento = prossima.service === "abbonamento";
+  // Per un abbonamento in corso conta il prossimo pranzo del periodo, non il giorno d'inizio.
+  const data = prossimaUscitaDi(prossima, oggi) ?? prossima.fulfillment_date;
   const quando = !data ? "Giorno da definire"
     : data === oggi ? `Oggi, ${formattaGiorno(data, oggi)}`
     : data === spostaGiorni(oggi, 1) ? `Domani, ${formattaGiorno(data, oggi)}`
@@ -187,10 +190,10 @@ function ProssimaConsegna({ ordini, oggi }: Pick<PropsArea, "ordini" | "oggi">) 
       <p className="mt-3 text-steel">
         {ritiro ? "Ritiro in Via del Santuario 214, Pescara" : `Consegna a ${prossima.comune || "domicilio"}`}
         {" · "}
-        {prossima.meals ? `${prossima.meals} pasti` : ETICHETTE_SERVIZIO[prossima.service]}
+        {prossima.meals && !abbonamento ? `${prossima.meals} pasti` : ETICHETTE_SERVIZIO[prossima.service]}
       </p>
       <div className="mt-7">
-        <Passi stato={prossima.status} modalita={prossima.fulfillment} />
+        <Passi stato={prossima.status} modalita={prossima.fulfillment} servizio={prossima.service} />
       </div>
       {prossima.customer_message ? (
         <div className="acc-messaggio mt-7">
@@ -218,8 +221,8 @@ function InAttesa({ ordini, oggi }: { ordini: Ordine[]; oggi: string }) {
             <Link href={hrefSezione("richieste", { apri: o.id })} scroll={false} className="acc-riga">
               <span className="font-semibold">Inviata il {formattaGiornoDa(o.created_at)}</span>
               <span className="text-sm text-muted">
-                {o.meals ? `${o.meals} pasti` : ETICHETTE_SERVIZIO[o.service]}
-                {o.requested_date ? ` · preferito ${formattaGiorno(o.requested_date, oggi)}` : ""}
+                {o.meals && o.service !== "abbonamento" ? `${o.meals} pasti` : ETICHETTE_SERVIZIO[o.service]}
+                {o.requested_date ? ` · ${o.service === "abbonamento" ? "inizio" : "preferito"} ${formattaGiorno(o.requested_date, oggi)}` : ""}
               </span>
             </Link>
           </li>

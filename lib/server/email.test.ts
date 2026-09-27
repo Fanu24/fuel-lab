@@ -71,6 +71,42 @@ describe("email", () => {
     expect(msg.text).toContain("Rispondi a questa email per scrivere direttamente a luca@example.com.");
   });
 
+  it("per l'abbonamento dice l'inizio desiderato, il prezzo proposto e la scheda", () => {
+    const abb: RichiestaPerEmail = { ...richiesta, service: "abbonamento", meals: 1, notes: "Pesi lun-mer-ven", price_cents: 23900,
+      items: [{ id: "c", name: "Manzo", day: "lun", meal: "pranzo", extras: [] }] };
+    const mail = emailNuovaRichiesta(abb);
+    expect(mail.subject).toBe("Nuova richiesta: Giulia <b>Rossi</b> · Abbonamento mensile");
+    expect(mail.text).toContain("Servizio: Abbonamento mensile");
+    expect(mail.text).toContain("Inizio desiderato: giovedì 1 ottobre 2026");
+    expect(mail.text).toContain("Prezzo proposto: 239 € al mese");
+    expect(mail.text).toContain("PRANZI INDICATI DAL CLIENTE");
+    expect(mail.text).toContain("La scheda del cliente:");
+    expect(mail.text).not.toContain("Pasti:");
+    expect(emailAnnullataDalCliente(abb).text).toContain("Inizio desiderato: giovedì 1 ottobre 2026");
+  });
+
+  it("al cliente dell'abbonamento scrive il periodo, e chiama proposta il prezzo non ancora confermato", () => {
+    const confermato = emailAggiornamentoCliente({
+      service: "abbonamento", customer_name: "Giulia Rossi", status: "confirmed", fulfillment: "pickup", fulfillment_date: "2026-10-05",
+      address: "", comune: "Pescara", customer_message: "", price_cents: 23900, paid: 0,
+    }, true);
+    expect(confermato.subject).toBe("Aggiornamento FUEL LAB: abbonamento confermato");
+    expect(confermato.text).toContain("Matteo ha confermato il tuo abbonamento ai pranzi.");
+    expect(confermato.text).toContain("Periodo: dal lunedì 5 ottobre 2026 al mercoledì 4 novembre 2026, pranzi dal lunedì al venerdì");
+    expect(confermato.text).toContain("Totale concordato: € 239,00");
+    const concluso = emailAggiornamentoCliente({
+      service: "abbonamento", customer_name: "Giulia", status: "completed", fulfillment: "pickup", fulfillment_date: "2026-10-05",
+      address: "", comune: "", customer_message: "", price_cents: 23900, paid: 1,
+    }, true);
+    expect(concluso.subject).toBe("Aggiornamento FUEL LAB: abbonamento concluso");
+    expect(concluso.text).toContain("Stato: Concluso");
+    const proposta = emailAggiornamentoCliente({
+      service: "abbonamento", customer_name: "Giulia", status: "requested", fulfillment: "pickup", fulfillment_date: null,
+      address: "", comune: "", customer_message: "Ci sentiamo domani", price_cents: 23900, paid: 0,
+    }, false);
+    expect(proposta.text).toContain("Prezzo proposto: € 239,00");
+  });
+
   it("mantiene il testo dell'email di accesso", () => {
     const mail = emailAccesso("Verifica la tua email FUEL LAB", "https://fuelchef.it/api/auth/verify-email?token=a&b=c");
     expect(mail.text).toContain("https://fuelchef.it/api/auth/verify-email?token=a&b=c");

@@ -11,6 +11,7 @@ import {
   formattaMomento,
   hrefSezione,
   messaggioDa,
+  periodoRichiesta,
   piattiNonPiuDisponibili,
   STATI_IN_CORSO,
 } from "@/lib/account";
@@ -288,23 +289,31 @@ function SchedaRichiesta({
     router.push("/settimana");
   }
 
-  const quando = o.fulfillment_date
-    ? { etichetta: ritiro ? "Ritiro" : "Consegna", valore: formattaGiorno(o.fulfillment_date, oggi) }
-    : o.requested_date
-      ? { etichetta: "Giorno preferito", valore: `${formattaGiorno(o.requested_date, oggi)}, da confermare` }
-      : { etichetta: ritiro ? "Ritiro" : "Consegna", valore: "Da concordare" };
+  const abbonamento = o.service === "abbonamento";
+  // L'abbonamento confermato ha un periodo (un mese dalla data d'inizio), non un giorno di ritiro.
+  const periodo = periodoRichiesta(o, oggi);
+  const quando = periodo
+    ? { etichetta: "Periodo", valore: periodo }
+    : o.fulfillment_date
+      ? { etichetta: ritiro ? "Ritiro" : "Consegna", valore: formattaGiorno(o.fulfillment_date, oggi) }
+      : o.requested_date
+        ? { etichetta: abbonamento ? "Inizio desiderato" : "Giorno preferito", valore: `${formattaGiorno(o.requested_date, oggi)}, da confermare` }
+        : { etichetta: abbonamento ? "Inizio" : ritiro ? "Ritiro" : "Consegna", valore: "Da concordare" };
 
   const anteprima = o.items.slice(0, 3).map((v) => v.name);
 
-  // Il giorno confermato da Matteo si puo' mettere nel calendario del telefono.
+  // Il giorno confermato da Matteo si puo' mettere nel calendario del telefono (per l'abbonamento, l'inizio).
   const inCalendario = !!o.fulfillment_date && ["confirmed", "preparing", "ready"].includes(o.status);
   function scaricaCalendario() {
     if (!o.fulfillment_date) return;
     const ics = fileIcs({
       uid: `ordine-${o.id}`,
       giorno: o.fulfillment_date,
-      titolo: `${ritiro ? "Ritiro" : "Consegna"} FUEL LAB${o.meals ? `, ${o.meals} pasti` : ""}`,
+      titolo: abbonamento
+        ? "Inizio dell’abbonamento FUEL LAB"
+        : `${ritiro ? "Ritiro" : "Consegna"} FUEL LAB${o.meals ? `, ${o.meals} pasti` : ""}`,
       descrizione: [
+        abbonamento && periodo ? `Pranzi dal lunedì al venerdì, ${periodo}.` : "",
         ritiro ? `Ritiro in ${INDIRIZZO_RIGA}.` : `Consegna a ${[o.address, o.comune].filter(Boolean).join(", ")}.`,
         o.customer_message ? `Messaggio di Matteo: ${o.customer_message}` : "",
         "Dettagli: https://fuelchef.it/account?sezione=richieste",
@@ -334,12 +343,12 @@ function SchedaRichiesta({
           <h4 id={idTitolo} className="acc-richiesta-titolo">Richiesta del {formattaGiornoDa(o.created_at)}</h4>
         </div>
         <span className="acc-stato" data-stato={o.status}>
-          {o.status === "completed" && ritiro ? "Ritirato" : etichettaStato(o.status, "cliente")}
+          {o.status === "completed" && abbonamento ? "Concluso" : o.status === "completed" && ritiro ? "Ritirato" : etichettaStato(o.status, "cliente")}
         </span>
       </header>
 
       <div className="mt-5">
-        <Passi stato={o.status} modalita={o.fulfillment} />
+        <Passi stato={o.status} modalita={o.fulfillment} servizio={o.service} />
       </div>
 
       <dl className="acc-fatti mt-5">
@@ -351,10 +360,17 @@ function SchedaRichiesta({
           <dt>Modalità</dt>
           <dd>{ritiro ? "Ritiro a Pescara" : `Consegna${o.comune ? ` a ${o.comune}` : ""}`}</dd>
         </div>
-        <div>
-          <dt>Pasti</dt>
-          <dd>{o.meals || "—"}</dd>
-        </div>
+        {abbonamento ? (
+          <div>
+            <dt>Pranzi</dt>
+            <dd>Dal lunedì al venerdì</dd>
+          </div>
+        ) : (
+          <div>
+            <dt>Pasti</dt>
+            <dd>{o.meals || "—"}</dd>
+          </div>
+        )}
         {o.price_cents !== null && o.price_cents !== undefined ? (
           <div>
             <dt>{o.status === "requested" ? "Prezzo proposto" : "Totale concordato"}</dt>
@@ -386,7 +402,7 @@ function SchedaRichiesta({
         <button type="button" className="btn btn-linea btn-sm" aria-expanded={aperta} aria-controls={idDettagli} onClick={onAlterna}>
           {aperta ? "Chiudi i dettagli" : "Dettagli e cronologia"}
         </button>
-        {o.items.length ? (
+        {o.items.length && !abbonamento ? (
           <button type="button" className="btn btn-ink btn-sm" disabled={!!azione} onClick={() => void ripeti()}>
             {azione === "ripeti" ? "Carico…" : "Ripeti questa settimana"}
           </button>
@@ -421,10 +437,11 @@ function Dettagli({
   onRiprova: () => void;
 }) {
   const perGiorno = raggruppa(o.items);
+  const abbonamento = o.service === "abbonamento";
   return (
     <div className="grid gap-6">
       {perGiorno.length ? (
-        <Blocco titolo="Piatti">
+        <Blocco titolo={abbonamento ? "Pranzi che hai indicato" : "Piatti"}>
           <ul className="grid gap-3">
             {perGiorno.map(([giorno, voci]) => (
               <li key={giorno}>
@@ -444,7 +461,7 @@ function Dettagli({
       ) : null}
 
       {o.notes ? (
-        <Blocco titolo="Le tue note">
+        <Blocco titolo={abbonamento ? "La tua scheda" : "Le tue note"}>
           <p className="whitespace-pre-line text-sm">{o.notes}</p>
         </Blocco>
       ) : null}

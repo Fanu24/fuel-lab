@@ -2,15 +2,21 @@
 
 /* La Cucina: cosa preparare in un giorno di produzione.
    Quattro schede sullo stesso insieme di ordini (confermati o in preparazione
-   con quel giorno di cucina): Piatti, Spesa, Etichette, Ordini. Giorno e
+   con quel giorno di cucina) e di pranzi in abbonamento (gli abbonamenti in
+   corso, dal lunedi' al venerdi'): Piatti, Spesa, Etichette, Ordini. Giorno e
    scheda stanno nell'indirizzo (?giorno=2026-09-28&scheda=spesa), cosi' un
-   link o un ricarica riaprono lo stesso foglio. Stampa solo la scheda aperta. */
+   link o un ricarica riaprono lo stesso foglio. Stampa solo la scheda aperta.
+   Si cucina ogni giorno: le scorciatoie sono Oggi, Domani e Dopodomani, e un
+   giorno di chiusura segnato in Impostazioni si vede in cima al foglio. */
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState, type KeyboardEvent } from "react";
 import { api, type Ordine } from "@/lib/api";
+import { chiusuraDi, periodo } from "@/lib/impostazioni";
+import { scorciatoieDate } from "@/lib/operazioni";
 import {
+  abbonamentiDelGiorno,
   confermatiSenzaGiorno,
   contaPiatti,
   contaPorzioni,
@@ -19,9 +25,10 @@ import {
   isData,
   oggiRoma,
   ordiniDelGiorno,
-  prossimo,
+  pranziComeOrdini,
   spostaGiorni,
 } from "@/lib/produzione";
+import { useImpostazioni } from "@/components/impostazioni/useImpostazioni";
 import CucinaEtichette from "./CucinaEtichette";
 import CucinaOrdini from "./CucinaOrdini";
 import CucinaPiatti from "./CucinaPiatti";
@@ -58,6 +65,7 @@ export default function ProductionLive() {
     return eScheda(s) ? s : "piatti";
   });
   const [anchePronti, setAnchePronti] = useState(false);
+  const { chiusure } = useImpostazioni({ fresche: true }).impostazioni;
 
   useEffect(() => {
     let vivo = true;
@@ -92,7 +100,7 @@ export default function ProductionLive() {
   }
 
   const oggi = oggiRoma();
-  const giorno = giornoScelto ?? giornoPredefinito(ordini ?? [], oggi);
+  const giorno = giornoScelto ?? giornoPredefinito(ordini ?? [], oggi, chiusure);
 
   function scriviIndirizzo(g: string | null, s: Scheda) {
     const p = new URLSearchParams();
@@ -111,21 +119,22 @@ export default function ProductionLive() {
   }
 
   const delGiorno = useMemo(() => (ordini ? ordiniDelGiorno(ordini, giorno, anchePronti) : []), [ordini, giorno, anchePronti]);
-  const porzioni = contaPorzioni(delGiorno);
-  const piattiDiversi = useMemo(() => contaPiatti(delGiorno).length, [delGiorno]);
+  const abbonamenti = useMemo(() => (ordini ? abbonamentiDelGiorno(ordini, giorno) : []), [ordini, giorno]);
+  // Ordini e pranzi in abbonamento insieme, per contare piatti, spesa e allergeni.
+  const perContare = useMemo(() => [...delGiorno, ...pranziComeOrdini(abbonamenti, giorno)], [delGiorno, abbonamenti, giorno]);
+  const porzioni = contaPorzioni(delGiorno) + abbonamenti.length;
+  const piattiDiversi = useMemo(() => contaPiatti(perContare).length, [perContare]);
   const prossimi = useMemo(() => (ordini ? giorniConOrdini(ordini, oggi, anchePronti) : []), [ordini, oggi, anchePronti]);
   const senzaGiorno = useMemo(() => (ordini ? confermatiSenzaGiorno(ordini) : []), [ordini]);
+  const chiusura = chiusuraDi(giorno, chiusure);
+  const qualcosa = delGiorno.length + abbonamenti.length > 0;
 
-  const scorciatoie = [
-    { nome: "Oggi", data: oggi },
-    { nome: "Lunedì", data: prossimo(oggi, 1) },
-    { nome: "Giovedì", data: prossimo(oggi, 4) },
-  ];
+  const scorciatoie = scorciatoieDate(oggi);
 
   const conteggi: Partial<Record<Scheda, number>> = {
     piatti: piattiDiversi,
     etichette: porzioni,
-    ordini: delGiorno.length,
+    ordini: delGiorno.length + abbonamenti.length,
   };
 
   function tastiSchede(e: KeyboardEvent<HTMLButtonElement>) {
@@ -163,7 +172,7 @@ export default function ProductionLive() {
               <button type="button" className="btn btn-linea btn-sm" onClick={aggiorna} disabled={aggiornando || ordini === null}>
                 {aggiornando ? "Aggiorno…" : "Aggiorna"}
               </button>
-              <button type="button" className="btn btn-ink btn-sm" onClick={() => window.print()} disabled={!delGiorno.length}>
+              <button type="button" className="btn btn-ink btn-sm" onClick={() => window.print()} disabled={!qualcosa}>
                 {schedaAttiva.stampa}
               </button>
             </>
@@ -198,7 +207,10 @@ export default function ProductionLive() {
                   onClick={() => scegliGiorno(s.data)}
                 >
                   <span className="cu-scorciatoia-nome">{s.nome}</span>
-                  <span className="cu-scorciatoia-data">{giornoCorto(s.data)}</span>
+                  <span className="cu-scorciatoia-data">
+                    {giornoCorto(s.data)}
+                    {chiusuraDi(s.data, chiusure) ? " · chiuso" : ""}
+                  </span>
                 </button>
               ))}
               <div className="campo cu-altra-data">
@@ -245,8 +257,8 @@ export default function ProductionLive() {
             <div className="print:hidden">
               <Avviso tipo="info">
                 {senzaGiorno.length === 1
-                  ? "1 ordine confermato non ha ancora il giorno di cucina e non compare qui. "
-                  : `${senzaGiorno.length} ordini confermati non hanno ancora il giorno di cucina e non compaiono qui. `}
+                  ? "1 ordine confermato non ha ancora le date (o l’inizio, se è un abbonamento) e non compare qui. "
+                  : `${senzaGiorno.length} ordini confermati non hanno ancora le date (o l’inizio, se sono abbonamenti) e non compaiono qui. `}
                 <Link href="/dashboard/ordini" className="link">
                   Assegnalo in Ordini
                 </Link>
@@ -262,11 +274,21 @@ export default function ProductionLive() {
               </h2>
             </div>
 
-            {delGiorno.length === 0 ? (
+            {chiusura ? (
+              <div className="print:hidden">
+                <Avviso tipo="info">
+                  Questo giorno sei chiuso ({periodo(chiusura.dal, chiusura.al, oggi)}
+                  {chiusura.motivo ? `, ${chiusura.motivo}` : ""}): i clienti non possono sceglierlo.
+                  {qualcosa ? " Quello che vedi qui sotto è già confermato: sposta le date o avvisa i clienti." : ""}
+                </Avviso>
+              </div>
+            ) : null}
+
+            {!qualcosa ? (
               <div className="cu-vuoto print:hidden">
                 <Vuoto>
-                  Nessun ordine da preparare per {giornoLungo(giorno)}. Qui arrivano gli ordini confermati o in preparazione
-                  a cui hai assegnato questo giorno di cucina.
+                  Niente da preparare per {giornoLungo(giorno)}. Qui arrivano gli ordini confermati o in preparazione
+                  a cui hai assegnato questo giorno di cucina, e dal lunedì al venerdì i pranzi degli abbonamenti in corso.
                 </Vuoto>
                 <Link href="/dashboard/ordini" className="btn btn-linea btn-sm">
                   Vai agli ordini
@@ -274,8 +296,9 @@ export default function ProductionLive() {
               </div>
             ) : (
               <>
-                <div className="grid grid-cols-3 gap-3 print:hidden">
+                <div className={`grid gap-3 print:hidden ${abbonamenti.length ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3"}`}>
                   <Kpi label="Ordini" valore={delGiorno.length} />
+                  {abbonamenti.length ? <Kpi label="In abbonamento" valore={abbonamenti.length} nota="pranzi" /> : null}
                   <Kpi label="Porzioni" valore={porzioni} />
                   <Kpi label="Piatti diversi" valore={piattiDiversi} />
                 </div>
@@ -305,13 +328,16 @@ export default function ProductionLive() {
                 <div id="cu-pannello" role="tabpanel" aria-labelledby={`cu-tab-${scheda}`} tabIndex={0} className="cu-pannello">
                   {scheda !== "etichette" ? (
                     <p className="cu-stampa-testa">
-                      FUEL LAB · Cucina di {giornoLungo(giorno)} · {schedaAttiva.label} · {delGiorno.length} ordini, {porzioni} porzioni
+                      FUEL LAB · Cucina di {giornoLungo(giorno)} · {schedaAttiva.label} · {delGiorno.length} ordini
+                      {abbonamenti.length ? `, ${abbonamenti.length} pranzi in abbonamento` : ""}, {porzioni} porzioni
                     </p>
                   ) : null}
-                  {scheda === "piatti" ? <CucinaPiatti ordini={delGiorno} /> : null}
-                  {scheda === "spesa" ? <CucinaSpesa ordini={delGiorno} giorno={giorno} porzioni={porzioni} /> : null}
-                  {scheda === "etichette" ? <CucinaEtichette ordini={delGiorno} giorno={giorno} /> : null}
-                  {scheda === "ordini" ? <CucinaOrdini ordini={delGiorno} giorno={giorno} /> : null}
+                  {scheda === "piatti" ? <CucinaPiatti ordini={perContare} abbonamenti={abbonamenti} giorno={giorno} /> : null}
+                  {scheda === "spesa" ? (
+                    <CucinaSpesa ordini={perContare} giorno={giorno} porzioni={porzioni} abbonamenti={abbonamenti} />
+                  ) : null}
+                  {scheda === "etichette" ? <CucinaEtichette ordini={delGiorno} abbonamenti={abbonamenti} giorno={giorno} /> : null}
+                  {scheda === "ordini" ? <CucinaOrdini ordini={delGiorno} abbonamenti={abbonamenti} giorno={giorno} /> : null}
                 </div>
               </>
             )}

@@ -52,13 +52,31 @@ export function linkWhatsAppCliente(telefono: string, testo = "") {
 
 /* ---------- Componenti ---------- */
 
-/** Il pallino colorato con lo stato dell'ordine. `ritiro`: un ordine completato si dice "Ritirato". */
-export function Stato({ stato, grande = false, ritiro = false }: { stato: StatoOrdine | string; grande?: boolean; ritiro?: boolean }) {
+/**
+ * Il pallino colorato con lo stato dell'ordine. `ritiro`: un ordine completato
+ * si dice "Ritirato"; `abbonamento`: un abbonamento completato si dice "Concluso".
+ */
+export function Stato({
+  stato,
+  grande = false,
+  ritiro = false,
+  abbonamento = false,
+}: {
+  stato: StatoOrdine | string;
+  grande?: boolean;
+  ritiro?: boolean;
+  abbonamento?: boolean;
+}) {
   return (
     <span className={`pn-stato pn-stato-${stato} ${grande ? "pn-stato-l" : ""}`}>
-      {stato === "completed" && ritiro ? "Ritirato" : etichettaStato(stato)}
+      {stato === "completed" && abbonamento ? "Concluso" : stato === "completed" && ritiro ? "Ritirato" : etichettaStato(stato)}
     </span>
   );
+}
+
+/** "Abbonamento": il segno che distingue un abbonamento mensile in elenchi e schede. */
+export function SegnoAbbonamento() {
+  return <span className="pn-segno pn-segno-abbonamento">Abbonamento</span>;
 }
 
 /** Un numero grande con la sua etichetta. `tono` colora il bordo sinistro quando serve attenzione. */

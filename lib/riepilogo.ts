@@ -1,7 +1,7 @@
 import { getExtra } from "./catalogo";
 import { TAGLIE, preventivo, tagliaPer, type Preventivo } from "./pricing";
 import { GIORNI, PASTI, ZERO_MACRO, macroCasella, type Casella, type Piano } from "./settimana";
-import type { Formula, Macros } from "./types";
+import type { Macros } from "./types";
 
 /* =========================================================================
    Il riepilogo della settimana: tutti i numeri della barra in un colpo solo.
@@ -63,7 +63,7 @@ function prossimaTagliaPer(pasti: number): RiepilogoSettimana["prossimaTaglia"] 
   return t ? { mancano: t.pasti - pasti, prezzoPasto: t.prezzoPasto } : null;
 }
 
-export function riepilogoSettimana(piano: Piano, formula: Formula): RiepilogoSettimana {
+export function riepilogoSettimana(piano: Piano): RiepilogoSettimana {
   let pasti = 0;
   let giorniPieni = 0;
   let macroSettimana: Macros = { ...ZERO_MACRO };
@@ -90,7 +90,7 @@ export function riepilogoSettimana(piano: Piano, formula: Formula): RiepilogoSet
     giorniPieni,
     macroSettimana,
     macroMediaGiorno: dividi(macroSettimana, giorniPieni),
-    preventivo: pasti === 0 ? null : preventivo(pasti, formula),
+    preventivo: pasti === 0 ? null : preventivo(pasti),
     prossimaTaglia: prossimaTagliaPer(pasti),
     supplementiExtra,
     extraSuRichiesta,

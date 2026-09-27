@@ -114,7 +114,7 @@ export const onRequestPatch = async ({ env, request, params, waitUntil }: Contex
     price_cents: current.price_cents,
     paid: current.paid,
   };
-  const esito = leggiModificaAdmin(body, stato, current.fulfillment);
+  const esito = leggiModificaAdmin(body, stato, current.fulfillment, current.service);
   if (!esito.ok) return json({ error: esito.error }, esito.status);
   const { next, cambi, avvisaCliente } = esito.value;
 

@@ -2,9 +2,12 @@ import { describe, expect, it } from "vitest";
 import type { ClienteAdmin } from "./api";
 import { PIATTI } from "./catalogo";
 import {
+  PREZZO_ABBONAMENTO_CAMPO,
   campiVuoti,
   cercaClienti,
   conCliente,
+  conInizio,
+  conServizio,
   corpoNuovoOrdine,
   erroriNuovoOrdine,
   giornoSettimanaDi,
@@ -182,5 +185,38 @@ describe("controlli prima di salvare", () => {
     expect(moduloToccato({ ...campiVuoti(), nome: "A" })).toBe(true);
     expect(moduloToccato({ ...campiVuoti(), piano: riempiCaselle({}, pollo.id, 1, "lun").piano })).toBe(true);
     expect(moduloToccato({ ...campiVuoti(), pagato: true })).toBe(true);
+  });
+});
+
+describe("abbonamento a mano", () => {
+  const base = (): CampiNuovoOrdine => ({ ...campiVuoti("senza-account"), nome: "Anna", telefono: "347 765 4321" });
+
+  it("passando all'abbonamento svuota i piatti, propone il prezzo e usa una data sola", () => {
+    const conPiatti = { ...base(), piano: { lun: { pranzo: { piatto: pollo.id, extra: [] } } }, uscita: "2026-10-05" };
+    const abb = conServizio(conPiatti, "abbonamento");
+    expect(abb).toMatchObject({ servizio: "abbonamento", piano: {}, prezzo: PREZZO_ABBONAMENTO_CAMPO, produzione: "2026-10-05", uscita: "2026-10-05" });
+    expect(PREZZO_ABBONAMENTO_CAMPO).toBe("239,00");
+    // un prezzo gia' scritto resta
+    expect(conServizio({ ...base(), prezzo: "200" }, "abbonamento").prezzo).toBe("200");
+    // tornando indietro il prezzo proposto sparisce, quello scritto no
+    expect(conServizio(abb, "menu-settimana").prezzo).toBe("");
+    expect(conServizio({ ...abb, prezzo: "200" }, "menu-settimana").prezzo).toBe("200");
+    expect(conInizio(abb, "2026-10-12")).toMatchObject({ produzione: "2026-10-12", uscita: "2026-10-12" });
+  });
+
+  it("non chiede piatti ne' porzioni; confermato vuole l'inizio", () => {
+    const abb = conServizio(base(), "abbonamento");
+    expect(erroriNuovoOrdine(abb)).toEqual({});
+    expect(porzioniOrdine(abb)).toBe(0);
+    expect(erroriNuovoOrdine({ ...abb, stato: "confirmed" }).date).toMatch(/inizio/);
+    expect(erroriNuovoOrdine(conInizio({ ...abb, stato: "confirmed" }, "2026-10-05"))).toEqual({});
+  });
+
+  it("manda l'inizio in entrambe le date, senza piatti", () => {
+    const corpo = corpoNuovoOrdine(conInizio(conServizio(base(), "abbonamento"), "2026-10-05"));
+    expect(corpo).toMatchObject({
+      service: "abbonamento", plan: {}, productionDate: "2026-10-05", fulfillmentDate: "2026-10-05", priceCents: 23900,
+    });
+    expect(corpo).not.toHaveProperty("meals");
   });
 });

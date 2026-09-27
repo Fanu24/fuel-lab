@@ -11,11 +11,13 @@
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type MouseEvent, type SyntheticEvent } from "react";
 import { api, ApiError, ETICHETTE_SERVIZIO, type DettaglioOrdine, type Ordine } from "@/lib/api";
+import { periodoDi } from "@/lib/operazioni";
+import { eAbbonamento } from "@/lib/produzione";
 import { Icona } from "./PannelloIcone";
 import { usePannello } from "./PannelloDati";
 import OrdineGestisci from "./OrdineGestisci";
 import { Allergie, NoteCliente, OrdineContatti, OrdineCronologia, OrdinePiatti } from "./OrdineInfo";
-import { Avviso, Caricamento, Stato, faTempo, quando } from "./ui";
+import { Avviso, Caricamento, SegnoAbbonamento, Stato, faTempo, quando } from "./ui";
 
 /* ---------- L'indirizzo ---------- */
 
@@ -151,9 +153,12 @@ export default function OrdineScheda({ id, onChiudi }: { id: string; onChiudi: (
             {ordine ? (
               <>
                 <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[16px]">
-                  <Stato stato={ordine.status} grande ritiro={ordine.fulfillment === "pickup"} />
+                  <Stato stato={ordine.status} grande ritiro={ordine.fulfillment === "pickup"} abbonamento={eAbbonamento(ordine)} />
+                  {eAbbonamento(ordine) ? <SegnoAbbonamento /> : null}
                   <span className="font-semibold">
-                    {ordine.meals} {ordine.meals === 1 ? "pasto" : "pasti"} · {ordine.fulfillment === "pickup" ? "Ritiro" : "Consegna"}
+                    {eAbbonamento(ordine)
+                      ? `${periodoDi(ordine, oggi) ?? "Inizio da fissare"} · ${ordine.fulfillment === "pickup" ? "Ritiro" : "Consegna"}`
+                      : `${ordine.meals} ${ordine.meals === 1 ? "pasto" : "pasti"} · ${ordine.fulfillment === "pickup" ? "Ritiro" : "Consegna"}`}
                   </span>
                 </div>
                 <p className="mt-1 text-[14px] text-muted">
@@ -193,7 +198,7 @@ export default function OrdineScheda({ id, onChiudi }: { id: string; onChiudi: (
                 ) : null}
                 <OrdineContatti ordine={ordine} senzaAccount={!!dettaglio?.no_account} />
                 <Allergie testo={ordine.dietary_preferences} />
-                <NoteCliente testo={ordine.notes} />
+                <NoteCliente testo={ordine.notes} titolo={eAbbonamento(ordine) ? "La scheda del cliente" : undefined} />
                 <OrdinePiatti ordine={ordine} allenamenti={dettaglio?.training} />
               </>
             }

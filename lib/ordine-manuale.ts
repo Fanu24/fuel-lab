@@ -8,11 +8,16 @@
    rete: i test la provano cosi' com'e'. Il server rifa' tutti i controlli
    (lib/server/ordini-manuali.ts), questi servono a dirlo prima e accanto al
    campo giusto.
+
+   L'abbonamento mensile non ha piatti ne' porzioni: ha una data d'inizio
+   (scritta in entrambe le date dell'ordine) e il prezzo di lib/abbonamento.ts,
+   che il modulo propone e Matteo puo' cambiare.
    ========================================================================= */
 
+import { PREZZO_ABBONAMENTO_CENTESIMI } from "@/lib/abbonamento";
 import type { ClienteAdmin, Modalita, NuovoOrdineManuale, Servizio } from "@/lib/api";
 import { getPiatto } from "@/lib/catalogo";
-import { leggiEuro } from "@/lib/operazioni";
+import { centesimiInTesto, leggiEuro } from "@/lib/operazioni";
 import { conCasella, GIORNI, PASTI, type GiornoSettimana, type Piano } from "@/lib/settimana";
 
 export type ModoCliente = "registrato" | "senza-account";
@@ -80,6 +85,32 @@ export function conCliente(campi: CampiNuovoOrdine, cliente: ClienteAdmin): Camp
   };
 }
 
+/* ---------- Servizio ---------- */
+
+/** "239,00": il prezzo dell'abbonamento come lo scrive il campo. */
+export const PREZZO_ABBONAMENTO_CAMPO = centesimiInTesto(PREZZO_ABBONAMENTO_CENTESIMI);
+
+/**
+ * Cambia servizio. Passando all'abbonamento la griglia si svuota (i pranzi si
+ * compongono sulla scheda), le due date diventano l'inizio e, se il prezzo e'
+ * vuoto, si propone quello dell'abbonamento; tornando indietro quel prezzo
+ * proposto sparisce, uno scritto da Matteo resta.
+ */
+export function conServizio(campi: CampiNuovoOrdine, servizio: Servizio): CampiNuovoOrdine {
+  if (servizio === campi.servizio) return campi;
+  if (servizio === "abbonamento") {
+    const inizio = campi.uscita || campi.produzione;
+    return { ...campi, servizio, piano: {}, porzioni: "", produzione: inizio, uscita: inizio, prezzo: campi.prezzo.trim() ? campi.prezzo : PREZZO_ABBONAMENTO_CAMPO };
+  }
+  const prezzo = campi.servizio === "abbonamento" && campi.prezzo === PREZZO_ABBONAMENTO_CAMPO ? "" : campi.prezzo;
+  return { ...campi, servizio, prezzo };
+}
+
+/** L'inizio dell'abbonamento: e' sia il giorno di cucina sia il giorno di ritiro o consegna. */
+export function conInizio(campi: CampiNuovoOrdine, data: string): CampiNuovoOrdine {
+  return { ...campi, produzione: data, uscita: data };
+}
+
 /* ---------- Ricerca clienti ---------- */
 
 const normalizza = (t: string) => t.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase().trim();
@@ -124,8 +155,9 @@ export function leggiPorzioni(testo: string): number | null | undefined {
   return n <= MAX_PORZIONI ? n : undefined;
 }
 
-/** Le porzioni dell'ordine, come le contera' il server. */
+/** Le porzioni dell'ordine, come le contera' il server (l'abbonamento non ne ha: i pranzi li conta il periodo). */
 export function porzioniOrdine(campi: Pick<CampiNuovoOrdine, "servizio" | "piano" | "porzioni">): number {
+  if (campi.servizio === "abbonamento") return 0;
   const piatti = piattiScelti(campi.piano);
   if (campi.servizio !== "home-cooking") return piatti;
   return Math.max(piatti, leggiPorzioni(campi.porzioni) ?? 0);
@@ -195,9 +227,12 @@ export function erroriNuovoOrdine(c: CampiNuovoOrdine): ErroriNuovoOrdine {
     if (!c.comune.trim()) e.comune = "Per la consegna serve il comune.";
     if (!c.indirizzo.trim()) e.indirizzo = "Per la consegna serve l’indirizzo.";
   }
-  if (c.servizio !== "home-cooking" && piattiScelti(c.piano) === 0) e.piatti = "Scegli almeno un piatto.";
+  const abbonamento = c.servizio === "abbonamento";
+  if (!abbonamento && c.servizio !== "home-cooking" && piattiScelti(c.piano) === 0) e.piatti = "Scegli almeno un piatto.";
   if (c.servizio === "home-cooking" && leggiPorzioni(c.porzioni) === undefined) e.porzioni = `Scrivi un numero da 0 a ${MAX_PORZIONI}.`;
-  if (c.produzione && c.uscita && c.produzione > c.uscita) {
+  if (abbonamento) {
+    if (c.stato === "confirmed" && !(c.uscita || c.produzione)) e.date = "Per un abbonamento già confermato serve la data d’inizio.";
+  } else if (c.produzione && c.uscita && c.produzione > c.uscita) {
     e.date = "Il giorno di cucina non può venire dopo il ritiro o la consegna.";
   } else if (c.stato === "confirmed" && (!c.produzione || !c.uscita)) {
     e.date = "Per un ordine già confermato servono tutte e due le date.";
@@ -211,6 +246,27 @@ export function erroriNuovoOrdine(c: CampiNuovoOrdine): ErroriNuovoOrdine {
 /** Il corpo di POST /api/admin/orders. Va chiamato solo con zero errori. */
 export function corpoNuovoOrdine(c: CampiNuovoOrdine): NuovoOrdineManuale {
   const porzioni = c.servizio === "home-cooking" ? leggiPorzioni(c.porzioni) : null;
+  if (c.servizio === "abbonamento") {
+    // Una data sola, l'inizio, in entrambe le date; niente piatti.
+    const inizio = c.uscita || c.produzione || null;
+    return {
+      customerId: c.modo === "registrato" ? (c.cliente?.id ?? null) : null,
+      name: c.nome.trim(),
+      phone: c.telefono.trim(),
+      comune: c.comune.trim(),
+      address: c.indirizzo.trim(),
+      service: "abbonamento",
+      fulfillment: c.modalita,
+      plan: {},
+      productionDate: inizio,
+      fulfillmentDate: inizio,
+      status: c.stato,
+      priceCents: leggiEuro(c.prezzo) ?? null,
+      paid: c.pagato,
+      internalNote: c.nota.trim(),
+      notes: c.note.trim(),
+    };
+  }
   return {
     customerId: c.modo === "registrato" ? (c.cliente?.id ?? null) : null,
     name: c.nome.trim(),

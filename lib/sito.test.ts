@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
@@ -12,6 +12,8 @@ import {
   elencoZone,
 } from "./sito";
 import { PIATTI } from "./catalogo";
+import { ETICHETTE_SERVIZIO } from "./api";
+import { SERVIZI } from "./servizi";
 import { CONSEGNA_GRATIS_DA } from "./pricing";
 import {
   ABBONAMENTO_CONSEGNA_GRATIS,
@@ -255,6 +257,29 @@ describe("decisioni del committente", () => {
     for (const t of testi) expect(t).not.toMatch(DUE_GIORNI);
     // Le schede dei piatti non dicono piu' in che giorno sono cucinati.
     for (const p of PIATTI) expect(`${descrizionePiatto(p)} ${descrizioneEstesa(p)}`).not.toMatch(/luned|gioved/i);
+  });
+
+  it("nemmeno il pannello, l'area cliente o le email parlano piu' dei due giorni fissi", () => {
+    // Tutti i sorgenti (pagine, componenti, logica, Functions), test esclusi: qui la regola e' scritta apposta.
+    const sorgenti = (cartella: string): string[] =>
+      readdirSync(path.join(RADICE, cartella), { withFileTypes: true }).flatMap((voce) => {
+        const relativo = path.join(cartella, voce.name);
+        if (voce.isDirectory()) return sorgenti(relativo);
+        return /\.(ts|tsx)$/.test(voce.name) && !/\.test\.ts$/.test(voce.name) ? [relativo] : [];
+      });
+    const colpevoli = ["app", "components", "lib", "functions"]
+      .flatMap(sorgenti)
+      // Anche nei commenti, dove i giorni si scrivono con l'apostrofo ("lunedi' e giovedi'").
+      .filter((f) => /luned[iì]'? (e|o) (il )?gioved|lun · gio|due cotture/i.test(readFileSync(path.join(RADICE, f), "utf8")));
+    expect(colpevoli).toEqual([]);
+  });
+
+  it("l'abbonamento e' il secondo servizio, con il prezzo al mese di lib/abbonamento.ts", () => {
+    expect(SERVIZI.map((s) => s.id)).toEqual(["menu-settimana", "abbonamento", "sui-tuoi-macro", "home-cooking"]);
+    expect(SERVIZI.map((s) => s.numero)).toEqual(["01", "02", "03", "04"]);
+    expect(SERVIZI[1].prezzo).toEqual({ tipo: "mese", valore: PREZZO_ABBONAMENTO });
+    expect(SERVIZI[1].href).toBe(PAGINE.abbonamento.percorso);
+    expect(ETICHETTE_SERVIZIO.abbonamento).toBe("Abbonamento mensile");
   });
 
   it("la vecchia pagina su Matteo non c'e' piu' e reindirizza in modo permanente a /chi-siamo", () => {

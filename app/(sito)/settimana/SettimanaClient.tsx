@@ -47,7 +47,7 @@ export default function SettimanaClient() {
     nomeSlot,
   });
 
-  const r = useMemo(() => riepilogoSettimana(piano, "singolo"), [piano]);
+  const r = useMemo(() => riepilogoSettimana(piano), [piano]);
   const giorniScelti = Object.keys(allenamenti).length;
   const fuori = useMemo(() => (pronto ? caselleEscluse(piano, esclusi) : []), [pronto, piano, esclusi]);
 

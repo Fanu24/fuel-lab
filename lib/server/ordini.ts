@@ -5,13 +5,16 @@
  * cliente puo' vedere si decide qui.
  */
 
+import { fineAbbonamento, PREZZO_ABBONAMENTO_CENTESIMI } from "../abbonamento";
 import { etichettaStato, type DettaglioOrdine, type EventoOrdine, type Modalita, type Ordine, type Servizio, type StatoOrdine, type VoceOrdine } from "../api";
 import { getExtra, getPiatto } from "../catalogo";
-import { GIORNI, PASTI, potaAllenamenti, potaPiano, type Allenamenti, type Piano } from "../settimana";
+import { GIORNI, PASTI, potaAllenamenti, potaPiano, type Allenamenti, type GiornoSettimana, type Piano } from "../settimana";
 import { dataEstesa, dataValida, spostaGiorno, tsSqlite } from "./date";
 
 export const STATI: readonly StatoOrdine[] = ["requested", "confirmed", "preparing", "ready", "completed", "cancelled"];
-export const SERVIZI: readonly Servizio[] = ["menu-settimana", "sui-tuoi-macro", "home-cooking"];
+export const SERVIZI: readonly Servizio[] = ["menu-settimana", "abbonamento", "sui-tuoi-macro", "home-cooking"];
+/** I servizi che partono anche senza piatti: l'home cooking si concorda, l'abbonamento si compone sulla scheda. */
+export const SERVIZI_SENZA_PIATTI: readonly Servizio[] = ["abbonamento", "home-cooking"];
 export const TIPI_EVENTO: readonly EventoOrdine["type"][] = ["created", "status", "schedule", "note", "message", "price", "payment", "email"];
 /** Gli unici eventi che il cliente vede: il resto e' lavoro interno di Matteo. */
 export const EVENTI_CLIENTE: readonly EventoOrdine["type"][] = ["created", "status", "message"];
@@ -128,6 +131,23 @@ export function vociDalPiano(plan: Piano): VoceOrdine[] {
   return voci;
 }
 
+/** I giorni dei pranzi in abbonamento. */
+const FERIALI: readonly GiornoSettimana[] = ["lun", "mar", "mer", "gio", "ven"];
+
+/**
+ * Per l'abbonamento il piano allegato vale solo per i pranzi dal lunedi' al
+ * venerdi': le cene e il fine settimana non fanno parte dell'abbonamento, e
+ * lasciarli nella richiesta farebbe credere a Matteo che vadano cucinati.
+ */
+export function soloPranziFeriali(plan: Piano): Piano {
+  const out: Piano = {};
+  for (const g of FERIALI) {
+    const pranzo = plan[g]?.pranzo;
+    if (pranzo) out[g] = { pranzo };
+  }
+  return out;
+}
+
 export type NuovoOrdineValido = {
   name: string;
   phone: string;
@@ -140,9 +160,15 @@ export type NuovoOrdineValido = {
   plan: Piano;
   training: Allenamenti;
   items: VoceOrdine[];
+  /** La proposta che parte con la richiesta: solo per l'abbonamento (prezzo fisso), altrimenti null. */
+  priceCents: number | null;
 };
 
-/** Valida il corpo di POST /api/orders. `oggi` e' il giorno a Pescara. */
+/**
+ * Valida il corpo di POST /api/orders. `oggi` e' il giorno a Pescara.
+ * Per l'abbonamento `requestedDate` e' l'inizio desiderato, i piatti non
+ * servono e il prezzo proposto e' quello di lib/abbonamento.ts.
+ */
 export function leggiNuovoOrdine(body: Record<string, unknown>, nomeAccount: string, oggi: string): Esito<NuovoOrdineValido> {
   const name = campo(body.name, 100) || nomeAccount.trim().slice(0, 100);
   const phone = campo(body.phone, 40);
@@ -158,11 +184,13 @@ export function leggiNuovoOrdine(body: Record<string, unknown>, nomeAccount: str
   if (requestedDate && (requestedDate < oggi || requestedDate > spostaGiorno(oggi, 90))) {
     return errore(400, "Scegli una data nei prossimi 90 giorni");
   }
-  const plan = potaPiano(body.plan);
+  const abbonamento = service === "abbonamento";
+  const plan = abbonamento ? soloPranziFeriali(potaPiano(body.plan)) : potaPiano(body.plan);
   const training = potaAllenamenti(body.training);
   const items = vociDalPiano(plan);
-  if (service !== "home-cooking" && !items.length) return errore(400, "Componi almeno un piatto prima di inviare");
-  return { ok: true, value: { name, phone, comune, address, notes, service, fulfillment, requestedDate, plan, training, items } };
+  if (!SERVIZI_SENZA_PIATTI.includes(service) && !items.length) return errore(400, "Componi almeno un piatto prima di inviare");
+  const priceCents = abbonamento ? PREZZO_ABBONAMENTO_CENTESIMI : null;
+  return { ok: true, value: { name, phone, comune, address, notes, service, fulfillment, requestedDate, plan, training, items, priceCents } };
 }
 
 /* ---------- Modifiche di Matteo ---------- */
@@ -203,8 +231,13 @@ export function euroTesto(centesimi: number): string {
   return `${centesimi < 0 ? "-" : ""}€ ${euro},${cent}`;
 }
 
-export function descriviDate(fulfillment: Modalita, produzione: string | null, consegna: string | null): string {
+/** L'evento delle date nella cronologia. Per l'abbonamento le date sono l'inizio, e si scrive fin quando vale. */
+export function descriviDate(fulfillment: Modalita, produzione: string | null, consegna: string | null, servizio?: Servizio): string {
   const quando = (day: string | null) => (day ? dataEstesa(day) : "da fissare");
+  if (servizio === "abbonamento") {
+    const inizio = consegna ?? produzione;
+    return inizio && dataValida(inizio) ? `Inizio: ${dataEstesa(inizio)}, fino a ${dataEstesa(fineAbbonamento(inizio))}` : "Inizio: da fissare";
+  }
   return `Produzione: ${quando(produzione)} · ${fulfillment === "delivery" ? "Consegna" : "Ritiro"}: ${quando(consegna)}`;
 }
 
@@ -216,6 +249,7 @@ export function leggiModificaAdmin(
   body: Record<string, unknown>,
   current: StatoModificabile,
   fulfillment: Modalita,
+  servizio?: Servizio,
 ): Esito<ModificaValida> {
   if (body.status !== undefined && !eStato(body.status)) return errore(400, "Stato non valido");
   const status = body.status === undefined ? current.status : body.status as StatoOrdine;
@@ -261,7 +295,7 @@ export function leggiModificaAdmin(
   const evento = (type: Cambio["type"], detail: string, from_status: StatoOrdine | null = null, to_status: StatoOrdine | null = null) =>
     cambi.push({ type, detail, from_status, to_status });
   if (statoCambiato) evento("status", "", current.status, status);
-  if (dateCambiate) evento("schedule", descriviDate(fulfillment, produzione.value, consegna.value));
+  if (dateCambiate) evento("schedule", descriviDate(fulfillment, produzione.value, consegna.value, servizio));
   if (nota !== current.internal_note) evento("note", nota || "Nota interna cancellata");
   const messaggioCambiato = messaggio !== current.customer_message;
   if (messaggioCambiato) evento("message", messaggio || "Messaggio rimosso");

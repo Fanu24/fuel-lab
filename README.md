@@ -4,6 +4,11 @@ Sito e area clienti di Matteo Pattanè, Via del Santuario 214, 65124 Pescara. Pr
 
 Next.js 16 genera le pagine statiche; Cloudflare Pages Functions gestisce autenticazione e API; Cloudflare D1 conserva account, menu salvati, richieste e statistiche aggregate. Il progetto Pages si chiama `fuelchef` nell'account Cloudflare `dotatv24`.
 
+Decisioni del committente (settembre 2026), da tenere ferme:
+
+- **Matteo cucina ogni giorno e consegna ogni giorno.** Non ci sono più giorni fissi: il pannello propone come giorno di cucina e di uscita la data chiesta dal cliente (se è futura) o domani, e salta solo i giorni di chiusura segnati in Impostazioni. Il testo pubblico sta in `QUANDO_CUCINA` di `lib/sito.ts`; `lib/sito.test.ts` controlla che nessun sorgente citi più i due giorni.
+- **Abbonamento mensile ai pranzi: 239 € al mese**, tutti i pranzi dal lunedì al venerdì per un mese, composti sulla scheda del cliente (allenamento, obiettivi, indicazioni del nutrizionista). Prezzo, link e testi stanno in `lib/abbonamento.ts`. Nessun pagamento online: inizio, consegna o ritiro e pagamento si concordano con Matteo.
+
 ## Avvio e pubblicazione
 
 ```bash
@@ -25,18 +30,28 @@ Il contratto fra pagine e server è `lib/api.ts`; le regole pure (validazioni, c
 
 Le email partono da `accesso@fuelchef.it` via Resend. Gli avvisi per Matteo vanno a `ADMIN_NOTIFY_EMAIL` (predefinito `info@fuelchef.it`); senza `RESEND_API_KEY` vengono saltati senza far fallire le richieste. Nuova migrazione in produzione: `npx wrangler d1 migrations apply fuelchef --remote` (dopo un backup con `npx wrangler d1 export fuelchef --remote --output backup.sql`).
 
+**Migrazioni da applicare in produzione prima di pubblicare questa versione** (se `npx wrangler d1 migrations list fuelchef --remote` le mostra ancora da applicare):
+
+- `0003_pannello.sql`: prezzo concordato, pagato e messaggio al cliente sugli ordini, cronologia degli eventi (`order_events`), messaggi del modulo contatti (`contact_messages`);
+- `0004_ordini_manuali.sql`: colonna `source` (`web` o `manual`) per gli ordini inseriti a mano da Matteo;
+- `0005_impostazioni.sql`: tabella `site_settings` per piatti non disponibili, chiusure e avviso.
+
+L'abbonamento non vuole migrazioni: `orders.service` è testo senza vincolo e vale `abbonamento`; la richiesta nasce con `price_cents = 23900` (prezzo proposto, da confermare) e la data preferita è l'inizio desiderato. Alla conferma le due date dell'ordine sono entrambe l'inizio; il periodo vale un mese, fino al giorno prima dello stesso giorno del mese dopo (se quel giorno non esiste, l'ultimo del mese: 31 gennaio → 27 febbraio). Le regole stanno in `lib/abbonamento.ts` e `lib/server/ordini.ts`.
+
 ## Pagine e accessi
 
-- `/menu`, `/settimana`, `/scheda`: scelta dei piatti e composizione della settimana. Il bottone "Invia a Matteo" del compositore porta alla richiesta dall'account.
+- `/menu`, `/settimana`, `/scheda`: scelta dei piatti e composizione della settimana. Il bottone "Invia a Matteo" del compositore porta alla richiesta dall'account. Per chi ha fatto l'accesso la settimana è **sincronizzata con l'account** (`lib/sincronizzaPiano.ts`, `GET/PUT /api/plan`): ogni salvataggio porta la versione da cui parte (`ifUpdatedAt`) e il server risponde 409 se nel frattempo è cambiata altrove; se sono cambiati entrambi i lati il sito chiede quale tenere.
+- `/servizi`: i quattro servizi (menu della settimana, abbonamento, sui tuoi macro, home cooking) da `lib/servizi.ts`. `/abbonamento`: la pagina dell'abbonamento mensile; "Richiedilo" porta a `/account?sezione=richiesta&servizio=abbonamento`, senza account a `/richiesta?servizio=abbonamento#scrivi`.
 - `/accedi`: registrazione e accesso via email o Google, recupero password, `?next=` per tornare alla pagina di partenza (solo percorsi interni).
-- `/account`: area cliente a sezioni (`?sezione=panoramica|settimana|richieste|richiesta|profilo|sicurezza`): settimana salvata, richieste con stato, messaggio di Matteo, prezzo concordato, "Ripeti", annullamento, promemoria da calendario (.ics), profilo, cambio password, download dei dati, eliminazione dell'account. Una richiesta non equivale a un ordine confermato o a un pagamento.
-- `/richiesta`: contatti. Richiesta dall'account, modulo senza account (finisce nel pannello, sezione Messaggi) ed email.
+- `/account`: area cliente a sezioni (`?sezione=panoramica|settimana|richieste|richiesta|profilo|sicurezza`): settimana salvata, richieste con stato, messaggio di Matteo, prezzo concordato, "Ripeti", annullamento, promemoria da calendario (.ics), profilo, cambio password, download dei dati, eliminazione dell'account. Una richiesta non equivale a un ordine confermato o a un pagamento. `&servizio=abbonamento` preseleziona l'abbonamento: niente settimana obbligatoria, la data diventa "Inizio desiderato" e le note diventano la scheda per Matteo; nelle Richieste l'abbonamento confermato mostra il periodo (dal … al …).
+- `/richiesta`: contatti. Richiesta dall'account, modulo senza account (finisce nel pannello, sezione Messaggi) ed email. `?servizio=` (anche `abbonamento`) preseleziona l'argomento del modulo e il servizio del messaggio WhatsApp. Nel menu del telefono la voce è "Contatti"; nella barra del computer non c'è (non entra accanto ad "Abbonamento"), ci porta il bottone accanto.
 - Pagine locali per la ricerca: `/meal-prep-pescara`, `/consegna-pasti-pescara`, `/pasti-proteici-pescara`, `/cuoco-a-domicilio-pescara`.
 - `/blog`, `/blog/categoria/<id>`, `/blog/<slug>` (con immagine social `/blog/<slug>/og.png`); `/privacy`: informativa e preferenze Analytics.
 - `/dashboard` (solo Matteo, installabile sul telefono come app "Pannello"):
-  - **Oggi**: cosa fare adesso in ordine di urgenza, cucina e uscite del giorno, prossimi 7 giorni.
-  - **Ordini** (`?id=` apre la scheda): filtri, ricerca, elenco o colonne per stato, CSV; nella scheda il bottone del passo successivo, date con scorciatoie ai giorni di cucina, prezzo, pagato, messaggio al cliente (con email), nota interna, cronologia.
-  - **Cucina** (`?giorno=&scheda=`): porzioni per piatto, lista della spesa, etichette A4 3×7 da stampare, schede d'imballo.
+  - **Oggi**: cosa fare adesso in ordine di urgenza, cucina e uscite del giorno (con i pranzi in abbonamento di oggi e dei prossimi 7 giorni), prossimi 7 giorni con i giorni di chiusura in evidenza.
+  - **Ordini** (`?id=` apre la scheda, `?nuovo=1` il modulo dell'ordine a mano): filtri, "Solo da incassare", "Solo abbonamenti" (`?solo=abbonamenti`), ricerca, elenco o colonne per stato, CSV; nella scheda il bottone del passo successivo, date con le scorciatoie Oggi, Domani, Dopodomani, prezzo, pagato, messaggio al cliente (con email), nota interna, cronologia. L'abbonamento ha il segno "Abbonamento", una data sola (l'inizio) e il periodo calcolato; a mese finito risulta "Mese finito" e il bottone propone "Segna concluso".
+  - **Cucina** (`?giorno=&scheda=`): porzioni per piatto, lista della spesa, etichette A4 3×7 da stampare, schede d'imballo. Dal lunedì al venerdì ci sono anche i **pranzi in abbonamento** degli abbonamenti in corso (confermati, in preparazione o pronti, con il periodo che comprende il giorno): una sezione con cliente, pranzo, allergie e scheda, un'etichetta per pranzo (il piatto indicato dal cliente per quel giorno o "Pranzo in abbonamento") e una scheda d'imballo. La logica è `abbonamentiDelGiorno` in `lib/produzione.ts`.
+  - **Impostazioni**: piatti non disponibili, chiusure e ferie (i clienti non possono scegliere quei giorni e il pannello non li propone), avviso in cima al sito.
   - **Clienti**, **Messaggi** (modulo contatti), **Numeri** (7/30/90 giorni).
 
 Nota sui soldi: i campi "Da incassare" contano solo i prezzi di ordini confermati; il prezzo di una richiesta ancora da confermare è una proposta.

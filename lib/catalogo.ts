@@ -1,4 +1,4 @@
-import { kcalDa, type Giorno, type Macros, type Tag } from "./types";
+import { kcalDa, type Macros, type Tag } from "./types";
 import { EXTRA } from "./catalogo-extra";
 
 /*
@@ -49,7 +49,6 @@ export interface Piatto extends Macros {
   tag: Tag[];
   allergeni: string[];
   img: string;
-  giorno: Giorno;
   ingredienti: Ingrediente[];
   motivo: string;
   allenamento: Allenamento;
@@ -117,7 +116,6 @@ export const PIATTI: Piatto[] = [
     tag: ["carne"],
     allergeni: ["glutine", "sesamo", "soia"],
     img: "/foto/photo-1526318896980-cf78c088247c.webp",
-    giorno: "lunedi",
     allenamento: "cardio",
     ingredienti: [
       { nome: "Noodles", grammi: 100 },
@@ -152,7 +150,6 @@ export const PIATTI: Piatto[] = [
     tag: ["veg"],
     allergeni: ["glutine", "latte", "uova"],
     img: "/foto/photo-1601556123240-462c758a50db.webp",
-    giorno: "giovedi",
     allenamento: "cardio",
     ingredienti: [
       { nome: "Gnocchi fatti a mano", grammi: 200 },
@@ -179,7 +176,6 @@ export const PIATTI: Piatto[] = [
     tag: ["carne", "senza-glutine"],
     allergeni: ["sesamo", "soia"],
     img: "/foto/photo-1603133872878-684f208fb84b.webp",
-    giorno: "lunedi",
     allenamento: "entrambi",
     ingredienti: [
       { nome: "Riso basmati", grammi: 150 },
@@ -204,7 +200,6 @@ export const PIATTI: Piatto[] = [
     tag: ["carne", "senza-glutine"],
     allergeni: ["senape", "soia"],
     img: "/foto/photo-1432139555190-58524dae6a55.webp",
-    giorno: "giovedi",
     allenamento: "pesi",
     ingredienti: [
       { nome: "Fesa di maiale", grammi: 250 },
@@ -237,7 +232,6 @@ export const PIATTI: Piatto[] = [
     tag: ["veg"],
     allergeni: ["glutine", "uova", "latte"],
     img: "/foto/photo-1529042410759-befb1204b468.webp",
-    giorno: "giovedi",
     allenamento: "pesi",
     ingredienti: [
       { nome: "Pane raffermo", grammi: 180 },
@@ -266,7 +260,6 @@ export const PIATTI: Piatto[] = [
     tag: ["veg", "senza-glutine"],
     allergeni: ["uova", "latte"],
     img: "/foto/photo-1590412200988-a436970781fa.webp",
-    giorno: "lunedi",
     allenamento: "pesi",
     ingredienti: [
       { nome: "Uova", nota: "3" },

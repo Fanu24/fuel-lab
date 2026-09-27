@@ -1,5 +1,6 @@
 /* I filtri della pagina Ordini: chip per stato con i conteggi, ricerca,
-   "solo da incassare", scelta elenco/colonne ed esportazione CSV. */
+   "solo da incassare" o "solo abbonamenti" (uno alla volta), scelta
+   elenco/colonne ed esportazione CSV. */
 
 import { FILTRI_SPECIALI, FILTRI_STATO, type FiltroSpeciale, type FiltroStato } from "@/lib/operazioni";
 import { Icona } from "./PannelloIcone";
@@ -61,7 +62,11 @@ export default function OrdiniFiltri({
             <input type="checkbox" checked={speciale === "incassare"} onChange={(e) => onSpeciale(e.target.checked ? "incassare" : null)} />
             Solo da incassare
           </label>
-          {speciale && speciale !== "incassare" ? (
+          <label className="pn-casella">
+            <input type="checkbox" checked={speciale === "abbonamenti"} onChange={(e) => onSpeciale(e.target.checked ? "abbonamenti" : null)} />
+            Solo abbonamenti
+          </label>
+          {speciale && speciale !== "incassare" && speciale !== "abbonamenti" ? (
             <button type="button" className="pn-chip" aria-pressed="true" onClick={() => onSpeciale(null)} aria-label={`Togli il filtro ${FILTRI_SPECIALI[speciale]}`}>
               {FILTRI_SPECIALI[speciale]}
               <Icona nome="chiudi" className="size-4" />

@@ -3,10 +3,14 @@
 /* "Oggi in uscita": chi ritira in Via del Santuario e chi riceve a casa.
    Per ognuno: dove, quanti pasti, Chiama / WhatsApp e un tocco per segnare
    consegnato (con "Annulla" in basso per qualche secondo). Gli ordini gia'
-   consegnati restano in fondo, cosi' si vede a che punto e' la giornata. */
+   consegnati restano in fondo, cosi' si vede a che punto e' la giornata.
+   I pranzi in abbonamento escono anche loro, ma non si segnano uno per uno
+   (chiuderebbero l'abbonamento): una riga li conta e porta alle schede
+   d'imballo del foglio cucina. */
 
+import Link from "next/link";
 import { euro, type Ordine } from "@/lib/api";
-import { daIncassare, linkMappa, nomeProprio, testoWhatsApp, type CodeOperative } from "@/lib/operazioni";
+import { daIncassare, elencoNomi, linkMappa, nomeProprio, plurale, testoWhatsApp, type CodeOperative } from "@/lib/operazioni";
 import { INDIRIZZO } from "@/lib/sito";
 import { Icona } from "./PannelloIcone";
 import { fraseAvviso, usePannello } from "./PannelloDati";
@@ -22,6 +26,12 @@ export default function OggiUscite({ code, apri, veloci }: { code: CodeOperative
       )
     : null;
   const fatti = lista?.filter((o) => o.status === "completed").length ?? 0;
+  const abbonamenti = code?.abbonamentiOggi ?? [];
+  const ritiriAbb = abbonamenti.filter((o) => o.fulfillment === "pickup").length;
+  const dettaglioAbb = [
+    ritiriAbb ? plurale(ritiriAbb, "ritiro", "ritiri") : "",
+    abbonamenti.length - ritiriAbb ? plurale(abbonamenti.length - ritiriAbb, "consegna", "consegne") : "",
+  ].filter(Boolean).join(", ");
 
   return (
     <Sezione
@@ -32,7 +42,9 @@ export default function OggiUscite({ code, apri, veloci }: { code: CodeOperative
           ? "Carico gli ordini…"
           : lista.length
             ? `${lista.length - fatti} da consegnare · ${fatti} ${fatti === 1 ? "fatto" : "fatti"}`
-            : "Nessun ritiro o consegna oggi."
+            : abbonamenti.length
+              ? "Nessun ordine in uscita oggi, solo pranzi in abbonamento."
+              : "Nessun ritiro o consegna oggi."
       }
     >
       {!lista ? (
@@ -46,9 +58,21 @@ export default function OggiUscite({ code, apri, veloci }: { code: CodeOperative
             <Uscita key={o.id} ordine={o} apri={apri} veloci={veloci} />
           ))}
         </ul>
-      ) : (
+      ) : abbonamenti.length ? null : (
         <Vuoto>Quando un ordine ha il ritiro o la consegna oggi, compare qui.</Vuoto>
       )}
+      {abbonamenti.length ? (
+        <p className="mt-3 text-[15px]">
+          <strong>
+            {lista?.length ? "+ " : ""}
+            {plurale(abbonamenti.length, "pranzo in abbonamento", "pranzi in abbonamento")}
+          </strong>{" "}
+          ({dettaglioAbb}): {elencoNomi(abbonamenti, 3)}.{" "}
+          <Link href="/dashboard/produzione?scheda=ordini" className="link">
+            Schede d’imballo
+          </Link>
+        </p>
+      ) : null}
     </Sezione>
   );
 }

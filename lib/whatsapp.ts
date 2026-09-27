@@ -2,6 +2,7 @@ import { GIORNI, NOMI_GIORNATA, NOMI_GIORNO, PASTI } from "./settimana";
 import type { Allenamenti, Casella, GiornoSettimana, Piano } from "./settimana";
 import { getPiatto, getExtra, etichettaPrezzo } from "./catalogo";
 import type { Macros } from "./types";
+import { PREZZO_ABBONAMENTO_TESTO } from "./abbonamento";
 
 /* =========================================================================
    Il contatto finale non e' un checkout, e' una conversazione su WhatsApp.
@@ -75,7 +76,7 @@ export function linkWhatsAppA(telefono: string, testo: string): string | null {
 }
 
 /**
- * Un testo diverso per ciascuno dei tre servizi: e' cosi' che Matteo capisce
+ * Un testo diverso per ciascuno dei quattro servizi: e' cosi' che Matteo capisce
  * da quale pagina arriva il contatto, senza altro tracciamento. `servizioId`
  * e' una stringa e non l'union di lib/servizi.ts di proposito: questo modulo
  * non dipende da quale altro file definisce i servizi, quindi un id ignoto
@@ -85,6 +86,8 @@ export function linkWhatsAppA(telefono: string, testo: string): string | null {
 const TESTI_SERVIZIO: Record<string, string> = {
   "menu-settimana":
     "Ciao Matteo! Ho visto il Menu della settimana su FUEL LAB e vorrei qualche informazione per iniziare.",
+  abbonamento:
+    `Ciao Matteo! Mi interessa l'abbonamento mensile ai pranzi di FUEL LAB (${PREZZO_ABBONAMENTO_TESTO} al mese, dal lunedì al venerdì) e vorrei sapere come partire.`,
   "sui-tuoi-macro":
     "Ciao Matteo! Vorrei un piano costruito sui miei macro (servizio Sui tuoi macro): mi dici come funziona e come partire?",
   "home-cooking":

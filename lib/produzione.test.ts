@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
-import type { ClienteAdmin, MessaggioContatto, Ordine } from "./api";
+import type { Chiusura, ClienteAdmin, MessaggioContatto, Ordine } from "./api";
 import {
+  PRANZO_IN_ABBONAMENTO,
+  abbonamentiDelGiorno,
   allergeniDelGiorno,
   cellaCsv,
   clientiCsv,
@@ -11,6 +13,7 @@ import {
   corpoRisposta,
   dataBreve,
   etichette,
+  etichetteAbbonamenti,
   filtraClienti,
   euroTondo,
   formattaPeso,
@@ -26,7 +29,9 @@ import {
   oggettoRisposta,
   oggiRoma,
   ordiniDelGiorno,
-  prossimo,
+  pranziComeOrdini,
+  pranzoInAbbonamento,
+  primoGiornoDiCucina,
   repartoDi,
   spostaGiorni,
   tacche,
@@ -54,10 +59,10 @@ describe("date della cucina", () => {
     expect(oggiRoma(new Date("2026-09-27T22:30:00Z"))).toBe("2026-09-28");
   });
 
-  it("trova il prossimo lunedi' e giovedi', oggi compreso", () => {
-    expect(prossimo("2026-09-27", 1)).toBe("2026-09-28"); // domenica -> lunedi'
-    expect(prossimo("2026-09-28", 1)).toBe("2026-09-28"); // lunedi' -> se stesso
-    expect(prossimo("2026-09-28", 4)).toBe("2026-10-01");
+  it("si cucina ogni giorno: il primo giorno di cucina e' oggi, se non e' chiuso", () => {
+    const ferie: Chiusura[] = [{ dal: "2026-09-27", al: "2026-09-29", motivo: "" }];
+    expect(primoGiornoDiCucina("2026-09-27")).toBe("2026-09-27"); // anche di domenica
+    expect(primoGiornoDiCucina("2026-09-27", ferie)).toBe("2026-09-30");
     expect(spostaGiorni("2026-10-24", 3)).toBe("2026-10-27"); // attraverso il cambio dell'ora
   });
 
@@ -124,10 +129,74 @@ describe("foglio di produzione", () => {
     expect(confermatiSenzaGiorno(ordini).map((o) => o.id)).toEqual(["senza-giorno"]);
   });
 
-  it("apre su oggi se c'e' produzione, altrimenti sul prossimo giorno di cucina", () => {
+  it("apre su oggi, o sul primo giorno dopo una chiusura se oggi non c'e' niente", () => {
+    const chiuso: Chiusura[] = [{ dal: "2026-09-29", al: "2026-09-30", motivo: "ferie" }];
     expect(giornoPredefinito(ordini, "2026-09-28")).toBe("2026-09-28");
-    expect(giornoPredefinito([], "2026-09-29")).toBe("2026-10-01"); // martedi' -> giovedi'
-    expect(giornoPredefinito([], "2026-10-02")).toBe("2026-10-05"); // venerdi' -> lunedi'
+    expect(giornoPredefinito([], "2026-09-29")).toBe("2026-09-29");
+    expect(giornoPredefinito([], "2026-09-29", chiuso)).toBe("2026-10-01");
+    // chiuso, ma con un ordine gia' confermato per oggi: si apre su oggi
+    expect(giornoPredefinito([ordine("x", { production_date: "2026-09-29" })], "2026-09-29", chiuso)).toBe("2026-09-29");
+  });
+});
+
+describe("abbonamenti in cucina", () => {
+  // Giulia: dal 1 al 31 ottobre, ha indicato il pranzo del lunedi' e del mercoledi'.
+  const giulia = ordine("giulia", {
+    service: "abbonamento", customer_name: "Giulia", production_date: "2026-10-01", fulfillment_date: "2026-10-01",
+    notes: "Pesi lun-mer-ven, 140 g di proteine", dietary_preferences: "Senza lattosio",
+    items: [
+      { id: "riso-julien-pollo-teriyaki", name: "Riso", day: "lun", meal: "pranzo", extras: ["Pasta"] },
+      { id: "uova-purgatorio-peperoni", name: "Uova", day: "mer", meal: "pranzo", extras: [] },
+    ],
+  });
+  // Anna: dal 5 al 4 novembre, nessun piatto indicato.
+  const anna = ordine("anna", { service: "abbonamento", customer_name: "Anna", production_date: "2026-10-05", fulfillment_date: "2026-10-05", items: [] });
+  const tutti = [
+    giulia,
+    anna,
+    ordine("richiesta", { service: "abbonamento", status: "requested", production_date: null, fulfillment_date: null, requested_date: "2026-10-01" }),
+    ordine("annullato", { service: "abbonamento", status: "cancelled", production_date: "2026-10-01", fulfillment_date: "2026-10-01" }),
+    ordine("concluso", { service: "abbonamento", status: "completed", production_date: "2026-10-01", fulfillment_date: "2026-10-01" }),
+    ordine("normale", { production_date: "2026-10-05", fulfillment_date: "2026-10-05" }),
+  ];
+
+  it("prende gli abbonamenti in corso il cui periodo comprende il giorno, dal lunedi' al venerdi'", () => {
+    expect(abbonamentiDelGiorno(tutti, "2026-10-01").map((o) => o.id)).toEqual(["giulia"]); // giovedi', primo giorno
+    expect(abbonamentiDelGiorno(tutti, "2026-10-05").map((o) => o.id)).toEqual(["anna", "giulia"]); // lunedi', per nome
+    expect(abbonamentiDelGiorno(tutti, "2026-10-03")).toEqual([]); // sabato
+    expect(abbonamentiDelGiorno(tutti, "2026-10-31")).toEqual([]); // sabato, ultimo giorno di Giulia
+    expect(abbonamentiDelGiorno(tutti, "2026-10-30").map((o) => o.id)).toEqual(["anna", "giulia"]);
+    expect(abbonamentiDelGiorno(tutti, "2026-11-02").map((o) => o.id)).toEqual(["anna"]); // Giulia e' finita
+    expect(abbonamentiDelGiorno(tutti, "2026-11-05")).toEqual([]); // Anna finisce il 4
+    expect(abbonamentiDelGiorno(tutti, "2026-09-30")).toEqual([]); // prima dell'inizio
+    // anche in preparazione o pronto, mai da confermare, annullato o concluso
+    expect(abbonamentiDelGiorno([{ ...giulia, status: "ready" }], "2026-10-02").map((o) => o.id)).toEqual(["giulia"]);
+  });
+
+  it("non finisce fra gli ordini del giorno d'inizio", () => {
+    expect(ordiniDelGiorno(tutti, "2026-10-05").map((o) => o.id)).toEqual(["normale"]);
+    expect(giorniConOrdini(tutti, "2026-10-01")).toEqual([{ giorno: "2026-10-05", ordini: 1, porzioni: 1 }]);
+    expect(giornoPredefinito(tutti, "2026-10-02")).toBe("2026-10-02"); // venerdi': c'e' il pranzo di Giulia
+  });
+
+  it("trova il pranzo indicato per quel giorno della settimana e lo conta come una porzione", () => {
+    expect(pranzoInAbbonamento(giulia, "2026-10-05")?.name).toBe("Riso"); // lunedi'
+    expect(pranzoInAbbonamento(giulia, "2026-10-06")).toBeNull(); // martedi'
+    const comeOrdini = pranziComeOrdini(abbonamentiDelGiorno(tutti, "2026-10-05"), "2026-10-05");
+    expect(comeOrdini.map((o) => o.items.length)).toEqual([0, 1]);
+    expect(contaPiatti(comeOrdini).map((p) => [p.id, p.porzioni])).toEqual([["riso-julien-pollo-teriyaki", 1]]);
+  });
+
+  it("fa una etichetta per pranzo: il piatto indicato, o Pranzo in abbonamento con allergeni da verificare", () => {
+    const lunedi = etichetteAbbonamenti(abbonamentiDelGiorno(tutti, "2026-10-05"), "2026-10-05");
+    expect(lunedi.map((e) => [e.cliente, e.piatto, e.quando])).toEqual([
+      ["Anna", PRANZO_IN_ABBONAMENTO, "Lunedì · pranzo · abbonamento"],
+      ["Giulia", "Riso carote e zucchine julien, pollo teriyaki", "Lunedì · pranzo · abbonamento"],
+    ]);
+    expect(lunedi[0].allergeni).toBeNull();
+    expect(lunedi[1].allergeni).toEqual(["glutine", "sesamo", "soia"]);
+    expect(lunedi[1].extra).toEqual(["Pasta"]);
+    expect(new Set(lunedi.map((e) => e.chiave)).size).toBe(2);
   });
 });
 

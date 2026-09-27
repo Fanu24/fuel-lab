@@ -100,11 +100,11 @@ export function Allergie({ testo, compatto = false }: { testo: string | null | u
   );
 }
 
-export function NoteCliente({ testo }: { testo: string }) {
+export function NoteCliente({ testo, titolo = "Note del cliente" }: { testo: string; titolo?: string }) {
   if (!testo.trim()) return null;
   return (
     <section aria-labelledby="scheda-note">
-      <h3 id="scheda-note" className="pn-h3">Note del cliente</h3>
+      <h3 id="scheda-note" className="pn-h3">{titolo}</h3>
       <p className="pn-nota">{testo}</p>
     </section>
   );
@@ -134,10 +134,17 @@ export function OrdinePiatti({ ordine, allenamenti }: { ordine: Ordine; allename
   const giorni = vociPerGiorno(ordine.items, allenamenti ?? {});
   const conPiatti = giorni.filter((g) => g.pranzo.length || g.cena.length).length;
   const extra = ordine.items.reduce((s, v) => s + v.extras.length, 0);
+  const abbonamento = ordine.service === "abbonamento";
   return (
     <section aria-labelledby="scheda-piatti">
-      <h3 id="scheda-piatti" className="pn-h3">Piatti</h3>
-      {ordine.items.length ? (
+      <h3 id="scheda-piatti" className="pn-h3">{abbonamento ? "Pranzi indicati e allenamenti" : "Piatti"}</h3>
+      {abbonamento ? (
+        <p className="pn-aiuto mb-2">
+          I pranzi dal lunedì al venerdì si compongono sulla scheda del cliente.
+          {ordine.items.length ? " Dove ha indicato un piatto, finisce così sull’etichetta; negli altri giorni scegli tu." : ""}
+        </p>
+      ) : null}
+      {ordine.items.length && !abbonamento ? (
         <p className="pn-aiuto mb-2">
           {ordine.meals} {ordine.meals === 1 ? "pasto" : "pasti"} in {conPiatti} {conPiatti === 1 ? "giorno" : "giorni"}
           {extra ? ` · ${extra} extra` : ""}
@@ -166,7 +173,9 @@ export function OrdinePiatti({ ordine, allenamenti }: { ordine: Ordine; allename
         <Vuoto>
           {ordine.service === "home-cooking"
             ? "Home cooking: nessun piatto dal menu. I dettagli si concordano con il cliente."
-            : "Nessun piatto nell’ordine."}
+            : abbonamento
+              ? "Nessun piatto indicato e nessun allenamento: guarda la scheda del cliente qui sopra."
+              : "Nessun piatto nell’ordine."}
         </Vuoto>
       )}
     </section>

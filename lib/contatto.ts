@@ -54,6 +54,7 @@ export const LIMITI = {
 export const ARGOMENTI: readonly ArgomentoMessaggio[] = [
   "info",
   "menu-settimana",
+  "abbonamento",
   "sui-tuoi-macro",
   "home-cooking",
   "consegna",

@@ -5,22 +5,31 @@
    Un bottone grande in basso fa il passo successivo (Conferma -> Inizia
    preparazione -> Segna pronto -> Consegnato) e salva insieme le altre
    modifiche. Se per quel passo mancano le date non compare un errore: il
-   pannello propone il primo giorno di cucina e chiede solo "va bene?".
+   pannello propone il giorno chiesto dal cliente (o domani, saltando le
+   chiusure), con cucina e uscita nello stesso giorno, e chiede solo "va bene?".
+
+   L'abbonamento mensile ha una data sola, l'inizio (scritta in entrambe le
+   date dell'ordine), e il periodo di un mese che ne discende. Il bottone
+   grande lo conferma; a mese finito propone di segnarlo concluso.
 
    Il modulo avvolge anche le parti di sola lettura (`prima` e `dopo`), cosi'
    la barra dei bottoni resta ferma in fondo alla scheda mentre il resto scorre. */
 
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { fineAbbonamento, periodoAbbonamento, pranziNelPeriodo } from "@/lib/abbonamento";
 import { api, ApiError, STATI_ORDINE, etichettaStato, type ModificaOrdine, type Ordine, type StatoOrdine } from "@/lib/api";
+import { chiusuraDi } from "@/lib/impostazioni";
 import {
   centesimiInTesto,
   dateSuggerite,
   leggiEuro,
   nomeProprio,
-  prossimaAzione,
-  prossimiGiorniCucina,
+  prossimaAzioneDi,
+  scorciatoieDate,
   servonoDate,
 } from "@/lib/operazioni";
+import { eAbbonamento, isData } from "@/lib/produzione";
+import { useImpostazioni } from "@/components/impostazioni/useImpostazioni";
 import { fraseAvviso, usePannello } from "./PannelloDati";
 import { Icona } from "./PannelloIcone";
 import { Avviso, giorno, giornoLungo } from "./ui";
@@ -82,7 +91,59 @@ const FATTO: Record<StatoOrdine, string> = {
   cancelled: "Ordine annullato.",
 };
 
+const FATTO_ABBONAMENTO: Record<StatoOrdine, string> = {
+  requested: "Abbonamento rimesso tra le richieste da confermare.",
+  confirmed: "Abbonamento confermato.",
+  preparing: "Abbonamento aggiornato.",
+  ready: "Abbonamento aggiornato.",
+  completed: "Abbonamento concluso.",
+  cancelled: "Abbonamento annullato.",
+};
+
 const iniziale = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
+
+/** "Concluso" al posto di "Consegnato", e niente preparazione o pronto: un abbonamento non si imballa in un giorno. */
+function statiPer(abbonamento: boolean, attuale: StatoOrdine) {
+  if (!abbonamento) return STATI_ORDINE;
+  return STATI_ORDINE.filter((s) => (s.id !== "preparing" && s.id !== "ready") || s.id === attuale).map((s) =>
+    s.id === "completed" ? { ...s, label: "Concluso" } : s,
+  );
+}
+
+/** Le scorciatoie Oggi, Domani, Dopodomani: un tocco scrive lo stesso giorno in cucina e uscita. */
+function Scorciatoie({
+  oggi,
+  scelto,
+  onScegli,
+  etichetta,
+}: {
+  oggi: string;
+  scelto: (d: string) => boolean;
+  onScegli: (d: string) => void;
+  etichetta: string;
+}) {
+  const { chiusure } = useImpostazioni({ fresche: true }).impostazioni;
+  return (
+    <div className="pn-scelte" role="group" aria-label={etichetta}>
+      {scorciatoieDate(oggi).map(({ nome, data }) => {
+        const chiusa = chiusuraDi(data, chiusure);
+        return (
+          <button
+            key={data}
+            type="button"
+            className="pn-chip"
+            aria-pressed={scelto(data)}
+            onClick={() => onScegli(data)}
+            title={chiusa ? `Sei chiuso${chiusa.motivo ? `: ${chiusa.motivo}` : ""}` : undefined}
+          >
+            {nome} · {giorno(data)}
+            {chiusa ? <span className="font-normal"> · chiuso</span> : null}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 type Esito = { tipo: "ok" | "errore"; testo: string } | null;
 type Proposta = { stato: StatoOrdine; produzione: string; uscita: string } | null;
@@ -106,6 +167,7 @@ export default function OrdineGestisci({
   senzaAccount?: boolean;
 }) {
   const { emailAttiva } = usePannello();
+  const { chiusure } = useImpostazioni({ fresche: true }).impostazioni;
   const [base, setBase] = useState(ordine);
   const [campi, setCampi] = useState(() => daOrdine(ordine));
   const [avvisa, setAvvisa] = useState(true);
@@ -138,10 +200,13 @@ export default function OrdineGestisci({
   const prezzoIllegibile = leggiEuro(campi.prezzo) === undefined;
   const sporco = Object.keys(modifiche).length > 0 || prezzoIllegibile;
   const statoScelto = campi.stato !== base.status;
-  const azione = prossimaAzione(base.status, base.fulfillment);
-  const scorciatoie = prossimiGiorniCucina(oggi, 3);
+  const azione = prossimaAzioneDi(base, oggi);
   const nome = nomeProprio(base.customer_name) || "il cliente";
   const avvisaDavvero = avvisa && !senzaAccount;
+  const abbonamento = eAbbonamento(base);
+  // L'inizio dell'abbonamento: la data di uscita (o quella di cucina, se c'e' solo quella).
+  const inizio = campi.uscita || campi.produzione;
+  const periodo = abbonamento && isData(inizio) ? periodoAbbonamento(inizio) : null;
 
   useEffect(() => onSporco(sporco), [sporco, onSporco]);
 
@@ -152,6 +217,7 @@ export default function OrdineGestisci({
     if (k === "prezzo") setErrorePrezzo("");
   }
 
+  /** Stesso giorno in cucina e in uscita. Per l'abbonamento e' l'inizio, e le date sono sempre uguali. */
   function scegliGiorno(d: string) {
     setCampi((c) => ({ ...c, produzione: d, uscita: d }));
     setErroreDate("");
@@ -171,8 +237,10 @@ export default function OrdineGestisci({
       const s = dateSuggerite(
         { requested_date: base.requested_date, production_date: c.produzione || null, fulfillment_date: c.uscita || null },
         oggi,
+        chiusure,
       );
-      setProposta({ stato: c.stato, ...s });
+      // Per l'abbonamento le due date sono l'inizio: se Matteo ne ha scritta una, vale per tutte e due.
+      setProposta({ stato: c.stato, ...(abbonamento ? { produzione: s.uscita, uscita: s.uscita } : s) });
       return;
     }
     if (c.produzione && c.uscita && c.produzione > c.uscita) {
@@ -195,7 +263,14 @@ export default function OrdineGestisci({
       setProposta(null);
       setConfermaAnnullo(false);
       onSalvato(order);
-      const testo = m.status === "completed" && base.fulfillment === "pickup" ? "Ordine ritirato." : m.status ? FATTO[m.status] : "Modifiche salvate.";
+      const testo =
+        m.status && abbonamento
+          ? FATTO_ABBONAMENTO[m.status]
+          : m.status === "completed" && base.fulfillment === "pickup"
+            ? "Ordine ritirato."
+            : m.status
+              ? FATTO[m.status]
+              : "Modifiche salvate.";
       setEsito({ tipo: "ok", testo: `${testo}${email && avvisaDavvero ? ` ${fraseAvviso(emailAttiva, iniziale(nome))}` : ""}` });
     } catch (e) {
       setEsito({ tipo: "errore", testo: e instanceof ApiError ? e.message : "Modifica non salvata. Riprova." });
@@ -242,7 +317,7 @@ export default function OrdineGestisci({
           <fieldset>
             <legend className="pn-legenda">Stato</legend>
             <div className="pn-scelte">
-              {STATI_ORDINE.map((s) => (
+              {statiPer(abbonamento, base.status).map((s) => (
                 <label key={s.id} className={`pn-scelta pn-scelta-${s.id}`}>
                   <input type="radio" name="stato" value={s.id} checked={campi.stato === s.id} onChange={() => cambia("stato", s.id)} />
                   {s.label}
@@ -251,52 +326,77 @@ export default function OrdineGestisci({
             </div>
           </fieldset>
 
-          <fieldset className="grid gap-3">
-            <legend className="pn-legenda">Date</legend>
-            <p className="pn-aiuto -mt-1">
-              {base.requested_date ? <>Il cliente preferisce <strong className="text-ink">{giornoLungo(base.requested_date)}</strong>. </> : null}
-              Un tocco su un giorno di cucina imposta cucina e {base.fulfillment === "pickup" ? "ritiro" : "consegna"}.
-            </p>
-            <div className="pn-scelte" role="group" aria-label="Prossimi giorni di cucina">
-              {scorciatoie.map((d) => (
-                <button
-                  key={d}
-                  type="button"
-                  className="pn-chip"
-                  aria-pressed={campi.produzione === d && campi.uscita === d}
-                  onClick={() => scegliGiorno(d)}
-                >
-                  {d === oggi ? `Oggi · ${giorno(d)}` : iniziale(giorno(d))}
-                </button>
-              ))}
-            </div>
-            <div className="pn-due-campi">
-              <div className="campo">
-                <label htmlFor="scheda-produzione">Cucina il</label>
+          {abbonamento ? (
+            <fieldset className="grid gap-3">
+              <legend className="pn-legenda">Periodo</legend>
+              <p className="pn-aiuto -mt-1">
+                {base.requested_date ? <>Il cliente vorrebbe iniziare <strong className="text-ink">{giornoLungo(base.requested_date)}</strong>. </> : null}
+                L’abbonamento vale un mese dall’inizio: tutti i pranzi dal lunedì al venerdì.
+              </p>
+              <Scorciatoie oggi={oggi} scelto={(d) => inizio === d} onScegli={scegliGiorno} etichetta="Inizio: oggi, domani o dopodomani" />
+              <div className="campo max-w-xs">
+                <label htmlFor="scheda-produzione">Inizio</label>
                 <input
                   ref={campoProduzione}
                   id="scheda-produzione"
                   type="date"
-                  value={campi.produzione}
-                  onChange={(e) => cambia("produzione", e.target.value)}
-                  aria-invalid={!!erroreDate}
-                  aria-describedby={erroreDate ? "scheda-errore-date" : undefined}
+                  value={inizio}
+                  onChange={(e) => scegliGiorno(e.target.value)}
+                  aria-describedby="scheda-periodo"
                 />
               </div>
-              <div className="campo">
-                <label htmlFor="scheda-uscita">{etichettaUscita}</label>
-                <input
-                  id="scheda-uscita"
-                  type="date"
-                  value={campi.uscita}
-                  onChange={(e) => cambia("uscita", e.target.value)}
-                  aria-invalid={!!erroreDate}
-                  aria-describedby={erroreDate ? "scheda-errore-date" : undefined}
-                />
+              <p id="scheda-periodo" className="text-[16px]" aria-live="polite">
+                {periodo ? (
+                  <>
+                    Dal <strong>{giornoLungo(periodo.dal)}</strong> al <strong>{giornoLungo(periodo.al)}</strong> ·{" "}
+                    <span className="num">{pranziNelPeriodo(periodo)}</span> pranzi, {base.fulfillment === "pickup" ? "ritiro" : "consegna"} ogni giorno feriale
+                  </>
+                ) : (
+                  "Scegli l’inizio: il periodo si calcola da solo."
+                )}
+              </p>
+            </fieldset>
+          ) : (
+            <fieldset className="grid gap-3">
+              <legend className="pn-legenda">Date</legend>
+              <p className="pn-aiuto -mt-1">
+                {base.requested_date ? <>Il cliente preferisce <strong className="text-ink">{giornoLungo(base.requested_date)}</strong>. </> : null}
+                Un tocco imposta cucina e {base.fulfillment === "pickup" ? "ritiro" : "consegna"} nello stesso giorno.
+              </p>
+              <Scorciatoie
+                oggi={oggi}
+                scelto={(d) => campi.produzione === d && campi.uscita === d}
+                onScegli={scegliGiorno}
+                etichetta="Cucina e uscita: oggi, domani o dopodomani"
+              />
+              <div className="pn-due-campi">
+                <div className="campo">
+                  <label htmlFor="scheda-produzione">Cucina il</label>
+                  <input
+                    ref={campoProduzione}
+                    id="scheda-produzione"
+                    type="date"
+                    value={campi.produzione}
+                    onChange={(e) => cambia("produzione", e.target.value)}
+                    aria-invalid={!!erroreDate}
+                    aria-describedby={erroreDate ? "scheda-errore-date" : undefined}
+                  />
+                </div>
+                <div className="campo">
+                  <label htmlFor="scheda-uscita">{etichettaUscita}</label>
+                  <input
+                    id="scheda-uscita"
+                    type="date"
+                    value={campi.uscita}
+                    onChange={(e) => cambia("uscita", e.target.value)}
+                    aria-invalid={!!erroreDate}
+                    aria-describedby={erroreDate ? "scheda-errore-date" : undefined}
+                  />
+                </div>
               </div>
-            </div>
-            {erroreDate ? <p id="scheda-errore-date" className="pn-errore-campo" role="alert">{erroreDate}</p> : null}
-          </fieldset>
+              {erroreDate ? <p id="scheda-errore-date" className="pn-errore-campo" role="alert">{erroreDate}</p> : null}
+            </fieldset>
+          )}
 
           <div className="pn-due-campi items-end">
             <div className="campo">
@@ -319,7 +419,9 @@ export default function OrdineGestisci({
               {errorePrezzo ? (
                 <p id="scheda-errore-prezzo" className="pn-errore-campo" role="alert">{errorePrezzo}</p>
               ) : (
-                <p id="scheda-aiuto-prezzo" className="pn-aiuto">In euro, con la virgola. Lo vede anche il cliente.</p>
+                <p id="scheda-aiuto-prezzo" className="pn-aiuto">
+                  {abbonamento ? "Il prezzo del mese, in euro con la virgola. Lo vede anche il cliente." : "In euro, con la virgola. Lo vede anche il cliente."}
+                </p>
               )}
             </div>
             <button
@@ -375,7 +477,9 @@ export default function OrdineGestisci({
             <div className="grid gap-3 border-t border-ink/15 pt-5">
               {confermaAnnullo ? (
                 <div className="pn-conferma-pericolo" role="alert">
-                  <p className="font-bold">Annullare l’ordine di {base.customer_name || "questo cliente"}?</p>
+                  <p className="font-bold">
+                    Annullare {abbonamento ? "l’abbonamento" : "l’ordine"} di {base.customer_name || "questo cliente"}?
+                  </p>
                   <p className="text-[15px]">
                     {senzaAccount
                       ? "Cliente senza account: nessuna email, avvisalo tu per telefono o WhatsApp."
@@ -383,7 +487,7 @@ export default function OrdineGestisci({
                   </p>
                   <div className="pn-bottoni">
                     <button type="button" className="pn-tasto pn-tasto-pericolo" disabled={salvo} onClick={() => void salva("cancelled")}>
-                      Sì, annulla l’ordine
+                      {abbonamento ? "Sì, annulla l’abbonamento" : "Sì, annulla l’ordine"}
                     </button>
                     <button type="button" className="pn-tasto" onClick={() => setConfermaAnnullo(false)}>
                       No, torna indietro
@@ -392,7 +496,7 @@ export default function OrdineGestisci({
                 </div>
               ) : (
                 <button type="button" className="pn-tasto pn-tasto-pericolo justify-self-start" onClick={() => setConfermaAnnullo(true)}>
-                  Annulla ordine
+                  {abbonamento ? "Annulla abbonamento" : "Annulla ordine"}
                 </button>
               )}
             </div>
@@ -405,13 +509,25 @@ export default function OrdineGestisci({
       <div className="pn-scheda-piede">
         {proposta ? (
           <div className="pn-proposta" role="alert">
-            <p className="text-[17px] font-bold">
-              Per “{etichettaStato(proposta.stato)}” servono le date.
-            </p>
-            <p className="text-[16px]">
-              Ti propongo: cucina <strong>{giornoLungo(proposta.produzione)}</strong>, {base.fulfillment === "pickup" ? "ritiro" : "consegna"}{" "}
-              <strong>{giornoLungo(proposta.uscita)}</strong>.
-            </p>
+            {abbonamento ? (
+              <>
+                <p className="text-[17px] font-bold">Per confermare l’abbonamento serve l’inizio.</p>
+                <p className="text-[16px]">
+                  Ti propongo: inizio <strong>{giornoLungo(proposta.uscita)}</strong>, fino a{" "}
+                  <strong>{giornoLungo(fineAbbonamento(proposta.uscita))}</strong>.
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-[17px] font-bold">
+                  Per “{etichettaStato(proposta.stato)}” servono le date.
+                </p>
+                <p className="text-[16px]">
+                  Ti propongo: cucina <strong>{giornoLungo(proposta.produzione)}</strong>, {base.fulfillment === "pickup" ? "ritiro" : "consegna"}{" "}
+                  <strong>{giornoLungo(proposta.uscita)}</strong>.
+                </p>
+              </>
+            )}
             <div className="pn-bottoni">
               <button
                 type="button"
@@ -419,7 +535,7 @@ export default function OrdineGestisci({
                 disabled={salvo}
                 onClick={() => void salva(proposta.stato, { produzione: proposta.produzione, uscita: proposta.uscita })}
               >
-                {salvo ? "Salvo…" : "Va bene, usa queste date"}
+                {salvo ? "Salvo…" : abbonamento ? "Va bene, inizia quel giorno" : "Va bene, usa queste date"}
               </button>
               <button
                 type="button"
@@ -467,7 +583,7 @@ export default function OrdineGestisci({
           <div className="pn-bottoni">
             {statoScelto ? (
               <button type="button" className="pn-tasto pn-tasto-pieno pn-tasto-grande flex-1" disabled={salvo} onClick={() => void salva()}>
-                {salvo ? "Salvo…" : `Salva: ${etichettaStato(campi.stato)}`}
+                {salvo ? "Salvo…" : `Salva: ${statiPer(abbonamento, base.status).find((x) => x.id === campi.stato)?.label ?? etichettaStato(campi.stato)}`}
               </button>
             ) : azione ? (
               <>

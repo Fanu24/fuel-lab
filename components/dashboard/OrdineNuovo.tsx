@@ -9,15 +9,25 @@
    "indietro" lo chiude, Esc e lo sfondo chiedono conferma se c'e' qualcosa di
    scritto. Dopo il salvataggio al suo posto si apre la scheda del nuovo
    ordine (?id=...). La logica sta in lib/ordine-manuale.ts, le regole vere
-   le rifa' il server (POST /api/admin/orders). */
+   le rifa' il server (POST /api/admin/orders).
+
+   L'abbonamento mensile non ha piatti: al posto della griglia c'e' la data
+   d'inizio (con il periodo di un mese che ne discende) e il prezzo parte da
+   quello dell'abbonamento. */
 
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type FormEvent, type MouseEvent, type ReactNode, type SyntheticEvent } from "react";
+import { periodoAbbonamento, pranziNelPeriodo } from "@/lib/abbonamento";
 import { adminApi, ApiError, ETICHETTE_SERVIZIO, euro, type ClienteAdmin, type Modalita, type Servizio } from "@/lib/api";
-import { leggiEuro, plurale, prossimiGiorniCucina } from "@/lib/operazioni";
+import { chiusuraDi } from "@/lib/impostazioni";
+import { leggiEuro, plurale, scorciatoieDate } from "@/lib/operazioni";
+import { isData } from "@/lib/produzione";
+import { useImpostazioni } from "@/components/impostazioni/useImpostazioni";
 import {
   campiVuoti,
   conCliente,
+  conInizio,
+  conServizio,
   corpoNuovoOrdine,
   erroriNuovoOrdine,
   moduloToccato,
@@ -117,8 +127,6 @@ const NOME_CAMPO: Record<CampoNuovoOrdine, string> = {
   prezzo: "prezzo",
 };
 
-const iniziale = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
-
 export default function OrdineNuovo({ onChiudi, onSalvato }: { onChiudi: () => void; onSalvato: (id: string) => void }) {
   const { oggi, sostituisciOrdine, aggiorna } = usePannello();
   const dialogo = useRef<HTMLDialogElement>(null);
@@ -134,8 +142,12 @@ export default function OrdineNuovo({ onChiudi, onSalvato }: { onChiudi: () => v
   const campiConErrore = ORDINE_CAMPI.filter((k) => errori[k]);
   const porzioni = porzioniOrdine(campi);
   const ritiro = campi.modalita === "pickup";
-  const scorciatoie = prossimiGiorniCucina(oggi, 4);
+  const { chiusure } = useImpostazioni({ fresche: true }).impostazioni;
   const centesimi = leggiEuro(campi.prezzo);
+  const abbonamento = campi.servizio === "abbonamento";
+  // L'abbonamento ha una data sola: l'inizio, scritta in entrambe le date.
+  const inizio = campi.uscita || campi.produzione;
+  const periodo = abbonamento && isData(inizio) ? periodoAbbonamento(inizio) : null;
 
   // Apertura modale, focus sul titolo; alla chiusura il focus torna da dove era partito.
   useEffect(() => {
@@ -281,19 +293,29 @@ export default function OrdineNuovo({ onChiudi, onSalvato }: { onChiudi: () => v
                 legenda="Che cosa ha chiesto"
                 valore={campi.servizio}
                 opzioni={(Object.keys(ETICHETTE_SERVIZIO) as Servizio[]).map((s) => ({ id: s, label: ETICHETTE_SERVIZIO[s] }))}
-                onScegli={(s) => cambia({ servizio: s })}
+                onScegli={(s) => {
+                  setCampi((c) => conServizio(c, s));
+                  setErroreServer("");
+                }}
+                aiuto={
+                  abbonamento
+                    ? "Tutti i pranzi dal lunedì al venerdì per un mese, sulla scheda del cliente: niente piatti da scegliere. La scheda si scrive nelle note, più in basso."
+                    : undefined
+                }
               />
             </section>
 
-            <OrdineNuovoPiatti
-              piano={campi.piano}
-              onPiano={(piano) => cambia({ piano })}
-              servizio={campi.servizio}
-              porzioni={campi.porzioni}
-              onPorzioni={(porzioni) => cambia({ porzioni })}
-              uscita={campi.uscita}
-              errori={errori}
-            />
+            {abbonamento ? null : (
+              <OrdineNuovoPiatti
+                piano={campi.piano}
+                onPiano={(piano) => cambia({ piano })}
+                servizio={campi.servizio}
+                porzioni={campi.porzioni}
+                onPorzioni={(porzioni) => cambia({ porzioni })}
+                uscita={campi.uscita}
+                errori={errori}
+              />
+            )}
 
             <section aria-labelledby="nuovo-quando" className="grid gap-4">
               <h3 id="nuovo-quando" className="pn-h3 mb-0">Stato e date</h3>
@@ -307,51 +329,90 @@ export default function OrdineNuovo({ onChiudi, onSalvato }: { onChiudi: () => v
                 ]}
                 onScegli={(s) => cambia({ stato: s })}
                 aiuto={
-                  campi.stato === "confirmed"
-                    ? "Va dritto nel calendario della cucina: servono le due date."
-                    : "Resta fra le richieste da confermare, come quelle dal sito. Le date sono facoltative."
+                  abbonamento
+                    ? campi.stato === "confirmed"
+                      ? "I pranzi vanno in cucina ogni giorno feriale del periodo: serve l’inizio."
+                      : "Resta fra le richieste da confermare, come quelle dal sito. L’inizio è facoltativo."
+                    : campi.stato === "confirmed"
+                      ? "Va dritto nel calendario della cucina: servono le due date."
+                      : "Resta fra le richieste da confermare, come quelle dal sito. Le date sono facoltative."
                 }
               />
               <fieldset className="grid min-w-0 gap-3">
-                <legend className="pn-legenda">Date</legend>
-                <p className="pn-aiuto -mt-1">Un tocco su un giorno di cucina imposta cucina e {ritiro ? "ritiro" : "consegna"}.</p>
-                <div className="pn-scelte" role="group" aria-label="Prossimi giorni di cucina">
-                  {scorciatoie.map((d) => (
-                    <button
-                      key={d}
-                      type="button"
-                      className="pn-chip"
-                      aria-pressed={campi.produzione === d && campi.uscita === d}
-                      onClick={() => cambia({ produzione: d, uscita: d })}
-                    >
-                      {d === oggi ? `Oggi · ${giorno(d)}` : iniziale(giorno(d))}
-                    </button>
-                  ))}
+                <legend className="pn-legenda">{abbonamento ? "Inizio" : "Date"}</legend>
+                <p className="pn-aiuto -mt-1">
+                  {abbonamento
+                    ? "L’abbonamento vale un mese dall’inizio."
+                    : `Un tocco imposta cucina e ${ritiro ? "ritiro" : "consegna"} nello stesso giorno.`}
+                </p>
+                <div className="pn-scelte" role="group" aria-label={abbonamento ? "Inizio: oggi, domani o dopodomani" : "Cucina e uscita: oggi, domani o dopodomani"}>
+                  {scorciatoieDate(oggi).map(({ nome, data }) => {
+                    const chiusa = chiusuraDi(data, chiusure);
+                    return (
+                      <button
+                        key={data}
+                        type="button"
+                        className="pn-chip"
+                        aria-pressed={campi.produzione === data && campi.uscita === data}
+                        onClick={() => setCampi((c) => conInizio(c, data))}
+                        title={chiusa ? `Sei chiuso${chiusa.motivo ? `: ${chiusa.motivo}` : ""}` : undefined}
+                      >
+                        {nome} · {giorno(data)}
+                        {chiusa ? <span className="font-normal"> · chiuso</span> : null}
+                      </button>
+                    );
+                  })}
                 </div>
-                <div className="pn-due-campi">
-                  <div className="campo min-w-0">
-                    <label htmlFor="nuovo-produzione">Cucina il</label>
-                    <input
-                      id="nuovo-produzione"
-                      type="date"
-                      value={campi.produzione}
-                      onChange={(e) => cambia({ produzione: e.target.value })}
-                      aria-invalid={errori.date ? true : undefined}
-                      aria-describedby={idErroreDate}
-                    />
+                {abbonamento ? (
+                  <>
+                    <div className="campo min-w-0 max-w-xs">
+                      <label htmlFor="nuovo-produzione">Inizio dell’abbonamento</label>
+                      <input
+                        id="nuovo-produzione"
+                        type="date"
+                        value={inizio}
+                        onChange={(e) => setCampi((c) => conInizio(c, e.target.value))}
+                        aria-invalid={errori.date ? true : undefined}
+                        aria-describedby={[idErroreDate, "nuovo-periodo"].filter(Boolean).join(" ")}
+                      />
+                    </div>
+                    <p id="nuovo-periodo" className="text-[16px]" aria-live="polite">
+                      {periodo ? (
+                        <>
+                          Dal <strong>{giornoLungo(periodo.dal)}</strong> al <strong>{giornoLungo(periodo.al)}</strong> ·{" "}
+                          <span className="num">{pranziNelPeriodo(periodo)}</span> pranzi dal lunedì al venerdì
+                        </>
+                      ) : (
+                        "Scegli l’inizio: il periodo si calcola da solo."
+                      )}
+                    </p>
+                  </>
+                ) : (
+                  <div className="pn-due-campi">
+                    <div className="campo min-w-0">
+                      <label htmlFor="nuovo-produzione">Cucina il</label>
+                      <input
+                        id="nuovo-produzione"
+                        type="date"
+                        value={campi.produzione}
+                        onChange={(e) => cambia({ produzione: e.target.value })}
+                        aria-invalid={errori.date ? true : undefined}
+                        aria-describedby={idErroreDate}
+                      />
+                    </div>
+                    <div className="campo min-w-0">
+                      <label htmlFor="nuovo-uscita">{ritiro ? "Ritiro il" : "Consegna il"}</label>
+                      <input
+                        id="nuovo-uscita"
+                        type="date"
+                        value={campi.uscita}
+                        onChange={(e) => cambia({ uscita: e.target.value })}
+                        aria-invalid={errori.date ? true : undefined}
+                        aria-describedby={idErroreDate}
+                      />
+                    </div>
                   </div>
-                  <div className="campo min-w-0">
-                    <label htmlFor="nuovo-uscita">{ritiro ? "Ritiro il" : "Consegna il"}</label>
-                    <input
-                      id="nuovo-uscita"
-                      type="date"
-                      value={campi.uscita}
-                      onChange={(e) => cambia({ uscita: e.target.value })}
-                      aria-invalid={errori.date ? true : undefined}
-                      aria-describedby={idErroreDate}
-                    />
-                  </div>
-                </div>
+                )}
                 {errori.date ? <p id="nuovo-date-errore" className="pn-errore-campo">{errori.date}</p> : null}
               </fieldset>
             </section>
@@ -378,7 +439,11 @@ export default function OrdineNuovo({ onChiudi, onSalvato }: { onChiudi: () => v
                   {errori.prezzo ? (
                     <p id="nuovo-prezzo-errore" className="pn-errore-campo">{errori.prezzo}</p>
                   ) : (
-                    <p id="nuovo-prezzo-aiuto" className="pn-aiuto">In euro, con la virgola. Facoltativo: puoi scriverlo anche dopo.</p>
+                    <p id="nuovo-prezzo-aiuto" className="pn-aiuto">
+                      {abbonamento
+                        ? "Il prezzo del mese, già scritto: cambialo solo se avete concordato altro."
+                        : "In euro, con la virgola. Facoltativo: puoi scriverlo anche dopo."}
+                    </p>
                   )}
                 </div>
                 <button
@@ -396,7 +461,15 @@ export default function OrdineNuovo({ onChiudi, onSalvato }: { onChiudi: () => v
 
             <section aria-labelledby="nuovo-note-titolo" className="grid gap-4">
               <h3 id="nuovo-note-titolo" className="pn-h3 mb-0">Note</h3>
-              <Campo id="nuovo-note" etichetta="Richieste del cliente" aiuto="Allergie dette al telefono, senza cipolla, porzioni grandi… Compaiono nella scheda ordine.">
+              <Campo
+                id="nuovo-note"
+                etichetta={abbonamento ? "La scheda del cliente" : "Richieste del cliente"}
+                aiuto={
+                  abbonamento
+                    ? "Come si allena, obiettivi, indicazioni del nutrizionista, allergie. Compare nella scheda ordine e nel foglio cucina."
+                    : "Allergie dette al telefono, senza cipolla, porzioni grandi… Compaiono nella scheda ordine."
+                }
+              >
                 {(aria) => (
                   <textarea {...aria} rows={3} maxLength={1500} value={campi.note} onChange={(e) => cambia({ note: e.target.value })} />
                 )}
@@ -438,12 +511,20 @@ export default function OrdineNuovo({ onChiudi, onSalvato }: { onChiudi: () => v
                     ? `In sede${campi.comune.trim() ? ` · cliente di ${campi.comune.trim()}` : ""}`
                     : [campi.indirizzo.trim(), campi.comune.trim()].filter(Boolean).join(", ") || "Indirizzo da scrivere"}
                 </Riga>
-                <Riga etichetta="Date">
-                  Cucina {giornoLungo(campi.produzione || null, "da fissare")} · {ritiro ? "ritiro" : "consegna"} {giornoLungo(campi.uscita || null, "da fissare")}
-                </Riga>
+                {abbonamento ? (
+                  <Riga etichetta="Periodo">
+                    {periodo ? `Dal ${giornoLungo(periodo.dal)} al ${giornoLungo(periodo.al)}` : "Inizio da fissare"}
+                  </Riga>
+                ) : (
+                  <Riga etichetta="Date">
+                    Cucina {giornoLungo(campi.produzione || null, "da fissare")} · {ritiro ? "ritiro" : "consegna"} {giornoLungo(campi.uscita || null, "da fissare")}
+                  </Riga>
+                )}
                 <Riga etichetta="Stato">{campi.stato === "confirmed" ? "Già confermato" : "Da confermare"}</Riga>
-                <Riga etichetta="Piatti">
-                  {piatti.length ? (
+                <Riga etichetta={abbonamento ? "Pranzi" : "Piatti"}>
+                  {abbonamento ? (
+                    "Dal lunedì al venerdì, sulla scheda del cliente"
+                  ) : piatti.length ? (
                     <ul>
                       {piatti.map((p) => (
                         <li key={p.id}>
@@ -457,9 +538,11 @@ export default function OrdineNuovo({ onChiudi, onSalvato }: { onChiudi: () => v
                     "Nessun piatto scelto"
                   )}
                 </Riga>
-                <Riga etichetta="Porzioni">
-                  <span className="num font-bold">{porzioni}</span>
-                </Riga>
+                {abbonamento ? null : (
+                  <Riga etichetta="Porzioni">
+                    <span className="num font-bold">{porzioni}</span>
+                  </Riga>
+                )}
                 <Riga etichetta="Prezzo">
                   {centesimi === undefined ? "Da correggere" : centesimi === null ? "Senza prezzo" : euro(centesimi)}
                   {centesimi ? (campi.pagato ? " · pagato" : " · da pagare") : ""}
@@ -476,15 +559,17 @@ export default function OrdineNuovo({ onChiudi, onSalvato }: { onChiudi: () => v
               </Avviso>
             ) : null}
             <p className="flex flex-wrap items-baseline gap-x-3 text-[15px]">
-              <strong className="num text-[18px]">{plurale(porzioni, "porzione", "porzioni")}</strong>
+              <strong className="num text-[18px]">
+                {abbonamento ? ETICHETTE_SERVIZIO.abbonamento : plurale(porzioni, "porzione", "porzioni")}
+              </strong>
               <span className="text-muted">
-                {ritiro ? "Ritiro" : "Consegna"} {giorno(campi.uscita || null, "da fissare")}
+                {abbonamento ? "Inizio" : ritiro ? "Ritiro" : "Consegna"} {giorno(inizio || null, "da fissare")}
                 {centesimi ? ` · ${euro(centesimi)}` : ""}
               </span>
             </p>
             <div className="pn-bottoni">
               <button type="submit" className="pn-tasto pn-tasto-pieno pn-tasto-grande flex-1" disabled={salvo} aria-busy={salvo}>
-                {salvo ? "Salvo…" : "Salva ordine"}
+                {salvo ? "Salvo…" : abbonamento ? "Salva abbonamento" : "Salva ordine"}
               </button>
               <button type="button" className="pn-tasto pn-tasto-grande" onClick={chiudi} disabled={salvo}>
                 Annulla

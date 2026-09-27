@@ -120,7 +120,7 @@ export const PAGINE = {
     percorso: "/servizi",
     titolo: "Servizi e prezzi del meal prep a Pescara",
     descrizione:
-      "Menu della settimana sul tuo allenamento, piano sui macro del nutrizionista o Matteo che cucina da te: i servizi di FUEL LAB a Pescara, da 8,90 € a pasto.",
+      `Menu della settimana da 8,90 € a pasto, abbonamento ai pranzi a ${PREZZO_ABBONAMENTO_TESTO} al mese, piano sui macro o Matteo che cucina da te: i servizi di FUEL LAB a Pescara.`,
     breve: "Servizi e prezzi",
     priorita: 0.8,
     frequenza: "monthly",

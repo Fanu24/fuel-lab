@@ -346,7 +346,11 @@ export default function ModuloContatto({ argomentoIniziale = "info" }: { argomen
               value={campi.messaggio}
               onChange={(e) => aggiorna("messaggio", e.target.value)}
               maxLength={Math.max(massimo, scritti)}
-              placeholder="Cosa ti serve, per quanti pasti, da quando. Allergie o domande sulla consegna."
+              placeholder={
+                dati.argomento === "abbonamento"
+                  ? "Da quando vorresti iniziare, come e quando ti alleni, i tuoi obiettivi o le indicazioni del nutrizionista. Allergie o domande sulla consegna."
+                  : "Cosa ti serve, per quanti pasti, da quando. Allergie o domande sulla consegna."
+              }
               aria-invalid={!!mostra("messaggio")}
               aria-describedby={ids("c-messaggio-conta", !!mostra("messaggio") && "c-messaggio-e")}
               className="resize-y"

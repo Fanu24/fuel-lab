@@ -41,6 +41,7 @@ describe("argomenti", () => {
 
   it("?servizio= preseleziona l'argomento, qualunque altra cosa torna a info", () => {
     expect(argomentoDaParam("home-cooking")).toBe("home-cooking");
+    expect(argomentoDaParam("abbonamento")).toBe("abbonamento");
     expect(argomentoDaParam("sui-tuoi-macro")).toBe("sui-tuoi-macro");
     expect(argomentoDaParam("consegna")).toBe("consegna");
     expect(argomentoDaParam("<script>")).toBe("info");

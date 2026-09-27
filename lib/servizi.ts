@@ -1,12 +1,17 @@
+import { PREZZO_ABBONAMENTO } from "./abbonamento";
+
 /* =========================================================================
-   I tre servizi di FUEL LAB (spec sezione 12).
+   I quattro servizi di FUEL LAB (spec sezione 12, piu' l'abbonamento deciso
+   dal committente a settembre 2026).
 
    Il committente non vuole prezzi in chiaro, almeno per l'inizio: qui non
-   c'e' un listino, c'e' una soglia. I primi due servizi sono meal prep,
-   condividono la STESSA soglia di ingresso (SOGLIA_PREZZO, 8,90 euro a
-   pasto) perche' la variabile che cambia e' cosa arriva nel box, non il
-   prezzo minimo. Il terzo servizio, l'home cooking, non ha soglia: vende
-   il tempo di Matteo dentro la cucina del cliente, non produzione in
+   c'e' un listino, c'e' una soglia. I due servizi di meal prep a scelta
+   (menu della settimana e sui macro) condividono la STESSA soglia di
+   ingresso (SOGLIA_PREZZO, 8,90 euro a pasto) perche' la variabile che
+   cambia e' cosa arriva nel box, non il prezzo minimo. L'eccezione voluta dal
+   committente e' l'abbonamento: un prezzo fisso al mese (lib/abbonamento.ts)
+   per tutti i pranzi dal lunedi' al venerdi'. L'home cooking non ha soglia:
+   vende il tempo di Matteo dentro la cucina del cliente, non produzione in
    serie, e la sua economia non si lascia scrivere come "a partire da X".
    Per questo il prezzo di questo servizio e' sempre "su preventivo": mai
    un totale, mai un calcolo, mai un numero, da nessuna parte.
@@ -17,20 +22,22 @@
    da quale servizio arriva un contatto, senza installare analytics.
    ========================================================================= */
 
-export type ServizioId = "menu-settimana" | "sui-tuoi-macro" | "home-cooking";
+export type ServizioId = "menu-settimana" | "abbonamento" | "sui-tuoi-macro" | "home-cooking";
 
 /**
  * Unione discriminata sul campo "tipo": "soglia" per i due servizi di meal
- * prep (un numero e un'unita, sempre presentati come minimo d'ingresso),
+ * prep a scelta (un numero e un'unita, sempre presentati come minimo
+ * d'ingresso), "mese" per l'abbonamento (il prezzo intero del mese),
  * "preventivo" per l'home cooking, che non porta nessun numero con se.
  */
 export type Prezzo =
   | { tipo: "soglia"; valore: number; unita: string }
+  | { tipo: "mese"; valore: number }
   | { tipo: "preventivo" };
 
 export interface Servizio {
   id: ServizioId;
-  /** "01" / "02" / "03": il testo che finisce dentro la classe .num */
+  /** "01" / "02" / "03" / "04": il testo che finisce dentro la classe .num */
   numero: string;
   nome: string;
   descrizione: string;
@@ -56,8 +63,18 @@ export const SERVIZI: Servizio[] = [
     href: "/settimana",
   },
   {
-    id: "sui-tuoi-macro",
+    id: "abbonamento",
     numero: "02",
+    nome: "L’abbonamento ai pranzi",
+    descrizione:
+      "Tutti i pranzi dal lunedì al venerdì per un mese, composti da Matteo sulla tua scheda: come ti alleni, i tuoi obiettivi o le indicazioni del nutrizionista. Niente settimana da comporre ogni volta.",
+    prezzo: { tipo: "mese", valore: PREZZO_ABBONAMENTO },
+    img: "/foto/photo-1498837167922-ddd27525d352.webp",
+    href: "/abbonamento",
+  },
+  {
+    id: "sui-tuoi-macro",
+    numero: "03",
     nome: "Sui macro della tua scheda",
     descrizione:
       "Scrivi i numeri della scheda del tuo nutrizionista: il piano si compone sui tuoi target, scegliendo i piatti più vicini ai tuoi macro. Tu confermi.",
@@ -67,7 +84,7 @@ export const SERVIZI: Servizio[] = [
   },
   {
     id: "home-cooking",
-    numero: "03",
+    numero: "04",
     nome: "Home cooking",
     descrizione:
       "Matteo viene a casa tua: fa la spesa, cucina e porziona nella tua cucina. Non è produzione in serie, è il suo tempo dedicato solo a te, e per questo ha un'economia sua.",
@@ -83,7 +100,7 @@ export const SERVIZI: Servizio[] = [
 /** Lettura per id invece che per indice: l'ordine del componente non deve dipendere dall'ordine dell'array. */
 export function getServizio(id: ServizioId): Servizio {
   const s = SERVIZI.find((s) => s.id === id);
-  // I tre id sono un union type chiuso e SERVIZI li copre tutti e tre: se questo
+  // I quattro id sono un union type chiuso e SERVIZI li copre tutti: se questo
   // scatta, e' un refuso introdotto qui dentro, non un caso limite da gestire a valle.
   if (!s) throw new Error(`servizio mancante nei dati: ${id}`);
   return s;

@@ -1,5 +1,3 @@
-import type { Formula } from "./types";
-
 export interface Taglia {
   pasti: number;
   prezzoPasto: number;
@@ -25,9 +23,6 @@ export const TAGLIE: Taglia[] = [
  */
 export const MOSTRA_STIMA_PREZZO = false;
 
-/** Sconto dell'abbonamento settimanale, sopra allo sconto di volume. */
-export const SCONTO_ABBONAMENTO = 0.15;
-
 /** Consegna a Pescara e provincia. Gratis dai 10 pasti in su. */
 export const CONSEGNA = 3.9;
 export const CONSEGNA_GRATIS_DA = 10;
@@ -44,32 +39,31 @@ export interface Preventivo {
   pasti: number;
   prezzoPasto: number;
   scontoVolume: number;
-  formula: Formula;
   subtotale: number;
-  scontoAbbonamento: number;
   consegna: number;
   totale: number;
   /** quanto risparmi rispetto al prezzo pieno della taglia da 6, a parita di pasti */
   risparmio: number;
 }
 
-export function preventivo(pasti: number, formula: Formula): Preventivo {
+/**
+ * La stima di una settimana composta nel compositore. Non c'entra con
+ * l'abbonamento mensile ai pranzi, che ha un prezzo fisso suo (lib/abbonamento.ts).
+ */
+export function preventivo(pasti: number): Preventivo {
   const t = tagliaPer(pasti);
   const subtotale = pasti * t.prezzoPasto;
-  const scontoAbbonamento = formula === "abbonamento" ? subtotale * SCONTO_ABBONAMENTO : 0;
   const consegna = pasti >= CONSEGNA_GRATIS_DA ? 0 : CONSEGNA;
-  const totale = subtotale - scontoAbbonamento + consegna;
+  const totale = subtotale + consegna;
   const pieno = pasti * TAGLIE[0].prezzoPasto;
   return {
     pasti,
     prezzoPasto: t.prezzoPasto,
     scontoVolume: t.scontoVolume,
-    formula,
     subtotale,
-    scontoAbbonamento,
     consegna,
     totale,
-    risparmio: Math.max(0, pieno - (subtotale - scontoAbbonamento)),
+    risparmio: Math.max(0, pieno - subtotale),
   };
 }
 

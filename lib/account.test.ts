@@ -20,9 +20,13 @@ import {
   nomeFileDati,
   passiOrdine,
   passwordAccettabile,
+  periodoRichiesta,
   piattiNonPiuDisponibili,
+  pranziFeriali,
   primoNome,
   prossimaConsegna,
+  prossimaUscitaDi,
+  SERVIZIO_CON_PIATTI,
   requisitiPassword,
   righePiano,
   servizioDa,
@@ -100,6 +104,7 @@ describe("hrefAccedi e hrefSezione", () => {
     expect(modoDa("crea")).toBe("crea");
     expect(modoDa("x")).toBe("accedi");
     expect(servizioDa("home-cooking")).toBe("home-cooking");
+    expect(servizioDa("abbonamento")).toBe("abbonamento");
     expect(servizioDa(null)).toBe("menu-settimana");
   });
 });
@@ -228,6 +233,27 @@ describe("stato degli ordini", () => {
     expect(passiOrdine("cancelled")).toBeNull();
   });
 
+  it("l'abbonamento ha tre tappe: inviata, in corso, concluso", () => {
+    expect(passiOrdine("requested", "pickup", "abbonamento")?.map((p) => [p.etichetta, p.stato])).toEqual([
+      ["Inviata", "attuale"], ["In corso", "da-fare"], ["Concluso", "da-fare"],
+    ]);
+    expect(passiOrdine("preparing", "pickup", "abbonamento")?.map((p) => p.stato)).toEqual(["fatto", "attuale", "da-fare"]);
+    expect(passiOrdine("completed", "pickup", "abbonamento")?.every((p) => p.stato === "fatto")).toBe(true);
+    expect(passiOrdine("cancelled", "pickup", "abbonamento")).toBeNull();
+  });
+
+  it("per l'abbonamento la prossima consegna e' il prossimo pranzo del periodo, e il periodo si legge", () => {
+    const abb = ordine({ id: "abb", service: "abbonamento", status: "confirmed", fulfillment_date: "2026-09-14" });
+    // dal 14 settembre al 13 ottobre: domenica 27 -> lunedi' 28
+    expect(prossimaUscitaDi(abb, "2026-09-27")).toBe("2026-09-28");
+    expect(prossimaUscitaDi(abb, "2026-10-14")).toBeNull();
+    const lontana = ordine({ id: "lontana", status: "confirmed", fulfillment_date: "2026-10-10" });
+    expect(prossimaConsegna([lontana, abb], "2026-09-27")?.id).toBe("abb");
+    expect(periodoRichiesta(abb, "2026-09-27")).toBe("dal 14 settembre al 13 ottobre");
+    expect(periodoRichiesta({ ...abb, service: "menu-settimana" }, "2026-09-27")).toBeNull();
+    expect(periodoRichiesta({ ...abb, fulfillment_date: null }, "2026-09-27")).toBeNull();
+  });
+
   it("trova la prossima consegna confermata", () => {
     const ordini = [
       ordine({ id: "attesa", status: "requested", fulfillment_date: null }),
@@ -305,6 +331,26 @@ describe("nuova richiesta", () => {
   it("chiede i piatti solo ai servizi di meal prep", () => {
     expect(validaRichiesta(buona, { ...limiti, piatti: 0 }).piano).toBeTruthy();
     expect(validaRichiesta({ ...buona, servizio: "home-cooking" }, { ...limiti, piatti: 0 })).toEqual({});
+    expect(validaRichiesta({ ...buona, servizio: "abbonamento" }, { ...limiti, piatti: 0 })).toEqual({});
+    expect(SERVIZIO_CON_PIATTI.abbonamento).toBe(false);
+  });
+
+  it("per l'abbonamento la data e' l'inizio, con le stesse regole", () => {
+    const abb = { ...buona, servizio: "abbonamento" as const };
+    expect(validaRichiesta({ ...abb, data: "2026-10-05" }, limiti)).toEqual({});
+    expect(validaRichiesta({ ...abb, data: "2026-09-27" }, limiti).data).toMatch(/iniziare da domani/);
+    expect(validaRichiesta({ ...abb, data: "2027-01-10" }, limiti).data).toMatch(/inizio entro i prossimi 90/);
+    const corpo = corpoRichiesta({ ...abb, data: "2026-10-05", note: " Pesi lun-mer-ven " }, {}, { lun: "pesi" });
+    expect(corpo).toMatchObject({ service: "abbonamento", requestedDate: "2026-10-05", notes: "Pesi lun-mer-ven" });
+  });
+
+  it("conta i soli pranzi dal lunedi' al venerdi' per l'abbonamento", () => {
+    const piano: Piano = {
+      lun: { pranzo: { piatto: "noodles-sesamo-maiale", extra: [] }, cena: { piatto: "noodles-sesamo-maiale", extra: [] } },
+      mer: { pranzo: { piatto: "piatto-sparito", extra: [] } },
+      sab: { pranzo: { piatto: "noodles-sesamo-maiale", extra: [] } },
+    };
+    expect(pranziFeriali(piano)).toBe(1);
   });
 
   it("prepara il corpo per il server", () => {

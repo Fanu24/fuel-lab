@@ -5,11 +5,12 @@
    date apre la scheda, dove il pannello le propone). */
 
 import type { Ordine, StatoOrdine } from "@/lib/api";
-import { inRitardo, nomeProprio, perStato, prossimaAzione, servonoDate } from "@/lib/operazioni";
+import { inRitardo, nomeProprio, perStato, prossimaAzioneDi, servonoDate } from "@/lib/operazioni";
+import { eAbbonamento } from "@/lib/produzione";
 import { DateOrdine } from "./OrdiniElenco";
 import { fraseAvviso, usePannello } from "./PannelloDati";
 import type { useAzioniVeloci } from "./PannelloStato";
-import { Stato } from "./ui";
+import { SegnoAbbonamento, Stato } from "./ui";
 
 type Veloci = ReturnType<typeof useAzioniVeloci>;
 
@@ -55,7 +56,8 @@ export default function OrdiniColonne({
 
 function Carta({ ordine: o, oggi, apri, veloci }: { ordine: Ordine; oggi: string; apri: (id: string) => void; veloci: Veloci }) {
   const { emailAttiva } = usePannello();
-  const azione = prossimaAzione(o.status, o.fulfillment);
+  const azione = prossimaAzioneDi(o, oggi);
+  const abbonamento = eAbbonamento(o);
   const mancanoDate = !!azione && servonoDate(azione.stato) && (!o.production_date || !o.fulfillment_date);
   const nome = nomeProprio(o.customer_name) || "Cliente";
   return (
@@ -64,15 +66,16 @@ function Carta({ ordine: o, oggi, apri, veloci }: { ordine: Ordine; oggi: string
         {o.customer_name || "Cliente senza nome"}
       </button>
       <p className="text-[15px] text-muted">
-        {o.meals} {o.meals === 1 ? "pasto" : "pasti"} · {o.fulfillment === "pickup" ? "Ritiro" : "Consegna"}
+        {abbonamento ? "Pranzi lun–ven" : `${o.meals} ${o.meals === 1 ? "pasto" : "pasti"}`} · {o.fulfillment === "pickup" ? "Ritiro" : "Consegna"}
         {o.comune ? ` · ${o.comune}` : ""}
       </p>
       <p className="text-[15px]">
         <DateOrdine ordine={o} />
       </p>
-      {inRitardo(o, oggi) || o.dietary_preferences?.trim() ? (
+      {abbonamento || inRitardo(o, oggi) || o.dietary_preferences?.trim() ? (
         <p className="flex flex-wrap gap-2">
-          {inRitardo(o, oggi) ? <span className="pn-segno pn-segno-allarme">In ritardo</span> : null}
+          {abbonamento ? <SegnoAbbonamento /> : null}
+          {inRitardo(o, oggi) ? <span className="pn-segno pn-segno-allarme">{abbonamento && o.status !== "requested" ? "Mese finito" : "In ritardo"}</span> : null}
           {o.dietary_preferences?.trim() ? <span className="pn-segno pn-segno-allarme">Allergie</span> : null}
         </p>
       ) : null}

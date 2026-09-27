@@ -34,7 +34,12 @@ export type Utente = {
 export type Profilo = { phone: string; comune: string; address: string; preferences: string };
 
 export type StatoOrdine = "requested" | "confirmed" | "preparing" | "ready" | "completed" | "cancelled";
-export type Servizio = "menu-settimana" | "sui-tuoi-macro" | "home-cooking";
+/**
+ * "abbonamento": l'abbonamento mensile ai pranzi (lib/abbonamento.ts). Non vuole
+ * piatti; la data preferita e' l'inizio desiderato, la data di ritiro o
+ * consegna confermata da Matteo e' l'inizio del periodo di un mese.
+ */
+export type Servizio = "menu-settimana" | "abbonamento" | "sui-tuoi-macro" | "home-cooking";
 export type Modalita = "pickup" | "delivery";
 
 export type VoceOrdine = { id: string; name: string; day: string; meal: string; extras: string[] };
@@ -123,8 +128,10 @@ export type NuovoOrdine = {
   address: string;
   service: Servizio;
   fulfillment: Modalita;
+  /** Il giorno preferito; per l'abbonamento, l'inizio desiderato. */
   requestedDate: string | null;
   notes: string;
+  /** Per l'abbonamento contano solo i pranzi dal lunedi' al venerdi' (facoltativi). */
   plan: Piano;
   training: Allenamenti;
 };
@@ -143,13 +150,15 @@ export type NuovoOrdineManuale = {
   address: string;
   service: Servizio;
   fulfillment: Modalita;
+  /** Ignorato per l'abbonamento: i pranzi si compongono sulla scheda del cliente. */
   plan: Piano;
   /** Solo home cooking: porzioni concordate, anche senza piatti del menu. */
   meals?: number;
   productionDate?: string | null;
   fulfillmentDate?: string | null;
-  /** "confirmed" vuole entrambe le date. */
+  /** "confirmed" vuole entrambe le date (per l'abbonamento sono entrambe l'inizio). */
   status: "requested" | "confirmed";
+  /** Assente per l'abbonamento: vale il prezzo di lib/abbonamento.ts. */
   priceCents?: number | null;
   paid?: boolean;
   internalNote?: string;
@@ -192,7 +201,7 @@ export type Metriche = {
 };
 
 export type StatoMessaggio = "new" | "handled" | "archived";
-export type ArgomentoMessaggio = "info" | "menu-settimana" | "sui-tuoi-macro" | "home-cooking" | "consegna" | "altro";
+export type ArgomentoMessaggio = "info" | "menu-settimana" | "abbonamento" | "sui-tuoi-macro" | "home-cooking" | "consegna" | "altro";
 
 export type MessaggioContatto = {
   id: string;
@@ -375,6 +384,7 @@ export const etichettaStato = (stato: string, per: "admin" | "cliente" = "admin"
 
 export const ETICHETTE_SERVIZIO: Record<Servizio, string> = {
   "menu-settimana": "Menu della settimana",
+  abbonamento: "Abbonamento mensile",
   "sui-tuoi-macro": "Sui tuoi macro",
   "home-cooking": "Home cooking",
 };
@@ -382,6 +392,7 @@ export const ETICHETTE_SERVIZIO: Record<Servizio, string> = {
 export const ETICHETTE_ARGOMENTO: Record<ArgomentoMessaggio, string> = {
   info: "Informazioni",
   "menu-settimana": "Menu della settimana",
+  abbonamento: "Abbonamento mensile",
   "sui-tuoi-macro": "Sui tuoi macro",
   "home-cooking": "Home cooking",
   consegna: "Consegna e ritiro",

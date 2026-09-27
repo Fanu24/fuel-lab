@@ -273,6 +273,41 @@
     font-size: 17px;
   }
 
+  /* Pranzi in abbonamento: una scheda per cliente, bordo lime come il segno del pannello. */
+  .cu-abbonamenti-lista {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+    gap: 12px;
+  }
+  .cu-abbonamento {
+    display: grid;
+    align-content: start;
+    gap: 8px;
+    padding: 14px 16px;
+    background: #fbf9f4;
+    border: 1px solid rgba(18, 20, 18, 0.14);
+    border-left: 6px solid var(--color-lime);
+    font-size: 16px;
+    min-width: 0;
+  }
+  .cu-abbonamento-testa {
+    display: grid;
+    gap: 2px;
+    font-size: 19px;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+  }
+  .cu-abbonamento-etichetta {
+    display: inline-block;
+    padding: 0 6px;
+    background: var(--color-ink);
+    color: var(--color-paper);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
   .cu-piatto {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
@@ -1033,6 +1068,7 @@
   .cu-piatto,
   .cu-riga,
   .cu-reparto,
+  .cu-abbonamento,
   .cu-ordine,
   .cu-spesa-riga,
   .cu-attenzione,
@@ -1106,6 +1142,12 @@
   }
   .cu-ordine-piede {
     padding-top: 2mm;
+  }
+  .cu-abbonamento {
+    border: 1pt solid #000;
+    border-left-width: 4pt;
+    background: none;
+    font-size: 10pt;
   }
   .cu-attenzione,
   .cu-preferenze {

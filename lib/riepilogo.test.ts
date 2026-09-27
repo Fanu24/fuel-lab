@@ -11,7 +11,7 @@ const P1 = PIATTI[1];
 
 describe("riepilogoSettimana", () => {
   it("settimana vuota: zeri, niente preventivo, prezzo minimo sempre", () => {
-    const r = riepilogoSettimana({}, "singolo");
+    const r = riepilogoSettimana({});
     expect(r.pasti).toBe(0);
     expect(r.giorniPieni).toBe(0);
     expect(r.macroMediaGiorno).toEqual({ kcal: 0, proteine: 0, carboidrati: 0, grassi: 0 });
@@ -25,7 +25,7 @@ describe("riepilogoSettimana", () => {
       lun: { pranzo: { piatto: P0.id, extra: [] }, cena: { piatto: P1.id, extra: [] } },
       gio: { pranzo: { piatto: P0.id, extra: [] } },
     };
-    const r = riepilogoSettimana(p, "singolo");
+    const r = riepilogoSettimana(p);
     expect(r.pasti).toBe(3);
     expect(r.giorniPieni).toBe(2);
     expect(r.macroSettimana.kcal).toBe(P0.kcal * 2 + P1.kcal);
@@ -38,15 +38,14 @@ describe("riepilogoSettimana", () => {
     for (const g of ["lun", "mar", "mer", "gio"] as const) {
       p[g] = { pranzo: { piatto: P0.id, extra: [] }, cena: { piatto: P1.id, extra: [] } };
     }
-    const r = riepilogoSettimana(p, "abbonamento");
+    const r = riepilogoSettimana(p);
     expect(r.pasti).toBe(8);
     expect(r.prossimaTaglia).toEqual({ mancano: 2, prezzoPasto: TAGLIE[1].prezzoPasto });
-    expect(r.preventivo?.formula).toBe("abbonamento");
   });
 
   it("la prossima taglia e quella che abbassa davvero il prezzo, non la prima soglia", () => {
     // sotto i 6 pasti si paga gia' il prezzo della taglia da 6: arrivarci non cambia nulla
-    const r = riepilogoSettimana({ lun: { pranzo: { piatto: P0.id, extra: [] } } }, "singolo");
+    const r = riepilogoSettimana({ lun: { pranzo: { piatto: P0.id, extra: [] } } });
     expect(r.prossimaTaglia).toEqual({ mancano: 9, prezzoPasto: TAGLIE[1].prezzoPasto });
   });
 
@@ -55,7 +54,7 @@ describe("riepilogoSettimana", () => {
       lun: { pranzo: { piatto: P0.id, extra: [conPrezzo.id, suRichiesta.id] } },
       mar: { cena: { piatto: P1.id, extra: [conPrezzo.id] } },
     };
-    const r = riepilogoSettimana(p, "singolo");
+    const r = riepilogoSettimana(p);
     expect(r.supplementiExtra).toBeCloseTo((conPrezzo.prezzoEuro ?? 0) * 2, 10);
     expect(r.extraSuRichiesta).toBe(1);
   });

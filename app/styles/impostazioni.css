@@ -188,6 +188,10 @@
       display: inline-flex;
       margin-left: auto;
     }
+    /* Dove c'e' la scheda, il collegamento in testata sarebbe un doppione. */
+    .pn-link-impostazioni {
+      display: none;
+    }
   }
 
   .pn-imp-griglia {

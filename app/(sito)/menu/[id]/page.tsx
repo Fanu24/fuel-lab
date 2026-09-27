@@ -32,8 +32,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return metadatiPagina(paginaPiatto(p));
 }
 
-const GIORNO: Record<string, string> = { lunedi: "il lunedì", giovedi: "il giovedì" };
-
 export default async function PaginaPiatto({ params }: Props) {
   const piatto = getPiatto((await params).id);
   if (!piatto) notFound();
@@ -91,8 +89,8 @@ export default async function PaginaPiatto({ params }: Props) {
                 <NumeriMacro macro={piatto} />
                 <BarraComposizione macro={piatto} className="mt-5" />
                 <p className="mt-3 text-sm text-muted">
-                  Porzione da <span className="num">{piatto.grammi}</span> g · cucinato {GIORNO[piatto.giorno]} a
-                  Pescara · valori per porzione intera
+                  Porzione da <span className="num">{piatto.grammi}</span> g · cucinato a Pescara il giorno stesso del
+                  ritiro o della consegna · valori per porzione intera
                 </p>
               </div>
 

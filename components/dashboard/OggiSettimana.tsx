@@ -1,5 +1,6 @@
-/* "Prossimi 7 giorni": per ogni giorno le porzioni da cucinare e i ritiri o
-   le consegne. Lunedi' e giovedi' (giorni di cucina) hanno il bordo pieno. */
+/* "Prossimi 7 giorni": per ogni giorno le porzioni da cucinare, i pranzi in
+   abbonamento e i ritiri o le consegne. Si cucina e si consegna ogni giorno:
+   in evidenza restano solo i giorni di chiusura segnati in Impostazioni. */
 
 import type { GiornoCalendario } from "@/lib/operazioni";
 import { Sezione, giorno } from "./ui";
@@ -7,21 +8,41 @@ import { Sezione, giorno } from "./ui";
 const iniziale = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
 
 export default function OggiSettimana({ giorni }: { giorni: GiornoCalendario[] | null }) {
+  const chiusi = giorni?.filter((g) => g.chiusura).length ?? 0;
+  const abbonamenti = giorni?.reduce((n, g) => n + g.abbonamenti, 0) ?? 0;
+  const sotto = [
+    "Si cucina e si consegna ogni giorno.",
+    chiusi ? `${chiusi === 1 ? "Un giorno di chiusura" : `${chiusi} giorni di chiusura`} in vista.` : "",
+    abbonamenti
+      ? `Porzioni dagli ordini confermati, più ${abbonamenti} ${abbonamenti === 1 ? "pranzo" : "pranzi"} in abbonamento.`
+      : "Porzioni dagli ordini confermati.",
+  ]
+    .filter(Boolean)
+    .join(" ");
   return (
-    <Sezione titolo="Prossimi 7 giorni" id="oggi-settimana" sotto="Lunedì e giovedì si cucina. Porzioni dagli ordini confermati.">
+    <Sezione titolo="Prossimi 7 giorni" id="oggi-settimana" sotto={sotto}>
       {giorni ? (
         <ol className="pn-settimana mt-4">
           {giorni.map((g) => (
-            <li key={g.data} className={`pn-giorno ${g.cucina ? "pn-giorno-cucina" : ""}`}>
+            <li
+              key={g.data}
+              className={`pn-giorno ${g.chiusura ? "pn-giorno-chiuso" : ""}`}
+              title={g.chiusura ? `Chiuso${g.chiusura.motivo ? `: ${g.chiusura.motivo}` : ""}` : undefined}
+            >
               <div>
                 <p className="pn-giorno-nome">{iniziale(giorno(g.data))}</p>
                 {g.oggi ? <span className="pn-giorno-etichetta pn-giorno-etichetta-oggi">Oggi</span> : null}
-                {g.cucina ? <span className="pn-giorno-etichetta">Cucina</span> : null}
+                {g.chiusura ? (
+                  <span className="pn-giorno-etichetta pn-giorno-etichetta-chiuso">
+                    Chiuso<span className="sr-only">{g.chiusura.motivo ? `: ${g.chiusura.motivo}` : ""}</span>
+                  </span>
+                ) : null}
               </div>
               <p className="pn-giorno-dato">
-                <strong className="num">{g.porzioni}</strong>
-                {g.porzioni === 1 ? "porzione" : "porzioni"}
+                <strong className="num">{g.porzioni + g.abbonamenti}</strong>
+                {g.porzioni + g.abbonamenti === 1 ? "porzione" : "porzioni"}
                 {g.ordiniInCucina ? ` · ${g.ordiniInCucina} ${g.ordiniInCucina === 1 ? "ordine" : "ordini"}` : ""}
+                {g.abbonamenti ? ` · ${g.abbonamenti} in abbonamento` : ""}
               </p>
               <p className="pn-giorno-dato">
                 <strong className="num">{g.uscite}</strong>

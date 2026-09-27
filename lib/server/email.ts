@@ -7,6 +7,7 @@
  * nell'HTML, e da unaRiga prima di finire in un oggetto.
  */
 
+import { PREZZO_ABBONAMENTO_TESTO, periodoAbbonamento } from "../abbonamento";
 import {
   ETICHETTE_ARGOMENTO,
   ETICHETTE_SERVIZIO,
@@ -122,6 +123,8 @@ export type RichiestaPerEmail = {
   notes: string;
   meals: number;
   items: VoceOrdine[];
+  /** La proposta di prezzo partita con la richiesta (l'abbonamento ne ha una). */
+  price_cents?: number | null;
 };
 
 export const linkPannello = (id: string) => `${SITO}/dashboard/ordini?id=${encodeURIComponent(id)}`;
@@ -147,9 +150,25 @@ export function piattiPerGiorno(items: VoceOrdine[]): string[] {
   return righe;
 }
 
+/** "Pasti: 3" o, per l'abbonamento, cosa chiede davvero: la data e' l'inizio, non un giorno di ritiro. */
+function righeRichiesta(o: RichiestaPerEmail): Array<[string, string]> {
+  if (o.service === "abbonamento") {
+    return [
+      ["Inizio desiderato", o.requested_date ? dataEstesa(o.requested_date) : "Da concordare"],
+      ["Cosa chiede", "Tutti i pranzi dal lunedì al venerdì per un mese, sulla sua scheda"],
+      ["Prezzo proposto", `${PREZZO_ABBONAMENTO_TESTO} al mese`],
+    ];
+  }
+  return [
+    ["Data preferita", o.requested_date ? dataEstesa(o.requested_date) : "Nessuna preferenza"],
+    ["Pasti", String(o.meals)],
+  ];
+}
+
 /** (a) Nuova richiesta -> a Matteo. */
 export function emailNuovaRichiesta(o: RichiestaPerEmail): ContenutoEmail {
   const nome = unaRiga(o.customer_name) || "Cliente";
+  const abbonamento = o.service === "abbonamento";
   const blocchi: Blocco[] = [
     { tipo: "righe", righe: [
       ["Cliente", nome],
@@ -158,15 +177,17 @@ export function emailNuovaRichiesta(o: RichiestaPerEmail): ContenutoEmail {
       ["Servizio", ETICHETTE_SERVIZIO[o.service] ?? o.service],
       ["Modalità", modalita(o)],
       ["Comune", o.comune || "—"],
-      ["Data preferita", o.requested_date ? dataEstesa(o.requested_date) : "Nessuna preferenza"],
-      ["Pasti", String(o.meals)],
+      ...righeRichiesta(o),
     ] },
   ];
   const giorni = piattiPerGiorno(o.items);
-  if (giorni.length) blocchi.push({ tipo: "sezione", titolo: "Piatti per giorno" }, { tipo: "elenco", voci: giorni });
-  if (o.notes) blocchi.push({ tipo: "citazione", titolo: "Note del cliente", testo: o.notes });
+  if (giorni.length) {
+    blocchi.push({ tipo: "sezione", titolo: abbonamento ? "Pranzi indicati dal cliente" : "Piatti per giorno" }, { tipo: "elenco", voci: giorni });
+  }
+  if (o.notes) blocchi.push({ tipo: "citazione", titolo: abbonamento ? "La scheda del cliente" : "Note del cliente", testo: o.notes });
   blocchi.push({ tipo: "link", url: linkPannello(o.id), etichetta: "Apri la richiesta nel pannello" });
-  return componi(`Nuova richiesta: ${nome} · ${o.meals} ${o.meals === 1 ? "pasto" : "pasti"}`, "Nuova richiesta dal sito", blocchi);
+  const cosa = abbonamento ? ETICHETTE_SERVIZIO.abbonamento : `${o.meals} ${o.meals === 1 ? "pasto" : "pasti"}`;
+  return componi(`Nuova richiesta: ${nome} · ${cosa}`, abbonamento ? "Nuova richiesta di abbonamento dal sito" : "Nuova richiesta dal sito", blocchi);
 }
 
 /** (d) Richiesta annullata dal cliente -> a Matteo. */
@@ -179,8 +200,7 @@ export function emailAnnullataDalCliente(o: RichiestaPerEmail): ContenutoEmail {
       ["Email", o.email || "—"],
       ["Telefono", o.phone || "—"],
       ["Servizio", ETICHETTE_SERVIZIO[o.service] ?? o.service],
-      ["Pasti", String(o.meals)],
-      ["Data preferita", o.requested_date ? dataEstesa(o.requested_date) : "Nessuna preferenza"],
+      ...righeRichiesta(o).filter(([etichetta]) => etichetta !== "Cosa chiede"),
     ] },
     { tipo: "link", url: linkPannello(o.id), etichetta: "Apri la richiesta nel pannello" },
   ]);
@@ -197,7 +217,28 @@ const FRASI_STATO: Record<StatoOrdine, string> = {
   cancelled: "La tua richiesta è stata annullata.",
 };
 
+/** Le stesse frasi per l'abbonamento: non si prepara un ordine, parte un mese di pranzi. */
+const FRASI_STATO_ABBONAMENTO: Record<StatoOrdine, string> = {
+  requested: "La tua richiesta di abbonamento è in attesa di conferma: Matteo la guarda al più presto.",
+  confirmed: "Matteo ha confermato il tuo abbonamento ai pranzi.",
+  preparing: "Il tuo abbonamento ai pranzi è in corso.",
+  ready: "Il tuo abbonamento ai pranzi è in corso.",
+  completed: "Il tuo abbonamento ai pranzi si è concluso. Grazie!",
+  cancelled: "La tua richiesta di abbonamento è stata annullata.",
+};
+
+const OGGETTO_ABBONAMENTO: Record<StatoOrdine, string> = {
+  requested: "abbonamento in attesa di conferma",
+  confirmed: "abbonamento confermato",
+  preparing: "abbonamento in corso",
+  ready: "abbonamento in corso",
+  completed: "abbonamento concluso",
+  cancelled: "abbonamento annullato",
+};
+
 export type AggiornamentoPerEmail = {
+  /** Assente nei client vecchi: vale come un ordine normale. */
+  service?: Servizio;
   customer_name: string;
   status: StatoOrdine;
   fulfillment: Modalita;
@@ -213,14 +254,26 @@ export type AggiornamentoPerEmail = {
 export function emailAggiornamentoCliente(o: AggiornamentoPerEmail, statoCambiato: boolean): ContenutoEmail {
   const nome = unaRiga(o.customer_name).split(" ")[0] || "";
   const etichetta = etichettaStato(o.status, "cliente");
-  const righe: Array<[string, string]> = [["Stato", etichetta]];
+  const abbonamento = o.service === "abbonamento";
+  const righe: Array<[string, string]> = [["Stato", abbonamento && o.status === "completed" ? "Concluso" : etichetta]];
+  if (abbonamento) righe.push(["Servizio", ETICHETTE_SERVIZIO.abbonamento]);
   if (o.status !== "cancelled") {
-    if (o.fulfillment_date) righe.push([o.fulfillment === "delivery" ? "Consegna" : "Ritiro", dataEstesa(o.fulfillment_date)]);
+    if (o.fulfillment_date && abbonamento) {
+      const { dal, al } = periodoAbbonamento(o.fulfillment_date);
+      righe.push(["Periodo", `dal ${dataEstesa(dal)} al ${dataEstesa(al)}, pranzi dal lunedì al venerdì`]);
+    } else if (o.fulfillment_date) {
+      righe.push([o.fulfillment === "delivery" ? "Consegna" : "Ritiro", dataEstesa(o.fulfillment_date)]);
+    }
     righe.push(["Dove", o.fulfillment === "delivery" ? [o.address, o.comune].filter(Boolean).join(", ") : `${INDIRIZZO_LABORATORIO} (ritiro in laboratorio)`]);
   }
-  if (o.price_cents !== null) righe.push(["Totale concordato", `${euroTesto(o.price_cents)}${o.paid ? " · pagato" : ""}`]);
+  if (o.price_cents !== null) {
+    // Su una richiesta ancora da confermare il prezzo e' una proposta, come nel pannello e nell'area cliente.
+    const proposto = o.status === "requested";
+    righe.push([proposto ? "Prezzo proposto" : "Totale concordato", `${euroTesto(o.price_cents)}${o.paid ? " · pagato" : ""}`]);
+  }
+  const frasi = abbonamento ? FRASI_STATO_ABBONAMENTO : FRASI_STATO;
   const blocchi: Blocco[] = [
-    { tipo: "paragrafo", testo: statoCambiato ? FRASI_STATO[o.status] : "Matteo ti ha scritto un messaggio sulla tua richiesta." },
+    { tipo: "paragrafo", testo: statoCambiato ? frasi[o.status] : "Matteo ti ha scritto un messaggio sulla tua richiesta." },
     { tipo: "righe", righe },
   ];
   if (o.customer_message) blocchi.push({ tipo: "citazione", titolo: "Messaggio di Matteo", testo: o.customer_message });
@@ -228,7 +281,9 @@ export function emailAggiornamentoCliente(o: AggiornamentoPerEmail, statoCambiat
     { tipo: "link", url: `${SITO}/account`, etichetta: "Vedi la richiesta nel tuo account" },
     { tipo: "paragrafo", testo: "Per qualsiasi domanda rispondi pure a questa email." },
   );
-  const subject = statoCambiato ? `Aggiornamento FUEL LAB: ${etichetta}` : "Un messaggio di Matteo sulla tua richiesta FUEL LAB";
+  const subject = statoCambiato
+    ? `Aggiornamento FUEL LAB: ${abbonamento ? OGGETTO_ABBONAMENTO[o.status] : etichetta}`
+    : "Un messaggio di Matteo sulla tua richiesta FUEL LAB";
   return componi(subject, nome ? `Ciao ${nome},` : "Ciao,", blocchi);
 }
 

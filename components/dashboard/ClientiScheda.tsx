@@ -153,15 +153,19 @@ export default function ClientiScheda({
               <li key={o.id} className="cl-ordine">
                 <div className="grid gap-1">
                   <p className="cl-ordine-titolo">
-                    {ETICHETTE_SERVIZIO[o.service] ?? o.service} · {o.meals} {o.meals === 1 ? "pasto" : "pasti"}
+                    {ETICHETTE_SERVIZIO[o.service] ?? o.service}
+                    {o.service === "abbonamento" ? "" : ` · ${o.meals} ${o.meals === 1 ? "pasto" : "pasti"}`}
                   </p>
                   <p className="cu-riga-nota">
-                    Richiesto {quando(o.created_at)} · {o.fulfillment === "pickup" ? "ritiro" : "consegna"} {giorno(o.fulfillment_date, "da fissare")}
+                    Richiesto {quando(o.created_at)} ·{" "}
+                    {o.service === "abbonamento"
+                      ? `inizio ${giorno(o.fulfillment_date, "da fissare")}`
+                      : `${o.fulfillment === "pickup" ? "ritiro" : "consegna"} ${giorno(o.fulfillment_date, "da fissare")}`}
                     {o.price_cents !== null ? ` · ${euro(o.price_cents)}${o.paid ? " pagato" : " da pagare"}` : ""}
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
-                  <Stato stato={o.status} ritiro={o.fulfillment === "pickup"} />
+                  <Stato stato={o.status} ritiro={o.fulfillment === "pickup"} abbonamento={o.service === "abbonamento"} />
                   <Link
                     href={`/dashboard/ordini?id=${encodeURIComponent(o.id)}`}
                     className="btn btn-linea btn-sm"

@@ -7,8 +7,13 @@
  * Le righe (items) si ricavano dal piano con lo stesso vociDalPiano del sito,
  * cosi' un ordine a mano arriva in Oggi, nel foglio Cucina, nella spesa e
  * nelle etichette esattamente come una richiesta dal sito.
+ *
+ * L'abbonamento a mano non ha piatti (i pranzi si compongono sulla scheda del
+ * cliente, scritta nelle note) e, se Matteo non scrive un prezzo, prende
+ * quello di lib/abbonamento.ts. Le due date sono entrambe l'inizio.
  */
 
+import { PREZZO_ABBONAMENTO_CENTESIMI } from "../abbonamento";
 import type { Modalita, Servizio, VoceOrdine } from "../api";
 import { potaPiano, type Piano } from "../settimana";
 import { dataValida, spostaGiorno } from "./date";
@@ -119,7 +124,13 @@ export function leggiOrdineManuale(
     return errore(400, "Per un ordine già confermato servono le date di produzione e di ritiro o consegna");
   }
 
-  let priceCents: number | null = null;
+  const abbonamento = service === "abbonamento";
+  if (abbonamento && produzione.value && uscita.value && produzione.value !== uscita.value) {
+    return errore(400, "Per l'abbonamento le due date sono l'inizio: devono coincidere");
+  }
+
+  // Un prezzo assente vale il prezzo dell'abbonamento; null resta "senza prezzo", scelto da Matteo.
+  let priceCents: number | null = abbonamento && body.priceCents === undefined ? PREZZO_ABBONAMENTO_CENTESIMI : null;
   if (body.priceCents !== undefined && body.priceCents !== null) {
     if (typeof body.priceCents !== "number" || !Number.isInteger(body.priceCents) || body.priceCents < 0 || body.priceCents > MAX_PREZZO_CENTESIMI) {
       return errore(400, "Totale non valido: usa i centesimi, da 0 a 10.000 €");
@@ -137,7 +148,8 @@ export function leggiOrdineManuale(
   if (notes === null) return errore(400, "Note non valide");
   if (notes.length > MAX_NOTE_CLIENTE) return errore(400, `Le note possono avere al massimo ${MAX_NOTE_CLIENTE} caratteri`);
 
-  const plan = potaPiano(body.plan);
+  // Abbonamento: niente piatti e niente porzioni, i pranzi del mese li conta il pannello dal periodo.
+  const plan = abbonamento ? {} : potaPiano(body.plan);
   const items = vociDalPiano(plan);
   let meals = items.length;
   if (service === "home-cooking") {
@@ -148,7 +160,7 @@ export function leggiOrdineManuale(
       }
       meals = Math.max(items.length, body.meals);
     }
-  } else if (!items.length) {
+  } else if (!abbonamento && !items.length) {
     return errore(400, "Scegli almeno un piatto");
   }
 

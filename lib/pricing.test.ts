@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
   CONSEGNA,
   MOSTRA_STIMA_PREZZO,
-  SCONTO_ABBONAMENTO,
   TAGLIE,
   preventivo,
   tagliaPer,
@@ -23,20 +22,12 @@ describe("tagliaPer", () => {
 
 describe("preventivo", () => {
   it("la consegna e gratis dai 10 pasti", () => {
-    expect(preventivo(9, "singolo").consegna).toBe(CONSEGNA);
-    expect(preventivo(10, "singolo").consegna).toBe(0);
+    expect(preventivo(9).consegna).toBe(CONSEGNA);
+    expect(preventivo(10).consegna).toBe(0);
   });
 
-  it("l'abbonamento toglie il 15% dal subtotale", () => {
-    const p = preventivo(10, "abbonamento");
-    expect(SCONTO_ABBONAMENTO).toBe(0.15);
-    expect(p.scontoAbbonamento).toBeCloseTo(p.subtotale * 0.15, 10);
-    expect(p.totale).toBeCloseTo(p.subtotale * 0.85, 10);
-    expect(preventivo(10, "singolo").scontoAbbonamento).toBe(0);
-  });
-
-  it("il totale somma subtotale, sconto e consegna", () => {
-    const p = preventivo(9, "singolo");
+  it("il totale somma subtotale e consegna", () => {
+    const p = preventivo(9);
     expect(p.subtotale).toBeCloseTo(9 * TAGLIE[0].prezzoPasto, 10);
     expect(p.totale).toBeCloseTo(p.subtotale + CONSEGNA, 10);
   });

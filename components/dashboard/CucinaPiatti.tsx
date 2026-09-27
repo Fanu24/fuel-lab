@@ -2,20 +2,27 @@
 
 /* Scheda Piatti: la lavagna della cucina. Numeri grandi, da leggere a un metro
    dal telefono appoggiato sul piano: quante porzioni di ogni piatto, quanti
-   extra, quali allergeni girano oggi e chi ha allergie da non dimenticare. */
+   extra, quali allergeni girano oggi e chi ha allergie da non dimenticare.
+   I pranzi in abbonamento hanno la loro sezione (per chi, con la scheda); se
+   il cliente ha indicato il piatto del giorno, conta anche nelle porzioni. */
 
 import { useMemo } from "react";
 import type { Ordine } from "@/lib/api";
 import { allergeniDelGiorno, contaExtra, contaPiatti } from "@/lib/produzione";
+import CucinaAbbonamenti from "./CucinaAbbonamenti";
 import { Vuoto } from "./ui";
 
 const maiuscola = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
-export default function CucinaPiatti({ ordini }: { ordini: Ordine[] }) {
+/**
+ * `ordini`: gli ordini del giorno piu' i pranzi in abbonamento come ordini da
+ * una porzione (pranziComeOrdini); `abbonamenti`: gli abbonamenti del giorno.
+ */
+export default function CucinaPiatti({ ordini, abbonamenti = [], giorno }: { ordini: Ordine[]; abbonamenti?: Ordine[]; giorno: string }) {
   const piatti = useMemo(() => contaPiatti(ordini), [ordini]);
   const extra = useMemo(() => contaExtra(ordini), [ordini]);
   const allergeni = useMemo(() => allergeniDelGiorno(ordini), [ordini]);
-  const conPreferenze = ordini.filter((o) => o.dietary_preferences?.trim());
+  const conPreferenze = ordini.filter((o, i) => o.dietary_preferences?.trim() && ordini.findIndex((x) => x.id === o.id) === i);
   const totaleExtra = extra.reduce((n, e) => n + e.quanti, 0);
 
   return (
@@ -33,6 +40,8 @@ export default function CucinaPiatti({ ordini }: { ordini: Ordine[] }) {
           </ul>
         </section>
       ) : null}
+
+      <CucinaAbbonamenti abbonamenti={abbonamenti} giorno={giorno} />
 
       <div className="grid gap-10 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
         <section aria-labelledby="cu-piatti" className="grid content-start gap-2">
@@ -58,7 +67,9 @@ export default function CucinaPiatti({ ordini }: { ordini: Ordine[] }) {
               ))}
             </ul>
           ) : (
-            <Vuoto>Questi ordini non hanno piatti dal menu (per esempio home cooking): guarda la scheda Ordini.</Vuoto>
+            <Vuoto>
+              Nessun piatto del menu da contare (home cooking, o pranzi in abbonamento ancora da comporre): guarda la scheda Ordini.
+            </Vuoto>
           )}
         </section>
 

@@ -36,6 +36,10 @@ describe("whatsapp", () => {
     const b = messaggioServizio("home-cooking");
     expect(a).not.toBe(b);
     expect(a.length).toBeGreaterThan(20);
+    // l'abbonamento ha il suo, con il prezzo del mese preso da lib/abbonamento.ts
+    const c = messaggioServizio("abbonamento");
+    expect(new Set([a, b, c, messaggioServizio("sui-tuoi-macro")]).size).toBe(4);
+    expect(c).toContain("239 € al mese");
   });
 
   // --- normalizzazione: il punto piu' delicato del task -------------------
@@ -144,9 +148,9 @@ const CONTATTO_BASE: DatiContatto = {
   note: "",
 };
 
-/** I tre id reali piu' un id che nessun servizio ha mai avuto: il contratto
+/** I quattro id reali piu' un id che nessun servizio ha mai avuto: il contratto
  *  di componiMessaggio() vale per entrambi allo stesso modo. */
-const SERVIZI_DA_TESTARE = ["menu-settimana", "sui-tuoi-macro", "home-cooking", "id-che-non-esiste"];
+const SERVIZI_DA_TESTARE = ["menu-settimana", "abbonamento", "sui-tuoi-macro", "home-cooking", "id-che-non-esiste"];
 
 describe("componiMessaggio produce sempre esattamente una domanda di chiusura", () => {
   it.each(SERVIZI_DA_TESTARE)("servizioId=%s, senza settimana", (servizioId) => {

@@ -267,8 +267,7 @@ export function nutrizione(p: Piatto): Nodo {
 
 /**
  * Ingredienti e allergeni in una frase: MenuItem non ha un campo ingredienti, la descrizione si'.
- * Niente giorno di cottura: Matteo cucina ogni giorno, e il campo `giorno` del
- * catalogo non e' piu' un'informazione da dare al pubblico.
+ * Niente giorno di cottura: Matteo cucina ogni giorno.
  */
 export function descrizioneEstesa(p: Piatto): string {
   const ingredienti = p.ingredienti

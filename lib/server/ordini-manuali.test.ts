@@ -190,3 +190,27 @@ describe("ordine a mano visto dal pannello", () => {
     expect(ordineDaRiga({ ...riga, source: "manual" }, false)).not.toHaveProperty("source");
   });
 });
+
+describe("ordine a mano: abbonamento", () => {
+  it("niente piatti, prezzo dell'abbonamento se Matteo non lo scrive, le due date sono l'inizio", () => {
+    const e = esito({ service: "abbonamento", plan: {}, status: "confirmed", productionDate: "2026-10-05", fulfillmentDate: "2026-10-05" });
+    expect(e.ok).toBe(true);
+    if (!e.ok) return;
+    expect(e.value).toMatchObject({ service: "abbonamento", items: [], meals: 0, priceCents: 23900, requestedDate: "2026-10-05" });
+    expect(e.value.plan).toEqual({});
+  });
+
+  it("ignora i piatti mandati per sbaglio e rispetta il prezzo scritto, anche vuoto", () => {
+    const conPiatti = esito({ service: "abbonamento" });
+    expect(conPiatti.ok && conPiatti.value.items).toEqual([]);
+    const scontato = esito({ service: "abbonamento", priceCents: 20000 });
+    expect(scontato.ok && scontato.value.priceCents).toBe(20000);
+    const senza = esito({ service: "abbonamento", priceCents: null });
+    expect(senza.ok && senza.value.priceCents).toBeNull();
+  });
+
+  it("vuole le due date uguali, e l'inizio per un abbonamento gia' confermato", () => {
+    expect(errore({ service: "abbonamento", productionDate: "2026-10-05", fulfillmentDate: "2026-10-06" })).toMatch(/coincidere/);
+    expect(errore({ service: "abbonamento", status: "confirmed" })).toMatch(/servono le date/);
+  });
+});

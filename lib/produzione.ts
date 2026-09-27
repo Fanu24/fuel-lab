@@ -7,9 +7,11 @@
  * sbagliato, il posto dove cercare e' questo file.
  */
 
+import { eFeriale, nelPeriodo } from "@/lib/abbonamento";
 import {
   ETICHETTE_ARGOMENTO,
   daSqlite,
+  type Chiusura,
   type ClienteAdmin,
   type MessaggioContatto,
   type Ordine,
@@ -17,6 +19,7 @@ import {
   type VoceOrdine,
 } from "@/lib/api";
 import { EXTRA, getPiatto } from "@/lib/catalogo";
+import { chiusuraDi } from "@/lib/impostazioni";
 import { GIORNI, NOMI_GIORNO, PASTI, type GiornoSettimana, type Pasto } from "@/lib/settimana";
 
 const FUSO = "Europe/Rome";
@@ -48,13 +51,21 @@ export function giornoSettimana(data: string): number {
   return new Date(`${data}T12:00:00Z`).getUTCDay();
 }
 
-/** Il prossimo lunedi' (1) o giovedi' (4) a partire da `da`, `da` compreso. */
-export function prossimo(da: string, giorno: number): string {
-  return spostaGiorni(da, (giorno - giornoSettimana(da) + 7) % 7);
+/** "2026-09-28" -> "lun": la chiave del giorno nel piano della settimana. */
+export function giornoDelPiano(data: string): GiornoSettimana {
+  return GIORNI[(giornoSettimana(data) + 6) % 7];
 }
 
-/** I giorni in cui Matteo cucina. */
-export const GIORNI_CUCINA = [1, 4] as const;
+/**
+ * Il primo giorno da `da` (compreso) in cui Matteo cucina: ogni giorno, tranne
+ * i periodi di chiusura che segna in Impostazioni. Oltre un anno di chiusure
+ * di fila non si cerca: si torna `da`.
+ */
+export function primoGiornoDiCucina(da: string, chiusure: readonly Chiusura[] = []): string {
+  let d = da;
+  for (let i = 0; i < 366; i++, d = spostaGiorni(d, 1)) if (!chiusuraDi(d, chiusure)) return d;
+  return da;
+}
 
 /** "2026-09-28" -> "lun 28/09": corto, per le etichette. */
 export function dataBreve(data: string): string {
@@ -81,8 +92,13 @@ function perUscita(a: Ordine, b: Ordine) {
   return da.localeCompare(db) || a.fulfillment.localeCompare(b.fulfillment) || a.customer_name.localeCompare(b.customer_name, "it");
 }
 
+/**
+ * Gli ordini da cucinare in un giorno. Gli abbonamenti restano fuori: le loro
+ * date sono l'inizio del mese, non un giorno di cucina, e i loro pranzi
+ * arrivano da abbonamentiDelGiorno.
+ */
 export function ordiniDelGiorno(ordini: Ordine[], giorno: string, anchePronti = false): Ordine[] {
-  return ordini.filter((o) => o.production_date === giorno && entraInCucina(o, anchePronti)).sort(perUscita);
+  return ordini.filter((o) => !eAbbonamento(o) && o.production_date === giorno && entraInCucina(o, anchePronti)).sort(perUscita);
 }
 
 /** Una porzione = un piatto in una casella del piano (una voce dell'ordine). */
@@ -94,7 +110,7 @@ export function contaPorzioni(ordini: Ordine[]): number {
 export function giorniConOrdini(ordini: Ordine[], daGiorno: string, anchePronti = false) {
   const mappa = new Map<string, { giorno: string; ordini: number; porzioni: number }>();
   for (const o of ordini) {
-    if (!o.production_date || o.production_date < daGiorno || !entraInCucina(o, anchePronti)) continue;
+    if (eAbbonamento(o) || !o.production_date || o.production_date < daGiorno || !entraInCucina(o, anchePronti)) continue;
     const r = mappa.get(o.production_date) ?? { giorno: o.production_date, ordini: 0, porzioni: 0 };
     r.ordini += 1;
     r.porzioni += o.items.length;
@@ -109,13 +125,54 @@ export function confermatiSenzaGiorno(ordini: Ordine[]): Ordine[] {
 }
 
 /**
- * Il giorno che la Cucina apre da sola: oggi se oggi c'e' produzione,
- * altrimenti il primo lunedi' o giovedi' da oggi in poi.
+ * Il giorno che la Cucina apre da sola: oggi se oggi c'e' qualcosa da
+ * preparare (ordini o pranzi in abbonamento), altrimenti il primo giorno di
+ * cucina da oggi in poi, cioe' oggi stesso se Matteo non e' chiuso.
  */
-export function giornoPredefinito(ordini: Ordine[], oggi: string): string {
-  if (ordini.some((o) => o.production_date === oggi && entraInCucina(o, false))) return oggi;
-  return GIORNI_CUCINA.map((g) => prossimo(oggi, g)).sort()[0];
+export function giornoPredefinito(ordini: Ordine[], oggi: string, chiusure: readonly Chiusura[] = []): string {
+  if (ordiniDelGiorno(ordini, oggi).length || abbonamentiDelGiorno(ordini, oggi).length) return oggi;
+  return primoGiornoDiCucina(oggi, chiusure);
 }
+
+/* ---------- Abbonamenti ---------- */
+
+export const eAbbonamento = (o: Pick<Ordine, "service">) => o.service === "abbonamento";
+
+/** Gli stati in cui un abbonamento e' in corso: i suoi pranzi vanno in cucina ogni giorno feriale del periodo. */
+export const STATI_ABBONAMENTO_ATTIVO: readonly StatoOrdine[] = ["confirmed", "preparing", "ready"];
+
+/**
+ * Gli abbonamenti che hanno un pranzo in `giorno`: confermati (o in
+ * preparazione, o pronti), con il periodo che comprende `giorno`, e `giorno`
+ * dal lunedi' al venerdi'. Il periodo parte dalla data di ritiro o consegna
+ * confermata da Matteo e dura un mese (lib/abbonamento.ts). Per nome.
+ */
+export function abbonamentiDelGiorno(ordini: Ordine[], giorno: string): Ordine[] {
+  if (!isData(giorno) || !eFeriale(giorno)) return [];
+  return ordini
+    .filter((o) => eAbbonamento(o) && STATI_ABBONAMENTO_ATTIVO.includes(o.status) && isData(o.fulfillment_date) && nelPeriodo(o.fulfillment_date, giorno))
+    .sort((a, b) => a.customer_name.localeCompare(b.customer_name, "it") || a.id.localeCompare(b.id));
+}
+
+/** Il piatto che il cliente ha indicato per il pranzo di quel giorno della settimana, se c'e'. */
+export function pranzoInAbbonamento(o: Pick<Ordine, "items">, giorno: string): VoceOrdine | null {
+  const g = giornoDelPiano(giorno);
+  return o.items.find((v) => v.day === g && v.meal === "pranzo") ?? null;
+}
+
+/**
+ * Gli abbonamenti del giorno come ordini da una porzione: il pranzo indicato
+ * dal cliente, se c'e', o nessuna voce. Servono a contare piatti, spesa e
+ * allergeni insieme agli ordini: un pranzo senza piatto indicato non ha una
+ * ricetta da moltiplicare e resta fuori da quei conti.
+ */
+export function pranziComeOrdini(abbonamenti: Ordine[], giorno: string): Ordine[] {
+  return abbonamenti.map((o) => {
+    const voce = pranzoInAbbonamento(o, giorno);
+    return { ...o, items: voce ? [voce] : [], meals: 1 };
+  });
+}
+
 
 /* ---------- Piatti, extra, allergeni ---------- */
 
@@ -342,6 +399,9 @@ export function listaSpesa(ordini: Ordine[]): ListaSpesa {
 
 /* ---------- Etichette ---------- */
 
+/** Il nome sull'etichetta di un pranzo in abbonamento senza piatto indicato dal cliente. */
+export const PRANZO_IN_ABBONAMENTO = "Pranzo in abbonamento";
+
 export type Etichetta = {
   chiave: string;
   ordineId: string;
@@ -385,6 +445,27 @@ export function etichette(ordini: Ordine[]): Etichetta[] {
       allergeni: allergeniVoce(v),
     })),
   );
+}
+
+/**
+ * Una etichetta per ogni pranzo in abbonamento del giorno: il piatto indicato
+ * dal cliente per quel giorno della settimana, oppure "Pranzo in abbonamento"
+ * (e allergeni da verificare, perche' il piatto lo decide Matteo sulla scheda).
+ */
+export function etichetteAbbonamenti(abbonamenti: Ordine[], giorno: string): Etichetta[] {
+  const quando = `${NOMI_GIORNO[giornoDelPiano(giorno)]} · pranzo · abbonamento`;
+  return abbonamenti.map((o) => {
+    const voce = pranzoInAbbonamento(o, giorno);
+    return {
+      chiave: `${o.id}-abbonamento-${giorno}`,
+      ordineId: o.id,
+      cliente: o.customer_name,
+      piatto: voce ? (getPiatto(voce.id)?.nome ?? voce.name) : PRANZO_IN_ABBONAMENTO,
+      quando,
+      extra: voce?.extras ?? [],
+      allergeni: voce ? allergeniVoce(voce) : null,
+    };
+  });
 }
 
 /** Il formato scelto: A4 con 3 colonne e 7 righe, etichette 70 x 42,3 mm senza margini. */

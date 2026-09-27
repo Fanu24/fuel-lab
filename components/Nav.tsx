@@ -13,9 +13,15 @@ import { iniziale, nomeBreve } from "@/lib/account";
 const FOCUSABILI =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-/* "Contatti" non c'e': porta alla stessa pagina del bottone "Scrivi a Matteo"
-   che sta accanto alla nav (e in fondo al menu mobile), e con "Abbonamento" le
-   sei voci non entravano piu' nella barra sotto i 1440px. */
+/* Nella barra del computer "Contatti" non c'e': porta alla stessa pagina del
+   bottone "Scrivi a Matteo" che sta accanto alla nav, e con "Abbonamento" non
+   entra a 1024px (ne' a 1280 e 1440 per Matteo, che ha anche "Pannello").
+   Nel menu del telefono lo spazio c'e', e Contatti torna al suo posto
+   (CONTATTI, sotto).
+
+   Le voci della barra non vanno mai a capo: fra 1024 e 1535px gli spazi e la
+   spaziatura delle lettere si stringono e il logo non si rimpicciolisce; dai
+   1536px tornano quelli pieni. */
 const VOCI = [
   { href: "/menu", label: "Menu" },
   { href: "/abbonamento", label: "Abbonamento" },
@@ -24,6 +30,9 @@ const VOCI = [
   { href: "/chi-siamo", label: "Chi siamo" },
   { href: "/account", label: "Area cliente" },
 ];
+
+/* Solo nel menu del telefono, prima dell'area cliente. */
+const CONTATTI = { href: "/richiesta", label: "Contatti" };
 
 /* Le pagine che si aprono su una foto scura a tutta altezza: li' la barra parte
    trasparente col logo in negativo, e diventa carta appena si scorre. */
@@ -42,7 +51,12 @@ export default function Nav() {
   const utente = sessione.utente;
   const admin = utente?.role === "admin";
   const voci = VOCI.map((v) => (v.href === "/account" && utente ? { ...v, label: "Il mio account" } : v));
-  const vociMobile = admin ? [...voci, { href: "/dashboard", label: "Pannello" }] : voci;
+  const vociMobile = [
+    ...voci.filter((v) => v.href !== "/account"),
+    CONTATTI,
+    ...voci.filter((v) => v.href === "/account"),
+    ...(admin ? [{ href: "/dashboard", label: "Pannello" }] : []),
+  ];
   const suAccount = percorso === "/account" || percorso === "/accedi";
   const etichettaAccount =
     sessione.stato === "attesa" ? "Area cliente"
@@ -104,8 +118,8 @@ export default function Nav() {
         }`}
         style={{ borderColor: "var(--line)" }}
       >
-        <div className="wrap flex items-center gap-6" style={{ height: "var(--nav-h)" }}>
-          <Link href="/" aria-label="FUEL LAB, home" className="mr-auto flex min-h-11 items-center">
+        <div className="wrap flex items-center gap-6 lg:gap-4 2xl:gap-6" style={{ height: "var(--nav-h)" }}>
+          <Link href="/" aria-label="FUEL LAB, home" className="mr-auto flex min-h-11 shrink-0 items-center">
             <Image
               src="/logo-fuellab.png"
               alt=""
@@ -117,7 +131,7 @@ export default function Nav() {
             />
           </Link>
 
-          <nav aria-label="Principale" className="hidden items-center gap-8 lg:flex">
+          <nav aria-label="Principale" className="hidden items-center gap-4 lg:flex xl:gap-6 2xl:gap-8">
             {VOCI.filter((v) => v.href !== "/account").map((v) => {
               const attiva = percorso === v.href || percorso.startsWith(v.href + "/");
               return (
@@ -125,7 +139,7 @@ export default function Nav() {
                   key={v.href}
                   href={v.href}
                   aria-current={attiva ? "page" : undefined}
-                  className="relative py-2 font-disp text-[13px] font-semibold tracking-[.16em] uppercase"
+                  className="relative py-2 font-disp text-[13px] font-semibold tracking-[.12em] whitespace-nowrap uppercase 2xl:tracking-[.16em]"
                 >
                   {v.label}
                   <span
@@ -140,7 +154,7 @@ export default function Nav() {
             {admin ? (
               <Link
                 href="/dashboard"
-                className="hidden py-2 font-disp text-[13px] font-semibold tracking-[.16em] uppercase xl:inline-block"
+                className="hidden py-2 font-disp text-[13px] font-semibold tracking-[.12em] whitespace-nowrap uppercase xl:inline-block 2xl:tracking-[.16em]"
               >
                 Pannello
               </Link>

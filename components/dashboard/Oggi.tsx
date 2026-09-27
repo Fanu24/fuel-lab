@@ -9,7 +9,9 @@
 import Link from "next/link";
 import { useMemo, type ReactNode } from "react";
 import { euro } from "@/lib/api";
+import { chiusuraDi } from "@/lib/impostazioni";
 import { azioniDaFare, calendario, codeOperative, plurale, sommaCentesimi, type CodeOperative } from "@/lib/operazioni";
+import { useImpostazioni } from "@/components/impostazioni/useImpostazioni";
 import { useAdmin } from "./AdminGate";
 import OggiCucina from "./OggiCucina";
 import OggiDaFare from "./OggiDaFare";
@@ -36,9 +38,13 @@ export default function Oggi() {
   const { id, apri, chiudi } = useSchedaUrl();
   const veloci = useAzioniVeloci();
 
+  // Le chiusure di Impostazioni: si cucina ogni giorno, tranne quelli.
+  const { chiusure } = useImpostazioni({ fresche: true }).impostazioni;
+
   const code = useMemo(() => (ordini ? codeOperative(ordini, oggi) : null), [ordini, oggi]);
   const azioni = useMemo(() => (ordini ? azioniDaFare(ordini, oggi, messaggiNuovi ?? 0) : null), [ordini, oggi, messaggiNuovi]);
-  const settimana = useMemo(() => (ordini ? calendario(ordini, oggi) : null), [ordini, oggi]);
+  const settimana = useMemo(() => (ordini ? calendario(ordini, oggi, 7, chiusure) : null), [ordini, oggi, chiusure]);
+  const abbonamentiSettimana = settimana ? settimana.reduce((n, g) => n + g.abbonamenti, 0) : null;
 
   const nome = utente?.name.trim().split(/\s+/)[0] || "Matteo";
   const riassunto = code && azioni
@@ -68,7 +74,13 @@ export default function Oggi() {
         <OggiDaFare azioni={azioni} />
         <OggiNumeri code={code} />
         <div className="pn-due-colonne">
-          <OggiCucina code={code} oggi={oggi} apri={apri} />
+          <OggiCucina
+            code={code}
+            oggi={oggi}
+            apri={apri}
+            chiusura={chiusuraDi(oggi, chiusure)}
+            abbonamentiSettimana={abbonamentiSettimana}
+          />
           <OggiUscite code={code} apri={apri} veloci={veloci} />
         </div>
         <OggiSettimana giorni={settimana} />
@@ -123,7 +135,16 @@ export function OggiNumeri({ code }: { code: CodeOperative | null }) {
       <Numero
         label="Porzioni oggi"
         valore={code ? code.porzioniOggi : attesa}
-        nota={code ? (code.cucinaOggi.length ? plurale(code.cucinaOggi.length, "ordine in cucina", "ordini in cucina") : "niente da cucinare") : "…"}
+        nota={
+          code
+            ? code.cucinaOggi.length || code.abbonamentiOggi.length
+              ? [
+                  code.cucinaOggi.length ? plurale(code.cucinaOggi.length, "ordine in cucina", "ordini in cucina") : "",
+                  code.abbonamentiOggi.length ? `${code.abbonamentiOggi.length} in abbonamento` : "",
+                ].filter(Boolean).join(" · ")
+              : "niente da cucinare"
+            : "…"
+        }
         tono="neutro"
         href="/dashboard/produzione"
       />

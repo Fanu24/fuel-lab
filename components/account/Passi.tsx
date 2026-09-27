@@ -1,12 +1,22 @@
 import { passiOrdine } from "@/lib/account";
-import type { Modalita, StatoOrdine } from "@/lib/api";
+import type { Modalita, Servizio, StatoOrdine } from "@/lib/api";
 
-/* Le cinque tappe di una richiesta come barra a segmenti: pieno = fatto,
+/* Le tappe di una richiesta (cinque, tre per l'abbonamento) come barra a segmenti: pieno = fatto,
    tratteggiato = a che punto e', chiaro = da fare. Sul telefono le etichette di
    ogni tappa non ci stanno: resta la barra e una riga con la tappa attuale. */
 
-export default function Passi({ stato, modalita, compatto = false }: { stato: StatoOrdine; modalita: Modalita; compatto?: boolean }) {
-  const passi = passiOrdine(stato, modalita);
+export default function Passi({
+  stato,
+  modalita,
+  servizio,
+  compatto = false,
+}: {
+  stato: StatoOrdine;
+  modalita: Modalita;
+  servizio?: Servizio;
+  compatto?: boolean;
+}) {
+  const passi = passiOrdine(stato, modalita, servizio);
   if (!passi) {
     return <p className="acc-annullata">Richiesta annullata</p>;
   }

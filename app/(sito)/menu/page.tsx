@@ -42,7 +42,7 @@ export default function PaginaMenu() {
             altri ingredienti.
           </p>
           <p className="mt-4 max-w-[56ch] text-muted">
-            Matteo li cucina a Pescara il lunedì e il giovedì: si ritirano in Via del Santuario o arrivano in zona.{" "}
+            Matteo li cucina ogni giorno a Pescara, e ogni giorno si ritirano in Via del Santuario o arrivano in zona.{" "}
             <Link href="/consegna-pasti-pescara" className="link">
               Ritiro e consegna
             </Link>

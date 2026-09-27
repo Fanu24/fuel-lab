@@ -1,7 +1,5 @@
 export type Tag = "carne" | "pesce" | "veg" | "senza-glutine";
 
-export type Giorno = "lunedi" | "giovedi";
-
 export interface Macros {
   kcal: number;
   proteine: number;
@@ -21,8 +19,6 @@ export interface Target extends Macros {
 export function kcalDa(proteine: number, carboidrati: number, grassi: number): number {
   return proteine * 4 + carboidrati * 4 + grassi * 9;
 }
-
-export type Formula = "singolo" | "abbonamento";
 
 export const TAGS: { id: Tag; label: string }[] = [
   { id: "carne", label: "Carne" },

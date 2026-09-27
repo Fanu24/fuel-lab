@@ -2,19 +2,32 @@
 
 /* Scheda Spesa: gli ingredienti della ricetta base moltiplicati per le
    porzioni del giorno, divisi per reparto. Le spunte restano sul telefono
-   (una lista per giorno di cucina), cosi' al supermercato si spunta e a casa
-   si ritrova il segno. */
+   (una lista per giorno), cosi' al supermercato si spunta e a casa si
+   ritrova il segno. I pranzi in abbonamento entrano con il piatto indicato
+   dal cliente; quelli ancora da comporre restano fuori, e la scheda lo dice. */
 
 import { useMemo } from "react";
 import type { Ordine } from "@/lib/api";
-import { formattaPeso, formattaPezzi, listaSpesa } from "@/lib/produzione";
+import { formattaPeso, formattaPezzi, listaSpesa, pranzoInAbbonamento } from "@/lib/produzione";
 import { useSpunte } from "./CucinaMemoria";
 import { Avviso } from "./ui";
 
 type Voce = { id: string; nome: string; quantita?: string; dettaglio: string };
 
-export default function CucinaSpesa({ ordini, giorno, porzioni }: { ordini: Ordine[]; giorno: string; porzioni: number }) {
+export default function CucinaSpesa({
+  ordini,
+  giorno,
+  porzioni,
+  abbonamenti = [],
+}: {
+  ordini: Ordine[];
+  giorno: string;
+  porzioni: number;
+  abbonamenti?: Ordine[];
+}) {
   const lista = useMemo(() => listaSpesa(ordini), [ordini]);
+  const daComporre = abbonamenti.filter((o) => !pranzoInAbbonamento(o, giorno)).length;
+  const contate = porzioni - daComporre;
   const { spunte, cambia, azzera } = useSpunte(`fuellab:cucina:spesa:${giorno}`);
 
   const gruppi: { id: string; titolo: string; nota?: string; voci: Voce[] }[] = [
@@ -46,8 +59,11 @@ export default function CucinaSpesa({ ordini, giorno, porzioni }: { ordini: Ordi
   return (
     <div className="cu-pagina grid gap-8">
       <Avviso tipo="info">
-        Quantità della ricetta base per una porzione, moltiplicate per {porzioni} {porzioni === 1 ? "porzione" : "porzioni"}.
+        Quantità della ricetta base per una porzione, moltiplicate per {contate} {contate === 1 ? "porzione" : "porzioni"}.
         Gli extra non sono compresi: li trovi contati nella scheda Piatti.
+        {daComporre
+          ? ` ${daComporre === 1 ? "Un pranzo in abbonamento è" : `${daComporre} pranzi in abbonamento sono`} ancora da comporre sulla scheda del cliente: aggiungi tu la spesa.`
+          : ""}
       </Avviso>
 
       {lista.sconosciuti.length ? (

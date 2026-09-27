@@ -20,6 +20,7 @@ import {
   type Servizio,
   type StatoOrdine,
 } from "./api";
+import { fineAbbonamento, frasePeriodo, periodoAbbonamento, prossimoPranzo } from "./abbonamento";
 import { getExtra, getPiatto } from "./catalogo";
 import { chiusuraDi, erroreDataChiusa } from "./impostazioni";
 import {
@@ -455,10 +456,24 @@ export type Passo = { id: StatoOrdine; etichetta: string; stato: StatoPasso };
 
 /**
  * Le cinque tappe che il cliente vede. Una richiesta annullata non ha tappe:
- * torna null e la pagina lo dice a parole.
+ * torna null e la pagina lo dice a parole. L'abbonamento ne ha tre: non si
+ * prepara un ordine, parte un mese di pranzi (preparazione e pronto contano
+ * come "in corso").
  */
-export function passiOrdine(stato: StatoOrdine, modalita: Modalita = "delivery"): Passo[] | null {
+export function passiOrdine(stato: StatoOrdine, modalita: Modalita = "delivery", servizio?: Servizio): Passo[] | null {
   if (stato === "cancelled") return null;
+  if (servizio === "abbonamento") {
+    const tappe: { id: StatoOrdine; etichetta: string }[] = [
+      { id: "requested", etichetta: "Inviata" },
+      { id: "confirmed", etichetta: "In corso" },
+      { id: "completed", etichetta: "Concluso" },
+    ];
+    const indice = stato === "requested" ? 0 : stato === "completed" ? 2 : 1;
+    return tappe.map((t, i) => ({
+      ...t,
+      stato: i < indice || stato === "completed" ? "fatto" : i === indice ? "attuale" : "da-fare",
+    }));
+  }
   const tappe: { id: StatoOrdine; etichetta: string }[] = [
     { id: "requested", etichetta: "Inviata" },
     { id: "confirmed", etichetta: "Confermata" },
@@ -474,18 +489,41 @@ export function passiOrdine(stato: StatoOrdine, modalita: Modalita = "delivery")
 }
 
 /**
+ * Il giorno in cui il cliente riceve (o ritira) qualcosa da un ordine: la data
+ * di uscita; per un abbonamento in corso, il prossimo pranzo dal lunedi' al
+ * venerdi' del periodo (null a periodo finito).
+ */
+export function prossimaUscitaDi(o: Pick<Ordine, "service" | "fulfillment_date">, oggi: string): string | null {
+  if (!o.fulfillment_date) return null;
+  if (o.service === "abbonamento") return dataValida(o.fulfillment_date) ? prossimoPranzo(o.fulfillment_date, oggi) : null;
+  return o.fulfillment_date;
+}
+
+/**
  * La consegna (o il ritiro) che il cliente aspetta: fra gli ordini confermati,
- * quello con la data piu' vicina da oggi in avanti. Senza date future, il
- * confermato aggiornato per ultimo, perche' e' quello di cui aspetta notizie.
+ * quello con la data piu' vicina da oggi in avanti (per un abbonamento, il
+ * prossimo pranzo). Senza date future, il confermato aggiornato per ultimo,
+ * perche' e' quello di cui aspetta notizie.
  */
 export function prossimaConsegna(ordini: Ordine[], oggi: string): Ordine | null {
   const confermati = ordini.filter((o) => STATI_CONFERMATI.includes(o.status));
   const future = confermati
-    .filter((o) => !!o.fulfillment_date && o.fulfillment_date >= oggi)
-    .sort((a, b) => a.fulfillment_date!.localeCompare(b.fulfillment_date!));
-  if (future.length) return future[0];
+    .map((o) => ({ o, data: prossimaUscitaDi(o, oggi) }))
+    .filter((x): x is { o: Ordine; data: string } => !!x.data && x.data >= oggi)
+    .sort((a, b) => a.data.localeCompare(b.data));
+  if (future.length) return future[0].o;
   return [...confermati].sort((a, b) => b.updated_at.localeCompare(a.updated_at))[0] ?? null;
 }
+
+/** "dal 5 ottobre al 4 novembre": il periodo di un abbonamento con la data d'inizio confermata, altrimenti null. */
+export function periodoRichiesta(o: Pick<Ordine, "service" | "fulfillment_date">, riferimento: string): string | null {
+  if (o.service !== "abbonamento" || !o.fulfillment_date || !dataValida(o.fulfillment_date)) return null;
+  return frasePeriodo(periodoAbbonamento(o.fulfillment_date), riferimento);
+}
+
+/** L'ultimo giorno di un abbonamento confermato, o null. */
+export const fineRichiesta = (o: Pick<Ordine, "service" | "fulfillment_date">) =>
+  o.service === "abbonamento" && o.fulfillment_date && dataValida(o.fulfillment_date) ? fineAbbonamento(o.fulfillment_date) : null;
 
 /** Una riga leggibile per la cronologia di un ordine. */
 export function descriviEvento(evento: EventoOrdine, modalita?: "pickup" | "delivery"): { titolo: string; dettaglio: string } {
@@ -574,15 +612,31 @@ export function piattiNonPiuDisponibili(piano: unknown): number {
 
 /* ---------- Nuova richiesta ---------- */
 
-/** I servizi di meal prep hanno bisogno di piatti; l'home cooking no. */
+/**
+ * I servizi di meal prep hanno bisogno di piatti; l'home cooking no, e
+ * nemmeno l'abbonamento: i pranzi li compone Matteo sulla scheda del cliente.
+ */
 export const SERVIZIO_CON_PIATTI: Record<Servizio, boolean> = {
   "menu-settimana": true,
+  abbonamento: false,
   "sui-tuoi-macro": true,
   "home-cooking": false,
 };
 
+/** `?servizio=` dell'indirizzo -> il servizio preselezionato; tutto il resto e' il menu della settimana. */
 export function servizioDa(valore: string | null | undefined): Servizio {
-  return valore === "sui-tuoi-macro" || valore === "home-cooking" ? valore : "menu-settimana";
+  return valore === "abbonamento" || valore === "sui-tuoi-macro" || valore === "home-cooking" ? valore : "menu-settimana";
+}
+
+/**
+ * Quanti pranzi dal lunedi' al venerdi' ha il piano: per l'abbonamento sono le
+ * uniche caselle che partono con la richiesta (il server tiene solo quelle).
+ */
+export function pranziFeriali(piano: Piano): number {
+  return (["lun", "mar", "mer", "gio", "ven"] as const).filter((g) => {
+    const id = piano[g]?.pranzo?.piatto;
+    return !!id && !!getPiatto(id);
+  }).length;
 }
 
 export type DatiRichiesta = {
@@ -633,9 +687,10 @@ export function validaRichiesta(
   }
 
   if (d.data) {
+    const inizio = d.servizio === "abbonamento";
     if (!dataValida(d.data)) e.data = "Questa data non è valida.";
-    else if (d.data < contesto.min) e.data = "Scegli un giorno da domani in poi.";
-    else if (d.data > contesto.max) e.data = "Puoi indicare un giorno entro i prossimi 90 giorni.";
+    else if (d.data < contesto.min) e.data = inizio ? "L’abbonamento può iniziare da domani in poi." : "Scegli un giorno da domani in poi.";
+    else if (d.data > contesto.max) e.data = inizio ? "Puoi indicare un inizio entro i prossimi 90 giorni." : "Puoi indicare un giorno entro i prossimi 90 giorni.";
     else {
       const chiusa = chiusuraDi(d.data, contesto.chiusure ?? []);
       if (chiusa) e.data = erroreDataChiusa(chiusa, contesto.min);
