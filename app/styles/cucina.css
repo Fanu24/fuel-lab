@@ -1,0 +1,1142 @@
+/* =========================================================================
+   Pannello di Matteo: Cucina, Clienti, Messaggi e Numeri.
+   Prefissi: .cu- cucina (e controlli comuni), .cl- clienti, .ms- messaggi,
+   .gr- grafici. I mattoni comuni (.pn-*) stanno in pannello.css.
+
+   Scritto per il telefono appoggiato sul piano della cucina: numeri grandi,
+   righe alte almeno 44 px, niente testo sotto i 13 px.
+
+   STAMPA: si stampa solo la scheda aperta della Cucina. Due pagine con nome:
+     @page cucina     A4, margini 12 mm   (piatti, spesa, ordini)
+     @page etichette  A4, margini 0       (fogli adesivi 3 x 7, 70 x 42,3 mm)
+   I fogli di etichette sono misurati in "millimetri del foglio" (--mm =
+   larghezza del foglio / 210): sullo schermo e' un'anteprima in scala, in
+   stampa il foglio e' largo 210 mm e --mm vale esattamente 1 mm.
+
+   COLORE DEI GRAFICI: una serie per grafico, #2a78d6 (hover #1c5cab),
+   validato con lo skill dataviz su carta #fbf9f4: banda di luminosita',
+   croma e contrasto >= 3:1 superati.
+   ========================================================================= */
+
+@layer components {
+  /* ---------- Controlli comuni ---------- */
+  .cu-legenda {
+    font-family: var(--font-disp);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+    margin-bottom: 10px;
+    padding: 0;
+  }
+  .cu-giorni,
+  .cl-filtri,
+  .gr-filtro {
+    border: 0;
+    margin: 0;
+    padding: 0;
+    min-width: 0;
+  }
+  .cu-giorni {
+    display: grid;
+    gap: 18px;
+  }
+
+  .cu-scorciatoie {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    align-items: end;
+  }
+  .cu-altra-data {
+    grid-column: 1 / -1;
+  }
+  @media (min-width: 720px) {
+    .cu-scorciatoie {
+      grid-template-columns: repeat(3, minmax(0, 150px)) minmax(0, 220px);
+    }
+    .cu-altra-data {
+      grid-column: auto;
+    }
+  }
+  .cu-scorciatoia {
+    display: grid;
+    gap: 2px;
+    justify-items: start;
+    min-height: 64px;
+    padding: 8px 10px;
+    background: #fbf9f4;
+    box-shadow: inset 0 0 0 2px rgba(18, 20, 18, 0.18);
+    text-align: left;
+  }
+  .cu-scorciatoia:hover {
+    box-shadow: inset 0 0 0 2px var(--color-ink);
+  }
+  .cu-scorciatoia[aria-pressed="true"] {
+    background: var(--color-ink);
+    color: var(--color-paper);
+    box-shadow: inset 0 0 0 2px var(--color-ink);
+  }
+  .cu-scorciatoia-nome {
+    font-family: var(--font-disp);
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .cu-scorciatoia-data {
+    font-size: 14px;
+    white-space: nowrap;
+  }
+  @media (min-width: 720px) {
+    .cu-scorciatoia {
+      padding-inline: 14px;
+    }
+    .cu-scorciatoia-data {
+      font-size: 15px;
+    }
+  }
+
+  .cu-opzione {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 44px;
+    font-size: 16px;
+    cursor: pointer;
+  }
+  .cu-opzione input,
+  .cu-casella {
+    flex: none;
+    width: 24px;
+    height: 24px;
+    accent-color: var(--color-ink);
+    cursor: pointer;
+  }
+  .cu-opzione-forte {
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  .cu-prossimi-titolo {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-muted);
+    margin-bottom: 8px;
+  }
+  .cu-prossimi-lista {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  /* Bottone-pillola: giorni con ordini, filtri dei clienti, periodo dei numeri. */
+  .cu-prossimo {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 6px 14px;
+    background: #fbf9f4;
+    box-shadow: inset 0 0 0 2px rgba(18, 20, 18, 0.18);
+    font-size: 15px;
+    text-align: left;
+  }
+  .cu-prossimo:hover {
+    box-shadow: inset 0 0 0 2px var(--color-ink);
+  }
+  .cu-prossimo[aria-pressed="true"] {
+    background: var(--color-ink);
+    color: var(--color-paper);
+    box-shadow: inset 0 0 0 2px var(--color-ink);
+  }
+
+  .cu-giorno-titolo {
+    font-size: clamp(26px, 4vw, 36px);
+    line-height: 1;
+  }
+  .cu-giorno-relativo {
+    color: var(--color-muted);
+  }
+  .cu-vuoto {
+    display: grid;
+    gap: 12px;
+    justify-items: start;
+  }
+  .cu-conto {
+    font-size: 16px;
+  }
+  .cu-conto strong {
+    font-size: 20px;
+  }
+
+  /* Importi nei riquadri .pn-kpi: sul telefono a due colonne "12500 €" non ci starebbe. */
+  .cu-kpi-soldi {
+    font-size: min(1em, 6.4vw);
+  }
+
+  /* ---------- Schede (tab) ---------- */
+  .cu-schede {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
+    border-bottom: 3px solid var(--color-ink);
+  }
+  .cu-schede-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .cu-scheda {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    min-height: 56px;
+    padding: 6px 4px;
+    font-family: var(--font-disp);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+    background: #fbf9f4;
+  }
+  .cu-scheda:hover {
+    color: var(--color-ink);
+    background: var(--color-paper-2);
+  }
+  .cu-scheda[aria-selected="true"] {
+    background: var(--color-ink);
+    color: var(--color-paper);
+  }
+  .cu-scheda-n {
+    min-width: 26px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: var(--color-paper-2);
+    color: var(--color-ink);
+    font-size: 13px;
+    letter-spacing: 0;
+  }
+  .cu-scheda[aria-selected="true"] .cu-scheda-n,
+  .cu-scheda-n.is-nuovi {
+    background: var(--color-lime);
+    color: var(--color-ink);
+  }
+  @media (min-width: 640px) {
+    .cu-scheda {
+      flex-direction: row;
+      gap: 10px;
+      font-size: 14px;
+      letter-spacing: 0.12em;
+    }
+  }
+  .cu-pannello:focus-visible {
+    outline-offset: 6px;
+  }
+  .cu-stampa-testa {
+    display: none;
+  }
+
+  /* ---------- Titoli e righe ---------- */
+  .cu-h3 {
+    font-size: 20px;
+    line-height: 1.1;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--color-ink);
+  }
+  .cu-h3-nota {
+    font-family: var(--font-ui);
+    font-size: 15px;
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--color-muted);
+  }
+
+  .cu-attenzione {
+    display: grid;
+    gap: 10px;
+    padding: 16px 18px;
+    background: #fbe0dc;
+    border-left: 6px solid #b3261e;
+    color: #6e140d; /* 8.9:1 sul rosa */
+  }
+  .cu-attenzione .cu-h3 {
+    border-color: currentColor;
+    color: inherit;
+  }
+  .cu-attenzione-riga {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 10px;
+    font-size: 17px;
+  }
+
+  .cu-piatto {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 18px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .cu-piatto-n {
+    min-width: 1.25em; /* due cifre: i nomi dei piatti partono tutti dalla stessa colonna */
+    font-size: clamp(52px, 10vw, 76px);
+    font-weight: 700;
+    line-height: 0.9;
+    text-align: right;
+  }
+  .cu-piatto-nome {
+    font-size: clamp(19px, 2.4vw, 24px);
+    font-weight: 700;
+    line-height: 1.2;
+  }
+  .cu-piatto-allergeni {
+    margin-top: 4px;
+    font-size: 15px;
+    color: var(--color-muted);
+  }
+
+  .cu-riga {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    min-height: 52px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .cu-riga-nome {
+    min-width: 0;
+    font-size: 17px;
+  }
+  .cu-riga-nota {
+    font-size: 14px;
+    color: var(--color-muted);
+  }
+  .cu-riga-n {
+    flex: none;
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .cu-riga-unita {
+    font-family: var(--font-ui);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-muted);
+  }
+
+  /* ---------- Spesa ---------- */
+  .cu-spesa-colonne {
+    columns: 2 360px;
+    column-gap: 48px;
+  }
+  .cu-reparto {
+    break-inside: avoid;
+    margin-bottom: 32px;
+  }
+  .cu-spesa-riga {
+    display: grid;
+    grid-template-columns: 26px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 14px;
+    min-height: 56px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--line);
+    cursor: pointer;
+  }
+  .cu-spesa-nome {
+    display: block;
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.25;
+  }
+  .cu-spesa-dettaglio {
+    display: block;
+    font-size: 13px;
+    color: var(--color-muted);
+    line-height: 1.35;
+  }
+  .cu-spesa-q {
+    font-size: 20px;
+    font-weight: 700;
+    white-space: nowrap;
+    text-align: right;
+  }
+  .cu-spesa-qb {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--color-muted);
+  }
+  .cu-spesa-riga.is-fatto .cu-spesa-nome,
+  .cu-spesa-riga.is-fatto .cu-spesa-q {
+    text-decoration: line-through;
+    text-decoration-thickness: 2px;
+    color: var(--color-muted);
+  }
+
+  /* ---------- Ordini della cucina ---------- */
+  .cu-ordini {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 440px), 1fr));
+    gap: 16px;
+  }
+  .cu-ordine {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 18px;
+    background: #fbf9f4;
+    border: 1px solid rgba(18, 20, 18, 0.14);
+    border-left: 6px solid var(--color-ink);
+    min-width: 0;
+  }
+  .cu-ordine.is-fatto {
+    border-left-color: #1f7a3a;
+  }
+  .cu-ordine-testa {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px 12px;
+  }
+  .cu-ordine-nome {
+    font-size: 24px;
+    line-height: 1.05;
+    overflow-wrap: anywhere;
+  }
+  .cu-ordine-uscita,
+  .cu-ordine-indirizzo {
+    font-size: 16px;
+  }
+  .cu-ordine-contatti {
+    font-size: 15px;
+    color: var(--color-muted);
+    overflow-wrap: anywhere;
+  }
+  .cu-preferenze {
+    padding: 10px 12px;
+    background: #fbe0dc;
+    border-left: 5px solid #b3261e;
+    color: #6e140d;
+    font-size: 16px;
+  }
+  .cu-voci {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15px;
+  }
+  .cu-voci th {
+    padding: 4px 0;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-align: left;
+    color: var(--color-muted);
+  }
+  .cu-voci td {
+    padding: 7px 0;
+    border-top: 1px solid var(--line);
+    vertical-align: top;
+  }
+  .cu-voce-quando {
+    width: 1%;
+    padding-right: 14px !important;
+    white-space: nowrap;
+    font-weight: 600;
+  }
+  .cu-voce-extra {
+    color: var(--color-muted);
+  }
+  .cu-nota {
+    font-size: 15px;
+    overflow-wrap: anywhere;
+  }
+  .cu-ordine-piede {
+    margin-top: auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+  }
+  .cu-bollino,
+  .cl-ok {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 10px;
+    border-radius: 999px;
+    background: #d3f2da;
+    color: #0d5222;
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  /* ---------- Etichette (anteprima = stampa) ---------- */
+  .cu-fogli {
+    display: grid;
+    gap: 24px;
+    justify-items: center;
+  }
+  .cu-foglio {
+    container-type: inline-size;
+    width: 100%;
+    max-width: 794px; /* 210 mm a 96 dpi: sul computer l'anteprima e' in scala 1:1 */
+    aspect-ratio: 210 / 297;
+    overflow: hidden;
+    background: #fff;
+    color: #000;
+    box-shadow: 0 1px 2px rgba(18, 20, 18, 0.2), 0 10px 30px rgba(18, 20, 18, 0.12);
+  }
+  .cu-foglio-griglia {
+    --mm: calc(100cqw / 210);
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(7, calc(var(--mm) * 42.3));
+    padding-top: calc(var(--mm) * 0.45);
+  }
+  .cu-et {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--mm) * 0.4);
+    min-width: 0;
+    padding: calc(var(--mm) * 4.5) calc(var(--mm) * 5);
+    overflow: hidden;
+    font-family: var(--font-ui);
+    font-size: calc(var(--mm) * 2.7); /* circa 7,7 pt in stampa */
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+    outline: 1px dashed rgba(18, 20, 18, 0.18);
+    outline-offset: -1px;
+  }
+  .cu-et p {
+    text-wrap: wrap;
+  }
+  .cu-et-testa {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: calc(var(--mm) * 2);
+  }
+  .cu-et-cliente {
+    min-width: 0;
+    font-size: calc(var(--mm) * 3.6);
+    font-weight: 800;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .cu-et-marchio {
+    flex: none;
+    font-family: var(--font-disp);
+    font-size: calc(var(--mm) * 2.2);
+    font-weight: 700;
+    letter-spacing: 0.12em;
+  }
+  .cu-et-piatto,
+  .cu-et-allergeni,
+  .cu-et-extra {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .cu-et-piatto {
+    -webkit-line-clamp: 2;
+    font-size: calc(var(--mm) * 3.1);
+    font-weight: 700;
+    line-height: 1.15;
+  }
+  .cu-et-extra {
+    -webkit-line-clamp: 1;
+  }
+  .cu-et-quando {
+    font-weight: 700;
+  }
+  .cu-et-allergeni {
+    -webkit-line-clamp: 2;
+  }
+  .cu-et-allergeni-lista {
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .cu-et-date {
+    margin-top: auto;
+    font-weight: 700;
+  }
+  .cu-et-vuota {
+    background: repeating-linear-gradient(135deg, transparent 0 6px, rgba(18, 20, 18, 0.05) 6px 7px);
+  }
+
+  /* ---------- Clienti ---------- */
+  .cl-controlli {
+    display: grid;
+    gap: 16px;
+  }
+  @media (min-width: 720px) {
+    .cl-controlli {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 300px);
+    }
+    .cl-filtri {
+      grid-column: 1 / -1;
+    }
+  }
+  .cl-elenco {
+    display: grid;
+    gap: 12px;
+  }
+  .cl-riga {
+    display: grid;
+    gap: 16px;
+    padding: 18px;
+    background: #fbf9f4;
+    border: 1px solid rgba(18, 20, 18, 0.14);
+    min-width: 0;
+  }
+  @media (min-width: 1024px) {
+    .cl-riga {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 460px);
+      align-items: start;
+    }
+  }
+  .cl-riga-chi {
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+  }
+  .cl-nome {
+    font-size: 22px;
+    line-height: 1.1;
+    overflow-wrap: anywhere;
+  }
+  .cl-nome-link {
+    display: inline-block;
+    padding-block: 10px;
+    margin-block: -10px;
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 5px;
+    text-decoration-color: rgba(18, 20, 18, 0.3);
+  }
+  .cl-nome-link:hover {
+    text-decoration-color: var(--color-ink);
+  }
+  .cl-contatti {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 10px;
+    font-size: 15px;
+    color: var(--color-muted);
+  }
+  .cl-bollino {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 10px;
+    border-radius: 999px;
+    background: #fbe0dc;
+    color: #8f1b12;
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .cl-pref {
+    padding-left: 10px;
+    border-left: 4px solid #b3261e;
+    font-size: 15px;
+  }
+  .cl-pref-testo {
+    font-size: 18px;
+    font-weight: 600;
+    white-space: pre-wrap;
+  }
+  .cl-numeri {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 16px;
+    align-content: start;
+  }
+  @media (min-width: 560px) {
+    .cl-numeri {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+  .cl-numeri dt,
+  .cl-profilo dt {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+  }
+  .cl-numeri dd {
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+  .cl-aperti {
+    font-family: var(--font-ui);
+    font-size: 14px;
+    font-weight: 600;
+    color: #6b3200;
+  }
+  .cl-profilo {
+    display: grid;
+    gap: 16px 24px;
+    padding-top: 16px;
+  }
+  @media (min-width: 640px) {
+    .cl-profilo {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  .cl-profilo dd {
+    margin-top: 2px;
+    font-size: 17px;
+    overflow-wrap: anywhere;
+  }
+  .cl-ordine {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .cl-ordine-titolo {
+    font-size: 17px;
+    font-weight: 700;
+  }
+
+  /* ---------- Messaggi ---------- */
+  .ms-avvisi:not(:empty) {
+    display: grid;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .ms-esito {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 16px;
+    background: #fbf9f4;
+    border-left: 5px solid var(--color-ink);
+    font-size: 16px;
+  }
+  .ms-msg {
+    display: grid;
+    gap: 14px;
+    padding: 20px;
+    background: #fbf9f4;
+    border: 1px solid rgba(18, 20, 18, 0.14);
+    border-left: 6px solid rgba(18, 20, 18, 0.25);
+    min-width: 0;
+  }
+  .ms-msg.is-nuovo {
+    border-left-color: var(--color-ink);
+  }
+  .ms-msg[aria-busy="true"] {
+    opacity: 0.7;
+  }
+  .ms-testa {
+    display: grid;
+    gap: 6px;
+  }
+  .ms-nome {
+    font-size: 22px;
+    line-height: 1.1;
+    overflow-wrap: anywhere;
+  }
+  .ms-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 14px;
+    font-size: 15px;
+    color: var(--color-muted);
+  }
+  .ms-argomento {
+    padding: 2px 10px;
+    border-radius: 999px;
+    background: var(--color-paper-2);
+    color: var(--color-ink);
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .ms-testo {
+    max-width: 72ch;
+    font-size: 17px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  .ms-contatti {
+    font-size: 15px;
+    color: var(--color-muted);
+  }
+  .ms-azioni {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 12px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+  }
+
+  /* ---------- Grafici (Numeri) ---------- */
+  .gr {
+    display: grid;
+    gap: 12px;
+    margin: 0;
+    padding: 16px 18px;
+    background: #fbf9f4;
+    border: 1px solid rgba(18, 20, 18, 0.14);
+    min-width: 0;
+  }
+  .gr-titolo {
+    font-size: 18px;
+    line-height: 1.1;
+  }
+  .gr-totale {
+    margin-top: 4px;
+    font-size: 15px;
+    color: var(--color-muted);
+  }
+  .gr-totale .num {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--color-ink);
+  }
+  .gr-area {
+    position: relative;
+    min-width: 0;
+  }
+  .gr-area:focus-visible {
+    outline-offset: 4px;
+  }
+  .gr-svg {
+    display: block;
+    overflow: visible;
+    touch-action: pan-y;
+    font-family: var(--font-ui);
+  }
+  .gr-griglia {
+    stroke: rgba(18, 20, 18, 0.1);
+    stroke-width: 1;
+    shape-rendering: crispEdges;
+  }
+  .gr-base {
+    stroke: rgba(18, 20, 18, 0.4);
+    stroke-width: 1;
+    shape-rendering: crispEdges;
+  }
+  .gr-tacca {
+    fill: var(--color-muted);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+  }
+  .gr-segno {
+    fill: #2a78d6;
+  }
+  .gr-segno-attivo,
+  .gr-barra:hover .gr-segno {
+    fill: #1c5cab;
+  }
+  .gr-linea {
+    fill: none;
+    stroke: #2a78d6;
+    stroke-width: 2;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+  }
+  .gr-velo {
+    fill: #2a78d6;
+    opacity: 0.1;
+  }
+  .gr-punto {
+    fill: #2a78d6;
+    stroke: #fbf9f4;
+    stroke-width: 2;
+  }
+  .gr-valore {
+    fill: var(--color-ink);
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .gr-vuoto {
+    fill: var(--color-muted);
+    font-size: 14px;
+  }
+  .gr-mirino line {
+    stroke: rgba(18, 20, 18, 0.45);
+    stroke-width: 1;
+  }
+  .gr-suggerimento {
+    position: absolute;
+    top: -6px;
+    transform: translate(-50%, -100%);
+    display: grid;
+    justify-items: center;
+    padding: 6px 12px;
+    background: var(--color-ink);
+    color: var(--color-paper);
+    font-size: 13px;
+    line-height: 1.3;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 2;
+  }
+  .gr-suggerimento strong {
+    font-size: 18px;
+  }
+  .gr-dati summary {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+  .gr-tabella-scorri {
+    max-height: 340px;
+    overflow: auto;
+  }
+  .gr-tabella {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15px;
+  }
+  .gr-tabella th,
+  .gr-tabella td {
+    padding: 8px 10px 8px 0;
+    border-bottom: 1px solid var(--line);
+    text-align: left;
+    vertical-align: top;
+  }
+  .gr-tabella thead th {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+  }
+  .gr-tabella tbody th {
+    font-weight: 400;
+  }
+  .gr-tabella .text-right {
+    text-align: right;
+  }
+  .gr-tabella-grande {
+    font-size: 16px;
+  }
+  .gr-tabella-grande td {
+    font-size: 18px;
+    font-weight: 700;
+  }
+  .gr-pagina-nome {
+    display: block;
+    font-weight: 600;
+  }
+  .gr-percorso {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--color-muted);
+    overflow-wrap: anywhere;
+  }
+  .gr-barre {
+    display: grid;
+    gap: 14px;
+  }
+  .gr-barra {
+    display: grid;
+    gap: 4px;
+  }
+  .gr-barra-nome {
+    font-size: 15px;
+    line-height: 1.3;
+  }
+  .gr-barra-riga {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 20px;
+  }
+  .gr-barra-svg {
+    display: block;
+    flex: none;
+  }
+  .gr-barra-valore {
+    font-size: 16px;
+    font-weight: 700;
+  }
+  .gr-nota {
+    font-size: 14px;
+    color: var(--color-muted);
+  }
+}
+
+/* =========================================================================
+   Stampa. Fuori dai layer di proposito: deve vincere sulle utility.
+   ========================================================================= */
+@media print {
+  @page cucina {
+    size: A4 portrait;
+    margin: 12mm 12mm 14mm;
+  }
+  @page etichette {
+    size: A4 portrait;
+    margin: 0;
+  }
+
+  /* Il guscio del pannello non va sulla carta: niente navigazione, niente margini del contenitore. */
+  body:has(.cu) :is(nav, footer) {
+    display: none !important;
+  }
+  main:has(.cu) {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: none !important;
+    width: auto !important;
+  }
+  .cu,
+  .cu-sezione-giorno {
+    display: block;
+  }
+
+  .cu-pagina {
+    page: cucina;
+    font-size: 11pt;
+    color: #000;
+  }
+  .cu-stampa-testa {
+    display: block;
+    page: cucina;
+    margin-bottom: 8mm;
+    padding-bottom: 2mm;
+    border-bottom: 1.5pt solid #000;
+    font-size: 10pt;
+    font-weight: 700;
+  }
+  .cu-piatto,
+  .cu-riga,
+  .cu-reparto,
+  .cu-ordine,
+  .cu-spesa-riga,
+  .cu-attenzione,
+  .pn-avviso {
+    break-inside: avoid;
+  }
+  .cu-h3 {
+    break-after: avoid;
+  }
+  .cu-piatto {
+    padding: 2mm 0;
+  }
+  .cu-piatto-n {
+    font-size: 30pt;
+  }
+  .cu-piatto-nome {
+    font-size: 14pt;
+  }
+  .cu-riga {
+    min-height: 0;
+    padding: 1.5mm 0;
+  }
+  .cu-riga-n {
+    font-size: 16pt;
+  }
+  .cu-spesa-colonne {
+    columns: 2;
+    column-gap: 10mm;
+  }
+  .cu-reparto {
+    margin-bottom: 6mm;
+  }
+  .cu-spesa-riga {
+    min-height: 0;
+    padding: 1.2mm 0;
+  }
+  .cu-spesa-nome {
+    font-size: 11pt;
+  }
+  .cu-spesa-q {
+    font-size: 12pt;
+  }
+  .cu-casella {
+    width: 14px;
+    height: 14px;
+  }
+  .cu-ordini {
+    display: block;
+  }
+  .cu-ordine {
+    gap: 2mm;
+    margin-bottom: 5mm;
+    padding: 4mm 5mm;
+    border: 1pt solid #000;
+    border-left-width: 4pt;
+    background: none;
+  }
+  .cu-ordine-nome {
+    font-size: 16pt;
+  }
+  .cu-ordine-uscita,
+  .cu-ordine-indirizzo,
+  .cu-ordine-contatti,
+  .cu-preferenze,
+  .cu-nota,
+  .cu-voci {
+    font-size: 10pt;
+  }
+  .cu-voci td {
+    padding: 1mm 0;
+  }
+  .cu-ordine-piede {
+    padding-top: 2mm;
+  }
+  .cu-attenzione,
+  .cu-preferenze {
+    border: 1.5pt solid #000;
+    border-left-width: 5pt;
+    background: none;
+    color: #000;
+  }
+
+  /* Etichette: il foglio e' la pagina. */
+  .cu-fogli {
+    display: block;
+  }
+  .cu-foglio {
+    page: etichette;
+    width: 210mm;
+    height: 296.5mm;
+    max-width: none;
+    aspect-ratio: auto;
+    margin: 0;
+    box-shadow: none;
+    break-after: page;
+    break-inside: avoid;
+  }
+  .cu-foglio:last-child {
+    break-after: auto;
+  }
+  .cu-et {
+    outline: none;
+  }
+  .cu-et-vuota {
+    background: none;
+  }
+}

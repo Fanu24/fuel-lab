@@ -3,7 +3,16 @@ import { json } from "../_lib/http";
 
 export const onRequestGet = async ({ env, request }: Context) => {
   try {
-    return json({ user: await currentUser(env, request) });
+    const user = await currentUser(env, request);
+    // Solo i campi di `Utente` (lib/api.ts): emailVerified sempre booleano.
+    return json({ user: user ? {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      emailVerified: Boolean(user.emailVerified),
+      image: user.image ?? null,
+      role: user.role,
+    } : null });
   } catch (error) {
     console.error("Me error", error);
     return json({ error: "Servizio non disponibile" }, 503);

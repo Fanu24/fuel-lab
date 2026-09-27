@@ -1,0 +1,343 @@
+/**
+ * Il contratto fra il browser e le Pages Functions (functions/api/**).
+ *
+ * Qui stanno i tipi delle risposte e le funzioni che le chiamano: pagine,
+ * pannello di Matteo e area cliente passano tutti da qui, cosi' un campo che
+ * cambia nel server cambia in un posto solo. Le funzioni lanciano ApiError con
+ * il messaggio del server (gia' in italiano) quando la risposta non e' ok.
+ *
+ * Regole comuni del server:
+ * - GET senza effetti; POST/PUT/PATCH/DELETE vogliono Origin uguale al sito e
+ *   corpo JSON;
+ * - le date di calendario sono "YYYY-MM-DD" (fuso Europe/Rome), i timestamp
+ *   sono "YYYY-MM-DD HH:MM:SS" in UTC come li scrive SQLite (CURRENT_TIMESTAMP);
+ * - gli importi sono in centesimi di euro, interi.
+ */
+
+import type { Allenamenti, Piano } from "@/lib/settimana";
+
+/* ---------- Tipi di base ---------- */
+
+export type Ruolo = "customer" | "admin";
+
+export type Utente = {
+  id: string;
+  name: string;
+  email: string;
+  emailVerified: boolean;
+  image?: string | null;
+  role: Ruolo;
+};
+
+export type Profilo = { phone: string; comune: string; address: string; preferences: string };
+
+export type StatoOrdine = "requested" | "confirmed" | "preparing" | "ready" | "completed" | "cancelled";
+export type Servizio = "menu-settimana" | "sui-tuoi-macro" | "home-cooking";
+export type Modalita = "pickup" | "delivery";
+
+export type VoceOrdine = { id: string; name: string; day: string; meal: string; extras: string[] };
+
+/** Un evento nella storia di un ordine. Il cliente vede solo `created`, `status` e `message`. */
+export type EventoOrdine = {
+  id: number;
+  actor: "customer" | "admin" | "system";
+  type: "created" | "status" | "schedule" | "note" | "message" | "price" | "payment" | "email";
+  from_status: StatoOrdine | null;
+  to_status: StatoOrdine | null;
+  detail: string;
+  created_at: string;
+};
+
+/**
+ * Un ordine come lo restituisce GET /api/orders.
+ * I campi segnati "solo admin" arrivano `undefined` al cliente.
+ */
+export type Ordine = {
+  id: string;
+  user_id: string;
+  email: string;
+  status: StatoOrdine;
+  service: Servizio;
+  fulfillment: Modalita;
+  requested_date: string | null;
+  production_date?: string | null; // solo admin
+  fulfillment_date: string | null;
+  customer_name: string;
+  phone: string;
+  comune: string;
+  address: string;
+  notes: string;
+  internal_note?: string; // solo admin
+  /** Messaggio di Matteo al cliente: il cliente lo vede nel suo account e nelle email. */
+  customer_message: string;
+  /** Totale concordato in centesimi; null finche' Matteo non lo scrive. */
+  price_cents: number | null;
+  /** 1 se Matteo ha segnato l'ordine come pagato. */
+  paid: 0 | 1;
+  dietary_preferences: string | null;
+  meals: number;
+  created_at: string;
+  updated_at: string;
+  items: VoceOrdine[];
+  /** Solo admin: "web" se arriva dal sito, "manual" se Matteo l'ha inserito dal pannello. */
+  source?: "web" | "manual";
+};
+
+/** GET /api/orders/:id — per l'admin o per il proprietario. */
+export type DettaglioOrdine = Ordine & {
+  plan: Piano;
+  training: Allenamenti;
+  events: EventoOrdine[];
+  /**
+   * Solo admin: true se l'ordine e' intestato a un account dello staff, cioe'
+   * inserito a mano per un cliente senza account. Niente email al cliente.
+   */
+  no_account?: boolean;
+};
+
+/** Il corpo di PATCH /api/orders/:id. Tutti i campi sono facoltativi. */
+export type ModificaOrdine = {
+  status?: StatoOrdine;
+  productionDate?: string | null;
+  fulfillmentDate?: string | null;
+  internalNote?: string;
+  customerMessage?: string;
+  priceCents?: number | null;
+  paid?: boolean;
+  /** Se true e lo stato cambia (o cambia il messaggio), il server scrive al cliente via email. */
+  notify?: boolean;
+  /**
+   * Lo stato che Matteo aveva sotto gli occhi. Se nel frattempo e' cambiato
+   * (per esempio il cliente ha annullato) il server risponde 409 e non tocca niente.
+   */
+  expectedStatus?: StatoOrdine;
+};
+
+/** Il corpo di POST /api/orders. */
+export type NuovoOrdine = {
+  name: string;
+  phone: string;
+  comune: string;
+  address: string;
+  service: Servizio;
+  fulfillment: Modalita;
+  requestedDate: string | null;
+  notes: string;
+  plan: Piano;
+  training: Allenamenti;
+};
+
+/**
+ * Il corpo di POST /api/admin/orders: un ordine preso da Matteo per telefono,
+ * WhatsApp o di persona. Con `customerId` l'ordine va nell'account del cliente
+ * (nome, telefono, comune e indirizzo vuoti prendono quelli del profilo); senza,
+ * resta intestato a Matteo e il cliente non riceve email.
+ */
+export type NuovoOrdineManuale = {
+  customerId?: string | null;
+  name: string;
+  phone: string;
+  comune: string;
+  address: string;
+  service: Servizio;
+  fulfillment: Modalita;
+  plan: Piano;
+  /** Solo home cooking: porzioni concordate, anche senza piatti del menu. */
+  meals?: number;
+  productionDate?: string | null;
+  fulfillmentDate?: string | null;
+  /** "confirmed" vuole entrambe le date. */
+  status: "requested" | "confirmed";
+  priceCents?: number | null;
+  paid?: boolean;
+  internalNote?: string;
+  /** Richieste del cliente (senza cipolla, porzioni grandi...). */
+  notes?: string;
+};
+
+export type ClienteAdmin = {
+  id: string;
+  name: string;
+  email: string;
+  emailVerified: boolean;
+  createdAt: string;
+  phone: string;
+  comune: string;
+  address: string;
+  preferences: string;
+  orders: number;
+  activeOrders: number;
+  meals: number;
+  lastOrderAt: string | null;
+  /** Somma di price_cents degli ordini non annullati con prezzo. */
+  spentCents: number;
+  hasSavedPlan: boolean;
+};
+
+export type Metriche = {
+  days: number;
+  customers: number;
+  newCustomers: number;
+  ordersByStatus: { status: StatoOrdine; count: number }[];
+  /** Un punto per ogni giorno dell'intervallo, anche a zero, dal piu' vecchio al piu' recente. */
+  ordersDaily: { day: string; orders: number; meals: number }[];
+  signupsDaily: { day: string; count: number }[];
+  traffic: { day: string; views: number }[];
+  topPages: { path: string; views: number }[];
+  topDishes: { name: string; count: number }[];
+  revenue: { agreedCents: number; paidCents: number; unpaidCents: number };
+  messagesNew: number;
+};
+
+export type StatoMessaggio = "new" | "handled" | "archived";
+export type ArgomentoMessaggio = "info" | "menu-settimana" | "sui-tuoi-macro" | "home-cooking" | "consegna" | "altro";
+
+export type MessaggioContatto = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  comune: string;
+  topic: ArgomentoMessaggio;
+  message: string;
+  status: StatoMessaggio;
+  user_id: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+/** Il corpo di POST /api/contact. `website` e' l'esca per i bot: deve restare vuoto. */
+export type NuovoMessaggio = {
+  name: string;
+  email: string;
+  phone: string;
+  comune: string;
+  topic: ArgomentoMessaggio;
+  message: string;
+  website?: string;
+};
+
+export type Providers = { email: boolean; emailVerification: boolean; google: boolean; apple: boolean };
+
+/* ---------- Trasporto ---------- */
+
+export class ApiError extends Error {
+  constructor(message: string, readonly status: number) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
+async function chiama<T>(url: string, init?: RequestInit & { json?: unknown }): Promise<T> {
+  const { json, ...resto } = init ?? {};
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      credentials: "same-origin",
+      cache: "no-store",
+      ...resto,
+      headers: json === undefined ? resto.headers : { "Content-Type": "application/json", ...resto.headers },
+      body: json === undefined ? resto.body : JSON.stringify(json),
+    });
+  } catch {
+    throw new ApiError("Connessione assente. Controlla la rete e riprova.", 0);
+  }
+  let body: unknown = null;
+  try {
+    body = await response.json();
+  } catch {
+    // Risposta senza JSON (es. 502 del proxy): resta null.
+  }
+  if (!response.ok) {
+    const messaggio = body && typeof body === "object" && "error" in body && typeof body.error === "string"
+      ? body.error
+      : response.status === 401 ? "Accedi per continuare."
+      : response.status === 403 ? "Non hai i permessi per questa operazione."
+      : "Servizio non disponibile. Riprova tra poco.";
+    throw new ApiError(messaggio, response.status);
+  }
+  return body as T;
+}
+
+/* ---------- Account e cliente ---------- */
+
+export const api = {
+  me: () => chiama<{ user: Utente | null }>("/api/me"),
+  providers: () => chiama<Providers>("/api/providers"),
+
+  profilo: () => chiama<{ profile: Profilo }>("/api/profile"),
+  salvaProfilo: (profile: Profilo) => chiama<{ profile: Profilo }>("/api/profile", { method: "PUT", json: profile }),
+
+  piano: () => chiama<{ plan: Piano | null; training: Allenamenti | null; updatedAt: string | null }>("/api/plan"),
+  salvaPiano: (plan: Piano, training: Allenamenti) =>
+    chiama<{ plan: Piano; training: Allenamenti }>("/api/plan", { method: "PUT", json: { plan, training } }),
+
+  /** Cliente: i suoi ultimi 50. Admin: tutti gli aperti + gli ultimi 100 chiusi. */
+  ordini: () => chiama<{ orders: Ordine[]; historyLimit?: number }>("/api/orders"),
+  ordine: (id: string) => chiama<{ order: DettaglioOrdine }>(`/api/orders/${encodeURIComponent(id)}`),
+  inviaOrdine: (ordine: NuovoOrdine) => chiama<{ id: string; status: StatoOrdine }>("/api/orders", { method: "POST", json: ordine }),
+  /** Admin: qualunque campo. Cliente: solo { status: "cancelled" } finche' l'ordine e' "requested". */
+  modificaOrdine: (id: string, modifica: ModificaOrdine) =>
+    chiama<{ order: Ordine }>(`/api/orders/${encodeURIComponent(id)}`, { method: "PATCH", json: modifica }),
+
+  /** Tutti i dati dell'utente (GDPR). */
+  esportaDati: () => chiama<Record<string, unknown>>("/api/account/export"),
+
+  /** Pubblico: modulo contatti, anche senza account. */
+  inviaMessaggio: (messaggio: NuovoMessaggio) => chiama<{ id: string }>("/api/contact", { method: "POST", json: messaggio }),
+};
+
+/* ---------- Solo Matteo ---------- */
+
+export const adminApi = {
+  clienti: () => chiama<{ customers: ClienteAdmin[] }>("/api/admin/customers"),
+  /** Tutti gli ordini di un cliente (fino a 500), per la scheda cliente. */
+  ordiniCliente: (userId: string) => chiama<{ orders: Ordine[] }>(`/api/orders?user=${encodeURIComponent(userId)}`),
+  /** Ordine inserito a mano: nessuna email parte, ne' al cliente ne' a Matteo. */
+  nuovoOrdine: (ordine: NuovoOrdineManuale) => chiama<{ order: Ordine }>("/api/admin/orders", { method: "POST", json: ordine }),
+  metriche: (days = 30) => chiama<Metriche>(`/api/admin/metrics?days=${days}`),
+  messaggi: () => chiama<{ messages: MessaggioContatto[] }>("/api/admin/messages"),
+  modificaMessaggio: (id: string, status: StatoMessaggio) =>
+    chiama<{ message: MessaggioContatto }>(`/api/admin/messages/${encodeURIComponent(id)}`, { method: "PATCH", json: { status } }),
+};
+
+/* ---------- Etichette in italiano ---------- */
+
+export const STATI_ORDINE: { id: StatoOrdine; label: string; cliente: string }[] = [
+  { id: "requested", label: "Da confermare", cliente: "In attesa di conferma" },
+  { id: "confirmed", label: "Confermato", cliente: "Confermato" },
+  { id: "preparing", label: "In preparazione", cliente: "In preparazione" },
+  { id: "ready", label: "Pronto", cliente: "Pronto" },
+  { id: "completed", label: "Consegnato", cliente: "Consegnato" },
+  { id: "cancelled", label: "Annullato", cliente: "Annullato" },
+];
+
+export const etichettaStato = (stato: string, per: "admin" | "cliente" = "admin") => {
+  const s = STATI_ORDINE.find((x) => x.id === stato);
+  return s ? (per === "admin" ? s.label : s.cliente) : stato;
+};
+
+export const ETICHETTE_SERVIZIO: Record<Servizio, string> = {
+  "menu-settimana": "Menu della settimana",
+  "sui-tuoi-macro": "Sui tuoi macro",
+  "home-cooking": "Home cooking",
+};
+
+export const ETICHETTE_ARGOMENTO: Record<ArgomentoMessaggio, string> = {
+  info: "Informazioni",
+  "menu-settimana": "Menu della settimana",
+  "sui-tuoi-macro": "Sui tuoi macro",
+  "home-cooking": "Home cooking",
+  consegna: "Consegna e ritiro",
+  altro: "Altro",
+};
+
+export function euro(centesimi: number | null | undefined) {
+  if (centesimi === null || centesimi === undefined) return "—";
+  return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(centesimi / 100);
+}
+
+/** "2026-09-27 14:03:11" (UTC di SQLite) -> Date. */
+export function daSqlite(ts: string) {
+  return new Date(ts.includes("T") ? ts : `${ts.replace(" ", "T")}Z`);
+}

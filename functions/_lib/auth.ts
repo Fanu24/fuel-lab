@@ -1,6 +1,10 @@
 import { betterAuth } from "better-auth";
+import { APIError } from "better-auth/api";
 import { importPKCS8, SignJWT } from "jose";
 import type { D1Database } from "@cloudflare/workers-types";
+import { emailAccesso } from "../../lib/server/email";
+import { json } from "./http";
+import { inviaEmail } from "./mail";
 
 export interface Env {
   DB: D1Database;
@@ -12,6 +16,8 @@ export interface Env {
   APPLE_KEY_ID?: string;
   APPLE_PRIVATE_KEY?: string;
   RESEND_API_KEY?: string;
+  /** Dove arrivano gli avvisi per Matteo (nuove richieste, messaggi). Predefinito: info@fuelchef.it. */
+  ADMIN_NOTIFY_EMAIL?: string;
 }
 
 export interface Context<P = Record<string, string>> {
@@ -44,20 +50,24 @@ async function appleSecret(env: Env) {
 
 async function sendAuthEmail(env: Env, to: string, subject: string, url: string) {
   if (!env.RESEND_API_KEY) throw new Error("EMAIL_NOT_CONFIGURED");
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${env.RESEND_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      from: "FUEL LAB <accesso@fuelchef.it>",
-      to: [to],
-      subject,
-      text: `${subject}\n\nApri questo link per continuare:\n${url}\n\nSe non hai richiesto questa operazione, ignora questa email.\n\nFUEL LAB · Via del Santuario 214, Pescara`,
-    }),
-  });
-  if (!response.ok) throw new Error(`EMAIL_SEND_FAILED_${response.status}`);
+  await inviaEmail(env, { to: [to], ...emailAccesso(subject, url) });
+}
+
+/**
+ * Pulizia dopo la cancellazione dell'account. D1 applica gia' le foreign key
+ * (profilo, piano, ordini con i loro eventi, ruoli spariscono in cascata; i
+ * messaggi di contatto restano senza collegamento): queste istruzioni sono una
+ * rete di sicurezza e, se la cascata ha funzionato, non toccano niente.
+ */
+async function puliziaDopoCancellazione(env: Env, userId: string) {
+  await env.DB.batch([
+    env.DB.prepare("DELETE FROM order_events WHERE order_id IN (SELECT id FROM orders WHERE user_id=?)").bind(userId),
+    env.DB.prepare("DELETE FROM orders WHERE user_id=?").bind(userId),
+    env.DB.prepare("DELETE FROM saved_plans WHERE user_id=?").bind(userId),
+    env.DB.prepare("DELETE FROM customer_profiles WHERE user_id=?").bind(userId),
+    env.DB.prepare("DELETE FROM staff_roles WHERE user_id=?").bind(userId),
+    env.DB.prepare("UPDATE contact_messages SET user_id=NULL WHERE user_id=?").bind(userId),
+  ]);
 }
 
 export function createAuth(env: Env, request: Request, waitUntil?: Context["waitUntil"]) {
@@ -94,6 +104,25 @@ export function createAuth(env: Env, request: Request, waitUntil?: Context["wait
         await deliver(user.email, "Verifica la tua email FUEL LAB", url);
       },
     } } : {}),
+    user: {
+      // POST /api/auth/delete-user: con { password } per gli account email,
+      // senza password solo se l'accesso risale a meno di un giorno (freshAge).
+      deleteUser: {
+        enabled: true,
+        beforeDelete: async (user) => {
+          const staff = await env.DB.prepare("SELECT role FROM staff_roles WHERE user_id = ?").bind(user.id).first<{ role: string }>();
+          if (staff) {
+            throw APIError.from("FORBIDDEN", {
+              code: "ADMIN_ACCOUNT_PROTECTED",
+              message: "L'account amministratore è protetto e non si può cancellare dal sito.",
+            });
+          }
+        },
+        afterDelete: async (user) => {
+          await puliziaDopoCancellazione(env, user.id);
+        },
+      },
+    },
     socialProviders: {
       ...(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET
         ? { google: { clientId: env.GOOGLE_CLIENT_ID, clientSecret: env.GOOGLE_CLIENT_SECRET } }
@@ -113,4 +142,13 @@ export async function currentUser(env: Env, request: Request) {
   const staff = await env.DB.prepare("SELECT role FROM staff_roles WHERE user_id = ?")
     .bind(session.user.id).first<{ role: string }>();
   return { ...session.user, role: staff?.role === "admin" && session.user.emailVerified ? "admin" as const : "customer" as const };
+}
+
+export type UtenteCorrente = NonNullable<Awaited<ReturnType<typeof currentUser>>>;
+
+/** 401 senza sessione, 403 se non e' Matteo, null se puo' passare. Il ruolo si decide solo qui, mai nel browser. */
+export function soloAdmin(user: UtenteCorrente | null): Response | null {
+  if (!user) return json({ error: "Accedi per continuare" }, 401);
+  if (user.role !== "admin") return json({ error: "Riservato a Matteo" }, 403);
+  return null;
 }

@@ -1,14 +1,23 @@
-import type { Metadata } from "next";
+import JsonLd from "@/components/seo/JsonLd";
+import { AGGIORNAMENTO, PAGINE, metadatiPagina } from "@/components/seo/pagine";
+import { nodiPagina } from "@/components/seo/schema";
 
-export const metadata: Metadata = {
-  title: "Privacy e cookie",
-  description: "Informativa privacy e cookie di FUEL LAB, meal prep a Pescara.",
-  alternates: { canonical: "/privacy" },
-};
+const PAGINA = PAGINE.privacy;
+
+export const metadata = metadatiPagina(PAGINA);
 
 export default function PrivacyPage() {
   return (
     <article>
+      <JsonLd
+        dati={nodiPagina({
+          percorso: PAGINA.percorso,
+          nome: PAGINA.titolo,
+          descrizione: PAGINA.descrizione,
+          briciole: [{ nome: PAGINA.breve, href: PAGINA.percorso }],
+          dataModifica: AGGIORNAMENTO,
+        })}
+      />
       <header className="testata">
         <div className="wrap">
           <p className="occhiello">Informazioni legali</p>

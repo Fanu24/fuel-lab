@@ -1,7 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { Archivo, Martian_Mono, Oxanium } from "next/font/google";
-import { URL_SITO } from "@/lib/sito";
+import { DESCRIZIONE_ATTIVITA, NOME_ATTIVITA, TITOLARE, URL_SITO } from "@/lib/sito";
 import PrivacyConsent from "@/components/PrivacyConsent";
+import JsonLd from "@/components/seo/JsonLd";
+import { grafoSito } from "@/components/seo/schema";
+import { IMMAGINE_OG, TEMPLATE_TITOLO } from "@/components/seo/pagine";
 import "./globals.css";
 
 /* Oxanium per titoli ed etichette: lettere squadrate con gli spigoli tagliati a
@@ -27,21 +30,32 @@ const martian = Martian_Mono({
   display: "swap",
 });
 
+/* Il default per le pagine che non dicono nulla. L'openGraph qui NON ha titolo
+   ne' descrizione apposta: Next li riempie con quelli della pagina, cosi' anche
+   una pagina che dichiara solo `title` si presenta sui social col suo nome e
+   non con quello della home. Le pagine del sito passano da metadatiPagina()
+   (components/seo/pagine.ts), che scrive l'openGraph per intero. */
 export const metadata: Metadata = {
   metadataBase: new URL(URL_SITO),
   title: {
-    default: "FUEL LAB · Allenati. Al cibo ci pensa Matteo.",
-    template: "%s · FUEL LAB",
+    default: `${NOME_ATTIVITA} · Allenati. Al cibo ci pensa Matteo.`,
+    template: TEMPLATE_TITOLO,
   },
-  description:
-    "Meal prep fresco a Pescara, mai surgelato. Dici come ti alleni, la settimana si compone da sola: piatti pensati per il cardio e per i pesi, cucinati il lunedì e il giovedì.",
+  description: DESCRIZIONE_ATTIVITA,
+  applicationName: NOME_ATTIVITA,
+  authors: [{ name: TITOLARE.nome, url: `${URL_SITO}/chi-e-matteo` }],
+  publisher: NOME_ATTIVITA,
+  formatDetection: { telephone: false, address: false, email: false },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1, "max-video-preview": -1 },
+  },
   openGraph: {
     type: "website",
     locale: "it_IT",
-    siteName: "FUEL LAB",
-    title: "FUEL LAB · Allenati. Al cibo ci pensa Matteo.",
-    description: "Meal prep fresco a Pescara per chi si allena. Piatti per il cardio e per i pesi, cucinati il lunedì e il giovedì.",
-    images: [{ url: "/opengraph-image.jpg", width: 1200, height: 630, alt: "FUEL LAB · Meal prep a Pescara" }],
+    siteName: NOME_ATTIVITA,
+    images: [IMMAGINE_OG],
   },
   twitter: { card: "summary_large_image" },
 };
@@ -51,19 +65,6 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const organization = {
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    "@id": `${URL_SITO}/#organization`,
-    name: "FUEL LAB",
-    url: URL_SITO,
-    logo: `${URL_SITO}/logo-fuellab.png`,
-    description: "Meal prep fresco a Pescara per chi si allena.",
-    areaServed: { "@type": "City", name: "Pescara" },
-    founder: { "@type": "Person", name: "Matteo Pattanè" },
-    address: { "@type": "PostalAddress", streetAddress: "Via del Santuario 214", addressLocality: "Pescara", addressCountry: "IT" },
-  };
-
   return (
     <html
       lang="it"
@@ -71,10 +72,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       suppressHydrationWarning
     >
       <head>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(organization).replace(/</g, "\\u003c") }}
-        />
+        {/* L'attivita', la cucina, il sito e Matteo: il grafo che ogni pagina
+            richiama per @id (components/seo/schema.ts). */}
+        <JsonLd dati={grafoSito()} />
         {/* Marca la pagina come "JS vivo" prima del primo paint: le rivelazioni in
             scroll partono da opacity:0 solo sotto .js, cosi' senza JavaScript il
             sito resta statico invece che bianco. */}

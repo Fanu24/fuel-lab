@@ -8,6 +8,10 @@ import TagAllenamento from "@/components/ui/TagAllenamento";
 import { BarraComposizione, NumeriMacro } from "@/components/ui/Macro";
 import AggiungiAllaSettimana from "@/components/menu/AggiungiAllaSettimana";
 import CartaPiatto from "@/components/menu/CartaPiatto";
+import JsonLd from "@/components/seo/JsonLd";
+import Briciole from "@/components/seo/Briciole";
+import { AGGIORNAMENTO, PAGINE, metadatiPagina, paginaPiatto } from "@/components/seo/pagine";
+import { idPiatto, nodiPagina, nodoPiatto } from "@/components/seo/schema";
 
 /* La scheda del piatto, una pagina vera e non una finestra sopra il menu: si
    condivide con un link, si indicizza, e il tasto indietro fa quello che ci
@@ -19,10 +23,12 @@ export function generateStaticParams() {
   return PIATTI.map((p) => ({ id: p.id }));
 }
 
+/* Titolo = nome del piatto; descrizione con kcal e proteine (entro 155
+   caratteri, vedi descrizionePiatto); anteprima social = la foto del piatto. */
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const p = getPiatto((await params).id);
   if (!p) return {};
-  return { title: p.nome, description: `${p.descrizione} ${p.kcal} kcal, ${p.proteine} g di proteine.` };
+  return metadatiPagina(paginaPiatto(p));
 }
 
 const GIORNO: Record<string, string> = { lunedi: "il lunedì", giovedi: "il giovedì" };
@@ -33,14 +39,32 @@ export default async function PaginaPiatto({ params }: Props) {
 
   const consiglio = piatto.allenamento === "entrambi" ? null : CONSIGLI[piatto.allenamento];
   const altri = PIATTI.filter((p) => p.id !== piatto.id).slice(0, 3);
+  const scheda = paginaPiatto(piatto);
+  const briciole = [
+    { nome: PAGINE.menu.breve, href: PAGINE.menu.percorso },
+    { nome: piatto.nome, href: scheda.percorso },
+  ];
 
   return (
     <>
+      <JsonLd
+        dati={[
+          ...nodiPagina({
+            percorso: scheda.percorso,
+            nome: piatto.nome,
+            descrizione: scheda.descrizione,
+            tipo: "ItemPage",
+            immagine: piatto.img,
+            briciole,
+            mainEntity: { "@id": idPiatto(piatto.id) },
+            dataModifica: AGGIORNAMENTO,
+          }),
+          nodoPiatto(piatto, true),
+        ]}
+      />
       <article className="testata">
         <div className="wrap">
-          <Link href="/menu" className="link">
-            ← Il menu
-          </Link>
+          <Briciole voci={briciole} />
           <div className="mt-8 grid gap-10 lg:grid-cols-[1.1fr_1fr] lg:gap-16">
             <div className="smusso relative aspect-[4/5] overflow-hidden bg-paper-2 lg:sticky lg:top-[calc(var(--nav-h)+24px)] lg:self-start">
               <Image
@@ -64,7 +88,8 @@ export default async function PaginaPiatto({ params }: Props) {
                 <NumeriMacro macro={piatto} />
                 <BarraComposizione macro={piatto} className="mt-5" />
                 <p className="mt-3 text-sm text-muted">
-                  Porzione da <span className="num">{piatto.grammi}</span> g · cucinato {GIORNO[piatto.giorno]}
+                  Porzione da <span className="num">{piatto.grammi}</span> g · cucinato {GIORNO[piatto.giorno]} a
+                  Pescara · valori per porzione intera
                 </p>
               </div>
 
@@ -112,7 +137,12 @@ export default async function PaginaPiatto({ params }: Props) {
 
       <section className="sezione carta-2">
         <div className="wrap">
-          <h2 className="titolo-s">Altri piatti</h2>
+          <div className="flex flex-wrap items-end justify-between gap-6">
+            <h2 className="titolo-s">Altri piatti</h2>
+            <Link href="/pasti-proteici-pescara" className="link">
+              Tutti i piatti a confronto, per proteine
+            </Link>
+          </div>
           <ul className="mt-8 grid gap-8 sm:grid-cols-3">
             {altri.map((p) => (
               <li key={p.id}>

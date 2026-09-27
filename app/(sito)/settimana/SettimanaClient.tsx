@@ -55,8 +55,10 @@ export default function SettimanaClient() {
     <>
       <section className="testata !pb-8">
         <div className="wrap">
-          <p className="occhiello">Componi</p>
-          <h1 className="titolo mt-5 max-w-[14ch]">La tua settimana.</h1>
+          <h1>
+            <span className="occhiello">Componi il meal prep della settimana</span>
+            <span className="titolo mt-5 block max-w-[14ch]">La tua settimana.</span>
+          </h1>
           <p className="lead mt-6">
             Dicci come ti alleni: i piatti giusti arrivano da soli. Poi li sposti come vuoi, trascinandoli o toccandoli.
           </p>

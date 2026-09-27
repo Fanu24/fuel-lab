@@ -1,19 +1,30 @@
-import type { Metadata } from "next";
 import SchedaClient from "./SchedaClient";
+import JsonLd from "@/components/seo/JsonLd";
+import { AGGIORNAMENTO, PAGINE, metadatiPagina } from "@/components/seo/pagine";
+import { nodiPagina } from "@/components/seo/schema";
 
-export const metadata: Metadata = {
-  title: "Dai tuoi macro",
-  description:
-    "Hai una scheda del nutrizionista? Scrivi calorie, proteine, carboidrati e grassi: la settimana si compone sui tuoi numeri con i piatti di FUEL LAB.",
-};
+const PAGINA = PAGINE.scheda;
+
+export const metadata = metadatiPagina(PAGINA);
 
 export default function SchedaPage() {
   return (
     <>
+      <JsonLd
+        dati={nodiPagina({
+          percorso: PAGINA.percorso,
+          nome: PAGINA.titolo,
+          descrizione: PAGINA.descrizione,
+          briciole: [{ nome: PAGINA.breve, href: PAGINA.percorso }],
+          dataModifica: AGGIORNAMENTO,
+        })}
+      />
       <section className="testata">
         <div className="wrap">
-          <p className="occhiello">Dai tuoi macro</p>
-          <h1 className="titolo-xl mt-6 max-w-[12ch]">Hai già una scheda?</h1>
+          <h1>
+            <span className="occhiello">Meal prep sui tuoi macro</span>
+            <span className="titolo-xl mt-6 block max-w-[12ch]">Hai già una scheda?</span>
+          </h1>
           <p className="lead mt-6">
             Scrivi i quattro numeri del tuo nutrizionista. La settimana si compone da sola con i piatti più vicini ai
             tuoi macro, e poi la ritocchi come vuoi.

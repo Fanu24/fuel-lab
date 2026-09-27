@@ -1,3 +1,16 @@
-import Link from "next/link";
+import type { Metadata } from "next";
+import { Suspense } from "react";
+import { Caricamento } from "@/components/dashboard/ui";
+import OrdiniRimando from "@/components/dashboard/OrdiniRimando";
 
-export default function OldDetail() { return <div><h1 className="titolo-s">Le richieste sono nel nuovo pannello.</h1><Link href="/dashboard" className="btn btn-ink mt-6">Apri richieste →</Link></div>; }
+export const metadata: Metadata = { title: "Ordini" };
+
+/* Il vecchio indirizzo delle richieste: i link gia' mandati per email
+   (/dashboard/richiesta?id=...) finiscono sulla scheda del nuovo pannello. */
+export default function VecchiaRichiesta() {
+  return (
+    <Suspense fallback={<Caricamento testo="Apro l’ordine…" />}>
+      <OrdiniRimando />
+    </Suspense>
+  );
+}

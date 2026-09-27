@@ -27,11 +27,18 @@ export default function Hero() {
         </figcaption>
       </figure>
       <div className="wrap relative pt-32 pb-10 md:pb-14">
-        <p className="occhiello" style={{ animation: "fuel-sale .8s var(--e-out) both" }}>
-          Meal prep · Pescara
-        </p>
-        <h1 className="titolo-xl mt-6 max-w-[11ch]" style={{ animation: "fuel-sale 1s var(--e-out) both 120ms" }}>
-          Allenati. Al cibo ci pensa <span className="text-lime">Matteo.</span>
+        {/* L'occhiello sta dentro l'h1: il titolo della pagina dice anche che
+            cosa e dove ("meal prep a Pescara"), senza toccare la frase. */}
+        <h1>
+          <span className="occhiello" style={{ animation: "fuel-sale .8s var(--e-out) both" }}>
+            Meal prep a Pescara
+          </span>
+          <span
+            className="titolo-xl mt-6 block max-w-[11ch]"
+            style={{ animation: "fuel-sale 1s var(--e-out) both 120ms" }}
+          >
+            Allenati. Al cibo ci pensa <span className="text-lime">Matteo.</span>
+          </span>
         </h1>
         <p
           className="lead mt-6"

@@ -34,9 +34,14 @@ export default function Allenamento() {
           È la stessa regola che usa il compositore: scegli l&apos;allenamento di ogni giorno e i piatti arrivano da
           soli.
         </p>
-        <Link href="/settimana" className="btn btn-linea">
-          Prova il compositore <span className="freccia">→</span>
-        </Link>
+        <div className="flex flex-wrap items-center gap-x-8 gap-y-4">
+          <Link href="/pasti-proteici-pescara" className="link">
+            Pasti proteici, i numeri
+          </Link>
+          <Link href="/settimana" className="btn btn-linea">
+            Prova il compositore <span className="freccia">→</span>
+          </Link>
+        </div>
       </div>
     </section>
   );

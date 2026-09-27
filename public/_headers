@@ -9,15 +9,39 @@
   Cache-Control: public, max-age=604800
 
 # Sicurezza di base su tutte le pagine.
+# HSTS senza includeSubDomains: i sottodomini (posta, anteprime) restano liberi.
+# Niente Content-Security-Policy: l'export statico usa script inline (tema,
+# dati di Next) che una CSP senza nonce bloccherebbe.
 /*
+  Strict-Transport-Security: max-age=31536000
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   X-Frame-Options: DENY
   Permissions-Policy: camera=(), microphone=(), geolocation=()
 
-# Il pannello non va indicizzato (c'e' gia' il meta robots, questo e' il rinforzo).
+# Le pagine private non vanno indicizzate (c'e' gia' il meta robots, questo e'
+# il rinforzo, e vale anche per le varianti .html e i payload dell'export).
 /dashboard
   X-Robots-Tag: noindex, nofollow
 
 /dashboard/*
   X-Robots-Tag: noindex, nofollow
+
+/account*
+  X-Robots-Tag: noindex
+
+/accedi*
+  X-Robots-Tag: noindex
+
+/reimposta-password*
+  X-Robots-Tag: noindex
+
+/api/*
+  X-Robots-Tag: noindex
+
+# I manifest delle app installabili (sito e pannello), con il tipo giusto.
+/manifest.webmanifest
+  Content-Type: application/manifest+json
+
+/pannello.webmanifest
+  Content-Type: application/manifest+json

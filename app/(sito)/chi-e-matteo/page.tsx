@@ -1,16 +1,18 @@
-import type { Metadata } from "next";
 import Image from "next/image";
+import Link from "next/link";
 import Reveal from "@/components/Reveal";
 import FotoPiena from "@/components/ui/FotoPiena";
 import ChiusuraCta from "@/components/home/ChiusuraCta";
 import { PIATTI } from "@/lib/catalogo";
 import { FOTO, RITRATTO_MATTEO } from "@/lib/immagini";
+import JsonLd from "@/components/seo/JsonLd";
+import { AGGIORNAMENTO, PAGINE, metadatiPagina } from "@/components/seo/pagine";
+import { ID, nodiPagina } from "@/components/seo/schema";
+import { TITOLARE } from "@/lib/sito";
 
-export const metadata: Metadata = {
-  title: "Chi è Matteo",
-  description:
-    "Conosci Matteo Pattanè e FUEL LAB: piatti freschi, menu consultabile e meal prep per organizzare i pasti a Pescara.",
-};
+const PAGINA = PAGINE.chiEMatteo;
+
+export const metadata = metadatiPagina(PAGINA);
 
 /* La foto e' di repertorio finche' RITRATTO_MATTEO non viene fornito. */
 
@@ -30,11 +32,25 @@ export default function ChiEMatteo() {
   const ritratto = RITRATTO_MATTEO ?? FOTO.cuoco;
   return (
     <>
+      {/* AboutPage su Matteo (il nodo Person sta nel grafo del layout). */}
+      <JsonLd
+        dati={nodiPagina({
+          percorso: PAGINA.percorso,
+          nome: PAGINA.titolo,
+          descrizione: PAGINA.descrizione,
+          tipo: "AboutPage",
+          briciole: [{ nome: PAGINA.breve, href: PAGINA.percorso }],
+          mainEntity: { "@id": ID.matteo },
+          dataModifica: AGGIORNAMENTO,
+        })}
+      />
       <section className="testata">
         <div className="wrap grid items-end gap-10 lg:grid-cols-[1fr_1fr] lg:gap-16">
           <div>
-            <p className="occhiello">Chi è Matteo</p>
-            <h1 className="titolo-xl mt-6">Matteo.</h1>
+            <h1>
+              <span className="occhiello">Chi è {TITOLARE.nome}</span>
+              <span className="titolo-xl mt-6 block">Matteo.</span>
+            </h1>
             <p className="titolo-s mt-4 text-muted">Cucina a Pescara.</p>
             <p className="lead mt-8">
               FUEL LAB è il laboratorio di Matteo Pattanè a Pescara: cucina fresca due volte a settimana per chi si
@@ -70,6 +86,13 @@ export default function ChiEMatteo() {
               Il sito indica preparazioni e consegne il lunedì e il giovedì. Matteo conferma direttamente piatti,
               disponibilità e copertura del tuo indirizzo prima di qualsiasi ordine. Se hai domande su ingredienti o
               conservazione, scrivigli prima di scegliere.
+            </p>
+            <p>
+              Se preferisci che cucini da te, Matteo porta il meal prep nella tua cucina:{" "}
+              <Link href={PAGINE.domicilio.percorso} className="link">
+                cuoco a domicilio a Pescara
+              </Link>
+              .
             </p>
           </Reveal>
         </div>

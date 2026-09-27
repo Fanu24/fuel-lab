@@ -1,0 +1,332 @@
+/**
+ * Le regole delle richieste, senza D1 e senza Request: le Pages Functions
+ * leggono il database e chiamano queste funzioni, i test le chiamano con
+ * oggetti semplici. Cosa puo' fare Matteo, cosa puo' fare il cliente e cosa il
+ * cliente puo' vedere si decide qui.
+ */
+
+import { etichettaStato, type DettaglioOrdine, type EventoOrdine, type Modalita, type Ordine, type Servizio, type StatoOrdine, type VoceOrdine } from "../api";
+import { getExtra, getPiatto } from "../catalogo";
+import { GIORNI, PASTI, potaAllenamenti, potaPiano, type Allenamenti, type Piano } from "../settimana";
+import { dataEstesa, dataValida, spostaGiorno, tsSqlite } from "./date";
+
+export const STATI: readonly StatoOrdine[] = ["requested", "confirmed", "preparing", "ready", "completed", "cancelled"];
+export const SERVIZI: readonly Servizio[] = ["menu-settimana", "sui-tuoi-macro", "home-cooking"];
+export const TIPI_EVENTO: readonly EventoOrdine["type"][] = ["created", "status", "schedule", "note", "message", "price", "payment", "email"];
+/** Gli unici eventi che il cliente vede: il resto e' lavoro interno di Matteo. */
+export const EVENTI_CLIENTE: readonly EventoOrdine["type"][] = ["created", "status", "message"];
+
+export const MAX_NOTA_INTERNA = 2000;
+export const MAX_MESSAGGIO_CLIENTE = 1000;
+export const MAX_PREZZO_CENTESIMI = 1_000_000;
+
+export type Esito<T> = { ok: true; value: T } | { ok: false; status: number; error: string };
+
+const errore = (status: number, error: string) => ({ ok: false as const, status, error });
+
+export const eStato = (value: unknown): value is StatoOrdine =>
+  typeof value === "string" && (STATI as readonly string[]).includes(value);
+
+const testo = (value: unknown) => (typeof value === "string" ? value : value === null || value === undefined ? "" : String(value));
+const testoONull = (value: unknown) => (typeof value === "string" && value ? value : null);
+
+function leggiJson<T>(raw: unknown, fallback: T): T {
+  if (typeof raw !== "string" || !raw) return fallback;
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return fallback;
+  }
+}
+
+/** Una riga di D1: `SELECT o.*, u.email, p.preferences AS dietary_preferences ...`. */
+export type RigaOrdine = Record<string, unknown>;
+
+/**
+ * Da riga del database a `Ordine`, campo per campo: niente spread della riga,
+ * cosi' plan_json, colonne future o note interne non escono per sbaglio.
+ */
+export function ordineDaRiga(row: RigaOrdine, admin: boolean): Ordine {
+  const ordine: Ordine = {
+    id: testo(row.id),
+    user_id: testo(row.user_id),
+    email: testo(row.email),
+    status: eStato(row.status) ? row.status : "requested",
+    service: (SERVIZI as readonly unknown[]).includes(row.service) ? row.service as Servizio : "menu-settimana",
+    fulfillment: row.fulfillment === "delivery" ? "delivery" : "pickup",
+    requested_date: testoONull(row.requested_date),
+    fulfillment_date: testoONull(row.fulfillment_date),
+    customer_name: testo(row.customer_name),
+    phone: testo(row.phone),
+    comune: testo(row.comune),
+    address: testo(row.address),
+    notes: testo(row.notes),
+    customer_message: testo(row.customer_message),
+    price_cents: typeof row.price_cents === "number" ? row.price_cents : null,
+    paid: Number(row.paid) === 1 ? 1 : 0,
+    dietary_preferences: typeof row.dietary_preferences === "string" ? row.dietary_preferences : null,
+    meals: Number(row.meals) || 0,
+    created_at: tsSqlite(row.created_at) ?? testo(row.created_at),
+    updated_at: tsSqlite(row.updated_at) ?? testo(row.updated_at),
+    items: leggiJson<VoceOrdine[]>(row.items_json, []),
+  };
+  if (admin) {
+    ordine.production_date = testoONull(row.production_date);
+    ordine.internal_note = testo(row.internal_note);
+    // Prima della migrazione 0004 la colonna non c'e': tutto cio' che non e' "manual" arriva dal sito.
+    ordine.source = row.source === "manual" ? "manual" : "web";
+  }
+  return ordine;
+}
+
+export function eventoDaRiga(row: Record<string, unknown>): EventoOrdine {
+  return {
+    id: Number(row.id),
+    actor: row.actor === "admin" || row.actor === "system" ? row.actor : "customer",
+    type: (TIPI_EVENTO as readonly unknown[]).includes(row.type) ? row.type as EventoOrdine["type"] : "status",
+    from_status: eStato(row.from_status) ? row.from_status : null,
+    to_status: eStato(row.to_status) ? row.to_status : null,
+    detail: testo(row.detail),
+    created_at: tsSqlite(row.created_at) ?? testo(row.created_at),
+  };
+}
+
+export function eventiPerCliente(eventi: EventoOrdine[]): EventoOrdine[] {
+  return eventi.filter((evento) => EVENTI_CLIENTE.includes(evento.type));
+}
+
+export function dettaglioDaRiga(row: RigaOrdine, eventi: EventoOrdine[], admin: boolean): DettaglioOrdine {
+  const ordinati = [...eventi].sort((a, b) => a.created_at.localeCompare(b.created_at) || a.id - b.id);
+  return {
+    ...ordineDaRiga(row, admin),
+    plan: potaPiano(leggiJson<unknown>(row.plan_json, {})),
+    training: potaAllenamenti(leggiJson<unknown>(row.training_json, {})),
+    events: admin ? ordinati : eventiPerCliente(ordinati),
+  };
+}
+
+/* ---------- Nuova richiesta dal cliente ---------- */
+
+const campo = (value: unknown, max: number) => (typeof value === "string" ? value.trim().slice(0, max) : "");
+
+/** Le righe della richiesta, lette dal piano: solo piatti ed extra che il catalogo conosce ancora. */
+export function vociDalPiano(plan: Piano): VoceOrdine[] {
+  const voci: VoceOrdine[] = [];
+  for (const day of GIORNI) for (const meal of PASTI) {
+    const slot = plan[day]?.[meal];
+    if (!slot?.piatto) continue;
+    const dish = getPiatto(slot.piatto);
+    if (!dish) continue;
+    voci.push({
+      id: dish.id,
+      name: dish.nome,
+      day,
+      meal,
+      extras: slot.extra.map((id) => getExtra(id)?.nome).filter((nome): nome is string => !!nome),
+    });
+  }
+  return voci;
+}
+
+export type NuovoOrdineValido = {
+  name: string;
+  phone: string;
+  comune: string;
+  address: string;
+  notes: string;
+  service: Servizio;
+  fulfillment: Modalita;
+  requestedDate: string | null;
+  plan: Piano;
+  training: Allenamenti;
+  items: VoceOrdine[];
+};
+
+/** Valida il corpo di POST /api/orders. `oggi` e' il giorno a Pescara. */
+export function leggiNuovoOrdine(body: Record<string, unknown>, nomeAccount: string, oggi: string): Esito<NuovoOrdineValido> {
+  const name = campo(body.name, 100) || nomeAccount.trim().slice(0, 100);
+  const phone = campo(body.phone, 40);
+  const comune = campo(body.comune, 100);
+  const address = campo(body.address, 240);
+  const notes = campo(body.notes, 1500);
+  const fulfillment = body.fulfillment === "pickup" || body.fulfillment === "delivery" ? body.fulfillment : null;
+  const service = (SERVIZI as readonly unknown[]).includes(body.service) ? body.service as Servizio : "menu-settimana";
+  const requestedDate = dataValida(body.requestedDate) ? body.requestedDate : null;
+  if (!name || phone.replace(/\D/g, "").length < 9 || !comune || !fulfillment || (fulfillment === "delivery" && !address)) {
+    return errore(400, "Completa nome, telefono e dati di ritiro o consegna");
+  }
+  if (requestedDate && (requestedDate < oggi || requestedDate > spostaGiorno(oggi, 90))) {
+    return errore(400, "Scegli una data nei prossimi 90 giorni");
+  }
+  const plan = potaPiano(body.plan);
+  const training = potaAllenamenti(body.training);
+  const items = vociDalPiano(plan);
+  if (service !== "home-cooking" && !items.length) return errore(400, "Componi almeno un piatto prima di inviare");
+  return { ok: true, value: { name, phone, comune, address, notes, service, fulfillment, requestedDate, plan, training, items } };
+}
+
+/* ---------- Modifiche di Matteo ---------- */
+
+/** I campi dell'ordine che Matteo puo' cambiare, come stanno nel database. */
+export type StatoModificabile = {
+  status: StatoOrdine;
+  production_date: string | null;
+  fulfillment_date: string | null;
+  internal_note: string;
+  customer_message: string;
+  price_cents: number | null;
+  paid: 0 | 1;
+};
+
+export type Cambio = Pick<EventoOrdine, "type" | "from_status" | "to_status" | "detail">;
+
+export type ModificaValida = {
+  next: StatoModificabile;
+  cambi: Cambio[];
+  /** true se il cliente va avvisato via email: notify chiesto e cambia lo stato o arriva un messaggio. */
+  avvisaCliente: boolean;
+};
+
+const AVANZATI: readonly StatoOrdine[] = ["confirmed", "preparing", "ready", "completed"];
+
+function leggiData(value: unknown, attuale: string | null): { ok: true; value: string | null } | { ok: false } {
+  if (value === undefined) return { ok: true, value: attuale };
+  if (value === null || value === "") return { ok: true, value: null };
+  if (typeof value === "string" && dataValida(value.trim())) return { ok: true, value: value.trim() };
+  return { ok: false };
+}
+
+/** "€ 45,00" senza Intl: stesso risultato nel Worker, in Node e nei test. */
+export function euroTesto(centesimi: number): string {
+  const euro = Math.floor(Math.abs(centesimi) / 100).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  const cent = String(Math.abs(centesimi) % 100).padStart(2, "0");
+  return `${centesimi < 0 ? "-" : ""}€ ${euro},${cent}`;
+}
+
+export function descriviDate(fulfillment: Modalita, produzione: string | null, consegna: string | null): string {
+  const quando = (day: string | null) => (day ? dataEstesa(day) : "da fissare");
+  return `Produzione: ${quando(produzione)} · ${fulfillment === "delivery" ? "Consegna" : "Ritiro"}: ${quando(consegna)}`;
+}
+
+/**
+ * Valida il corpo di PATCH /api/orders/:id per Matteo e calcola cosa cambia.
+ * Ogni campo assente resta com'e'; ogni campo cambiato produce un evento.
+ */
+export function leggiModificaAdmin(
+  body: Record<string, unknown>,
+  current: StatoModificabile,
+  fulfillment: Modalita,
+): Esito<ModificaValida> {
+  if (body.status !== undefined && !eStato(body.status)) return errore(400, "Stato non valido");
+  const status = body.status === undefined ? current.status : body.status as StatoOrdine;
+
+  const produzione = leggiData(body.productionDate, current.production_date);
+  const consegna = leggiData(body.fulfillmentDate, current.fulfillment_date);
+  if (!produzione.ok || !consegna.ok) return errore(400, "Data non valida");
+  if (produzione.value && consegna.value && produzione.value > consegna.value) {
+    return errore(400, "La produzione non può essere dopo il ritiro o la consegna");
+  }
+  const statoCambiato = status !== current.status;
+  const dateCambiate = produzione.value !== current.production_date || consegna.value !== current.fulfillment_date;
+  // Le vecchie richieste avanzate senza date restano modificabili (prezzo, note):
+  // il vincolo scatta quando si cambia lo stato o si toccano le date.
+  if (AVANZATI.includes(status) && (!produzione.value || !consegna.value) && (statoCambiato || dateCambiate)) {
+    return errore(400, "Assegna le date di produzione e ritiro o consegna prima di avanzare l'ordine");
+  }
+
+  if (body.internalNote !== undefined && typeof body.internalNote !== "string") return errore(400, "Nota interna non valida");
+  const nota = typeof body.internalNote === "string" ? body.internalNote.trim() : current.internal_note;
+  if (nota.length > MAX_NOTA_INTERNA) return errore(400, `La nota interna può avere al massimo ${MAX_NOTA_INTERNA} caratteri`);
+
+  if (body.customerMessage !== undefined && typeof body.customerMessage !== "string") return errore(400, "Messaggio non valido");
+  const messaggio = typeof body.customerMessage === "string" ? body.customerMessage.trim() : current.customer_message;
+  if (messaggio.length > MAX_MESSAGGIO_CLIENTE) {
+    return errore(400, `Il messaggio al cliente può avere al massimo ${MAX_MESSAGGIO_CLIENTE} caratteri`);
+  }
+
+  let prezzo = current.price_cents;
+  if (body.priceCents !== undefined) {
+    if (body.priceCents === null) prezzo = null;
+    else if (typeof body.priceCents === "number" && Number.isInteger(body.priceCents) && body.priceCents >= 0 && body.priceCents <= MAX_PREZZO_CENTESIMI) {
+      prezzo = body.priceCents;
+    } else return errore(400, "Totale non valido: usa i centesimi, da 0 a 10.000 €");
+  }
+
+  if (body.paid !== undefined && typeof body.paid !== "boolean") return errore(400, "Pagamento non valido");
+  const pagato: 0 | 1 = body.paid === undefined ? current.paid : body.paid ? 1 : 0;
+
+  if (body.notify !== undefined && typeof body.notify !== "boolean") return errore(400, "Scelta di avviso non valida");
+
+  const cambi: Cambio[] = [];
+  const evento = (type: Cambio["type"], detail: string, from_status: StatoOrdine | null = null, to_status: StatoOrdine | null = null) =>
+    cambi.push({ type, detail, from_status, to_status });
+  if (statoCambiato) evento("status", "", current.status, status);
+  if (dateCambiate) evento("schedule", descriviDate(fulfillment, produzione.value, consegna.value));
+  if (nota !== current.internal_note) evento("note", nota || "Nota interna cancellata");
+  const messaggioCambiato = messaggio !== current.customer_message;
+  if (messaggioCambiato) evento("message", messaggio || "Messaggio rimosso");
+  if (prezzo !== current.price_cents) evento("price", prezzo === null ? "Totale rimosso" : `Totale concordato: ${euroTesto(prezzo)}`);
+  if (pagato !== current.paid) evento("payment", pagato ? "Segnato come pagato" : "Segnato come non pagato");
+
+  return {
+    ok: true,
+    value: {
+      next: {
+        status,
+        production_date: produzione.value,
+        fulfillment_date: consegna.value,
+        internal_note: nota,
+        customer_message: messaggio,
+        price_cents: prezzo,
+        paid: pagato,
+      },
+      cambi,
+      avvisaCliente: body.notify === true && (statoCambiato || (messaggioCambiato && messaggio !== "")),
+    },
+  };
+}
+
+/* ---------- Concorrenza ---------- */
+
+/** Il 409 quando l'ordine non e' piu' nello stato che Matteo aveva sotto gli occhi. */
+export const erroreStatoCambiato = (stato: StatoOrdine) =>
+  `L'ordine è cambiato nel frattempo: ora è «${etichettaStato(stato)}». Ho ricaricato la scheda, controlla e riprova.`;
+
+/**
+ * `expectedStatus` nel corpo di PATCH: lo stato che il pannello mostrava quando
+ * Matteo ha premuto il bottone. Assente o null (client vecchi) -> nessun
+ * controllo. Uno stato sconosciuto -> 400: un controllo di concorrenza
+ * illeggibile non deve passare in silenzio. Diverso dallo stato nel database
+ * -> 409 e la Function non tocca niente.
+ */
+export function controllaStatoAtteso(body: Record<string, unknown>, attuale: StatoOrdine): Esito<null> {
+  const atteso = body.expectedStatus;
+  if (atteso === undefined || atteso === null) return { ok: true, value: null };
+  if (!eStato(atteso)) return errore(400, "Stato atteso non valido");
+  if (atteso !== attuale) return errore(409, erroreStatoCambiato(attuale));
+  return { ok: true, value: null };
+}
+
+/* ---------- Annullamento del cliente ---------- */
+
+/**
+ * Il cliente puo' solo annullare la propria richiesta finche' Matteo non l'ha
+ * presa in carico. Chi non e' il proprietario riceve 404: non serve sapere che
+ * quell'id esiste.
+ */
+export function leggiAnnullamentoCliente(
+  body: Record<string, unknown>,
+  current: { status: string; user_id: string },
+  userId: string,
+): Esito<null> {
+  if (current.user_id !== userId) return errore(404, "Richiesta non trovata");
+  const chiavi = Object.keys(body);
+  if (body.status !== "cancelled" || chiavi.some((chiave) => chiave !== "status")) {
+    return errore(403, "Puoi solo annullare la tua richiesta: per altre modifiche scrivi a info@fuelchef.it");
+  }
+  if (current.status === "cancelled") return errore(409, "Questa richiesta è già annullata");
+  if (current.status !== "requested") {
+    return errore(409, "Matteo ha già preso in carico questa richiesta: per annullarla scrivi a info@fuelchef.it");
+  }
+  return { ok: true, value: null };
+}

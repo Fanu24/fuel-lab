@@ -1,17 +1,21 @@
-import type { Metadata } from "next";
+import Link from "next/link";
 import Reveal from "@/components/Reveal";
 import TrePassi from "@/components/home/TrePassi";
 import ChiusuraCta from "@/components/home/ChiusuraCta";
 import FotoPiena from "@/components/ui/FotoPiena";
-import Faq, { type Domanda } from "@/components/come-funziona/Faq";
+import Faq from "@/components/come-funziona/Faq";
+import JsonLd from "@/components/seo/JsonLd";
+import { AGGIORNAMENTO, PAGINE, metadatiPagina } from "@/components/seo/pagine";
+import { nodiPagina, type DomandaTesto } from "@/components/seo/schema";
+import { EMAIL, INDIRIZZO_RIGA, elencoZone } from "@/lib/sito";
 
-export const metadata: Metadata = {
-  title: "Come funziona",
-  description:
-    "Scopri come usare il compositore FUEL LAB, consultare ingredienti e piatti e chiedere a Matteo disponibilità, ritiro e consegna a Pescara.",
-};
+const PAGINA = PAGINE.comeFunziona;
 
-const DOMANDE: Domanda[] = [
+export const metadata = metadatiPagina(PAGINA);
+
+/* Solo testo nelle risposte: le stesse stringhe finiscono nei dati
+   strutturati FAQPage, che devono dire esattamente quello che si legge. */
+const DOMANDE: DomandaTesto[] = [
   {
     q: "Quanto durano i piatti in frigorifero?",
     a: "La durata dipende dal piatto e dal confezionamento. Segui la data e le istruzioni fornite con il prodotto; se non le hai, chiedi conferma a Matteo prima di consumarlo.",
@@ -22,7 +26,7 @@ const DOMANDE: Domanda[] = [
   },
   {
     q: "Quali zone servite?",
-    a: "Scrivi a info@fuelchef.it con il tuo comune e indirizzo: la copertura viene confermata prima dell'ordine. È possibile chiedere anche informazioni sul ritiro in Via del Santuario 214, Pescara.",
+    a: `Pescara e i comuni vicini: ${elencoZone()}. Scrivi a ${EMAIL} con il tuo comune e indirizzo: la copertura viene confermata prima dell'ordine. Puoi anche ritirare in ${INDIRIZZO_RIGA}.`,
   },
   {
     q: "Devo ordinare ogni settimana?",
@@ -41,10 +45,22 @@ const DOMANDE: Domanda[] = [
 export default function ComeFunziona() {
   return (
     <>
+      <JsonLd
+        dati={nodiPagina({
+          percorso: PAGINA.percorso,
+          nome: PAGINA.titolo,
+          descrizione: PAGINA.descrizione,
+          briciole: [{ nome: PAGINA.breve, href: PAGINA.percorso }],
+          faq: DOMANDE,
+          dataModifica: AGGIORNAMENTO,
+        })}
+      />
       <section className="testata">
         <div className="wrap">
-          <p className="occhiello">Come funziona</p>
-          <h1 className="titolo-xl mt-6 max-w-[12ch]">Dal tuo allenamento al tuo frigo.</h1>
+          <h1>
+            <span className="occhiello">Come funziona il meal prep a Pescara</span>
+            <span className="titolo-xl mt-6 block max-w-[12ch]">Dal tuo allenamento al tuo frigo.</span>
+          </h1>
         </div>
       </section>
 
@@ -65,6 +81,14 @@ export default function ComeFunziona() {
             <p style={{ color: "rgb(243 239 230 / .9)" }}>
               Ogni piatto ha una scheda con ingredienti e valori pubblicati. Per conservazione, allergeni e modalità
               di consumo, segui le informazioni del prodotto e chiedi direttamente quando hai dubbi.
+            </p>
+            <p className="flex flex-wrap gap-x-8 gap-y-4">
+              <Link href={PAGINE.mealPrep.percorso} className="link">
+                Il servizio, per intero
+              </Link>
+              <Link href={PAGINE.consegna.percorso} className="link">
+                Zone di consegna e ritiro
+              </Link>
             </p>
           </Reveal>
         </div>

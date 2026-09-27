@@ -1,25 +1,51 @@
-import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
 import { PIATTI } from "@/lib/catalogo";
 import MenuClient from "./MenuClient";
 import PerLaTuaBox from "@/components/menu/PerLaTuaBox";
 import ChiusuraCta from "@/components/home/ChiusuraCta";
+import JsonLd from "@/components/seo/JsonLd";
+import { AGGIORNAMENTO, PAGINE, metadatiPagina } from "@/components/seo/pagine";
+import { ID, nodiPagina, nodoMenu } from "@/components/seo/schema";
 
-export const metadata: Metadata = {
-  title: "Il menu",
-  description: `${PIATTI.length} piatti già composti, con ingredienti, macro e il motivo dell'abbinamento. Scegli per allenamento: cardio o pesi.`,
-};
+const PAGINA = PAGINE.menu;
+
+export const metadata = metadatiPagina(PAGINA);
 
 export default function PaginaMenu() {
   return (
     <>
+      {/* Il menu intero nei dati strutturati: sezioni per allenamento, ogni
+          piatto con i suoi valori per porzione. */}
+      <JsonLd
+        dati={[
+          ...nodiPagina({
+            percorso: PAGINA.percorso,
+            nome: PAGINA.titolo,
+            descrizione: PAGINA.descrizione,
+            tipo: "CollectionPage",
+            briciole: [{ nome: PAGINA.breve, href: PAGINA.percorso }],
+            mainEntity: { "@id": ID.menu },
+            dataModifica: AGGIORNAMENTO,
+          }),
+          nodoMenu(PIATTI, PAGINA.descrizione),
+        ]}
+      />
       <section className="testata">
         <div className="wrap">
-          <p className="occhiello">Menu · questa settimana</p>
-          <h1 className="titolo-xl mt-6 max-w-[10ch]">Il menu.</h1>
+          <h1>
+            <span className="occhiello">Meal prep a Pescara · il menu</span>
+            <span className="titolo-xl mt-6 block max-w-[10ch]">Il menu.</span>
+          </h1>
           <p className="lead mt-6">
             Sei piatti già composti. Ognuno ha i suoi grammi, i suoi macro e un motivo per stare nel piatto con gli
             altri ingredienti.
+          </p>
+          <p className="mt-4 max-w-[56ch] text-muted">
+            Matteo li cucina a Pescara il lunedì e il giovedì: si ritirano in Via del Santuario o arrivano in zona.{" "}
+            <Link href="/consegna-pasti-pescara" className="link">
+              Ritiro e consegna
+            </Link>
           </p>
         </div>
       </section>

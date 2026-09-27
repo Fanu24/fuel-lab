@@ -1,52 +1,532 @@
-export type Order = {
-  id: string; user_id: string; email: string; status: string; service: string; fulfillment: string;
-  requested_date: string | null; production_date: string | null; fulfillment_date: string | null;
-  customer_name: string; phone: string; comune: string; address: string;
-  notes: string; internal_note: string; dietary_preferences: string | null; meals: number; created_at: string; updated_at: string;
-  items: Array<{ id: string; name: string; day: string; meal: string; extras: string[] }>;
+/* =========================================================================
+   Il lavoro di Matteo, in funzioni pure.
+
+   Qui non c'e' React e non c'e' rete: date, code operative, filtri, CSV e
+   testi pronti si calcolano da una lista di ordini (il contratto di
+   lib/api.ts) e da "oggi" passato come argomento. Il pannello si limita a
+   mostrarli, e i test li provano senza browser.
+
+   Le date di calendario sono "YYYY-MM-DD" nel fuso di Roma; per spostarsi di
+   un giorno si lavora a mezzogiorno UTC, cosi' il cambio dell'ora legale non
+   fa mai saltare o ripetere una data.
+   ========================================================================= */
+
+import { etichettaStato, ETICHETTE_SERVIZIO, type Ordine, type StatoOrdine, type VoceOrdine } from "@/lib/api";
+import { GIORNI, NOMI_GIORNATA, NOMI_GIORNO, type Allenamenti, type GiornoSettimana, type TipoGiornata } from "@/lib/settimana";
+
+/* ---------- Stati ---------- */
+
+export const STATI_APERTI: readonly StatoOrdine[] = ["requested", "confirmed", "preparing", "ready"];
+
+export const aperto = (o: Pick<Ordine, "status">) => o.status !== "completed" && o.status !== "cancelled";
+
+/** Oltre "requested" (tranne l'annullamento) il server vuole entrambe le date. */
+export const servonoDate = (stato: StatoOrdine) => stato !== "requested" && stato !== "cancelled";
+
+type Azione = { stato: StatoOrdine; verbo: string; fatto: string };
+
+/** Il passo successivo naturale di un ordine: il bottone grande della scheda. */
+export function prossimaAzione(stato: StatoOrdine, modalita: Ordine["fulfillment"] = "pickup"): Azione | null {
+  switch (stato) {
+    case "requested":
+      return { stato: "confirmed", verbo: "Conferma l'ordine", fatto: "Ordine confermato" };
+    case "confirmed":
+      return { stato: "preparing", verbo: "Inizia la preparazione", fatto: "Preparazione iniziata" };
+    case "preparing":
+      return { stato: "ready", verbo: "Segna pronto", fatto: "Ordine pronto" };
+    case "ready":
+      return modalita === "pickup"
+        ? { stato: "completed", verbo: "Segna ritirato", fatto: "Ordine ritirato" }
+        : { stato: "completed", verbo: "Segna consegnato", fatto: "Ordine consegnato" };
+    default:
+      return null;
+  }
+}
+
+/* ---------- Date ---------- */
+
+const FUSO = "Europe/Rome";
+
+/** Oggi a Roma, "YYYY-MM-DD". */
+export function oggiRoma(ora: Date = new Date()) {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: FUSO, year: "numeric", month: "2-digit", day: "2-digit" }).format(ora);
+}
+
+export function spostaGiorni(data: string, giorni: number) {
+  const d = new Date(`${data}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + giorni);
+  return d.toISOString().slice(0, 10);
+}
+
+/** 0 = domenica, 1 = lunedi ... 6 = sabato. */
+export const giornoDellaSettimana = (data: string) => new Date(`${data}T12:00:00Z`).getUTCDay();
+
+/** Matteo cucina il lunedi e il giovedi. */
+export const GIORNI_CUCINA = [1, 4] as const;
+export const eGiornoDiCucina = (data: string) => (GIORNI_CUCINA as readonly number[]).includes(giornoDellaSettimana(data));
+
+/** I prossimi `quanti` giorni di cucina a partire da `da` (compreso). */
+export function prossimiGiorniCucina(da: string, quanti = 3) {
+  const giorni: string[] = [];
+  for (let d = da; giorni.length < quanti; d = spostaGiorni(d, 1)) if (eGiornoDiCucina(d)) giorni.push(d);
+  return giorni;
+}
+
+/** L'ultimo giorno di cucina fra `da` e `a` compresi, o null. */
+function ultimoGiornoCucina(da: string, a: string) {
+  for (let d = a; d >= da; d = spostaGiorni(d, -1)) if (eGiornoDiCucina(d)) return d;
+  return null;
+}
+
+/**
+ * Le date da proporre quando Matteo conferma un ordine che non le ha.
+ * Si parte dal giorno chiesto dal cliente (se non e' gia' passato) e si prende
+ * il primo giorno di cucina; ritiro o consegna lo stesso giorno. Una data gia'
+ * scritta non si tocca, e la produzione non supera mai l'uscita (regola del server).
+ */
+export function dateSuggerite(
+  o: Pick<Ordine, "requested_date" | "production_date" | "fulfillment_date">,
+  oggi: string,
+): { produzione: string; uscita: string } {
+  const partenza = o.requested_date && o.requested_date > oggi ? o.requested_date : oggi;
+  const produzioneFissata = o.production_date ?? null;
+  const uscitaFissata = o.fulfillment_date ?? null;
+  if (produzioneFissata) {
+    return { produzione: produzioneFissata, uscita: uscitaFissata && uscitaFissata >= produzioneFissata ? uscitaFissata : produzioneFissata };
+  }
+  if (uscitaFissata) {
+    const cucina = ultimoGiornoCucina(oggi, uscitaFissata) ?? (uscitaFissata < oggi ? uscitaFissata : oggi);
+    return { produzione: cucina, uscita: uscitaFissata };
+  }
+  const cucina = prossimiGiorniCucina(partenza, 1)[0];
+  return { produzione: cucina, uscita: cucina };
+}
+
+/* ---------- Soldi ---------- */
+
+/**
+ * Il prezzo scritto da Matteo -> centesimi.
+ * "" -> null (nessun prezzo); "12", "12,5", "12,50", "12.50", "1.250,00", "€ 45" -> centesimi;
+ * testo non valido -> undefined.
+ */
+export function leggiEuro(testo: string): number | null | undefined {
+  let t = testo.replace(/€|\s/g, "");
+  if (!t) return null;
+  if (t.includes(",")) t = t.replace(/\./g, "").replace(",", ".");
+  else if (/^\d{1,3}(\.\d{3})+$/.test(t)) t = t.replace(/\./g, "");
+  const m = /^(\d{1,6})(?:\.(\d{1,2}))?$/.exec(t);
+  if (!m) return undefined;
+  return Number(m[1]) * 100 + Number((m[2] ?? "").padEnd(2, "0"));
+}
+
+/** 1250 -> "12,50" per il campo del prezzo; null -> "". */
+export function centesimiInTesto(c: number | null | undefined) {
+  if (c === null || c === undefined) return "";
+  return `${Math.floor(c / 100)},${String(c % 100).padStart(2, "0")}`;
+}
+
+/**
+ * Ordine con un prezzo concordato e non ancora pagato. Annullati esclusi, e
+ * anche le richieste da confermare: li' il prezzo e' solo una proposta.
+ */
+export const daIncassare = (o: Ordine) =>
+  o.status !== "cancelled" && o.status !== "requested" && (o.price_cents ?? 0) > 0 && !o.paid;
+
+export const sommaCentesimi = (ordini: Ordine[]) => ordini.reduce((s, o) => s + (o.price_cents ?? 0), 0);
+
+/* ---------- Code operative ---------- */
+
+/** Una data e' passata e lo stato non si e' mosso. */
+export function inRitardo(o: Ordine, oggi: string) {
+  if (!aperto(o)) return false;
+  if (o.status === "requested") return !!o.requested_date && o.requested_date < oggi;
+  if (o.status === "ready") return !!o.fulfillment_date && o.fulfillment_date < oggi;
+  return (!!o.production_date && o.production_date < oggi) || (!!o.fulfillment_date && o.fulfillment_date < oggi);
+}
+
+const senzaDate = (o: Ordine) => aperto(o) && o.status !== "requested" && (!o.production_date || !o.fulfillment_date);
+const inCucina = (o: Ordine) => o.status === "confirmed" || o.status === "preparing";
+const esce = (o: Ordine) => o.status !== "requested" && o.status !== "cancelled";
+const pasti = (ordini: Ordine[]) => ordini.reduce((s, o) => s + o.meals, 0);
+
+export function codeOperative(ordini: Ordine[], oggi: string) {
+  const aperti = ordini.filter(aperto);
+  const cucinaOggi = aperti.filter((o) => o.production_date === oggi && inCucina(o));
+  const usciteOggi = ordini.filter((o) => o.fulfillment_date === oggi && esce(o));
+  const nonPagati = ordini.filter(daIncassare);
+  return {
+    aperti,
+    daConfermare: aperti.filter((o) => o.status === "requested"),
+    senzaDate: aperti.filter(senzaDate),
+    /** Tutti gli aperti con una data passata, richieste comprese. */
+    inRitardo: aperti.filter((o) => inRitardo(o, oggi)),
+    cucinaOggi,
+    porzioniOggi: pasti(cucinaOggi),
+    usciteOggi,
+    usciteDaFare: usciteOggi.filter((o) => o.status !== "completed"),
+    pronti: aperti.filter((o) => o.status === "ready"),
+    nonPagati,
+    consegnatiNonPagati: nonPagati.filter((o) => o.status === "completed"),
+  };
+}
+
+export type CodeOperative = ReturnType<typeof codeOperative>;
+
+/* ---------- Da fare adesso ---------- */
+
+export type Tono = "allarme" | "attenzione" | "info";
+
+export type AzioneDaFare = {
+  id: "ritardo" | "conferma" | "date" | "cucina" | "uscite" | "messaggi" | "incassa";
+  testo: string;
+  dettaglio: string;
+  href: string;
+  tono: Tono;
+  quanti: number;
 };
 
-export const STATES = [
+export const plurale = (n: number, uno: string, tanti: string) => `${n} ${n === 1 ? uno : tanti}`;
+
+/** "Giulia Rossi, Marco Bianchi e altri 2". */
+export function elencoNomi(ordini: Pick<Ordine, "customer_name">[], massimo = 2) {
+  const nomi = ordini.slice(0, massimo).map((o) => o.customer_name.trim() || "Senza nome");
+  const resto = ordini.length - nomi.length;
+  if (resto <= 0) return nomi.length > 1 ? `${nomi.slice(0, -1).join(", ")} e ${nomi.at(-1)}` : nomi[0] ?? "";
+  return `${nomi.join(", ")} e ${resto === 1 ? "un altro" : `altri ${resto}`}`;
+}
+
+const ORDINI = "/dashboard/ordini";
+/** Un solo ordine: si apre direttamente. Piu' ordini: la lista filtrata. */
+const verso = (lista: Ordine[], filtro: string) => (lista.length === 1 ? `${ORDINI}?id=${encodeURIComponent(lista[0].id)}` : `${ORDINI}?${filtro}`);
+
+const formatoEuro = (c: number) => new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(c / 100);
+
+/**
+ * Le cose da fare, dalla piu' urgente: ogni voce e' una frase con un verbo e un
+ * link che porta dritto al lavoro (un ordine solo si apre, piu' ordini si filtrano).
+ */
+export function azioniDaFare(ordini: Ordine[], oggi: string, messaggiNuovi = 0): AzioneDaFare[] {
+  const c = codeOperative(ordini, oggi);
+  const azioni: AzioneDaFare[] = [];
+
+  const ritardo = c.inRitardo.filter((o) => o.status !== "requested");
+  if (ritardo.length) {
+    azioni.push({
+      id: "ritardo",
+      testo: `${plurale(ritardo.length, "ordine", "ordini")} in ritardo`,
+      dettaglio: `${elencoNomi(ritardo)}: la data è passata, aggiorna lo stato o sposta le date.`,
+      href: verso(ritardo, "solo=ritardo"),
+      tono: "allarme",
+      quanti: ritardo.length,
+    });
+  }
+  if (c.daConfermare.length) {
+    const scadute = c.daConfermare.filter((o) => inRitardo(o, oggi)).length;
+    azioni.push({
+      id: "conferma",
+      testo: `Conferma ${plurale(c.daConfermare.length, "richiesta nuova", "richieste nuove")}`,
+      dettaglio: elencoNomi(c.daConfermare) + (scadute ? ` · ${plurale(scadute, "ha", "hanno")} già la data preferita passata` : ""),
+      href: verso(c.daConfermare, "stato=requested"),
+      tono: scadute ? "allarme" : "attenzione",
+      quanti: c.daConfermare.length,
+    });
+  }
+  if (c.senzaDate.length) {
+    azioni.push({
+      id: "date",
+      testo: `Assegna le date a ${plurale(c.senzaDate.length, "ordine", "ordini")}`,
+      dettaglio: `${elencoNomi(c.senzaDate)}: manca il giorno di cucina o di ritiro.`,
+      href: verso(c.senzaDate, "solo=senza-date"),
+      tono: "attenzione",
+      quanti: c.senzaDate.length,
+    });
+  }
+  if (c.cucinaOggi.length) {
+    azioni.push({
+      id: "cucina",
+      testo: `Cucina ${plurale(c.porzioniOggi, "porzione", "porzioni")} oggi`,
+      dettaglio: `${plurale(c.cucinaOggi.length, "ordine", "ordini")} · apri il foglio cucina con piatti ed extra.`,
+      href: "/dashboard/produzione",
+      tono: "info",
+      quanti: c.cucinaOggi.length,
+    });
+  }
+  if (c.usciteDaFare.length) {
+    const ritiri = c.usciteDaFare.filter((o) => o.fulfillment === "pickup").length;
+    const consegne = c.usciteDaFare.length - ritiri;
+    const parti = [ritiri ? plurale(ritiri, "ritiro", "ritiri") : "", consegne ? plurale(consegne, "consegna a domicilio", "consegne a domicilio") : ""];
+    azioni.push({
+      id: "uscite",
+      testo: `Consegna ${plurale(c.usciteDaFare.length, "ordine", "ordini")} oggi`,
+      dettaglio: parti.filter(Boolean).join(" · "),
+      href: "/dashboard#oggi-uscita",
+      tono: "info",
+      quanti: c.usciteDaFare.length,
+    });
+  }
+  if (messaggiNuovi > 0) {
+    azioni.push({
+      id: "messaggi",
+      testo: `Rispondi a ${plurale(messaggiNuovi, "messaggio", "messaggi")}`,
+      dettaglio: "Dal modulo contatti del sito.",
+      href: "/dashboard/messaggi",
+      tono: "attenzione",
+      quanti: messaggiNuovi,
+    });
+  }
+  if (c.consegnatiNonPagati.length) {
+    azioni.push({
+      id: "incassa",
+      testo: `Incassa ${formatoEuro(sommaCentesimi(c.consegnatiNonPagati))} da ${plurale(c.consegnatiNonPagati.length, "ordine consegnato", "ordini consegnati")}`,
+      dettaglio: elencoNomi(c.consegnatiNonPagati),
+      href: verso(c.consegnatiNonPagati, "solo=incassare"),
+      tono: "attenzione",
+      quanti: c.consegnatiNonPagati.length,
+    });
+  }
+  return azioni;
+}
+
+/* ---------- Calendario dei prossimi giorni ---------- */
+
+export type GiornoCalendario = {
+  data: string;
+  oggi: boolean;
+  cucina: boolean;
+  /** Porzioni con produzione in quel giorno (confermati e in preparazione). */
+  porzioni: number;
+  ordiniInCucina: number;
+  /** Ritiri e consegne con uscita in quel giorno. */
+  uscite: number;
+  ritiri: number;
+  consegne: number;
+  /** Richieste ancora da confermare che chiedono quel giorno. */
+  richieste: number;
+};
+
+export function calendario(ordini: Ordine[], oggi: string, giorni = 7): GiornoCalendario[] {
+  return Array.from({ length: giorni }, (_, i) => {
+    const data = spostaGiorni(oggi, i);
+    const cucina = ordini.filter((o) => o.production_date === data && inCucina(o));
+    const uscite = ordini.filter((o) => o.fulfillment_date === data && esce(o));
+    const ritiri = uscite.filter((o) => o.fulfillment === "pickup").length;
+    return {
+      data,
+      oggi: i === 0,
+      cucina: eGiornoDiCucina(data),
+      porzioni: pasti(cucina),
+      ordiniInCucina: cucina.length,
+      uscite: uscite.length,
+      ritiri,
+      consegne: uscite.length - ritiri,
+      richieste: ordini.filter((o) => o.status === "requested" && o.requested_date === data).length,
+    };
+  });
+}
+
+/* ---------- Piatti ---------- */
+
+/** Piatti ed extra sommati su piu' ordini, dal piu' frequente. Ogni voce e' una porzione. */
+export function contaVoci(ordini: Ordine[], tipo: "piatti" | "extra"): [string, number][] {
+  const conti = new Map<string, number>();
+  for (const o of ordini) for (const v of o.items) {
+    for (const nome of tipo === "piatti" ? [v.name] : v.extras) conti.set(nome, (conti.get(nome) ?? 0) + 1);
+  }
+  return [...conti.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "it"));
+}
+
+export type GiornoPiatti = {
+  giorno: string;
+  nome: string;
+  allenamento: TipoGiornata | null;
+  pranzo: VoceOrdine[];
+  cena: VoceOrdine[];
+};
+
+const posizioneGiorno = (g: string) => {
+  const i = (GIORNI as readonly string[]).indexOf(g);
+  return i === -1 ? GIORNI.length : i;
+};
+
+/**
+ * Le voci di un ordine raggruppate per giorno, nella griglia pranzo/cena.
+ * Entrano anche i giorni che hanno solo l'allenamento, cosi' la settimana si
+ * legge intera.
+ */
+export function vociPerGiorno(voci: VoceOrdine[], allenamenti: Allenamenti = {}): GiornoPiatti[] {
+  const giorni = new Map<string, GiornoPiatti>();
+  const prendi = (g: string) => {
+    let giorno = giorni.get(g);
+    if (!giorno) {
+      const tipo = (allenamenti as Record<string, TipoGiornata | undefined>)[g] ?? null;
+      giorno = { giorno: g, nome: NOMI_GIORNO[g as GiornoSettimana] ?? g, allenamento: tipo, pranzo: [], cena: [] };
+      giorni.set(g, giorno);
+    }
+    return giorno;
+  };
+  for (const v of voci) (v.meal === "cena" ? prendi(v.day).cena : prendi(v.day).pranzo).push(v);
+  for (const g of Object.keys(allenamenti)) if ((allenamenti as Record<string, unknown>)[g]) prendi(g);
+  return [...giorni.values()].sort((a, b) => posizioneGiorno(a.giorno) - posizioneGiorno(b.giorno));
+}
+
+export const nomeAllenamento = (t: TipoGiornata) => NOMI_GIORNATA[t];
+
+/* ---------- Filtri e ricerca ---------- */
+
+export type FiltroStato = "aperti" | StatoOrdine | "tutti";
+export type FiltroSpeciale = "ritardo" | "senza-date" | "incassare";
+
+export const FILTRI_STATO: { id: FiltroStato; label: string }[] = [
+  { id: "aperti", label: "Aperti" },
   { id: "requested", label: "Da confermare" },
-  { id: "confirmed", label: "Confermata" },
+  { id: "confirmed", label: "Confermati" },
   { id: "preparing", label: "In preparazione" },
-  { id: "ready", label: "Pronta" },
-  { id: "completed", label: "Completata" },
-  { id: "cancelled", label: "Annullata" },
+  { id: "ready", label: "Pronti" },
+  { id: "completed", label: "Consegnati" },
+  { id: "cancelled", label: "Annullati" },
+  { id: "tutti", label: "Tutti" },
 ];
 
-export const statusLabel = (status: string) => STATES.find((state) => state.id === status)?.label ?? status;
-export const isActive = (order: Order) => order.status !== "completed" && order.status !== "cancelled";
+export const FILTRI_SPECIALI: Record<FiltroSpeciale, string> = {
+  ritardo: "In ritardo",
+  "senza-date": "Senza date",
+  incassare: "Da incassare",
+};
 
-export function todayRome() {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Rome", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+export const leggiFiltroStato = (v: string | null): FiltroStato =>
+  FILTRI_STATO.some((f) => f.id === v) ? (v as FiltroStato) : "aperti";
+
+export const leggiFiltroSpeciale = (v: string | null): FiltroSpeciale | null =>
+  v && Object.prototype.hasOwnProperty.call(FILTRI_SPECIALI, v) ? (v as FiltroSpeciale) : null;
+
+export function passaStato(o: Ordine, filtro: FiltroStato) {
+  if (filtro === "tutti") return true;
+  if (filtro === "aperti") return aperto(o);
+  return o.status === filtro;
 }
 
-export function operationalQueues(orders: Order[], today: string) {
-  const active = orders.filter(isActive);
-  const newRequests = active.filter((order) => order.status === "requested");
-  const unscheduled = active.filter((order) => order.status !== "requested" && (!order.production_date || !order.fulfillment_date));
-  const overdue = active.filter((order) =>
-    order.status === "requested" ? !!order.requested_date && order.requested_date < today :
-    order.status === "ready" ? !!order.fulfillment_date && order.fulfillment_date < today :
-    !!(order.production_date && order.production_date < today || order.fulfillment_date && order.fulfillment_date < today));
-  const productionToday = active.filter((order) => order.production_date === today && ["confirmed", "preparing"].includes(order.status));
-  const fulfillmentToday = active.filter((order) => order.fulfillment_date === today && order.status !== "requested");
-  const ready = active.filter((order) => order.status === "ready");
-  const attentionIds = new Set([...newRequests, ...unscheduled, ...overdue].map((order) => order.id));
-  const attention = active.filter((order) => attentionIds.has(order.id)).sort((a, b) => {
-    const priority = (order: Order) => overdue.some((item) => item.id === order.id) ? 0 : order.status === "requested" ? 1 : 2;
-    return priority(a) - priority(b) || a.created_at.localeCompare(b.created_at);
+export function passaSpeciale(o: Ordine, filtro: FiltroSpeciale | null, oggi: string) {
+  if (filtro === "ritardo") return inRitardo(o, oggi);
+  if (filtro === "senza-date") return senzaDate(o);
+  if (filtro === "incassare") return daIncassare(o);
+  return true;
+}
+
+const semplifica = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLocaleLowerCase("it").trim();
+
+/** Cerca in nome, email, comune, indirizzo, id e telefono (il telefono per sole cifre). */
+export function corrisponde(o: Ordine, ricerca: string) {
+  const q = semplifica(ricerca);
+  if (!q) return true;
+  const cifre = q.replace(/\D/g, "");
+  if (cifre.length >= 3 && o.phone.replace(/\D/g, "").includes(cifre)) return true;
+  return [o.customer_name, o.email, o.comune, o.address, o.id].some((campo) => semplifica(campo ?? "").includes(q));
+}
+
+export type Filtri = { stato: FiltroStato; speciale: FiltroSpeciale | null; ricerca: string };
+
+export function filtraOrdini(ordini: Ordine[], filtri: Filtri, oggi: string) {
+  return ordina(
+    ordini.filter((o) => passaStato(o, filtri.stato) && passaSpeciale(o, filtri.speciale, oggi) && corrisponde(o, filtri.ricerca)),
+    oggi,
+  );
+}
+
+/** Quanti ordini per ogni chip, dopo ricerca e filtro speciale. */
+export function contaPerStato(ordini: Ordine[], filtri: Omit<Filtri, "stato">, oggi: string) {
+  const base = ordini.filter((o) => passaSpeciale(o, filtri.speciale, oggi) && corrisponde(o, filtri.ricerca));
+  return Object.fromEntries(FILTRI_STATO.map((f) => [f.id, base.filter((o) => passaStato(o, f.id)).length])) as Record<FiltroStato, number>;
+}
+
+/**
+ * L'ordine di lettura: prima i ritardi, poi le richieste (la piu' vecchia in
+ * alto), poi gli altri aperti per data di uscita; in fondo i chiusi, i piu'
+ * recenti per primi.
+ */
+export function ordina(ordini: Ordine[], oggi: string) {
+  const gruppo = (o: Ordine) =>
+    inRitardo(o, oggi) ? 0 : o.status === "requested" ? 1 : aperto(o) ? 2 : o.status === "completed" ? 3 : 4;
+  const data = (o: Ordine) => o.fulfillment_date ?? o.production_date ?? o.requested_date ?? "9999-12-31";
+  return [...ordini].sort((a, b) => {
+    const g = gruppo(a) - gruppo(b);
+    if (g) return g;
+    if (gruppo(a) >= 3) return b.updated_at.localeCompare(a.updated_at);
+    if (gruppo(a) === 1) return a.created_at.localeCompare(b.created_at);
+    return data(a).localeCompare(data(b)) || a.created_at.localeCompare(b.created_at);
   });
-  const portionsToday = productionToday.reduce((sum, order) => sum + order.meals, 0);
-  return { active, newRequests, unscheduled, overdue, productionToday, fulfillmentToday, ready, attention, portionsToday };
 }
 
-export function aggregateItems(orders: Order[], type: "dishes" | "extras") {
-  const counts = new Map<string, number>();
-  for (const order of orders) for (const item of order.items) {
-    const names = type === "dishes" ? [item.name] : item.extras;
-    for (const name of names) counts.set(name, (counts.get(name) ?? 0) + 1);
-  }
-  return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "it"));
+/** Le colonne della vista a colonne: gli stati in ordine di lavoro. */
+export function perStato(ordini: Ordine[], stati: readonly StatoOrdine[] = STATI_APERTI) {
+  return stati.map((stato) => ({ stato, ordini: ordini.filter((o) => o.status === stato) }));
+}
+
+/* ---------- Testi pronti ---------- */
+
+const dataLunga = (d: string) =>
+  new Intl.DateTimeFormat("it-IT", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" }).format(new Date(`${d}T12:00:00Z`));
+
+export const nomeProprio = (nome: string) => nome.trim().split(/\s+/)[0] ?? "";
+
+/** Il messaggio WhatsApp precompilato: nome, pasti e giorno di ritiro o consegna. */
+export function testoWhatsApp(o: Pick<Ordine, "customer_name" | "meals" | "fulfillment" | "fulfillment_date">) {
+  const nome = nomeProprio(o.customer_name);
+  const quando = o.fulfillment_date
+    ? ` con ${o.fulfillment === "pickup" ? "ritiro" : "consegna"} ${dataLunga(o.fulfillment_date)}`
+    : "";
+  const pastiTesto = o.meals ? ` di ${plurale(o.meals, "pasto", "pasti")}` : "";
+  return `Ciao${nome ? ` ${nome}` : ""}, sono Matteo di FUEL LAB. Ti scrivo per il tuo ordine${pastiTesto}${quando}.`;
+}
+
+/** Il link per aprire l'indirizzo in Google Maps. */
+export const linkMappa = (indirizzo: string, comune: string) =>
+  `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([indirizzo, comune].filter(Boolean).join(", "))}`;
+
+/* ---------- CSV ---------- */
+
+/** Una cella CSV: virgolette quando serve e niente formule (un "=" iniziale diventa testo). */
+function cella(valore: string | number | null | undefined) {
+  let s = valore === null || valore === undefined ? "" : String(valore);
+  if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
+  return /[;"\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+const oraRoma = (ts: string) =>
+  new Intl.DateTimeFormat("sv-SE", { timeZone: FUSO, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })
+    .format(new Date(ts.includes("T") ? ts : `${ts.replace(" ", "T")}Z`));
+
+/** Il segno invisibile U+FEFF che dice a Excel "questo file e' UTF-8". */
+const BOM = String.fromCharCode(0xfeff);
+
+/**
+ * L'elenco per Excel italiano: separatore ";", decimali con la virgola, BOM
+ * UTF-8 in testa cosi' le lettere accentate si leggono bene.
+ */
+export function ordiniCsv(ordini: Ordine[]) {
+  const intestazione = [
+    "ID", "Ricevuto", "Cliente", "Telefono", "Email", "Comune", "Indirizzo", "Servizio", "Modalità", "Stato",
+    "Pasti", "Data preferita", "Cucina", "Ritiro/consegna", "Prezzo (€)", "Pagato", "Note cliente", "Nota interna", "Piatti",
+  ];
+  const righe = ordini.map((o) => [
+    o.id,
+    oraRoma(o.created_at),
+    o.customer_name,
+    o.phone,
+    o.email,
+    o.comune,
+    o.address,
+    ETICHETTE_SERVIZIO[o.service] ?? o.service,
+    o.fulfillment === "pickup" ? "Ritiro" : "Consegna",
+    etichettaStato(o.status),
+    o.meals,
+    o.requested_date,
+    o.production_date,
+    o.fulfillment_date,
+    o.price_cents === null ? "" : centesimiInTesto(o.price_cents),
+    o.paid ? "Sì" : "No",
+    o.notes,
+    o.internal_note,
+    o.items.map((v) => `${NOMI_GIORNO[v.day as GiornoSettimana] ?? v.day} ${v.meal}: ${v.name}${v.extras.length ? ` + ${v.extras.join(", ")}` : ""}`).join(" | "),
+  ]);
+  return `${BOM}${[intestazione, ...righe].map((r) => r.map(cella).join(";")).join("\r\n")}\r\n`;
 }

@@ -1,0 +1,17 @@
+{
+  "name": "FUEL LAB · Pannello di Matteo",
+  "short_name": "Pannello",
+  "description": "Richieste, cucina, clienti e numeri di FUEL LAB.",
+  "lang": "it",
+  "dir": "ltr",
+  "id": "/dashboard",
+  "start_url": "/dashboard",
+  "scope": "/dashboard",
+  "display": "standalone",
+  "background_color": "#f3efe6",
+  "theme_color": "#0e100f",
+  "icons": [
+    { "src": "/icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/apple-icon.png", "sizes": "180x180", "type": "image/png", "purpose": "any" }
+  ]
+}

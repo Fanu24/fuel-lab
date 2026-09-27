@@ -4,7 +4,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type KeyboardEvent as KeyboardEventReact } from "react";
+import { useSessione } from "@/components/account/sessione";
+import { IconaPersona } from "@/components/account/ui";
 import WhatsAppCta from "@/components/ui/WhatsAppCta";
+import { iniziale, nomeBreve } from "@/lib/account";
 
 /* Cio' che il browser mette nel giro di Tab dentro un pannello. */
 const FOCUSABILI =
@@ -28,6 +31,19 @@ export default function Nav() {
   const [scorso, setScorso] = useState(false);
   const percorso = usePathname();
   const pannello = useRef<HTMLDivElement>(null);
+  /* Una sola chiamata a /api/me per pagina, condivisa con l'area cliente. Finche'
+     non risponde lo spazio del bottone account resta riservato e vuoto: niente
+     "Accedi" che diventa un nome sotto gli occhi. */
+  const sessione = useSessione();
+  const utente = sessione.utente;
+  const admin = utente?.role === "admin";
+  const voci = VOCI.map((v) => (v.href === "/account" && utente ? { ...v, label: "Il mio account" } : v));
+  const vociMobile = admin ? [...voci, { href: "/dashboard", label: "Pannello" }] : voci;
+  const suAccount = percorso === "/account" || percorso === "/accedi";
+  const etichettaAccount =
+    sessione.stato === "attesa" ? "Area cliente"
+    : utente ? `Il mio account, ${nomeBreve(utente.name, utente.email)}`
+    : "Accedi o crea un account";
 
   useEffect(() => {
     const suScroll = () => setScorso(window.scrollY > 24);
@@ -113,9 +129,31 @@ export default function Nav() {
                 </Link>
               );
             })}
+            {admin ? (
+              <Link
+                href="/dashboard"
+                className="hidden py-2 font-disp text-[13px] font-semibold tracking-[.16em] uppercase xl:inline-block"
+              >
+                Pannello
+              </Link>
+            ) : null}
           </nav>
 
-          <Link href="/account" aria-label="Area cliente" title="Area cliente" className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-full border border-current font-disp text-lg font-bold lg:inline-flex">◉</Link>
+          <Link
+            href={utente ? "/account" : "/accedi"}
+            aria-label={etichettaAccount}
+            title={etichettaAccount}
+            aria-current={suAccount ? "page" : undefined}
+            data-stato={sessione.stato === "attesa" ? "attesa" : utente ? "dentro" : "fuori"}
+            className="acc-nav"
+          >
+            <span aria-hidden="true" className="acc-nav-segno">
+              {utente ? iniziale(utente.name, utente.email) : sessione.stato === "attesa" ? null : <IconaPersona />}
+            </span>
+            <span aria-hidden="true" className="acc-nav-testo">
+              {utente ? nomeBreve(utente.name, utente.email) : sessione.stato === "attesa" ? "" : "Accedi"}
+            </span>
+          </Link>
 
           <WhatsAppCta
             mostraAvviso={false}
@@ -152,7 +190,7 @@ export default function Nav() {
         className={`notte fixed inset-0 z-50 flex-col justify-between overflow-y-auto px-6 pt-28 pb-8 outline-none lg:hidden ${aperto ? "flex" : "hidden"}`}
       >
         <nav aria-label="Principale" className="flex flex-col">
-          {VOCI.map((v, i) => (
+          {vociMobile.map((v, i) => (
             <Link
               key={v.href}
               href={v.href}

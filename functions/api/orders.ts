@@ -1,68 +1,90 @@
 import { currentUser, type Context } from "../_lib/auth";
-import { bodyJson, json, sameOrigin, str } from "../_lib/http";
-import { getExtra, getPiatto } from "../../lib/catalogo";
-import { GIORNI, PASTI, potaAllenamenti, potaPiano } from "../../lib/settimana";
-
-const ORDER_SELECT = "SELECT o.*, u.email, p.preferences AS dietary_preferences FROM orders o JOIN user u ON u.id=o.user_id LEFT JOIN customer_profiles p ON p.user_id=o.user_id";
+import { bodyJson, json, sameOrigin } from "../_lib/http";
+import { accodaEmail, emailMatteo } from "../_lib/mail";
+import { ORDER_SELECT } from "../_lib/ordini";
+import { oggiRoma } from "../../lib/server/date";
+import { emailNuovaRichiesta } from "../../lib/server/email";
+import { leggiNuovoOrdine, ordineDaRiga, type RigaOrdine } from "../../lib/server/ordini";
 
 export const onRequestGet = async ({ env, request }: Context) => {
   const user = await currentUser(env, request);
   if (!user) return json({ error: "Accesso richiesto" }, 401);
-  const rows = user.role === "admin"
+  const admin = user.role === "admin";
+  // Matteo puo' chiedere lo storico completo di un cliente: /api/orders?user=<id>.
+  const cliente = admin ? new URL(request.url).searchParams.get("user") : null;
+  if (cliente) {
+    const storico = await env.DB.prepare(`${ORDER_SELECT} WHERE o.user_id = ? ORDER BY o.created_at DESC LIMIT 500`).bind(cliente.slice(0, 100)).all<RigaOrdine>();
+    return json({ orders: storico.results.map((row) => ordineDaRiga(row, true)) });
+  }
+  const rows = admin
     ? (await Promise.all([
-      env.DB.prepare(`${ORDER_SELECT} WHERE o.status NOT IN ('completed','cancelled') ORDER BY o.created_at DESC`).all(),
-      env.DB.prepare(`${ORDER_SELECT} WHERE o.status IN ('completed','cancelled') ORDER BY o.created_at DESC LIMIT 100`).all(),
-    ])).flatMap((result) => result.results)
-    : (await env.DB.prepare(`${ORDER_SELECT} WHERE o.user_id = ? ORDER BY o.created_at DESC LIMIT 50`).bind(user.id).all()).results;
-  return json({ orders: rows.map((row) => ({
-    ...row,
-    items: JSON.parse(String(row.items_json)),
-    plan_json: undefined,
-    training_json: undefined,
-    items_json: undefined,
-    internal_note: user.role === "admin" ? row.internal_note : undefined,
-    production_date: user.role === "admin" ? row.production_date : undefined,
-  })), historyLimit: user.role === "admin" ? 100 : undefined });
+      // Aperti, piu' i consegnati ancora da incassare (che non devono sparire dal promemoria)...
+      env.DB.prepare(`${ORDER_SELECT} WHERE o.status NOT IN ('completed','cancelled') OR (o.status = 'completed' AND o.paid = 0 AND o.price_cents > 0) ORDER BY o.created_at DESC`).all<RigaOrdine>(),
+      // ...e gli ultimi 100 chiusi, per lo storico.
+      env.DB.prepare(`${ORDER_SELECT} WHERE o.status IN ('completed','cancelled') ORDER BY o.created_at DESC LIMIT 100`).all<RigaOrdine>(),
+    ])).flatMap((result) => result.results).filter((row, i, tutte) => tutte.findIndex((r) => r.id === row.id) === i)
+    : (await env.DB.prepare(`${ORDER_SELECT} WHERE o.user_id = ? ORDER BY o.created_at DESC LIMIT 50`).bind(user.id).all<RigaOrdine>()).results;
+  return json({ orders: rows.map((row) => ordineDaRiga(row, admin)), historyLimit: admin ? 100 : undefined });
 };
 
-export const onRequestPost = async ({ env, request }: Context) => {
+export const onRequestPost = async ({ env, request, waitUntil }: Context) => {
   if (!sameOrigin(request)) return json({ error: "Origine non valida" }, 403);
   const user = await currentUser(env, request);
   if (!user) return json({ error: "Accedi prima di inviare una richiesta" }, 401);
   const body = await bodyJson(request, 30000);
   if (!body) return json({ error: "Dati non validi" }, 400);
 
-  const name = str(body.name, 100) || user.name;
-  const phone = str(body.phone, 40);
-  const comune = str(body.comune, 100);
-  const address = str(body.address, 240);
-  const notes = str(body.notes, 1500);
-  const fulfillment = body.fulfillment === "pickup" ? "pickup" : body.fulfillment === "delivery" ? "delivery" : null;
-  const service = ["menu-settimana", "sui-tuoi-macro", "home-cooking"].includes(String(body.service)) ? body.service as string : "menu-settimana";
-  const requestedDate = typeof body.requestedDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.requestedDate) ? body.requestedDate : null;
-  if (!name || phone.replace(/\D/g, "").length < 9 || !comune || !fulfillment || (fulfillment === "delivery" && !address)) {
-    return json({ error: "Completa nome, telefono e dati di ritiro o consegna" }, 400);
-  }
-  if (requestedDate && (requestedDate < new Date().toISOString().slice(0, 10) || requestedDate > new Date(Date.now() + 90 * 86400000).toISOString().slice(0, 10))) {
-    return json({ error: "Scegli una data nei prossimi 90 giorni" }, 400);
-  }
+  const letto = leggiNuovoOrdine(body, user.name, oggiRoma());
+  if (!letto.ok) return json({ error: letto.error }, letto.status);
+  const o = letto.value;
+
   const recent = await env.DB.prepare("SELECT COUNT(*) AS n FROM orders WHERE user_id=? AND created_at > datetime('now','-1 day')")
     .bind(user.id).first<{ n: number }>();
   if ((recent?.n ?? 0) >= 5) return json({ error: "Hai già inviato diverse richieste oggi. Scrivici a info@fuelchef.it." }, 429);
 
-  const plan = potaPiano(body.plan);
-  const training = potaAllenamenti(body.training);
-  const items: Array<{ id: string; name: string; day: string; meal: string; extras: string[] }> = [];
-  for (const day of GIORNI) for (const meal of PASTI) {
-    const slot = plan[day]?.[meal];
-    if (!slot?.piatto) continue;
-    const dish = getPiatto(slot.piatto);
-    if (!dish) continue;
-    items.push({ id: dish.id, name: dish.nome, day, meal, extras: slot.extra.map((id) => getExtra(id)?.nome).filter((x): x is string => !!x) });
-  }
-  if (service !== "home-cooking" && !items.length) return json({ error: "Componi almeno un piatto prima di inviare" }, 400);
   const id = crypto.randomUUID();
-  await env.DB.prepare("INSERT INTO orders (id,user_id,service,fulfillment,requested_date,customer_name,phone,comune,address,notes,plan_json,training_json,items_json,meals) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
-    .bind(id, user.id, service, fulfillment, requestedDate, name, phone, comune, address, notes, JSON.stringify(plan), JSON.stringify(training), JSON.stringify(items), items.length).run();
+  /* Il limite giornaliero e' ricontrollato dentro l'INSERT: il conteggio sopra
+     da' un errore gentile, ma due invii in parallelo lo passerebbero entrambi.
+     L'evento si scrive solo se l'ordine e' entrato davvero. */
+  const [inserito] = await env.DB.batch([
+    env.DB.prepare(`INSERT INTO orders (id,user_id,service,fulfillment,requested_date,customer_name,phone,comune,address,notes,plan_json,training_json,items_json,meals)
+      SELECT ?,?,?,?,?,?,?,?,?,?,?,?,?,?
+      WHERE (SELECT COUNT(*) FROM orders WHERE user_id=? AND created_at > datetime('now','-1 day')) < 5`)
+      .bind(id, user.id, o.service, o.fulfillment, o.requestedDate, o.name, o.phone, o.comune, o.address, o.notes, JSON.stringify(o.plan), JSON.stringify(o.training), JSON.stringify(o.items), o.items.length, user.id),
+    env.DB.prepare(`INSERT INTO order_events (order_id,actor,type,from_status,to_status,detail)
+      SELECT ?, 'customer', 'created', NULL, 'requested', 'Richiesta inviata dal sito' WHERE EXISTS (SELECT 1 FROM orders WHERE id = ?)`)
+      .bind(id, id),
+    // Il profilo impara dalla prima richiesta: si riempiono solo i campi ancora vuoti.
+    env.DB.prepare(`INSERT INTO customer_profiles (user_id,phone,comune,address) VALUES (?,?,?,?)
+      ON CONFLICT(user_id) DO UPDATE SET
+        phone = CASE WHEN customer_profiles.phone = '' THEN excluded.phone ELSE customer_profiles.phone END,
+        comune = CASE WHEN customer_profiles.comune = '' THEN excluded.comune ELSE customer_profiles.comune END,
+        address = CASE WHEN customer_profiles.address = '' THEN excluded.address ELSE customer_profiles.address END,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE (customer_profiles.phone = '' AND excluded.phone <> '')
+         OR (customer_profiles.comune = '' AND excluded.comune <> '')
+         OR (customer_profiles.address = '' AND excluded.address <> '')`)
+      .bind(user.id, o.phone, o.comune, o.address),
+  ]);
+  if (!inserito.meta.changes) return json({ error: "Hai già inviato diverse richieste oggi. Scrivici a info@fuelchef.it." }, 429);
+
+  await accodaEmail({ env, waitUntil }, {
+    to: [emailMatteo(env)],
+    replyTo: user.email,
+    ...emailNuovaRichiesta({
+      id,
+      customer_name: o.name,
+      email: user.email,
+      phone: o.phone,
+      comune: o.comune,
+      address: o.address,
+      fulfillment: o.fulfillment,
+      service: o.service,
+      requested_date: o.requestedDate,
+      notes: o.notes,
+      meals: o.items.length,
+      items: o.items,
+    }),
+  });
   return json({ id, status: "requested" }, 201);
 };

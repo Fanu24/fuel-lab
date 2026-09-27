@@ -1,18 +1,323 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { getAdminOrders } from "./AdminDashboard";
-import { aggregateItems, statusLabel, todayRome, type Order } from "@/lib/operazioni";
+/* La Cucina: cosa preparare in un giorno di produzione.
+   Quattro schede sullo stesso insieme di ordini (confermati o in preparazione
+   con quel giorno di cucina): Piatti, Spesa, Etichette, Ordini. Giorno e
+   scheda stanno nell'indirizzo (?giorno=2026-09-28&scheda=spesa), cosi' un
+   link o un ricarica riaprono lo stesso foglio. Stampa solo la scheda aperta. */
+
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState, type KeyboardEvent } from "react";
+import { api, type Ordine } from "@/lib/api";
+import {
+  confermatiSenzaGiorno,
+  contaPiatti,
+  contaPorzioni,
+  giornoPredefinito,
+  giorniConOrdini,
+  isData,
+  oggiRoma,
+  ordiniDelGiorno,
+  prossimo,
+  spostaGiorni,
+} from "@/lib/produzione";
+import CucinaEtichette from "./CucinaEtichette";
+import CucinaOrdini from "./CucinaOrdini";
+import CucinaPiatti from "./CucinaPiatti";
+import CucinaSpesa from "./CucinaSpesa";
+import { Avviso, Caricamento, Kpi, TestaPagina, Vuoto, giorno as giornoCorto, giornoLungo } from "./ui";
+
+type Scheda = "piatti" | "spesa" | "etichette" | "ordini";
+
+const SCHEDE: { id: Scheda; label: string; stampa: string }[] = [
+  { id: "piatti", label: "Piatti", stampa: "Stampa i piatti" },
+  { id: "spesa", label: "Spesa", stampa: "Stampa la spesa" },
+  { id: "etichette", label: "Etichette", stampa: "Stampa le etichette" },
+  { id: "ordini", label: "Ordini", stampa: "Stampa gli ordini" },
+];
+
+const eScheda = (s: string | null): s is Scheda => SCHEDE.some((x) => x.id === s);
+
+const messaggio = (e: unknown) => (e instanceof Error ? e.message : "Non riesco a caricare gli ordini. Riprova tra poco.");
+
+const ora = (d: Date) => new Intl.DateTimeFormat("it-IT", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Rome" }).format(d);
 
 export default function ProductionLive() {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [day, setDay] = useState(todayRome());
-  const [error, setError] = useState("");
-  const [refreshing, setRefreshing] = useState(false);
-  useEffect(() => { void getAdminOrders().then(setOrders).catch((e) => setError(e instanceof Error ? e.message : "Errore di caricamento.")); }, []);
-  const selected = useMemo(() => orders.filter((order) => order.production_date === day && ["confirmed", "preparing"].includes(order.status)), [orders, day]);
-  const dishes = useMemo(() => aggregateItems(selected, "dishes"), [selected]);
-  const extras = useMemo(() => aggregateItems(selected, "extras"), [selected]);
+  const parametri = useSearchParams();
+  const [ordini, setOrdini] = useState<Ordine[] | null>(null);
+  const [errore, setErrore] = useState("");
+  const [aggiornando, setAggiornando] = useState(false);
+  const [aggiornatoAlle, setAggiornatoAlle] = useState<string>("");
+  const [giornoScelto, setGiornoScelto] = useState<string | null>(() => {
+    const g = parametri.get("giorno");
+    return isData(g) ? g : null;
+  });
+  const [scheda, setScheda] = useState<Scheda>(() => {
+    const s = parametri.get("scheda");
+    return eScheda(s) ? s : "piatti";
+  });
+  const [anchePronti, setAnchePronti] = useState(false);
 
-  return <div className="grid gap-8"><header className="flex flex-wrap items-end justify-between gap-5"><div><p className="occhiello">FUEL LAB · Cucina</p><h1 className="mt-3 font-disp text-3xl font-bold uppercase md:text-4xl">Foglio produzione</h1><p className="mt-2 text-sm text-muted">Ordini confermati e in preparazione per la data assegnata da Matteo.</p></div><div className="flex flex-wrap gap-2 print:hidden"><button type="button" className="btn btn-linea btn-sm" disabled={refreshing} onClick={() => { setRefreshing(true); void getAdminOrders().then((data) => { setOrders(data); setError(""); }).catch((e) => setError(e instanceof Error ? e.message : "Errore di caricamento.")).finally(() => setRefreshing(false)); }}>Aggiorna</button><button type="button" className="btn btn-ink btn-sm" onClick={() => window.print()}>Stampa</button></div></header>{error ? <p className="bg-lime p-4" role="alert">{error}</p> : null}<div className="campo print:hidden"><label htmlFor="production-day">Giorno di preparazione</label><input id="production-day" type="date" value={day} onChange={(e) => setDay(e.target.value)} className="max-w-xs" /></div><p className="text-sm font-semibold">{selected.length} ordini · {selected.reduce((sum, order) => sum + order.meals, 0)} porzioni · {day}</p><div className="grid gap-8 md:grid-cols-2"><section><div className="flex items-end justify-between border-b-[3px] border-ink pb-3"><h2 className="font-disp text-xl font-bold uppercase">Piatti</h2><strong>{dishes.reduce((sum, [, count]) => sum + count, 0)} porzioni</strong></div>{dishes.length ? <ul>{dishes.map(([name, count]) => <li key={name} className="flex justify-between gap-4 border-b border-ink/15 py-3"><span>{name}</span><strong>{count}</strong></li>)}</ul> : <p className="py-5 text-muted">Nessun piatto programmato per questa data.</p>}</section><section><h2 className="border-b-[3px] border-ink pb-3 font-disp text-xl font-bold uppercase">Extra</h2>{extras.length ? <ul>{extras.map(([name, count]) => <li key={name} className="flex justify-between gap-4 border-b border-ink/15 py-3"><span>{name}</span><strong>{count}</strong></li>)}</ul> : <p className="py-5 text-muted">Nessun extra.</p>}</section></div><section><h2 className="border-b-[3px] border-ink pb-3 font-disp text-xl font-bold uppercase">Ordini da preparare</h2>{selected.length ? <ul className="grid gap-3 pt-4 sm:grid-cols-2">{selected.map((order) => <li key={order.id} className="break-inside-avoid border border-ink/20 bg-paper-2 p-4"><div className="flex justify-between gap-3"><strong>{order.customer_name}</strong><span className="text-sm">{statusLabel(order.status)}</span></div><p className="mt-1 text-sm">{order.meals} pasti · {order.fulfillment === "pickup" ? "Ritiro" : "Consegna"} {order.fulfillment_date ? order.fulfillment_date : "data da assegnare"}</p><p className="text-sm text-muted">{order.phone} · {order.comune}{order.address ? ` · ${order.address}` : ""}</p>{order.items.length ? <ul className="mt-3 border-t border-ink/15 pt-2">{order.items.map((item, index) => <li key={`${item.id}-${index}`} className="py-1 text-sm"><span className="text-muted">{item.day} · {item.meal}:</span> {item.name}{item.extras.length ? ` + ${item.extras.join(", ")}` : ""}</li>)}</ul> : null}{order.dietary_preferences ? <p className="mt-2 border-l-2 border-red-700 pl-2 text-sm font-semibold">Preferenze alimentari: {order.dietary_preferences}</p> : null}{order.notes ? <p className="mt-2 text-sm">Nota cliente: {order.notes}</p> : null}{order.internal_note ? <p className="mt-2 text-sm font-semibold">Nota interna: {order.internal_note}</p> : null}</li>)}</ul> : <p className="py-5 text-muted">Nessun ordine in produzione.</p>}</section></div>;
+  useEffect(() => {
+    let vivo = true;
+    api.ordini().then(
+      (r) => {
+        if (!vivo) return;
+        setOrdini(r.orders);
+        setAggiornatoAlle(ora(new Date()));
+      },
+      (e: unknown) => {
+        if (vivo) setErrore(messaggio(e));
+      },
+    );
+    return () => {
+      vivo = false;
+    };
+  }, []);
+
+  function aggiorna() {
+    setAggiornando(true);
+    api
+      .ordini()
+      .then(
+        (r) => {
+          setOrdini(r.orders);
+          setErrore("");
+          setAggiornatoAlle(ora(new Date()));
+        },
+        (e: unknown) => setErrore(messaggio(e)),
+      )
+      .finally(() => setAggiornando(false));
+  }
+
+  const oggi = oggiRoma();
+  const giorno = giornoScelto ?? giornoPredefinito(ordini ?? [], oggi);
+
+  function scriviIndirizzo(g: string | null, s: Scheda) {
+    const p = new URLSearchParams();
+    if (g) p.set("giorno", g);
+    if (s !== "piatti") p.set("scheda", s);
+    const q = p.toString();
+    window.history.replaceState(null, "", q ? `?${q}` : window.location.pathname);
+  }
+  function scegliGiorno(g: string) {
+    setGiornoScelto(g);
+    scriviIndirizzo(g, scheda);
+  }
+  function scegliScheda(s: Scheda) {
+    setScheda(s);
+    scriviIndirizzo(giornoScelto, s);
+  }
+
+  const delGiorno = useMemo(() => (ordini ? ordiniDelGiorno(ordini, giorno, anchePronti) : []), [ordini, giorno, anchePronti]);
+  const porzioni = contaPorzioni(delGiorno);
+  const piattiDiversi = useMemo(() => contaPiatti(delGiorno).length, [delGiorno]);
+  const prossimi = useMemo(() => (ordini ? giorniConOrdini(ordini, oggi, anchePronti) : []), [ordini, oggi, anchePronti]);
+  const senzaGiorno = useMemo(() => (ordini ? confermatiSenzaGiorno(ordini) : []), [ordini]);
+
+  const scorciatoie = [
+    { nome: "Oggi", data: oggi },
+    { nome: "Lunedì", data: prossimo(oggi, 1) },
+    { nome: "Giovedì", data: prossimo(oggi, 4) },
+  ];
+
+  const conteggi: Partial<Record<Scheda, number>> = {
+    piatti: piattiDiversi,
+    etichette: porzioni,
+    ordini: delGiorno.length,
+  };
+
+  function tastiSchede(e: KeyboardEvent<HTMLButtonElement>) {
+    const i = SCHEDE.findIndex((s) => s.id === scheda);
+    const vai =
+      e.key === "ArrowRight" ? (i + 1) % SCHEDE.length
+      : e.key === "ArrowLeft" ? (i - 1 + SCHEDE.length) % SCHEDE.length
+      : e.key === "Home" ? 0
+      : e.key === "End" ? SCHEDE.length - 1
+      : -1;
+    if (vai === -1) return;
+    e.preventDefault();
+    scegliScheda(SCHEDE[vai].id);
+    document.getElementById(`cu-tab-${SCHEDE[vai].id}`)?.focus();
+  }
+
+  const quandoRelativo =
+    giorno === oggi ? "oggi" : giorno === spostaGiorni(oggi, 1) ? "domani" : giorno === spostaGiorni(oggi, -1) ? "ieri" : "";
+  const schedaAttiva = SCHEDE.find((s) => s.id === scheda) ?? SCHEDE[0];
+
+  return (
+    <div className="cu grid gap-8" data-scheda={scheda}>
+      <div className="print:hidden">
+        <TestaPagina
+          occhiello="Pannello · Cucina"
+          titolo="Cucina"
+          sotto={
+            <>
+              Cosa preparare, cosa comprare, cosa etichettare.
+              {aggiornatoAlle ? <> Dati delle {aggiornatoAlle}.</> : null}
+            </>
+          }
+          azioni={
+            <>
+              <button type="button" className="btn btn-linea btn-sm" onClick={aggiorna} disabled={aggiornando || ordini === null}>
+                {aggiornando ? "Aggiorno…" : "Aggiorna"}
+              </button>
+              <button type="button" className="btn btn-ink btn-sm" onClick={() => window.print()} disabled={!delGiorno.length}>
+                {schedaAttiva.stampa}
+              </button>
+            </>
+          }
+        />
+      </div>
+
+      {errore ? (
+        <div className="grid gap-3 print:hidden">
+          <Avviso>{errore}</Avviso>
+          {ordini === null ? (
+            <button type="button" className="btn btn-ink btn-sm justify-self-start" onClick={aggiorna} disabled={aggiornando}>
+              Riprova
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+
+      {ordini === null ? (
+        errore ? null : <Caricamento testo="Carico gli ordini della cucina…" />
+      ) : (
+        <>
+          <fieldset className="cu-giorni print:hidden">
+            <legend className="cu-legenda">Giorno di cucina</legend>
+            <div className="cu-scorciatoie">
+              {scorciatoie.map((s) => (
+                <button
+                  key={s.nome}
+                  type="button"
+                  className="cu-scorciatoia"
+                  aria-pressed={giorno === s.data}
+                  onClick={() => scegliGiorno(s.data)}
+                >
+                  <span className="cu-scorciatoia-nome">{s.nome}</span>
+                  <span className="cu-scorciatoia-data">{giornoCorto(s.data)}</span>
+                </button>
+              ))}
+              <div className="campo cu-altra-data">
+                <label htmlFor="cu-data">Altra data</label>
+                <input
+                  id="cu-data"
+                  type="date"
+                  value={giorno}
+                  onChange={(e) => {
+                    if (isData(e.target.value)) scegliGiorno(e.target.value);
+                  }}
+                />
+              </div>
+            </div>
+            <label className="cu-opzione">
+              <input type="checkbox" checked={anchePronti} onChange={(e) => setAnchePronti(e.target.checked)} />
+              <span>Includi anche gli ordini già pronti (per ristampare etichette o schede)</span>
+            </label>
+            {prossimi.length ? (
+              <div className="cu-prossimi">
+                <p className="cu-prossimi-titolo">Giorni con ordini da preparare</p>
+                <ul className="cu-prossimi-lista">
+                  {prossimi.slice(0, 6).map((p) => (
+                    <li key={p.giorno}>
+                      <button
+                        type="button"
+                        className="cu-prossimo"
+                        aria-pressed={giorno === p.giorno}
+                        onClick={() => scegliGiorno(p.giorno)}
+                      >
+                        <strong>{giornoCorto(p.giorno)}</strong>
+                        <span>
+                          {p.ordini} {p.ordini === 1 ? "ordine" : "ordini"} · {p.porzioni} porz.
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </fieldset>
+
+          {senzaGiorno.length ? (
+            <div className="print:hidden">
+              <Avviso tipo="info">
+                {senzaGiorno.length === 1
+                  ? "1 ordine confermato non ha ancora il giorno di cucina e non compare qui. "
+                  : `${senzaGiorno.length} ordini confermati non hanno ancora il giorno di cucina e non compaiono qui. `}
+                <Link href="/dashboard/ordini" className="link">
+                  Assegnalo in Ordini
+                </Link>
+              </Avviso>
+            </div>
+          ) : null}
+
+          <section aria-labelledby="cu-giorno" className="cu-sezione-giorno grid gap-6">
+            <div className="print:hidden">
+              <h2 id="cu-giorno" className="cu-giorno-titolo">
+                {giornoLungo(giorno)}
+                {quandoRelativo ? <span className="cu-giorno-relativo"> · {quandoRelativo}</span> : null}
+              </h2>
+            </div>
+
+            {delGiorno.length === 0 ? (
+              <div className="cu-vuoto print:hidden">
+                <Vuoto>
+                  Nessun ordine da preparare per {giornoLungo(giorno)}. Qui arrivano gli ordini confermati o in preparazione
+                  a cui hai assegnato questo giorno di cucina.
+                </Vuoto>
+                <Link href="/dashboard/ordini" className="btn btn-linea btn-sm">
+                  Vai agli ordini
+                </Link>
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-3 gap-3 print:hidden">
+                  <Kpi label="Ordini" valore={delGiorno.length} />
+                  <Kpi label="Porzioni" valore={porzioni} />
+                  <Kpi label="Piatti diversi" valore={piattiDiversi} />
+                </div>
+
+                <div role="tablist" aria-label="Cosa vuoi vedere" className="cu-schede print:hidden">
+                  {SCHEDE.map((s) => (
+                    <button
+                      key={s.id}
+                      id={`cu-tab-${s.id}`}
+                      type="button"
+                      role="tab"
+                      aria-selected={scheda === s.id}
+                      aria-controls="cu-pannello"
+                      tabIndex={scheda === s.id ? 0 : -1}
+                      className="cu-scheda"
+                      onClick={() => scegliScheda(s.id)}
+                      onKeyDown={tastiSchede}
+                    >
+                      {s.label}
+                      {conteggi[s.id] !== undefined ? (
+                        <span className="cu-scheda-n num" aria-hidden="true">{conteggi[s.id]}</span>
+                      ) : null}
+                    </button>
+                  ))}
+                </div>
+
+                <div id="cu-pannello" role="tabpanel" aria-labelledby={`cu-tab-${scheda}`} tabIndex={0} className="cu-pannello">
+                  {scheda !== "etichette" ? (
+                    <p className="cu-stampa-testa">
+                      FUEL LAB · Cucina di {giornoLungo(giorno)} · {schedaAttiva.label} · {delGiorno.length} ordini, {porzioni} porzioni
+                    </p>
+                  ) : null}
+                  {scheda === "piatti" ? <CucinaPiatti ordini={delGiorno} /> : null}
+                  {scheda === "spesa" ? <CucinaSpesa ordini={delGiorno} giorno={giorno} porzioni={porzioni} /> : null}
+                  {scheda === "etichette" ? <CucinaEtichette ordini={delGiorno} giorno={giorno} /> : null}
+                  {scheda === "ordini" ? <CucinaOrdini ordini={delGiorno} giorno={giorno} /> : null}
+                </div>
+              </>
+            )}
+          </section>
+        </>
+      )}
+    </div>
+  );
 }
