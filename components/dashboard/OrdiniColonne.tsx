@@ -7,6 +7,7 @@
 import type { Ordine, StatoOrdine } from "@/lib/api";
 import { inRitardo, nomeProprio, perStato, prossimaAzione, servonoDate } from "@/lib/operazioni";
 import { DateOrdine } from "./OrdiniElenco";
+import { fraseAvviso, usePannello } from "./PannelloDati";
 import type { useAzioniVeloci } from "./PannelloStato";
 import { Stato } from "./ui";
 
@@ -53,6 +54,7 @@ export default function OrdiniColonne({
 }
 
 function Carta({ ordine: o, oggi, apri, veloci }: { ordine: Ordine; oggi: string; apri: (id: string) => void; veloci: Veloci }) {
+  const { emailAttiva } = usePannello();
   const azione = prossimaAzione(o.status, o.fulfillment);
   const mancanoDate = !!azione && servonoDate(azione.stato) && (!o.production_date || !o.fulfillment_date);
   const nome = nomeProprio(o.customer_name) || "Cliente";
@@ -82,7 +84,7 @@ function Carta({ ordine: o, oggi, apri, veloci }: { ordine: Ordine; oggi: string
           onClick={() =>
             mancanoDate
               ? apri(o.id)
-              : void veloci.modifica(o, { status: azione.stato, notify: true }, `${nome}: ${azione.fatto.toLowerCase()}. Il cliente riceve un’email.`)
+              : void veloci.modifica(o, { status: azione.stato, notify: true }, `${nome}: ${azione.fatto.toLowerCase()}. ${fraseAvviso(emailAttiva)}`)
           }
         >
           {veloci.inCorso === o.id ? "Salvo…" : mancanoDate ? (o.status === "requested" ? `${azione.verbo}…` : "Assegna le date") : azione.verbo}

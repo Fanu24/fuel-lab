@@ -42,7 +42,7 @@ function RigaOrdine({ ordine: o, oggi, apri }: { ordine: Ordine; oggi: string; a
       <span className="min-w-0">
         <span className="pn-ordine-nome">{o.customer_name || "Cliente senza nome"}</span>
         <span className="pn-ordine-riga">
-          <Stato stato={o.status} />
+          <Stato stato={o.status} ritiro={o.fulfillment === "pickup"} />
           {ritardo ? <span className="pn-segno pn-segno-allarme">In ritardo</span> : null}
           {senzaDate ? <span className="pn-segno pn-segno-attenzione">Senza date</span> : null}
           {allergie ? <span className="pn-segno pn-segno-allarme">Allergie</span> : null}

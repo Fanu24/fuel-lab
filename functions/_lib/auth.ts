@@ -141,7 +141,12 @@ export async function currentUser(env: Env, request: Request) {
   if (!session?.user) return null;
   const staff = await env.DB.prepare("SELECT role FROM staff_roles WHERE user_id = ?")
     .bind(session.user.id).first<{ role: string }>();
-  return { ...session.user, role: staff?.role === "admin" && session.user.emailVerified ? "admin" as const : "customer" as const };
+  return {
+    ...session.user,
+    role: staff?.role === "admin" && session.user.emailVerified ? "admin" as const : "customer" as const,
+    /** Account di Matteo che deve ancora verificare l'email: per ora e' un cliente. */
+    adminInAttesa: staff?.role === "admin" && !session.user.emailVerified,
+  };
 }
 
 export type UtenteCorrente = NonNullable<Awaited<ReturnType<typeof currentUser>>>;

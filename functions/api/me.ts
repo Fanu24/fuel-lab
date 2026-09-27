@@ -12,6 +12,7 @@ export const onRequestGet = async ({ env, request }: Context) => {
       emailVerified: Boolean(user.emailVerified),
       image: user.image ?? null,
       role: user.role,
+      ...(user.adminInAttesa ? { adminInAttesa: true } : {}),
     } : null });
   } catch (error) {
     console.error("Me error", error);

@@ -471,7 +471,7 @@ function Dettagli({
         ) : dettaglio.dati.events.length ? (
           <ol className="acc-cronologia">
             {[...dettaglio.dati.events].reverse().map((e) => {
-              const { titolo, dettaglio: testo } = descriviEvento(e);
+              const { titolo, dettaglio: testo } = descriviEvento(e, dettaglio.dati.fulfillment);
               return (
                 <li key={e.id}>
                   <time dateTime={e.created_at}>{formattaMomento(e.created_at)}</time>

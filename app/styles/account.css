@@ -329,3 +329,9 @@
   from { background-position: 100% 0; }
   to { background-position: -100% 0; }
 }
+
+/* Nell'area cliente sotto la nav c'e' anche la sottonav incollata: un campo
+   che prende il fuoco (per esempio dopo un errore) deve restare visibile. */
+html:has(.acc-sottonav) {
+  scroll-padding-top: calc(var(--nav-h) + 62px + 16px);
+}

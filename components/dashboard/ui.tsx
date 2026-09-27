@@ -52,11 +52,11 @@ export function linkWhatsAppCliente(telefono: string, testo = "") {
 
 /* ---------- Componenti ---------- */
 
-/** Il pallino colorato con lo stato dell'ordine. */
-export function Stato({ stato, grande = false }: { stato: StatoOrdine | string; grande?: boolean }) {
+/** Il pallino colorato con lo stato dell'ordine. `ritiro`: un ordine completato si dice "Ritirato". */
+export function Stato({ stato, grande = false, ritiro = false }: { stato: StatoOrdine | string; grande?: boolean; ritiro?: boolean }) {
   return (
     <span className={`pn-stato pn-stato-${stato} ${grande ? "pn-stato-l" : ""}`}>
-      {etichettaStato(stato)}
+      {stato === "completed" && ritiro ? "Ritirato" : etichettaStato(stato)}
     </span>
   );
 }

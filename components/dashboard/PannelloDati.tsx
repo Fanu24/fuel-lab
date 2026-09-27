@@ -31,7 +31,14 @@ export type DatiPannello = {
   aggiorna: () => Promise<void>;
   /** Mette nella lista l'ordine appena salvato, senza aspettare il prossimo giro. */
   sostituisciOrdine: (ordine: Ordine) => void;
+  /** Se il server puo' mandare email (Resend configurato). null finche' non si sa. */
+  emailAttiva: boolean | null;
 };
+
+/** La frase dopo un'azione che avvisa il cliente: onesta anche quando l'email non parte. */
+export function fraseAvviso(emailAttiva: boolean | null, chi = "Il cliente") {
+  return emailAttiva === false ? `Email non attiva: avvisa ${chi === "Il cliente" ? "il cliente" : chi} per telefono o WhatsApp.` : `${chi} riceve un’email.`;
+}
 
 const Contesto = createContext<DatiPannello | null>(null);
 
@@ -50,6 +57,11 @@ export default function PannelloDati({ children }: { children: ReactNode }) {
   const [aggiornando, setAggiornando] = useState(false);
   const [aggiornatoAlle, setAggiornatoAlle] = useState<Date | null>(null);
   const [oggi, setOggi] = useState(() => oggiRoma());
+  const [emailAttiva, setEmailAttiva] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    api.providers().then((p) => setEmailAttiva(p.emailVerification), () => setEmailAttiva(null));
+  }, []);
   const inCorso = useRef(false);
   const ultimoGiro = useRef(0);
 
@@ -101,8 +113,8 @@ export default function PannelloDati({ children }: { children: ReactNode }) {
   }, []);
 
   const valore = useMemo<DatiPannello>(
-    () => ({ ordini, limiteStorico, messaggiNuovi, errore, sessioneScaduta, aggiornando, aggiornatoAlle, oggi, aggiorna, sostituisciOrdine }),
-    [ordini, limiteStorico, messaggiNuovi, errore, sessioneScaduta, aggiornando, aggiornatoAlle, oggi, aggiorna, sostituisciOrdine],
+    () => ({ ordini, limiteStorico, messaggiNuovi, errore, sessioneScaduta, aggiornando, aggiornatoAlle, oggi, aggiorna, sostituisciOrdine, emailAttiva }),
+    [ordini, limiteStorico, messaggiNuovi, errore, sessioneScaduta, aggiornando, aggiornatoAlle, oggi, aggiorna, sostituisciOrdine, emailAttiva],
   );
 
   return <Contesto.Provider value={valore}>{children}</Contesto.Provider>;

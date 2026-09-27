@@ -7,7 +7,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import { api, ApiError, type Utente } from "@/lib/api";
 import { authClient } from "@/lib/auth-client";
@@ -30,7 +30,6 @@ export function useAdmin() {
 export default function AdminGate({ children }: { children: ReactNode }) {
   const [esito, setEsito] = useState<Esito>({ tipo: "verifico" });
   const [ritorno, setRitorno] = useState("/dashboard");
-  const router = useRouter();
 
   const verifica = useCallback(async () => {
     setEsito({ tipo: "verifico" });
@@ -39,7 +38,8 @@ export default function AdminGate({ children }: { children: ReactNode }) {
       const { user } = await api.me();
       if (!user) setEsito({ tipo: "anonimo" });
       else if (user.role === "admin") setEsito({ tipo: "ok", utente: user });
-      else if (!user.emailVerified) setEsito({ tipo: "non-verificato", utente: user });
+      // Il messaggio "verifica l'email" serve solo all'account di Matteo: a un cliente si dice che il pannello non e' suo.
+      else if (user.adminInAttesa) setEsito({ tipo: "non-verificato", utente: user });
       else setEsito({ tipo: "non-admin", utente: user });
     } catch (e) {
       setEsito({ tipo: "errore", messaggio: e instanceof ApiError ? e.message : "Non riesco a verificare l'accesso." });
@@ -80,7 +80,9 @@ export default function AdminGate({ children }: { children: ReactNode }) {
             titolo="Questo account non è di Matteo."
             testo={<>Sei entrato come <strong className="text-paper">{esito.utente.email}</strong>. Il pannello si apre solo con l’account amministratore.</>}
           >
-            <button type="button" className="btn btn-lime" onClick={() => void authClient.signOut().then(() => router.push(accedi))}>
+            {/* Ricarica vera dopo l'uscita: la sessione in memoria del sito resterebbe quella vecchia. */}
+            {/* eslint-disable-next-line @next/next/no-location-assign-relative-destination */}
+            <button type="button" className="btn btn-lime" onClick={() => void authClient.signOut().finally(() => window.location.assign(accedi))}>
               Cambia account
             </button>
             <Link href="/account" className="btn btn-linea">Vai al tuo account</Link>

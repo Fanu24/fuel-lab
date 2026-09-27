@@ -151,7 +151,7 @@ export default function OrdineScheda({ id, onChiudi }: { id: string; onChiudi: (
             {ordine ? (
               <>
                 <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[16px]">
-                  <Stato stato={ordine.status} grande />
+                  <Stato stato={ordine.status} grande ritiro={ordine.fulfillment === "pickup"} />
                   <span className="font-semibold">
                     {ordine.meals} {ordine.meals === 1 ? "pasto" : "pasti"} · {ordine.fulfillment === "pickup" ? "Ritiro" : "Consegna"}
                   </span>

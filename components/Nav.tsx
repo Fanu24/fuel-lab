@@ -31,6 +31,7 @@ export default function Nav() {
   const [scorso, setScorso] = useState(false);
   const percorso = usePathname();
   const pannello = useRef<HTMLDivElement>(null);
+  const bottoneMenu = useRef<HTMLButtonElement>(null);
   /* Una sola chiamata a /api/me per pagina, condivisa con l'area cliente. Finche'
      non risponde lo spazio del bottone account resta riservato e vuoto: niente
      "Accedi" che diventa un nome sotto gli occhi. */
@@ -55,7 +56,11 @@ export default function Nav() {
   useEffect(() => {
     if (!aperto) return;
     const suEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setAperto(false);
+      if (e.key === "Escape") {
+        setAperto(false);
+        // Il fuoco torna al bottone che ha aperto il menu, non si perde sul body.
+        bottoneMenu.current?.focus();
+      }
     };
     const overflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -163,6 +168,7 @@ export default function Nav() {
 
           <button
             type="button"
+            ref={bottoneMenu}
             onClick={() => setAperto((a) => !a)}
             aria-expanded={aperto}
             aria-controls="menu-mobile"

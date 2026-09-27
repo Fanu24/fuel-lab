@@ -189,8 +189,10 @@ export const plurale = (n: number, uno: string, tanti: string) => `${n} ${n === 
 
 /** "Giulia Rossi, Marco Bianchi e altri 2". */
 export function elencoNomi(ordini: Pick<Ordine, "customer_name">[], massimo = 2) {
-  const nomi = ordini.slice(0, massimo).map((o) => o.customer_name.trim() || "Senza nome");
-  const resto = ordini.length - nomi.length;
+  // Stesso cliente con due ordini: il nome si scrive una volta sola.
+  const tutti = [...new Set(ordini.map((o) => o.customer_name.trim() || "Senza nome"))];
+  const nomi = tutti.slice(0, massimo);
+  const resto = tutti.length - nomi.length;
   if (resto <= 0) return nomi.length > 1 ? `${nomi.slice(0, -1).join(", ")} e ${nomi.at(-1)}` : nomi[0] ?? "";
   return `${nomi.join(", ")} e ${resto === 1 ? "un altro" : `altri ${resto}`}`;
 }
@@ -517,7 +519,7 @@ export function ordiniCsv(ordini: Ordine[]) {
     o.address,
     ETICHETTE_SERVIZIO[o.service] ?? o.service,
     o.fulfillment === "pickup" ? "Ritiro" : "Consegna",
-    etichettaStato(o.status),
+    o.status === "completed" && o.fulfillment === "pickup" ? "Ritirato" : etichettaStato(o.status),
     o.meals,
     o.requested_date,
     o.production_date,

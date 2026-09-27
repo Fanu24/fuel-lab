@@ -245,6 +245,8 @@ describe("stato degli ordini", () => {
     const base: EventoOrdine = { id: 1, actor: "admin", type: "created", from_status: null, to_status: null, detail: "", created_at: "" };
     expect(descriviEvento(base).titolo).toBe("Richiesta inviata");
     expect(descriviEvento({ ...base, type: "status", to_status: "confirmed" }).titolo).toBe("Confermato");
+    expect(descriviEvento({ ...base, type: "status", to_status: "completed" }, "pickup").titolo).toBe("Ritirato");
+    expect(descriviEvento({ ...base, type: "status", to_status: "completed" }, "delivery").titolo).toBe("Consegnato");
     expect(descriviEvento({ ...base, actor: "customer", type: "status", to_status: "cancelled" }).titolo).toBe("Hai annullato la richiesta");
     expect(descriviEvento({ ...base, type: "message", detail: " Ci vediamo giovedì " })).toEqual({ titolo: "Messaggio di Matteo", dettaglio: "Ci vediamo giovedì" });
   });

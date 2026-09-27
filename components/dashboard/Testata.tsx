@@ -7,7 +7,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { Icona, type NomeIcona } from "./PannelloIcone";
@@ -51,7 +51,6 @@ function useNumerini(): Record<string, { n: number; frase: string } | undefined>
 
 export default function Testata() {
   const percorso = usePathname();
-  const router = useRouter();
   const numerini = useNumerini();
   const [uscita, setUscita] = useState(false);
 
@@ -60,7 +59,8 @@ export default function Testata() {
     try {
       await authClient.signOut();
     } finally {
-      router.push("/");
+      // Ricarica vera: la nav del sito tiene la sessione in memoria e resterebbe "dentro".
+      window.location.replace("/");
     }
   }
 

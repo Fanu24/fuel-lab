@@ -161,7 +161,7 @@ export default function ClientiScheda({
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
-                  <Stato stato={o.status} />
+                  <Stato stato={o.status} ritiro={o.fulfillment === "pickup"} />
                   <Link
                     href={`/dashboard/ordini?id=${encodeURIComponent(o.id)}`}
                     className="btn btn-linea btn-sm"

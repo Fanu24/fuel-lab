@@ -218,6 +218,7 @@ describe("da fare adesso", () => {
     const nomi = ["A", "B", "C", "D"].map((n) => ({ customer_name: n }));
     expect(elencoNomi(nomi.slice(0, 1))).toBe("A");
     expect(elencoNomi(nomi.slice(0, 3))).toBe("A, B e un altro");
+    expect(elencoNomi([{ customer_name: "Rev B" }, { customer_name: "Rev B" }, { customer_name: "C" }])).toBe("Rev B e C");
     expect(elencoNomi(nomi)).toBe("A, B e altri 2");
   });
 });

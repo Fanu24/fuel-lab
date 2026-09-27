@@ -21,7 +21,7 @@ La pubblicazione diretta usa il profilo Wrangler `fuelchef` già autorizzato sul
 
 ## API, email e migrazioni
 
-Il contratto fra pagine e server è `lib/api.ts`; le regole pure (validazioni, calcoli, testi email) stanno in `lib/server/` con i loro test. Endpoint principali: `/api/orders` e `/api/orders/:id` (storia degli eventi, annullamento del cliente finché la richiesta è da confermare), `/api/contact` (pubblico, max 5 messaggi l'ora per IP, IP salvato solo come impronta SHA-256), `/api/account/export` (dati dell'utente in JSON), `/api/admin/customers`, `/api/admin/metrics?days=7..365`, `/api/admin/messages`. La cancellazione dell'account è `POST /api/auth/delete-user` di better-auth: con `{ "password": "..." }` per gli account email, senza password solo con un accesso di meno di 24 ore; l'account admin è protetto.
+Il contratto fra pagine e server è `lib/api.ts`; le regole pure (validazioni, calcoli, testi email) stanno in `lib/server/` con i loro test. Endpoint principali: `/api/orders` e `/api/orders/:id` (storia degli eventi, annullamento del cliente finché la richiesta è da confermare), `/api/contact` (pubblico, max 10 messaggi l'ora per rete, IP salvato solo come impronta SHA-256), `/api/account/export` (dati dell'utente in JSON), `/api/admin/customers`, `/api/admin/metrics?days=7..365`, `/api/admin/messages`. La cancellazione dell'account è `POST /api/auth/delete-user` di better-auth: con `{ "password": "..." }` per gli account email, senza password solo con un accesso di meno di 24 ore; l'account admin è protetto.
 
 Le email partono da `accesso@fuelchef.it` via Resend. Gli avvisi per Matteo vanno a `ADMIN_NOTIFY_EMAIL` (predefinito `info@fuelchef.it`); senza `RESEND_API_KEY` vengono saltati senza far fallire le richieste. Nuova migrazione in produzione: `npx wrangler d1 migrations apply fuelchef --remote` (dopo un backup con `npx wrangler d1 export fuelchef --remote --output backup.sql`).
 
@@ -45,7 +45,7 @@ L'account amministratore è `info@fuelchef.it`. Il ruolo è assegnato nella tabe
 
 Google Analytics usa l'ID `G-DNVWYB7R0C` e si carica dopo il consenso. La dashboard conta anche le visualizzazioni aggregate nello stesso caso; i dati GA4 possono comparire con ritardo nella console Google.
 
-Il numero WhatsApp non è configurato: i relativi pulsanti spiegano che sarà disponibile prossimamente. Imposta `NEXT_PUBLIC_WHATSAPP` con prefisso internazionale e ripubblica quando Matteo comunica il numero. Ragione sociale e Partita IVA sono segnaposto da completare appena disponibili.
+Il numero WhatsApp non è configurato: finché manca, i bottoni WhatsApp diventano "Scrivi a Matteo" e portano al modulo contatti (`/richiesta#scrivi`). Imposta `NEXT_PUBLIC_WHATSAPP` con prefisso internazionale e ripubblica quando Matteo comunica il numero. Ragione sociale e Partita IVA sono segnaposto da completare appena disponibili.
 
 `docs/HANDOFF-CLOUDFLARE.md` descrive una vecchia versione dimostrativa con PIN e solo dati locali; è conservato come documentazione storica e non va usato per pubblicare la versione corrente.
 

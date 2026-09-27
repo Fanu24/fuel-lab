@@ -43,7 +43,7 @@ function SchedaOrdine({ o, imballato, onImballato }: { o: Ordine; imballato: boo
         </h3>
         <div className="flex flex-wrap items-center gap-2">
           {imballato ? <span className="cu-bollino">Imballato</span> : null}
-          <Stato stato={o.status} />
+          <Stato stato={o.status} ritiro={o.fulfillment === "pickup"} />
         </div>
       </div>
 

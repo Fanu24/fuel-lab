@@ -14,7 +14,7 @@ export const MAX_COMUNE = 100;
 export const MIN_MESSAGGIO = 10;
 export const MAX_MESSAGGIO = 3000;
 /** Invii consentiti per impronta IP in un'ora. */
-export const MESSAGGI_ORARI = 5;
+export const MESSAGGI_ORARI = 10;
 
 export const eStatoMessaggio = (value: unknown): value is StatoMessaggio =>
   typeof value === "string" && (STATI_MESSAGGIO as readonly string[]).includes(value);

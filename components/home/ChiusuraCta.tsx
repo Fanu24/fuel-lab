@@ -21,7 +21,7 @@ export default function ChiusuraCta({
           </p>
           <div className="mt-10 flex flex-wrap items-center gap-x-8 gap-y-4">
             <WhatsAppCta buttonClassName="min-w-[min(100%,340px)] justify-between" />
-            <Link href="/richiesta" className="link">Scrivi via email</Link>
+            <Link href="/settimana" className="link">Componi la settimana</Link>
             <Link href="/scheda" className="link">
               Parto dalla mia scheda
             </Link>

@@ -21,6 +21,7 @@ import {
   prossimiGiorniCucina,
   servonoDate,
 } from "@/lib/operazioni";
+import { fraseAvviso, usePannello } from "./PannelloDati";
 import { Icona } from "./PannelloIcone";
 import { Avviso, giorno, giornoLungo } from "./ui";
 
@@ -104,6 +105,7 @@ export default function OrdineGestisci({
   /** Ordine a mano per un cliente senza account: nessuna email, la casella "Avvisa" e' spenta. */
   senzaAccount?: boolean;
 }) {
+  const { emailAttiva } = usePannello();
   const [base, setBase] = useState(ordine);
   const [campi, setCampi] = useState(() => daOrdine(ordine));
   const [avvisa, setAvvisa] = useState(true);
@@ -183,8 +185,8 @@ export default function OrdineGestisci({
       setProposta(null);
       setConfermaAnnullo(false);
       onSalvato(order);
-      const testo = m.status ? FATTO[m.status] : "Modifiche salvate.";
-      setEsito({ tipo: "ok", testo: `${testo}${email && avvisaDavvero ? ` ${iniziale(nome)} riceve un’email.` : ""}` });
+      const testo = m.status === "completed" && base.fulfillment === "pickup" ? "Ordine ritirato." : m.status ? FATTO[m.status] : "Modifiche salvate.";
+      setEsito({ tipo: "ok", testo: `${testo}${email && avvisaDavvero ? ` ${fraseAvviso(emailAttiva, iniziale(nome))}` : ""}` });
     } catch (e) {
       setEsito({ tipo: "errore", testo: e instanceof ApiError ? e.message : "Modifica non salvata. Riprova." });
       // 409: l'ordine e' cambiato nel frattempo (es. il cliente l'ha annullato). Si ricarica la scheda.
@@ -330,12 +332,14 @@ export default function OrdineGestisci({
             <textarea
               id="scheda-messaggio"
               rows={3}
-              maxLength={2000}
+              maxLength={1000}
               value={campi.messaggio}
               onChange={(e) => cambia("messaggio", e.target.value)}
               aria-describedby="scheda-aiuto-messaggio"
             />
-            <p id="scheda-aiuto-messaggio" className="pn-aiuto">Compare nel suo account e nell’email, se lo avvisi.</p>
+            <p id="scheda-aiuto-messaggio" className="pn-aiuto">
+              Compare nel suo account e nell’email, se lo avvisi. <span className="num">{campi.messaggio.length}/1000</span>
+            </p>
           </div>
 
           <div className="campo pn-solo-matteo">
@@ -365,7 +369,7 @@ export default function OrdineGestisci({
                   <p className="text-[15px]">
                     {senzaAccount
                       ? "Cliente senza account: nessuna email, avvisalo tu per telefono o WhatsApp."
-                      : avvisa ? `${iniziale(nome)} riceve un’email con l’annullamento.` : "Il cliente non riceve email (la casella in basso è spenta)."}
+                      : avvisa ? (emailAttiva === false ? "Email non attiva: avvisa il cliente per telefono o WhatsApp." : `${iniziale(nome)} riceve un’email con l’annullamento.`) : "Il cliente non riceve email (la casella in basso è spenta)."}
                   </p>
                   <div className="pn-bottoni">
                     <button type="button" className="pn-tasto pn-tasto-pericolo" disabled={salvo} onClick={() => void salva("cancelled")}>

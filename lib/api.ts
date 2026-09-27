@@ -27,6 +27,8 @@ export type Utente = {
   emailVerified: boolean;
   image?: string | null;
   role: Ruolo;
+  /** Solo per l'account di Matteo quando l'email non e' ancora verificata. */
+  adminInAttesa?: boolean;
 };
 
 export type Profilo = { phone: string; comune: string; address: string; preferences: string };

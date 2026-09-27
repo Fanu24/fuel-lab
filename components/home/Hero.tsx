@@ -3,6 +3,7 @@ import Link from "next/link";
 import { FOTO } from "@/lib/immagini";
 import FotoPiena from "@/components/ui/FotoPiena";
 import WhatsAppCta from "@/components/ui/WhatsAppCta";
+import { numeroConfigurato } from "@/lib/whatsapp";
 
 const FATTI = ["Fresco, mai surgelato", "Macro su ogni piatto", "Consegna lunedì e giovedì"];
 
@@ -51,7 +52,14 @@ export default function Hero() {
           className="mt-9 flex flex-wrap items-center gap-x-8 gap-y-4"
           style={{ animation: "fuel-sale 1s var(--e-out) both 360ms" }}
         >
-          <WhatsAppCta buttonClassName="min-w-[min(100%,340px)] justify-between" />
+          {/* Con WhatsApp attivo si scrive a Matteo; senza, la strada principale e' il compositore. */}
+          {numeroConfigurato() ? (
+            <WhatsAppCta buttonClassName="min-w-[min(100%,340px)] justify-between" />
+          ) : (
+            <Link href="/settimana" className="btn btn-lime min-w-[min(100%,340px)] justify-between">
+              Componi la tua settimana <span aria-hidden="true" className="freccia">→</span>
+            </Link>
+          )}
           <Link href="/menu" className="link">
             Guarda il menu
           </Link>

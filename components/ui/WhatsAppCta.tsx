@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { linkWhatsApp } from "@/lib/whatsapp";
 
 type Props = {
@@ -6,11 +7,20 @@ type Props = {
   buttonClassName?: string;
   label?: string;
   onClick?: () => void;
+  /** Non piu' usato: senza numero il bottone porta ai contatti, non serve spiegare. */
   mostraAvviso?: boolean;
 };
 
 const MESSAGGIO_DEFAULT =
   "Ciao Matteo! Ho visto FUEL LAB e vorrei informazioni sul menu e sul meal prep a Pescara.";
+
+function MarchioMessaggio() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-6 w-6 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round">
+      <path d="M4 5h16v11H9l-5 4V5Z" />
+    </svg>
+  );
+}
 
 export function MarchioWhatsApp() {
   return (
@@ -26,7 +36,6 @@ export default function WhatsAppCta({
   buttonClassName = "",
   label = "Contatta su WhatsApp",
   onClick,
-  mostraAvviso = true,
 }: Props) {
   const href = linkWhatsApp(testo);
 
@@ -45,21 +54,14 @@ export default function WhatsAppCta({
           <span aria-hidden="true" className="freccia">→</span>
         </a>
       ) : (
-        <span
-          className={`btn btn-whatsapp btn-whatsapp-inattivo ${buttonClassName}`}
-          role="status"
-          title="Il numero WhatsApp di Matteo non è ancora configurato"
-        >
-          <MarchioWhatsApp />
-          <span>{label}</span>
-          <span aria-hidden="true" className="text-xs">Presto</span>
-        </span>
+        /* Senza numero WhatsApp il bottone non resta spento: porta al modulo
+           contatti, che arriva a Matteo nel pannello e per email. */
+        <Link href="/richiesta#scrivi" onClick={onClick} className={`btn btn-lime ${buttonClassName}`}>
+          <MarchioMessaggio />
+          <span>{/whatsapp/i.test(label) ? "Scrivi a Matteo" : label}</span>
+          <span aria-hidden="true" className="freccia">→</span>
+        </Link>
       )}
-      {!href && mostraAvviso ? (
-        <p className="mt-3 max-w-[42ch] text-sm text-muted">
-          Il numero WhatsApp non è ancora configurato. Intanto puoi esplorare il menu e comporre il tuo piatto.
-        </p>
-      ) : null}
     </div>
   );
 }

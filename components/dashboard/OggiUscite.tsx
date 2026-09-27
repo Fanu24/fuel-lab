@@ -9,6 +9,7 @@ import { euro, type Ordine } from "@/lib/api";
 import { daIncassare, linkMappa, nomeProprio, testoWhatsApp, type CodeOperative } from "@/lib/operazioni";
 import { INDIRIZZO } from "@/lib/sito";
 import { Icona } from "./PannelloIcone";
+import { fraseAvviso, usePannello } from "./PannelloDati";
 import type { useAzioniVeloci } from "./PannelloStato";
 import { Sezione, Stato, Vuoto, linkWhatsAppCliente } from "./ui";
 
@@ -53,6 +54,7 @@ export default function OggiUscite({ code, apri, veloci }: { code: CodeOperative
 }
 
 function Uscita({ ordine: o, apri, veloci }: { ordine: Ordine; apri: (id: string) => void; veloci: Veloci }) {
+  const { emailAttiva } = usePannello();
   const fatto = o.status === "completed";
   const ritiro = o.fulfillment === "pickup";
   const telefono = o.phone.replace(/[^\d+]/g, "");
@@ -65,7 +67,7 @@ function Uscita({ ordine: o, apri, veloci }: { ordine: Ordine; apri: (id: string
         <button type="button" className="pn-nome" onClick={() => apri(o.id)}>
           {o.customer_name || "Cliente senza nome"}
         </button>
-        <Stato stato={o.status} />
+        <Stato stato={o.status} ritiro={o.fulfillment === "pickup"} />
       </div>
 
       <p className="pn-dove">
@@ -121,7 +123,7 @@ function Uscita({ ordine: o, apri, veloci }: { ordine: Ordine; apri: (id: string
             className="pn-tasto pn-tasto-pieno"
             disabled={occupato}
             onClick={() =>
-              void veloci.modifica(o, { status: "completed", notify: true }, `${nome}: segnato ${ritiro ? "ritirato" : "consegnato"}. Il cliente riceve un’email.`)
+              void veloci.modifica(o, { status: "completed", notify: true }, `${nome}: segnato ${ritiro ? "ritirato" : "consegnato"}. ${fraseAvviso(emailAttiva)}`)
             }
           >
             <Icona nome="spunta" className="size-5" />

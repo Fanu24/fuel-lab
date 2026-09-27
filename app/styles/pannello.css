@@ -989,6 +989,10 @@
     color: var(--color-paper);
   }
   .pn-scheda-scorre {
+    /* Contenitore dei figli assoluti (radio nascosti, simbolo dell'euro,
+       sr-only): senza, si agganciano al <dialog> e dopo ogni salvataggio
+       Chrome fa scorrere tutta la scheda di qualche centinaio di pixel. */
+    position: relative;
     flex: 1;
     display: grid;
     align-content: start;

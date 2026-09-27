@@ -486,7 +486,7 @@ export function prossimaConsegna(ordini: Ordine[], oggi: string): Ordine | null 
 }
 
 /** Una riga leggibile per la cronologia di un ordine. */
-export function descriviEvento(evento: EventoOrdine): { titolo: string; dettaglio: string } {
+export function descriviEvento(evento: EventoOrdine, modalita?: "pickup" | "delivery"): { titolo: string; dettaglio: string } {
   const dettaglio = evento.detail?.trim() ?? "";
   switch (evento.type) {
     case "created":
@@ -495,6 +495,7 @@ export function descriviEvento(evento: EventoOrdine): { titolo: string; dettagli
       if (evento.to_status === "cancelled") {
         return { titolo: evento.actor === "customer" ? "Hai annullato la richiesta" : "Richiesta annullata", dettaglio };
       }
+      if (evento.to_status === "completed" && modalita === "pickup") return { titolo: "Ritirato", dettaglio };
       return {
         titolo: evento.to_status ? etichettaStato(evento.to_status, "cliente") : "Stato aggiornato",
         dettaglio,
