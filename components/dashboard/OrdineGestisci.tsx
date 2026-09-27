@@ -117,6 +117,16 @@ export default function OrdineGestisci({
   const [errorePrezzo, setErrorePrezzo] = useState("");
   const campoProduzione = useRef<HTMLInputElement>(null);
   const campoPrezzo = useRef<HTMLInputElement>(null);
+  const areaEsito = useRef<HTMLDivElement>(null);
+
+  /* Il bottone premuto si spegne mentre salva e il fuoco cade sul body: lo si
+     porta sull'esito, cosi' tastiera e lettore di schermo sanno com'e' andata.
+     Se invece Matteo sta gia' scrivendo altrove, il fuoco resta dov'e'. */
+  useEffect(() => {
+    if (!esito) return;
+    const attivo = document.activeElement;
+    if (!attivo || attivo === document.body) areaEsito.current?.focus();
+  }, [esito]);
 
   // Arriva una versione piu' recente dell'ordine: si allinea senza perdere le modifiche in corso.
   if (ordine.updated_at !== base.updated_at) {
@@ -426,7 +436,9 @@ export default function OrdineGestisci({
           </div>
         ) : null}
 
-        {esito ? <Avviso tipo={esito.tipo}>{esito.testo}</Avviso> : null}
+        <div ref={areaEsito} tabIndex={-1} className="outline-none">
+          {esito ? <Avviso tipo={esito.tipo}>{esito.testo}</Avviso> : null}
+        </div>
 
         <div className="flex flex-wrap items-center justify-between gap-x-4">
           <label className={`pn-casella ${senzaAccount ? "cursor-not-allowed opacity-60" : ""}`}>

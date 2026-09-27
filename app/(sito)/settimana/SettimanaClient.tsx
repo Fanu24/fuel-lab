@@ -53,13 +53,15 @@ export default function SettimanaClient() {
 
   return (
     <>
-      <section className="testata !pb-8">
-        <div className="wrap">
+      {/* Su schermi larghi titolo e testo stanno affiancati: cosi' il passo 1,
+          fino a "Riempi la settimana", entra nella prima schermata sopra la barra. */}
+      <section className="testata !pb-8 lg:!pb-6">
+        <div className="wrap lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-end lg:gap-12">
           <h1>
             <span className="occhiello">Componi il meal prep della settimana</span>
             <span className="titolo mt-5 block max-w-[14ch]">La tua settimana.</span>
           </h1>
-          <p className="lead mt-6">
+          <p className="lead mt-6 lg:mt-0">
             Dicci come ti alleni: i piatti giusti arrivano da soli. Poi li sposti come vuoi, trascinandoli o toccandoli.
           </p>
         </div>
@@ -179,7 +181,13 @@ export default function SettimanaClient() {
         </div>
       </section>
 
-      <BarraSettimana r={r} pronto={pronto} piano={piano} allenamenti={allenamenti} />
+      <BarraSettimana
+        r={r}
+        pronto={pronto}
+        piano={piano}
+        allenamenti={allenamenti}
+        onRiempi={pronto && pasti === 0 && giorniScelti > 0 ? () => riempi(false) : undefined}
+      />
       <FoglioExtra slot={extraDi} chiudi={() => setExtraDi(null)} />
 
       {/* il fantasma del trascinamento: sempre montato, visibile solo mentre si trascina */}

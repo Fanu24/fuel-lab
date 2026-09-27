@@ -17,6 +17,10 @@ import { linkWhatsApp, numeroConfigurato } from "@/lib/whatsapp";
  * nel pannello con piatti e giorni, e il cliente ne segue lo stato. WhatsApp,
  * quando il numero c'e', resta come scorciatoia accanto.
  *
+ * Settimana vuota ma allenamenti gia' scelti: il bottone della barra diventa
+ * "Riempi la settimana", perche' sui portatili bassi quello della pagina puo'
+ * restare sotto la barra.
+ *
  * Il prezzo: il committente non vuole cifre in chiaro, quindi finche'
  * MOSTRA_STIMA_PREZZO e' spento compare solo la soglia d'ingresso.
  */
@@ -25,11 +29,13 @@ export default function BarraSettimana({
   pronto,
   piano,
   allenamenti,
+  onRiempi,
 }: {
   r: RiepilogoSettimana;
   pronto: boolean;
   piano: Piano;
   allenamenti: Allenamenti;
+  onRiempi?: () => void;
 }) {
   const vuota = !pronto || r.pasti === 0;
   const m = r.macroMediaGiorno;
@@ -68,7 +74,9 @@ export default function BarraSettimana({
             <>Da {euro(r.prezzoMinimo)} a pasto</>
           )}
           <span className="block">
-            {vuota
+            {vuota && onRiempi
+              ? "Allenamenti scelti: ora riempi la settimana"
+              : vuota
               ? "Scegli come ti alleni per iniziare"
               : mancanoConsegna > 0
                 ? `${mancanoConsegna} ${mancanoConsegna === 1 ? "pasto" : "pasti"} alla consegna gratis`
@@ -89,7 +97,15 @@ export default function BarraSettimana({
               <MarchioWhatsApp />
             </a>
           ) : null}
-          {vuota ? (
+          {vuota && onRiempi ? (
+            <button
+              type="button"
+              onClick={onRiempi}
+              className="btn btn-lime !min-h-11 !gap-2 !px-3 !text-[10px] sm:!min-h-12 sm:!px-4 sm:!text-xs"
+            >
+              Riempi la settimana <span aria-hidden="true" className="freccia">→</span>
+            </button>
+          ) : vuota ? (
             <span
               aria-disabled="true"
               className="btn btn-lime pointer-events-none !min-h-11 !gap-2 !px-3 !text-[10px] opacity-40 sm:!min-h-12 sm:!px-4 sm:!text-xs"
