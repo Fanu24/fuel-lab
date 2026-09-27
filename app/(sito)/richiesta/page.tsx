@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import RichiestaClient from "./RichiestaClient";
+import { numeroConfigurato } from "@/lib/whatsapp";
 
 /* La pagina vive sul piano (localStorage) e su ?servizio= (query string),
    quindi il corpo e' un client component: qui resta il metadata, che un
@@ -8,7 +9,7 @@ import RichiestaClient from "./RichiestaClient";
 export const metadata: Metadata = {
   title: "Scrivi a Matteo",
   description:
-    "Nome, telefono e comune, poi WhatsApp con il messaggio già scritto: la tua settimana e il servizio che ti interessa, pronti per Matteo. Nessun pagamento online.",
+    "Contatta Matteo Pattanè di FUEL LAB a Pescara: chiedi informazioni su menu, ritiro e consegna via email. WhatsApp sarà disponibile dopo la configurazione del numero.",
 };
 
 function Attesa() {
@@ -16,15 +17,17 @@ function Attesa() {
 }
 
 export default function RichiestaPage() {
+  const whatsappAttivo = numeroConfigurato();
   return (
     <>
       <section className="testata">
         <div className="wrap">
           <p className="occhiello">Scrivi a Matteo</p>
-          <h1 className="titolo-xl mt-6 max-w-[12ch]">Due minuti, poi parli con lui.</h1>
+          <h1 className="titolo-xl mt-6 max-w-[12ch]">Scrivi a Matteo.</h1>
           <p className="lead mt-6">
-            Nome, telefono e comune. Poi si apre WhatsApp col messaggio già pronto, settimana compresa. Nessun
-            pagamento online.
+            {whatsappAttivo
+              ? "Componi la tua richiesta e apri WhatsApp con il messaggio già pronto. Nessun pagamento online."
+              : "WhatsApp sarà disponibile quando avremo il numero. Intanto puoi scrivere a info@fuelchef.it per menu, consegne e disponibilità."}
           </p>
         </div>
       </section>

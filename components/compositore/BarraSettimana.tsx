@@ -1,9 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { CASELLE_TOTALI } from "@/lib/settimana";
 import { CONSEGNA_GRATIS_DA, MOSTRA_STIMA_PREZZO, euro } from "@/lib/pricing";
 import type { RiepilogoSettimana } from "@/lib/riepilogo";
+import { messaggioPiano } from "@/lib/whatsapp";
+import type { Allenamenti, Piano } from "@/lib/settimana";
+import WhatsAppCta from "@/components/ui/WhatsAppCta";
 
 /**
  * La barra in fondo allo schermo: quanti pasti, i macro medi di un giorno,
@@ -12,7 +14,17 @@ import type { RiepilogoSettimana } from "@/lib/riepilogo";
  * Il prezzo: il committente non vuole cifre in chiaro, quindi finche'
  * MOSTRA_STIMA_PREZZO e' spento compare solo la soglia d'ingresso.
  */
-export default function BarraSettimana({ r, pronto }: { r: RiepilogoSettimana; pronto: boolean }) {
+export default function BarraSettimana({
+  r,
+  pronto,
+  piano,
+  allenamenti,
+}: {
+  r: RiepilogoSettimana;
+  pronto: boolean;
+  piano: Piano;
+  allenamenti: Allenamenti;
+}) {
   const vuota = !pronto || r.pasti === 0;
   const m = r.macroMediaGiorno;
   const mancanoConsegna = CONSEGNA_GRATIS_DA - r.pasti;
@@ -58,16 +70,13 @@ export default function BarraSettimana({ r, pronto }: { r: RiepilogoSettimana; p
           </span>
         </p>
 
-        <Link
-          href="/richiesta?servizio=menu-settimana"
-          className={`btn btn-lime ml-auto shrink-0 ${vuota ? "pointer-events-none opacity-40" : ""}`}
-          aria-disabled={vuota}
-          tabIndex={vuota ? -1 : undefined}
-        >
-          <span className="hidden sm:inline">Invia a Matteo</span>
-          <span className="sm:hidden">Invia</span>
-          <span className="freccia">→</span>
-        </Link>
+        <WhatsAppCta
+          className="ml-auto shrink-0"
+          mostraAvviso={false}
+          testo={messaggioPiano(piano, r.macroSettimana, undefined, allenamenti)}
+          label="Invia su WhatsApp"
+          buttonClassName={`!min-h-11 !gap-2 !px-3 !text-[10px] sm:!min-h-12 sm:!px-4 sm:!text-xs ${vuota ? "pointer-events-none opacity-40" : ""}`}
+        />
       </div>
     </div>
   );

@@ -154,7 +154,12 @@ export default function SettimanaClient() {
           ) : null}
 
           <div className="tavolo">
-            <Banco stato={stato} inizia={inizia} tocca={tocca} />
+            <Banco
+              stato={stato}
+              inizia={inizia}
+              tocca={tocca}
+              destinazione={stato.modo === "cerca" ? nomeSlot(stato.slot) : undefined}
+            />
             <Griglia
               piano={piano}
               allenamenti={allenamenti}
@@ -172,7 +177,7 @@ export default function SettimanaClient() {
         </div>
       </section>
 
-      <BarraSettimana r={r} pronto={pronto} />
+      <BarraSettimana r={r} pronto={pronto} piano={piano} allenamenti={allenamenti} />
       <FoglioExtra slot={extraDi} chiudi={() => setExtraDi(null)} />
 
       {/* il fantasma del trascinamento: sempre montato, visibile solo mentre si trascina */}

@@ -8,36 +8,33 @@ import Faq, { type Domanda } from "@/components/come-funziona/Faq";
 export const metadata: Metadata = {
   title: "Come funziona",
   description:
-    "Dici come ti alleni, la settimana si compone da sola, Matteo cucina il lunedì e il giovedì e consegna in giornata. Fresco, mai surgelato: quattro giorni di frigo.",
+    "Scopri come usare il compositore FUEL LAB, consultare ingredienti e piatti e chiedere a Matteo disponibilità, ritiro e consegna a Pescara.",
 };
-
-/* NOTA REDAZIONALE (non va in pagina): le risposte sono segnaposto da
-   rivedere con Matteo, in particolare orari, zone e contenitori. */
 
 const DOMANDE: Domanda[] = [
   {
-    q: "Quanto durano in frigo?",
-    a: "Quattro giorni dalla consegna. Sull'etichetta trovi data e ora di cottura: il quarto giorno è l'ultimo utile, non un margine gonfiato. Tienile tra 0 e 4 gradi, con il coperchio chiuso.",
+    q: "Quanto durano i piatti in frigorifero?",
+    a: "La durata dipende dal piatto e dal confezionamento. Segui la data e le istruzioni fornite con il prodotto; se non le hai, chiedi conferma a Matteo prima di consumarlo.",
   },
   {
     q: "Come si scaldano?",
-    a: "In padella coperta, tre minuti a fuoco medio con un cucchiaio d'acqua. Al microonde, due minuti a 900 W con il coperchio appoggiato. I contenitori reggono entrambi.",
+    a: "Segui le istruzioni del piatto e del contenitore ricevuto. Non scaldare una confezione nel microonde senza aver verificato che sia adatta.",
   },
   {
     q: "Quali zone servite?",
-    a: "Pescara e provincia, fino a circa quaranta minuti dal laboratorio. Oltre, il vantaggio del fresco sparisce nel furgone.",
+    a: "Scrivi a info@fuelchef.it con il tuo comune e indirizzo: la copertura viene confermata prima dell'ordine. È possibile chiedere anche informazioni sul ritiro in Via del Santuario 214, Pescara.",
   },
   {
-    q: "Posso saltare una settimana?",
-    a: "Sì: basta scriverlo a Matteo entro il venerdì della settimana prima, quando parte la spesa. Nessuna penale.",
+    q: "Devo ordinare ogni settimana?",
+    a: "Il compositore è una bozza gratuita e non invia ordini automatici. Per ordinare, chiedi disponibilità e condizioni a Matteo via email.",
   },
   {
     q: "Ho un'allergia o un'intolleranza.",
-    a: "Ogni piatto dichiara i suoi allergeni. La cucina però è una sola e lavora anche glutine, pesce e frutta a guscio: se hai un'allergia diagnosticata scrivi prima, e Matteo ti dice la verità anche quando la verità è che non fa al caso tuo.",
+    a: "Consulta gli ingredienti indicati e contatta Matteo prima di ordinare. Chiedi conferma sugli allergeni e sulle possibili contaminazioni: la scheda online da sola non basta per valutare la sicurezza del piatto.",
   },
   {
     q: "Il mio nutrizionista può parlare con Matteo?",
-    a: "Volentieri. Dal compositore puoi anche mandargli la settimana con un link: la vede identica, con i macro giorno per giorno.",
+    a: "Puoi condividere la tua bozza e i valori pubblicati dei piatti con il professionista che ti segue. Per adattamenti e ingredienti, scrivi a Matteo e chiedi se sono possibili.",
   },
 ];
 
@@ -57,16 +54,17 @@ export default function ComeFunziona() {
         <FotoPiena foto="schiscette" velo="forte" />
         <div className="wrap relative grid gap-12 py-[var(--sezione)] md:grid-cols-2">
           <Reveal>
-            <p className="occhiello">Fresco contro surgelato</p>
-            <h2 className="titolo mt-5 max-w-[12ch]">Due giorni, non due stagioni.</h2>
+            <p className="occhiello">La preparazione</p>
+            <h2 className="titolo mt-5 max-w-[12ch]">Due giorni, una settimana più semplice.</h2>
           </Reveal>
           <Reveal delay={80} className="grid content-end gap-6 text-lg" >
             <p style={{ color: "rgb(243 239 230 / .9)" }}>
-              Matteo cucina il lunedì e il giovedì e consegna in giornata. La schiscetta che apri mercoledì sera è
-              stata in padella lunedì mattina.
+              Il sito indica lunedì e giovedì come giorni di preparazione e consegna. Scegli i piatti che ti
+              interessano e chiedi conferma di disponibilità, ritiro o copertura del tuo indirizzo.
             </p>
             <p style={{ color: "rgb(243 239 230 / .9)" }}>
-              Niente abbattitore a meno diciotto, niente magazzino: il riso resta riso e la carne resta carne.
+              Ogni piatto ha una scheda con ingredienti e valori pubblicati. Per conservazione, allergeni e modalità
+              di consumo, segui le informazioni del prodotto e chiedi direttamente quando hai dubbi.
             </p>
           </Reveal>
         </div>

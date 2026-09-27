@@ -9,18 +9,15 @@ import { FOTO, RITRATTO_MATTEO } from "@/lib/immagini";
 export const metadata: Metadata = {
   title: "Chi è Matteo",
   description:
-    "Matteo Pantanè, cuoco a Pescara dal 2014. FUEL LAB è nato in palestra, davanti a un contenitore di pollo lesso e riso in bianco.",
+    "Conosci Matteo Pattanè e FUEL LAB: piatti freschi, menu consultabile e meal prep per organizzare i pasti a Pescara.",
 };
 
-/* SEGNAPOSTO DICHIARATO: la storia e i numeri vanno confermati con Matteo, e
-   la foto e' di repertorio finche' RITRATTO_MATTEO in lib/immagini e' null.
-   La struttura resta: ritratto, storia, numeri, cosa FUEL LAB non e'. */
+/* La foto e' di repertorio finche' RITRATTO_MATTEO non viene fornito. */
 
 const CIFRE = [
-  { cifra: "2014", etichetta: "In cucina dal" },
   { cifra: "2", etichetta: "Cotture a settimana" },
   { cifra: String(PIATTI.length), etichetta: "Piatti in rotazione" },
-  { cifra: "4", etichetta: "Giorni di freschezza" },
+  { cifra: "PE", etichetta: "La nostra zona" },
 ];
 
 const NON_E = [
@@ -38,9 +35,9 @@ export default function ChiEMatteo() {
           <div>
             <p className="occhiello">Chi è Matteo</p>
             <h1 className="titolo-xl mt-6">Matteo.</h1>
-            <p className="titolo-s mt-4 text-muted">Cuoco. In cucina dal 2014.</p>
+            <p className="titolo-s mt-4 text-muted">Cucina a Pescara.</p>
             <p className="lead mt-8">
-              FUEL LAB è il laboratorio di Matteo Pantanè a Pescara: cucina fresca due volte a settimana per chi si
+              FUEL LAB è il laboratorio di Matteo Pattanè a Pescara: cucina fresca due volte a settimana per chi si
               allena, con i macro scritti su ogni piatto.
             </p>
           </div>
@@ -54,6 +51,7 @@ export default function ChiEMatteo() {
               fetchPriority="high"
               className="object-cover"
             />
+            {!RITRATTO_MATTEO ? <figcaption className="absolute right-3 bottom-3 bg-paper px-3 py-1 text-xs text-ink">Foto illustrativa</figcaption> : null}
           </figure>
         </div>
       </section>
@@ -61,19 +59,17 @@ export default function ChiEMatteo() {
       <section className="sezione">
         <div className="wrap grid gap-12 lg:grid-cols-[1fr_1.2fr]">
           <Reveal>
-            <blockquote className="titolo max-w-[12ch]">
-              I numeri c&apos;erano. <span className="evidenzia">Il mestiere no.</span>
-            </blockquote>
+            <h2 className="titolo max-w-[12ch]">Il menu parte dalla cucina.</h2>
           </Reveal>
           <Reveal delay={80} className="grid gap-6 text-lg leading-relaxed">
             <p>
-              L&apos;idea non è arrivata da un piano industriale. È arrivata in palestra, davanti a un contenitore di
-              pollo lesso e riso in bianco, seguito alla lettera: i macro tornavano, ma mangiarlo era una punizione.
+              FUEL LAB propone piatti da inserire nella tua settimana: consulta ingredienti e valori pubblicati,
+              scegli ciò che ti piace e costruisci una bozza dei pasti nei giorni più impegnativi.
             </p>
             <p>
-              Matteo cucina il lunedì e il giovedì e consegna in giornata. Niente abbattitore, niente scorte da tre
-              mesi: quello che esce dalla cucina ha quattro giorni di frigo davanti, poi finisce. Per questo resta su
-              Pescara e provincia.
+              Il sito indica preparazioni e consegne il lunedì e il giovedì. Matteo conferma direttamente piatti,
+              disponibilità e copertura del tuo indirizzo prima di qualsiasi ordine. Se hai domande su ingredienti o
+              conservazione, scrivigli prima di scegliere.
             </p>
           </Reveal>
         </div>
@@ -82,7 +78,7 @@ export default function ChiEMatteo() {
       <section className="notte relative overflow-hidden">
         <FotoPiena foto="presa" velo="forte" />
         <div className="wrap relative py-[var(--sezione)]">
-          <dl className="grid grid-cols-2 gap-x-6 gap-y-12 lg:grid-cols-4">
+          <dl className="grid grid-cols-2 gap-x-6 gap-y-12 lg:grid-cols-3">
             {CIFRE.map((c, i) => (
               <Reveal key={c.etichetta} delay={i * 70} className="border-t-[3px] border-lime pt-5">
                 <dt className="occhiello">{c.etichetta}</dt>

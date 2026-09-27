@@ -5,6 +5,9 @@
 /_next/static/*
   Cache-Control: public, max-age=31536000, immutable
 
+/foto/*
+  Cache-Control: public, max-age=604800
+
 # Sicurezza di base su tutte le pagine.
 /*
   X-Content-Type-Options: nosniff

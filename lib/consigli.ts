@@ -27,25 +27,25 @@ export const CONSIGLI: Record<ChiaveConsiglio, Consiglio> = {
   cardio: {
     id: "cardio",
     nome: "Cardio",
-    regola: "Più carboidrati.",
+    regola: "Carboidrati secondo l'allenamento.",
     perche:
-      "Corsa, bici, nuoto, circuiti: il carburante è il glicogeno. Un pasto ricco di carboidrati lo rimette dove serve, così il giorno dopo le gambe ci sono ancora.",
+      "Corsa, bici e circuiti possono richiedere organizzazioni diverse dei pasti. Guarda gli ingredienti e scegli secondo durata, orari e indicazioni del professionista che ti segue.",
     foto: "corsa",
   },
   pesi: {
     id: "pesi",
     nome: "Pesi",
-    regola: "Proteine, e carboidrati misurati.",
+    regola: "Proteine, senza formule fisse.",
     perche:
-      "Dopo la pesistica il muscolo si ricostruisce: servono proteine piene e una quota ridotta di carboidrati, quella giusta per assimilarle e favorire la sintesi proteica.",
+      "Dopo i pesi puoi preferire un pasto con una fonte proteica. La quantità di carboidrati e la porzione complessiva dipendono da te e dal resto della giornata.",
     foto: "pesi",
   },
   riposo: {
     id: "riposo",
     nome: "Riposo",
-    regola: "Più leggero.",
+    regola: "Scegli con flessibilità.",
     perche:
-      "Il giorno senza allenamento il fabbisogno scende. Piatti più leggeri, con le proteine che restano: il recupero si fa anche a tavola.",
+      "Un giorno di riposo non impone automaticamente porzioni più piccole. Scegli in base alle tue abitudini, alle preferenze e a eventuali indicazioni personalizzate.",
     foto: "verdure",
   },
 };

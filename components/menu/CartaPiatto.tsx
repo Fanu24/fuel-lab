@@ -20,6 +20,7 @@ export default function CartaPiatto({ piatto, grande = false }: { piatto: Piatto
           className="object-cover transition-transform duration-[1.2s] ease-[var(--e-out)] group-hover:scale-[1.04]"
         />
         <TagAllenamento tipo={piatto.allenamento} className="absolute top-4 left-4" />
+        <span className="absolute right-3 bottom-3 bg-paper px-2 py-1 text-xs text-ink">Foto illustrativa</span>
       </div>
       <h3 className="titolo-s mt-5 group-hover:underline group-hover:decoration-2 group-hover:underline-offset-4">
         {piatto.nome}

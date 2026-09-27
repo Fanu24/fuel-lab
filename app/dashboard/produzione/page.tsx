@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import TabellaProduzione from "@/components/dashboard/TabellaProduzione";
+import ProductionLive from "@/components/dashboard/ProductionLive";
 
 export const metadata: Metadata = { title: "Produzione" };
 
 export default function PaginaProduzione() {
-  return <TabellaProduzione />;
+  return <ProductionLive />;
 }

@@ -1,5 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
+import WhatsAppCta from "@/components/ui/WhatsAppCta";
+import PrivacySettingsButton from "@/components/PrivacySettingsButton";
 
 const COLONNE = [
   {
@@ -16,6 +18,7 @@ const COLONNE = [
       { href: "/come-funziona", label: "Come funziona" },
       { href: "/servizi", label: "Servizi e prezzi" },
       { href: "/chi-e-matteo", label: "Chi è Matteo" },
+      { href: "/blog", label: "Blog · Meal prep a Pescara" },
     ],
   },
 ];
@@ -36,12 +39,11 @@ export default function Footer() {
               />
             </Link>
             <p className="mt-8 max-w-[34ch] text-steel">
-              Cucina fresca per chi si allena. Via del Santuario 14, Pescara. Consegna in zona il lunedì e il
+              Cucina fresca per chi si allena. Via del Santuario 214, Pescara. Consegna in zona il lunedì e il
               giovedì.
             </p>
-            <Link href="/richiesta" className="btn btn-lime mt-8">
-              Scrivi a Matteo <span className="freccia">→</span>
-            </Link>
+            <WhatsAppCta className="mt-8" buttonClassName="justify-between" />
+            <a href="mailto:info@fuelchef.it" className="mt-5 inline-block text-steel underline underline-offset-4 hover:text-lime">info@fuelchef.it</a>
           </div>
 
           {COLONNE.map((c) => (
@@ -67,8 +69,13 @@ export default function Footer() {
           className="mt-20 flex flex-wrap justify-between gap-4 border-t pt-6 text-sm text-steel"
           style={{ borderColor: "var(--line)" }}
         >
-          <p>© FUEL LAB · Matteo Pantanè · Pescara</p>
-          <p>Sito dimostrativo: nessun ordine viene addebitato, la richiesta arriva su WhatsApp.</p>
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+            <p>© FUEL LAB · Matteo Pattanè · Pescara</p>
+            <p>Ragione sociale e P. IVA: in aggiornamento</p>
+            <Link href="/privacy" className="underline underline-offset-4 hover:text-lime">Privacy e cookie</Link>
+            <PrivacySettingsButton />
+          </div>
+          <p><Link href="/account" className="underline underline-offset-4">Area cliente</Link> · Nessun pagamento online: ordine e disponibilità si confermano con Matteo.</p>
         </div>
       </div>
     </footer>

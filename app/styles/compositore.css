@@ -63,6 +63,9 @@
     gap: 8px;
     overflow-x: auto;
     scrollbar-width: none;
+    scroll-snap-type: x mandatory;
+    overscroll-behavior-x: contain;
+    padding-bottom: 3px;
   }
   @media (min-width: 1024px) {
     .banco-lista {
@@ -76,6 +79,8 @@
     align-items: center;
     gap: 10px;
     width: 220px;
+    flex: 0 0 220px;
+    scroll-snap-align: start;
     padding: 6px;
     background: var(--color-paper);
     color: var(--color-ink);

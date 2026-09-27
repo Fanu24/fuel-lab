@@ -1,5 +1,7 @@
 # Handoff: pubblicare FUEL LAB su Cloudflare
 
+> Documento storico della vecchia demo. Per architettura, accessi e deploy attuali, leggi [README.md](../README.md). Le istruzioni di questo file su PIN, localStorage e pubblicazione non sono più valide.
+
 **Generato**: 2026-09-26 23:06
 **Branch**: `restyling` (sopra `fase-a`; remote `origin` = github.com/Fanu24/fuel-lab, **non ancora pushato**)
 **Stato**: pronto per la pubblicazione. Working tree pulito, tutto committato.

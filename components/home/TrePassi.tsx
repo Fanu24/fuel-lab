@@ -14,7 +14,7 @@ const PASSI = [
   {
     n: "03",
     titolo: "Matteo cucina e consegna",
-    testo: "La richiesta arriva a Matteo su WhatsApp, lui conferma. Lunedì e giovedì, direttamente nel tuo frigo.",
+    testo: "Scrivi a Matteo con le tue scelte: conferma piatti, ritiro o consegna prima dell'ordine.",
   },
 ];
 

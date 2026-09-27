@@ -3,19 +3,13 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
-import { getExtra, getPiatto } from "@/lib/catalogo";
+import { getPiatto } from "@/lib/catalogo";
 import { GIORNI, NOMI_GIORNATA, NOMI_GIORNO, PASTI, usePiano } from "@/lib/piano";
-import { getRepository } from "@/lib/richieste";
 import { SERVIZI, getServizio, type ServizioId } from "@/lib/servizi";
 import { componiMessaggio, linkWhatsApp, numeroConfigurato, type DatiContatto } from "@/lib/whatsapp";
 
-/* Scrivi a Matteo: quattro campi, poi WhatsApp col messaggio gia' scritto.
-
-   Prima di aprire WhatsApp la richiesta viene salvata nel repository
-   (lib/richieste): e' da li' che la legge la dashboard di Matteo. Il
-   salvataggio non si aspetta e non blocca: i browser concedono di aprire una
-   scheda solo subito dopo il click, e una richiesta persa per la dashboard e'
-   un danno minore di un cliente che non riesce a scrivere. */
+/* Scrivi a Matteo: i dati restano nella pagina finché l'utente non sceglie di
+   aprire WhatsApp. Non inviamo né archiviamo il modulo sul sito. */
 
 const RICHIEDE_PIANO: Record<ServizioId, boolean> = {
   "menu-settimana": true,
@@ -54,7 +48,7 @@ export default function RichiestaClient() {
   function invia(e: React.FormEvent) {
     e.preventDefault();
     setProvato(true);
-    if (Object.keys(errori).length || mancaPiano) return;
+    if (!configurato || Object.keys(errori).length || mancaPiano) return;
 
     const testo = componiMessaggio({
       servizioId,
@@ -64,32 +58,6 @@ export default function RichiestaClient() {
       contatto: dati,
       allenamenti,
     });
-
-    const nomiPiatti: Record<string, string> = {};
-    for (const g of GIORNI)
-      for (const m of PASTI) {
-        const c = piano[g]?.[m];
-        if (c?.piatto) nomiPiatti[c.piatto] = getPiatto(c.piatto)?.nome ?? c.piatto;
-        for (const x of c?.extra ?? []) nomiPiatti[x] = getExtra(x)?.nome ?? x;
-      }
-
-    try {
-      void getRepository()
-        .crea({
-          servizio: servizioId,
-          formula: "singolo",
-          contatto: dati,
-          piano: richiedePiano ? piano : {},
-          allenamenti: richiedePiano ? allenamenti : {},
-          nomiPiatti,
-          pasti: richiedePiano ? pasti : 0,
-          macro: macroSettimana,
-          origine: "sito",
-        })
-        .catch(() => {});
-    } catch {
-      /* storage negato: la richiesta non arriva alla dashboard, WhatsApp si apre lo stesso */
-    }
 
     const href = linkWhatsApp(testo);
     if (href) window.open(href, "_blank", "noopener,noreferrer");
@@ -120,22 +88,44 @@ export default function RichiestaClient() {
       <section className="pb-[var(--sezione)]">
         <div className="wrap">
           <div className="notte p-8 md:p-14" role="status">
-            <p className="occhiello">Richiesta registrata</p>
+            <p className="occhiello">Messaggio pronto</p>
             <h2 className="titolo mt-5 max-w-[16ch]">
-              {configurato ? "Ora parli con Matteo." : "Richiesta salvata."}
+              {configurato ? "Ora puoi scrivere a Matteo." : "WhatsApp non è ancora attivo."}
             </h2>
             <p className="mt-6 max-w-[52ch] text-steel">
               {configurato
                 ? "Si è aperta WhatsApp col messaggio già scritto: premi invio e Matteo ti risponde, di solito in giornata."
-                : "Il numero WhatsApp di Matteo non è ancora attivo in questa demo, ma la richiesta è arrivata nel suo pannello."}
+                : "Il numero WhatsApp non è ancora configurato. I dati inseriti non vengono inviati né salvati dal sito."}
             </p>
             <div className="mt-10 flex flex-wrap gap-x-8 gap-y-4">
               <Link href="/" className="btn btn-lime">
                 Torna alla home
               </Link>
-              <Link href="/dashboard" className="link">
-                Demo: vedila nel pannello di Matteo
-              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (!configurato) {
+    return (
+      <section className="pb-[var(--sezione)]">
+        <div className="wrap grid gap-8 md:grid-cols-2">
+          <div className="notte p-8 md:p-12">
+            <p className="occhiello">Contatto diretto</p>
+            <h2 className="titolo-s mt-5">Parliamo del tuo menu.</h2>
+            <p className="mt-5 text-steel">Scrivici cosa cerchi, il tuo comune e i giorni che ti interessano. Ti confermiamo disponibilità e modalità di consegna.</p>
+            <Link href="/account" className="btn btn-lime mt-8">Invia dal tuo account <span className="freccia">→</span></Link>
+            <a href="mailto:info@fuelchef.it?subject=Informazioni%20FUEL%20LAB" className="link mt-5 inline-block text-steel">Oppure scrivi a info@fuelchef.it</a>
+          </div>
+          <div className="bg-paper-2 p-8 md:p-12">
+            <p className="occhiello">Prima di scriverci</p>
+            <h2 className="titolo-s mt-5">Scegli cosa mangiare.</h2>
+            <p className="mt-5 text-muted">Esplora ingredienti e piatti oppure prepara una bozza dei pasti della settimana. Puoi citare i tuoi preferiti nel messaggio.</p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link href="/menu" className="btn btn-ink">Guarda il menu</Link>
+              <Link href="/settimana" className="btn btn-linea">Componi la settimana</Link>
             </div>
           </div>
         </div>
@@ -199,13 +189,13 @@ export default function RichiestaClient() {
           ) : null}
 
           <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-            <button type="submit" className="btn btn-lime" disabled={mancaPiano}>
-              {configurato ? "Apri WhatsApp" : "Invia la richiesta"} <span className="freccia">→</span>
+            <button type="submit" className="btn btn-lime" disabled={mancaPiano || !configurato}>
+              {configurato ? "Apri WhatsApp" : "WhatsApp presto disponibile"} <span className="freccia">→</span>
             </button>
             <p className="max-w-[40ch] text-sm text-muted">
               {configurato
                 ? "Si apre WhatsApp col messaggio già scritto: lo mandi tu."
-                : "Demo: il numero WhatsApp non è ancora attivo, la richiesta arriva solo nel pannello di Matteo."}
+                : "Il numero non è ancora configurato. Puoi esplorare menu e compositore senza inserire i tuoi dati."}
             </p>
           </div>
         </form>

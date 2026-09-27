@@ -45,13 +45,14 @@ export default async function PaginaPiatto({ params }: Props) {
             <div className="smusso relative aspect-[4/5] overflow-hidden bg-paper-2 lg:sticky lg:top-[calc(var(--nav-h)+24px)] lg:self-start">
               <Image
                 src={piatto.img}
-                alt={piatto.nome}
+                alt={`Foto illustrativa per ${piatto.nome}`}
                 fill
                 sizes="(min-width: 1024px) 50vw, 100vw"
                 loading="eager"
                 fetchPriority="high"
                 className="object-cover"
               />
+              <span className="absolute right-3 bottom-3 bg-paper px-3 py-1 text-xs text-ink">Foto illustrativa</span>
             </div>
 
             <div>

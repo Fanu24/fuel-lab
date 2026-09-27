@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import CartaPiatto from "@/components/menu/CartaPiatto";
+import AggiungiAllaSettimana from "@/components/menu/AggiungiAllaSettimana";
 import { PIATTI, type Piatto } from "@/lib/catalogo";
 import { CONSIGLI } from "@/lib/consigli";
 
@@ -57,6 +58,9 @@ export default function MenuClient() {
           {piatti.map((p) => (
             <li key={p.id}>
               <CartaPiatto piatto={p} grande />
+              <div className="mt-5">
+                <AggiungiAllaSettimana piattoId={p.id} />
+              </div>
             </li>
           ))}
         </ul>

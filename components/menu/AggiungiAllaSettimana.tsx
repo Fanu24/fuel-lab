@@ -26,7 +26,9 @@ export default function AggiungiAllaSettimana({ piattoId }: { piattoId: string }
   return (
     <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
       <button type="button" className="btn btn-ink" onClick={aggiungi}>
-        Aggiungi alla settimana <span aria-hidden="true">+</span>
+        <span className="hidden sm:inline">Aggiungi alla settimana</span>
+        <span className="sm:hidden">Aggiungi</span>
+        <span aria-hidden="true">+</span>
       </button>
       <p role="status" className="text-sm">
         {esito ? (

@@ -3,14 +3,9 @@
 /**
  * Loader di next/image.
  *
- * Le foto Unsplash le ridimensiona Unsplash stesso: chiedere a Vercel di
- * ottimizzare un'immagine che arriva gia' alla larghezza giusta vorrebbe dire
- * pagare due volte lo stesso lavoro. I percorsi locali (logo, e le foto vere
- * di Matteo quando arriveranno in /public) passano invariati.
+ * Le immagini sono ospitate sullo stesso dominio. Il loader conserva i
+ * percorsi locali anche nell'export statico per Cloudflare Pages.
  */
-export default function loader({ src, width, quality }: { src: string; width: number; quality?: number }) {
-  if (src.startsWith("photo-")) {
-    return `https://images.unsplash.com/${src}?w=${width}&q=${quality ?? 72}&auto=format&fit=crop`;
-  }
+export default function loader({ src }: { src: string; width: number; quality?: number }) {
   return src;
 }

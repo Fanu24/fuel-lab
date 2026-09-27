@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Cancello from "@/components/dashboard/Cancello";
+import AdminGate from "@/components/dashboard/AdminGate";
 import Testata from "@/components/dashboard/Testata";
 
 export const metadata: Metadata = {
@@ -7,15 +7,13 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-/* Il pannello di Matteo: fuori dal gruppo (sito), quindi senza nav, footer e
-   piano del cliente. Tutto passa dal cancello demo. */
 export default function LayoutDashboard({ children }: { children: React.ReactNode }) {
   return (
-    <Cancello>
+    <AdminGate>
       <div className="min-h-svh bg-paper">
         <Testata />
         <main className="wrap py-8 md:py-12">{children}</main>
       </div>
-    </Cancello>
+    </AdminGate>
   );
 }

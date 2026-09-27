@@ -1,17 +1,16 @@
 /* =========================================================================
    Tutte le foto del sito, in un posto solo.
 
-   Sono foto Unsplash scelte a mano in attesa degli scatti veri di Matteo:
+   Sono foto di repertorio da Unsplash, ora ospitate localmente, in attesa degli scatti veri di Matteo:
    quando arrivano, si cambia QUESTO file (un percorso in /public al posto
    dell'id) e nessuna pagina va toccata. Il loader in ./loader.ts riconosce
    i due casi da solo.
 
-   Ogni id e' stato verificato (risposta 200 da images.unsplash.com) e
-   guardato: l'alt descrive quello che c'e' davvero nella foto.
+   L'alt descrive il contenuto visibile nella foto.
    ========================================================================= */
 
 export interface Foto {
-  /** id Unsplash ("photo-...") oppure percorso locale ("/foto/matteo.jpg") */
+  /** Percorso locale ("/foto/matteo.jpg") */
   src: string;
   alt: string;
   /** punto focale per object-position quando la foto viene ritagliata */
@@ -20,59 +19,59 @@ export interface Foto {
 
 export const FOTO = {
   heroAtleta: {
-    src: "photo-1605296867304-46d5465a13f1",
+    src: "/foto/photo-1605296867304-46d5465a13f1.webp",
     alt: "Atleta chinato sul bilanciere prima di uno stacco, in una palestra al buio",
     fuoco: "50% 60%",
   },
   corsa: {
-    src: "photo-1552674605-db6ffd4facb5",
+    src: "/foto/photo-1552674605-db6ffd4facb5.webp",
     alt: "Tre persone che corrono in controluce all'alba",
     fuoco: "50% 50%",
   },
   scatto: {
-    src: "photo-1461897104016-0b3b00cc81ee",
+    src: "/foto/photo-1461897104016-0b3b00cc81ee.webp",
     alt: "Velocisti che esplodono dai blocchi su una pista di atletica",
   },
   pesi: {
-    src: "photo-1574680096145-d05b474e2155",
+    src: "/foto/photo-1574680096145-d05b474e2155.webp",
     alt: "Atleta di spalle con il bilanciere appoggiato sulle spalle",
     fuoco: "50% 30%",
   },
   presa: {
-    src: "photo-1549060279-7e168fcee0c2",
+    src: "/foto/photo-1549060279-7e168fcee0c2.webp",
     alt: "Mano che stringe il bilanciere carico, in primo piano",
   },
   distensione: {
-    src: "photo-1541534741688-6078c6bfb5c5",
+    src: "/foto/photo-1541534741688-6078c6bfb5c5.webp",
     alt: "Atleta in spinta sopra la testa con il bilanciere",
   },
   cuoco: {
-    src: "photo-1577219491135-ce391730fb2c",
+    src: "/foto/photo-1577219491135-ce391730fb2c.webp",
     alt: "Un cuoco impiatta con la pinza sotto le lampade della cucina",
     fuoco: "50% 35%",
   },
   schiscette: {
-    src: "photo-1498837167922-ddd27525d352",
+    src: "/foto/photo-1498837167922-ddd27525d352.webp",
     alt: "Vaschette di verdure, legumi e cereali freschi divise per ingrediente",
   },
   verdure: {
-    src: "photo-1518843875459-f738682238a6",
+    src: "/foto/photo-1518843875459-f738682238a6.webp",
     alt: "Verdure crude appoggiate su un fondo nero, prima della cottura",
   },
   cucina: {
-    src: "photo-1556910103-1c02745aae4d",
+    src: "/foto/photo-1556910103-1c02745aae4d.webp",
     alt: "Persone che cucinano insieme nella cucina di casa",
   },
   tagliere: {
-    src: "photo-1466637574441-749b8f19452f",
+    src: "/foto/photo-1466637574441-749b8f19452f.webp",
     alt: "Tagliere con avocado, uova, pomodorini, funghi e cipollotti, prima della preparazione",
   },
   ciotola: {
-    src: "photo-1547496502-affa22d38842",
+    src: "/foto/photo-1547496502-affa22d38842.webp",
     alt: "Ciotola di verdure, avocado e semi su fondo scuro",
   },
   bowl: {
-    src: "photo-1512621776951-a57141f2eefd",
+    src: "/foto/photo-1512621776951-a57141f2eefd.webp",
     alt: "Piatto di verdure fresche, ceci, avocado e patata dolce",
   },
 } satisfies Record<string, Foto>;

@@ -46,7 +46,7 @@ describe("catalogo", () => {
     const reparti = new Set(REPARTI.map((r) => r.id));
     for (const e of EXTRA) {
       expect(e.descrizione.length, e.id).toBeGreaterThan(8);
-      expect(e.img, e.id).toMatch(/^photo-/);
+      expect(e.img, e.id).toMatch(/^\/foto\/.+\.webp$/);
       expect(reparti.has(e.reparto), e.id).toBe(true);
       if (e.prezzoEuro != null) {
         expect(e.prezzoEuro).toBeGreaterThan(0);

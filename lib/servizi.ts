@@ -35,7 +35,7 @@ export interface Servizio {
   nome: string;
   descrizione: string;
   prezzo: Prezzo;
-  /** id Unsplash: lo ridimensiona il loader di next/image (lib/immagini/loader.ts) */
+  /** Percorso della foto illustrativa ospitata sul sito. */
   img: string;
   /** pagina del sito dove approfondire il servizio, mai un ancora vuota */
   href: string;
@@ -52,7 +52,7 @@ export const SERVIZI: Servizio[] = [
     descrizione:
       "Dici come ti alleni giorno per giorno e la settimana si compone con i sei piatti del menu. La ritocchi trascinando i piatti, aggiungi quello che vuoi alla box.",
     prezzo: { tipo: "soglia", valore: SOGLIA_PREZZO, unita: "a pasto" },
-    img: "photo-1505576399279-565b52d4ac71",
+    img: "/foto/photo-1505576399279-565b52d4ac71.webp",
     href: "/settimana",
   },
   {
@@ -62,7 +62,7 @@ export const SERVIZI: Servizio[] = [
     descrizione:
       "Scrivi i numeri della scheda del tuo nutrizionista: il piano si compone sui tuoi target, scegliendo i piatti più vicini ai tuoi macro. Tu confermi.",
     prezzo: { tipo: "soglia", valore: SOGLIA_PREZZO, unita: "a pasto" },
-    img: "photo-1512058564366-18510be2db19",
+    img: "/foto/photo-1512058564366-18510be2db19.webp",
     href: "/scheda",
   },
   {
@@ -72,7 +72,7 @@ export const SERVIZI: Servizio[] = [
     descrizione:
       "Matteo viene a casa tua: fa la spesa, cucina e porziona nella tua cucina. Non è produzione in serie, è il suo tempo dedicato solo a te, e per questo ha un'economia sua.",
     prezzo: { tipo: "preventivo" },
-    img: "photo-1556910103-1c02745aae4d",
+    img: "/foto/photo-1556910103-1c02745aae4d.webp",
     // non e' una pagina che spiega il servizio (non esiste ancora): e' un posizionamento
     // deliberato, "conosci Matteo prima di farlo entrare in casa tua". Vedi il commento
     // di LinkServizio in components/servizi/SezioneServizi.tsx per il dettaglio.

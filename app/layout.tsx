@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Archivo, Martian_Mono, Oxanium } from "next/font/google";
 import { URL_SITO } from "@/lib/sito";
+import PrivacyConsent from "@/components/PrivacyConsent";
 import "./globals.css";
 
 /* Oxanium per titoli ed etichette: lettere squadrate con gli spigoli tagliati a
@@ -40,6 +41,7 @@ export const metadata: Metadata = {
     siteName: "FUEL LAB",
     title: "FUEL LAB · Allenati. Al cibo ci pensa Matteo.",
     description: "Meal prep fresco a Pescara per chi si allena. Piatti per il cardio e per i pesi, cucinati il lunedì e il giovedì.",
+    images: [{ url: "/opengraph-image.jpg", width: 1200, height: 630, alt: "FUEL LAB · Meal prep a Pescara" }],
   },
   twitter: { card: "summary_large_image" },
 };
@@ -49,6 +51,19 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const organization = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "@id": `${URL_SITO}/#organization`,
+    name: "FUEL LAB",
+    url: URL_SITO,
+    logo: `${URL_SITO}/logo-fuellab.png`,
+    description: "Meal prep fresco a Pescara per chi si allena.",
+    areaServed: { "@type": "City", name: "Pescara" },
+    founder: { "@type": "Person", name: "Matteo Pattanè" },
+    address: { "@type": "PostalAddress", streetAddress: "Via del Santuario 214", addressLocality: "Pescara", addressCountry: "IT" },
+  };
+
   return (
     <html
       lang="it"
@@ -56,12 +71,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       suppressHydrationWarning
     >
       <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organization).replace(/</g, "\\u003c") }}
+        />
         {/* Marca la pagina come "JS vivo" prima del primo paint: le rivelazioni in
             scroll partono da opacity:0 solo sotto .js, cosi' senza JavaScript il
             sito resta statico invece che bianco. */}
         <script dangerouslySetInnerHTML={{ __html: `document.documentElement.classList.add('js')` }} />
       </head>
-      <body>{children}</body>
+      <body>{children}<PrivacyConsent /></body>
     </html>
   );
 }

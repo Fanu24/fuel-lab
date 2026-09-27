@@ -116,7 +116,7 @@ export const PIATTI: Piatto[] = [
     kcal: kcalDa(58, 116, 53),
     tag: ["carne"],
     allergeni: ["glutine", "sesamo", "soia"],
-    img: "photo-1526318896980-cf78c088247c",
+    img: "/foto/photo-1526318896980-cf78c088247c.webp",
     giorno: "lunedi",
     allenamento: "cardio",
     ingredienti: [
@@ -138,7 +138,7 @@ export const PIATTI: Piatto[] = [
       { nome: "Olio d'oliva", grammi: 15 },
     ],
     motivo:
-      "In questo pasto completo abbiamo un'alta quantità di proteine unita alla dose di carboidrati giusta per assimilarle al meglio. Le spezie usate in questo piatto sono ricche di antiossidanti. Gli alimenti vengono trattati con cura per esaltare i valori nutrizionali.",
+      "Noodles, carne e condimenti creano un piatto dal sapore deciso. Consulta ingredienti, allergeni e valori pubblicati per capire se si adatta alle tue preferenze e alla tua giornata.",
   },
   {
     id: "gnocchetti-sugo-ricotta",
@@ -151,7 +151,7 @@ export const PIATTI: Piatto[] = [
     kcal: kcalDa(46, 73, 49),
     tag: ["veg"],
     allergeni: ["glutine", "latte", "uova"],
-    img: "photo-1601556123240-462c758a50db",
+    img: "/foto/photo-1601556123240-462c758a50db.webp",
     giorno: "giovedi",
     allenamento: "cardio",
     ingredienti: [
@@ -165,7 +165,7 @@ export const PIATTI: Piatto[] = [
       { nome: "Olio d'oliva", grammi: 15 },
     ],
     motivo:
-      "La semplicità del prodotto non significa che in esso non ci sia racchiuso tutto quello di cui hai bisogno. Gli gnocchi fatti a mano sono fatti da patate, poca farina e uova: le patate sono una delle migliori fonti di carboidrati e le uova nell'impasto aggiungono anche proteine. La crema di ricotta e parmigiano non solo rende più gustoso il piatto, ha anche un fattore proteico non indifferente. Il sugo è fatto direttamente dai pomodorini freschi, cuocendo tutto a bassa temperatura per preservare il più possibile i suoi valori.",
+      "Gli gnocchetti con sugo e ricotta abbinano consistenza morbida e sapore fresco. Controlla la scheda per ingredienti, allergeni, porzione e valori del piatto prima di inserirlo nella settimana.",
   },
   {
     id: "riso-julien-pollo-teriyaki",
@@ -178,7 +178,7 @@ export const PIATTI: Piatto[] = [
     kcal: kcalDa(62, 140, 23),
     tag: ["carne", "senza-glutine"],
     allergeni: ["sesamo", "soia"],
-    img: "photo-1603133872878-684f208fb84b",
+    img: "/foto/photo-1603133872878-684f208fb84b.webp",
     giorno: "lunedi",
     allenamento: "entrambi",
     ingredienti: [
@@ -190,7 +190,7 @@ export const PIATTI: Piatto[] = [
       { nome: "Olio di sesamo", grammi: 6 },
     ],
     motivo:
-      "In un piatto abbiamo tutto quello di cui abbiamo bisogno. L'olio di sesamo è ricco di acidi grassi e di antiossidanti come il sesamolo, che aiutano a combattere i radicali liberi.",
+      "Riso, pollo e verdure julien compongono un piatto pratico da inserire nei giorni più pieni. I valori pubblicati descrivono la ricetta; per quantità individuali segui le indicazioni del tuo professionista.",
   },
   {
     id: "maiale-senape-spinaci",
@@ -203,7 +203,7 @@ export const PIATTI: Piatto[] = [
     kcal: kcalDa(71, 70, 37),
     tag: ["carne", "senza-glutine"],
     allergeni: ["senape", "soia"],
-    img: "photo-1432139555190-58524dae6a55",
+    img: "/foto/photo-1432139555190-58524dae6a55.webp",
     giorno: "giovedi",
     allenamento: "pesi",
     ingredienti: [
@@ -223,7 +223,7 @@ export const PIATTI: Piatto[] = [
       { nome: "Olio d'oliva", grammi: 20 },
     ],
     motivo:
-      "Un piatto estremamente gustoso e completo. La carne magra della fesa di maiale si combina perfettamente con la crema di senape. La senape è un condimento ipocalorico che favorisce la digestione, pieno zeppo di antiossidanti.",
+      "La fesa di maiale con crema di senape, spinaci e patate novelle combina sapori diversi. Leggi ingredienti e allergeni, soprattutto se eviti senape o altri componenti della ricetta.",
   },
   {
     id: "pallotte-cacio-ovo",
@@ -236,7 +236,7 @@ export const PIATTI: Piatto[] = [
     kcal: kcalDa(53, 116, 50),
     tag: ["veg"],
     allergeni: ["glutine", "uova", "latte"],
-    img: "photo-1529042410759-befb1204b468",
+    img: "/foto/photo-1529042410759-befb1204b468.webp",
     giorno: "giovedi",
     allenamento: "pesi",
     ingredienti: [
@@ -252,7 +252,7 @@ export const PIATTI: Piatto[] = [
       { nome: "Parmigiano", nota: "q.b." },
     ],
     motivo:
-      "Un piatto tipico della tradizione in versione più light. Pur conosciuto come un piatto della tradizione abruzzese abbastanza pesante, con qualche accorgimento diventa un ottimo pasto completo con anche una buona quantità di proteine.",
+      "Le pallotte cacio e ovo richiamano la cucina abruzzese in una proposta per il menu settimanale. La scheda indica ingredienti e valori della porzione, così puoi confrontarla con gli altri piatti.",
   },
   {
     id: "uova-purgatorio-peperoni",
@@ -265,7 +265,7 @@ export const PIATTI: Piatto[] = [
     kcal: kcalDa(35, 42, 31),
     tag: ["veg", "senza-glutine"],
     allergeni: ["uova", "latte"],
-    img: "photo-1590412200988-a436970781fa",
+    img: "/foto/photo-1590412200988-a436970781fa.webp",
     giorno: "lunedi",
     allenamento: "pesi",
     ingredienti: [
@@ -281,7 +281,7 @@ export const PIATTI: Piatto[] = [
       { nome: "Formaggio tipo quark", grammi: 80 },
     ],
     motivo:
-      "Poche calorie da carboidrati, tante proteine da uova e quark: il pasto da abbinare a un allenamento di pesistica, quando serve sintesi proteica e non un carico glucidico.",
+      "Uova, peperoni e quark danno carattere a questo piatto. Puoi confrontarne ingredienti e valori con le altre proposte del menu e scegliere in base a gusto e indicazioni personali.",
   },
 ];
 
@@ -298,13 +298,13 @@ export function getExtra(id: string): Extra | undefined {
   return EXTRA_BY_ID[id];
 }
 
-/** URL Unsplash con larghezza esplicita: le foto sono il 90% del peso della pagina. */
-export function piattoImg(e: Piatto, w = 800): string {
-  return `https://images.unsplash.com/${e.img}?w=${w}&q=80&auto=format&fit=crop`;
+/** Le foto del catalogo sono file locali serviti da fuelchef.it. */
+export function piattoImg(e: Piatto): string {
+  return e.img;
 }
 
-export function extraImg(e: Extra, w = 400): string {
-  return `https://images.unsplash.com/${e.img}?w=${w}&q=80&auto=format&fit=crop`;
+export function extraImg(e: Extra): string {
+  return e.img;
 }
 
 export function extraPerReparto(reparto: RepartoExtra): Extra[] {

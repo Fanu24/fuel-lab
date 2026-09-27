@@ -25,7 +25,7 @@ export const EXTRA: Extra[] = [
     nome: "Basmati / integrale",
     descrizione: "Riso basmati o integrale, porzione extra nella box.",
     grammi: 80, proteine: 2, carboidrati: 22, grassi: 0, allergeni: [],
-    img: "photo-1536304993881-ff6e9eefa2a6",
+    img: "/foto/photo-1536304993881-ff6e9eefa2a6.webp",
     reparto: "carboidrati", prezzoEuro: 2, prezzoNota: null,
   }),
   extra({
@@ -33,7 +33,7 @@ export const EXTRA: Extra[] = [
     nome: "Riso rosso",
     descrizione: "Riso rosso, porzione extra nella box.",
     grammi: 80, proteine: 3, carboidrati: 20, grassi: 1, allergeni: [],
-    img: "photo-1516684732162-798a0062be99",
+    img: "/foto/photo-1516684732162-798a0062be99.webp",
     reparto: "carboidrati", prezzoEuro: 3, prezzoNota: null,
   }),
   extra({
@@ -41,7 +41,7 @@ export const EXTRA: Extra[] = [
     nome: "Carnaroli",
     descrizione: "Riso carnaroli, porzione extra nella box.",
     grammi: 80, proteine: 2, carboidrati: 22, grassi: 0, allergeni: [],
-    img: "photo-1536304993881-ff6e9eefa2a6",
+    img: "/foto/photo-1536304993881-ff6e9eefa2a6.webp",
     reparto: "carboidrati", prezzoEuro: 3, prezzoNota: null,
   }),
   extra({
@@ -49,7 +49,7 @@ export const EXTRA: Extra[] = [
     nome: "Pasta",
     descrizione: "Pasta, porzione extra nella box.",
     grammi: 80, proteine: 3, carboidrati: 20, grassi: 1, allergeni: ["glutine"],
-    img: "photo-1621996346565-e3dbc646d9a9",
+    img: "/foto/photo-1621996346565-e3dbc646d9a9.webp",
     reparto: "carboidrati", prezzoEuro: 1, prezzoNota: null,
   }),
   extra({
@@ -57,7 +57,7 @@ export const EXTRA: Extra[] = [
     nome: "Cous cous",
     descrizione: "Cous cous, porzione extra nella box.",
     grammi: 80, proteine: 3, carboidrati: 18, grassi: 0, allergeni: ["glutine"],
-    img: "photo-1512058564366-18510be2db19",
+    img: "/foto/photo-1512058564366-18510be2db19.webp",
     reparto: "carboidrati", prezzoEuro: 1, prezzoNota: null,
   }),
   extra({
@@ -65,7 +65,7 @@ export const EXTRA: Extra[] = [
     nome: "Noodles",
     descrizione: "Noodles, porzione extra nella box.",
     grammi: 80, proteine: 3, carboidrati: 22, grassi: 1, allergeni: ["glutine"],
-    img: "photo-1612929633738-8fe44f7ec841",
+    img: "/foto/photo-1612929633738-8fe44f7ec841.webp",
     reparto: "carboidrati", prezzoEuro: 2, prezzoNota: null,
   }),
   extra({
@@ -73,7 +73,7 @@ export const EXTRA: Extra[] = [
     nome: "Gnocchi",
     descrizione: "Gnocchi, porzione extra nella box.",
     grammi: 100, proteine: 3, carboidrati: 18, grassi: 1, allergeni: ["glutine"],
-    img: "photo-1601556123240-462c758a50db",
+    img: "/foto/photo-1601556123240-462c758a50db.webp",
     reparto: "carboidrati", prezzoEuro: 3, prezzoNota: null,
   }),
   extra({
@@ -81,7 +81,7 @@ export const EXTRA: Extra[] = [
     nome: "Patate / patate dolci",
     descrizione: "Patate o patate dolci, porzione extra nella box.",
     grammi: 100, proteine: 2, carboidrati: 17, grassi: 0, allergeni: [],
-    img: "photo-1518977676601-b53f82aba655",
+    img: "/foto/photo-1518977676601-b53f82aba655.webp",
     reparto: "carboidrati", prezzoEuro: 1, prezzoNota: null,
   }),
   extra({
@@ -89,7 +89,7 @@ export const EXTRA: Extra[] = [
     nome: "Curry e latte di cocco",
     descrizione: "Condimento al curry e latte di cocco, sulla proteina.",
     grammi: 40, proteine: 1, carboidrati: 3, grassi: 8, allergeni: [],
-    img: "photo-1455619452474-d2be8b1e70cd",
+    img: "/foto/photo-1455619452474-d2be8b1e70cd.webp",
     reparto: "condimenti-proteine", prezzoEuro: 1, prezzoNota: null,
   }),
   extra({
@@ -97,7 +97,7 @@ export const EXTRA: Extra[] = [
     nome: "Soia",
     descrizione: "Salsa di soia sulla proteina. Inclusa nel piatto.",
     grammi: 15, proteine: 1, carboidrati: 1, grassi: 0, allergeni: ["soia"],
-    img: "photo-1474979266404-7eaacbcd87c5",
+    img: "/foto/photo-1474979266404-7eaacbcd87c5.webp",
     reparto: "condimenti-proteine", prezzoEuro: null, prezzoNota: "incluso",
   }),
   extra({
@@ -105,7 +105,7 @@ export const EXTRA: Extra[] = [
     nome: "Citronette",
     descrizione: "Citronette sulla proteina. Inclusa nel piatto.",
     grammi: 20, proteine: 0, carboidrati: 1, grassi: 4, allergeni: [],
-    img: "photo-1571066811602-716837d681de",
+    img: "/foto/photo-1571066811602-716837d681de.webp",
     reparto: "condimenti-proteine", prezzoEuro: null, prezzoNota: "incluso",
   }),
   extra({
@@ -113,7 +113,7 @@ export const EXTRA: Extra[] = [
     nome: "Senape",
     descrizione: "Senape sulla proteina.",
     grammi: 20, proteine: 1, carboidrati: 2, grassi: 1, allergeni: ["senape"],
-    img: "photo-1638324396220-432156cd9303",
+    img: "/foto/photo-1638324396220-432156cd9303.webp",
     reparto: "condimenti-proteine", prezzoEuro: 0.5, prezzoNota: null,
   }),
   extra({
@@ -121,7 +121,7 @@ export const EXTRA: Extra[] = [
     nome: "Pomodoro",
     descrizione: "Sugo di pomodoro sulla proteina. Incluso nel piatto.",
     grammi: 80, proteine: 1, carboidrati: 4, grassi: 0, allergeni: [],
-    img: "photo-1592924357228-91a4daadcfea",
+    img: "/foto/photo-1592924357228-91a4daadcfea.webp",
     reparto: "condimenti-proteine", prezzoEuro: null, prezzoNota: "incluso",
   }),
   extra({
@@ -129,7 +129,7 @@ export const EXTRA: Extra[] = [
     nome: "Tahina",
     descrizione: "Salsa tahina sulla proteina.",
     grammi: 20, proteine: 4, carboidrati: 4, grassi: 11, allergeni: ["sesamo"],
-    img: "photo-1571066811602-716837d681de",
+    img: "/foto/photo-1571066811602-716837d681de.webp",
     reparto: "condimenti-proteine", prezzoEuro: 0.5, prezzoNota: null,
   }),
   extra({
@@ -137,7 +137,7 @@ export const EXTRA: Extra[] = [
     nome: "Pollo",
     descrizione: "Petto di pollo extra. Incluso come proteina base.",
     grammi: 50, proteine: 12, carboidrati: 0, grassi: 1, allergeni: [],
-    img: "photo-1604503468506-a8da13d82791",
+    img: "/foto/photo-1604503468506-a8da13d82791.webp",
     reparto: "proteine", prezzoEuro: null, prezzoNota: "incluso",
   }),
   extra({
@@ -145,7 +145,7 @@ export const EXTRA: Extra[] = [
     nome: "Manzo",
     descrizione: "Manzo extra nella box.",
     grammi: 50, proteine: 13, carboidrati: 0, grassi: 4, allergeni: [],
-    img: "photo-1558030006-450675393462",
+    img: "/foto/photo-1558030006-450675393462.webp",
     reparto: "proteine", prezzoEuro: 2.5, prezzoNota: null,
   }),
   extra({
@@ -153,7 +153,7 @@ export const EXTRA: Extra[] = [
     nome: "Maiale",
     descrizione: "Fesa di maiale extra nella box.",
     grammi: 50, proteine: 11, carboidrati: 0, grassi: 3, allergeni: [],
-    img: "photo-1432139555190-58524dae6a55",
+    img: "/foto/photo-1432139555190-58524dae6a55.webp",
     reparto: "proteine", prezzoEuro: 1.5, prezzoNota: null,
   }),
   extra({
@@ -161,7 +161,7 @@ export const EXTRA: Extra[] = [
     nome: "Gamberi",
     descrizione: "Gamberi extra nella box.",
     grammi: 50, proteine: 12, carboidrati: 0, grassi: 1, allergeni: ["crostacei"],
-    img: "photo-1565680018434-b513d5e5fd47",
+    img: "/foto/photo-1565680018434-b513d5e5fd47.webp",
     reparto: "proteine", prezzoEuro: 2, prezzoNota: null,
   }),
   extra({
@@ -169,7 +169,7 @@ export const EXTRA: Extra[] = [
     nome: "Salmone",
     descrizione: "Salmone extra nella box.",
     grammi: 50, proteine: 10, carboidrati: 0, grassi: 6, allergeni: ["pesce"],
-    img: "photo-1467003909585-2f8a72700288",
+    img: "/foto/photo-1467003909585-2f8a72700288.webp",
     reparto: "proteine", prezzoEuro: 2.5, prezzoNota: null,
   }),
   extra({
@@ -177,7 +177,7 @@ export const EXTRA: Extra[] = [
     nome: "Merluzzo",
     descrizione: "Merluzzo extra nella box.",
     grammi: 50, proteine: 12, carboidrati: 0, grassi: 1, allergeni: ["pesce"],
-    img: "photo-1615141982883-c7ad0e69fd62",
+    img: "/foto/photo-1615141982883-c7ad0e69fd62.webp",
     reparto: "proteine", prezzoEuro: 2.5, prezzoNota: null,
   }),
   extra({
@@ -185,7 +185,7 @@ export const EXTRA: Extra[] = [
     nome: "Macinato di pollo",
     descrizione: "Macinato di pollo extra nella box.",
     grammi: 50, proteine: 11, carboidrati: 0, grassi: 2, allergeni: [],
-    img: "photo-1604503468506-a8da13d82791",
+    img: "/foto/photo-1604503468506-a8da13d82791.webp",
     reparto: "proteine", prezzoEuro: 1, prezzoNota: null,
   }),
   extra({
@@ -193,7 +193,7 @@ export const EXTRA: Extra[] = [
     nome: "Macinato di manzo",
     descrizione: "Macinato di manzo extra nella box.",
     grammi: 50, proteine: 12, carboidrati: 0, grassi: 5, allergeni: [],
-    img: "photo-1611270629569-8b357cb88da9",
+    img: "/foto/photo-1611270629569-8b357cb88da9.webp",
     reparto: "proteine", prezzoEuro: 2, prezzoNota: null,
   }),
   extra({
@@ -201,7 +201,7 @@ export const EXTRA: Extra[] = [
     nome: "Macinato di maiale",
     descrizione: "Macinato di maiale extra nella box.",
     grammi: 50, proteine: 10, carboidrati: 0, grassi: 4, allergeni: [],
-    img: "photo-1529042410759-befb1204b468",
+    img: "/foto/photo-1529042410759-befb1204b468.webp",
     reparto: "proteine", prezzoEuro: 1.5, prezzoNota: null,
   }),
   extra({
@@ -209,7 +209,7 @@ export const EXTRA: Extra[] = [
     nome: "Ricotta / formaggio proteico a scelta",
     descrizione: "Ricotta o formaggio proteico extra nella box.",
     grammi: 50, proteine: 8, carboidrati: 2, grassi: 4, allergeni: ["latte"],
-    img: "photo-1452195100486-9cc805987862",
+    img: "/foto/photo-1452195100486-9cc805987862.webp",
     reparto: "proteine", prezzoEuro: 2, prezzoNota: null,
   }),
   extra({
@@ -217,7 +217,7 @@ export const EXTRA: Extra[] = [
     nome: "Pomodoro",
     descrizione: "Sugo di pomodoro sul carboidrato. Incluso nel piatto.",
     grammi: 80, proteine: 1, carboidrati: 4, grassi: 0, allergeni: [],
-    img: "photo-1592924357228-91a4daadcfea",
+    img: "/foto/photo-1592924357228-91a4daadcfea.webp",
     reparto: "condimenti-carboidrati", prezzoEuro: null, prezzoNota: "incluso",
   }),
   extra({
@@ -225,7 +225,7 @@ export const EXTRA: Extra[] = [
     nome: "Soia",
     descrizione: "Salsa di soia sul carboidrato. Inclusa nel piatto.",
     grammi: 15, proteine: 1, carboidrati: 1, grassi: 0, allergeni: ["soia"],
-    img: "photo-1474979266404-7eaacbcd87c5",
+    img: "/foto/photo-1474979266404-7eaacbcd87c5.webp",
     reparto: "condimenti-carboidrati", prezzoEuro: null, prezzoNota: "incluso",
   }),
   extra({
@@ -233,7 +233,7 @@ export const EXTRA: Extra[] = [
     nome: "Olio",
     descrizione: "Olio extravergine sul carboidrato. Incluso nel piatto.",
     grammi: 10, proteine: 0, carboidrati: 0, grassi: 10, allergeni: [],
-    img: "photo-1474979266404-7eaacbcd87c5",
+    img: "/foto/photo-1474979266404-7eaacbcd87c5.webp",
     reparto: "condimenti-carboidrati", prezzoEuro: null, prezzoNota: "incluso",
   }),
   extra({
@@ -241,7 +241,7 @@ export const EXTRA: Extra[] = [
     nome: "Burro",
     descrizione: "Burro sul carboidrato.",
     grammi: 10, proteine: 0, carboidrati: 0, grassi: 8, allergeni: ["latte"],
-    img: "photo-1603596310923-dbb12732f9c7",
+    img: "/foto/photo-1603596310923-dbb12732f9c7.webp",
     reparto: "condimenti-carboidrati", prezzoEuro: 0.5, prezzoNota: null,
   }),
   extra({
@@ -249,7 +249,7 @@ export const EXTRA: Extra[] = [
     nome: "Miso",
     descrizione: "Miso sul carboidrato.",
     grammi: 15, proteine: 2, carboidrati: 4, grassi: 1, allergeni: ["soia"],
-    img: "photo-1547592180-85f173990554",
+    img: "/foto/photo-1547592180-85f173990554.webp",
     reparto: "condimenti-carboidrati", prezzoEuro: 0.5, prezzoNota: null,
   }),
   extra({
@@ -257,7 +257,7 @@ export const EXTRA: Extra[] = [
     nome: "Parmigiano",
     descrizione: "Parmigiano sul carboidrato.",
     grammi: 15, proteine: 5, carboidrati: 0, grassi: 4, allergeni: ["latte"],
-    img: "photo-1452195100486-9cc805987862",
+    img: "/foto/photo-1452195100486-9cc805987862.webp",
     reparto: "condimenti-carboidrati", prezzoEuro: 0.5, prezzoNota: null,
   }),
   extra({
@@ -265,7 +265,7 @@ export const EXTRA: Extra[] = [
     nome: "Citronette",
     descrizione: "Citronette sul carboidrato. Inclusa nel piatto.",
     grammi: 20, proteine: 0, carboidrati: 1, grassi: 4, allergeni: [],
-    img: "photo-1571066811602-716837d681de",
+    img: "/foto/photo-1571066811602-716837d681de.webp",
     reparto: "condimenti-carboidrati", prezzoEuro: null, prezzoNota: "incluso",
   }),
   extra({
@@ -273,7 +273,7 @@ export const EXTRA: Extra[] = [
     nome: "Verdure di stagione",
     descrizione: "Verdure di stagione, da un euro a due secondo il reco.",
     grammi: 150, proteine: 3, carboidrati: 8, grassi: 1, allergeni: [],
-    img: "photo-1540420773420-3366772f4999",
+    img: "/foto/photo-1540420773420-3366772f4999.webp",
     reparto: "verdure", prezzoEuro: null, prezzoNota: "da-a", prezzoDa: 1, prezzoA: 2,
   }),
   extra({
@@ -281,7 +281,7 @@ export const EXTRA: Extra[] = [
     nome: "Pancakes proteici",
     descrizione: "Pancakes proteici, snack della box.",
     grammi: 120, proteine: 18, carboidrati: 22, grassi: 6, allergeni: ["glutine", "uova", "latte"],
-    img: "photo-1567620905732-2d1ec7ab7445",
+    img: "/foto/photo-1567620905732-2d1ec7ab7445.webp",
     reparto: "snack", prezzoEuro: null, prezzoNota: "su-richiesta",
   }),
   extra({
@@ -289,7 +289,7 @@ export const EXTRA: Extra[] = [
     nome: "Porridge",
     descrizione: "Porridge, snack della box.",
     grammi: 180, proteine: 8, carboidrati: 32, grassi: 4, allergeni: ["glutine", "latte"],
-    img: "photo-1517673400267-0251440c45dc",
+    img: "/foto/photo-1517673400267-0251440c45dc.webp",
     reparto: "snack", prezzoEuro: null, prezzoNota: "su-richiesta",
   }),
   extra({
@@ -297,7 +297,7 @@ export const EXTRA: Extra[] = [
     nome: "Barrette",
     descrizione: "Barrette proteiche, snack della box.",
     grammi: 60, proteine: 10, carboidrati: 18, grassi: 6, allergeni: ["latte", "frutta a guscio"],
-    img: "photo-1705868432559-211198009991",
+    img: "/foto/photo-1705868432559-211198009991.webp",
     reparto: "snack", prezzoEuro: null, prezzoNota: "su-richiesta",
   }),
   extra({
@@ -305,7 +305,7 @@ export const EXTRA: Extra[] = [
     nome: "Tiramisu fit",
     descrizione: "Tiramisu fit, snack della box.",
     grammi: 110, proteine: 12, carboidrati: 20, grassi: 8, allergeni: ["uova", "latte", "glutine"],
-    img: "photo-1571877227200-a0d98ea607e9",
+    img: "/foto/photo-1571877227200-a0d98ea607e9.webp",
     reparto: "snack", prezzoEuro: null, prezzoNota: "su-richiesta",
   }),
   extra({
@@ -313,7 +313,7 @@ export const EXTRA: Extra[] = [
     nome: "Yogurt, muesli e frutta fresca",
     descrizione: "Yogurt con muesli e frutta fresca, snack della box.",
     grammi: 200, proteine: 10, carboidrati: 28, grassi: 5, allergeni: ["latte", "glutine", "frutta a guscio"],
-    img: "photo-1488477181946-6428a0291777",
+    img: "/foto/photo-1488477181946-6428a0291777.webp",
     reparto: "snack", prezzoEuro: null, prezzoNota: "su-richiesta",
   }),
   extra({
@@ -321,7 +321,7 @@ export const EXTRA: Extra[] = [
     nome: "Frutta",
     descrizione: "Frutta fresca, snack della box.",
     grammi: 150, proteine: 1, carboidrati: 18, grassi: 0, allergeni: [],
-    img: "photo-1619566636858-adf3ef46400b",
+    img: "/foto/photo-1619566636858-adf3ef46400b.webp",
     reparto: "snack", prezzoEuro: null, prezzoNota: "su-richiesta",
   }),
   extra({
@@ -329,7 +329,7 @@ export const EXTRA: Extra[] = [
     nome: "Centrifugati",
     descrizione: "Centrifugato di frutta e verdura, snack della box.",
     grammi: 250, proteine: 2, carboidrati: 16, grassi: 0, allergeni: [],
-    img: "photo-1613478223719-2ab802602423",
+    img: "/foto/photo-1613478223719-2ab802602423.webp",
     reparto: "snack", prezzoEuro: null, prezzoNota: "su-richiesta",
   }),
 ];

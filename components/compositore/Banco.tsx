@@ -14,10 +14,12 @@ export default function Banco({
   stato,
   inizia,
   tocca,
+  destinazione,
 }: {
   stato: Stato;
   inizia: (p: Presa) => (e: PointerEventReact) => void;
   tocca: (piattoId: string) => void;
+  destinazione?: string;
 }) {
   const tengoSlot = stato.modo === "presa" && stato.presa.tipo === "slot";
   const sopra = stato.modo === "presa" && stato.trascino && stato.sopra === "banco";
@@ -31,7 +33,7 @@ export default function Banco({
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="font-disp text-sm font-bold tracking-[.18em] uppercase">Il banco</h2>
         <p className="text-xs text-muted">
-          {tengoSlot ? "Riporta qui per togliere" : cerca ? "Tocca un piatto" : "Trascina o tocca"}
+          {tengoSlot ? "Riporta qui per togliere" : cerca ? `Scegli per ${destinazione ?? "questa casella"}` : "Trascina o tocca"}
         </p>
       </div>
       <ul className="banco-lista mt-3">

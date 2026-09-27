@@ -1,131 +1,37 @@
-# FUEL LAB — demo
+# FUEL LAB
 
-Sito dimostrativo per **Matteo Pantanè**, cuoco a Pescara: meal prep **fresco, mai surgelato**,
-consegnato in zona due volte a settimana, componibile a mano o a partire dalla scheda del
-nutrizionista.
+Sito e area clienti di Matteo Pattanè, Via del Santuario 214, 65124 Pescara. Produzione: <https://fuelchef.it/>.
 
-Next.js 16 (App Router) · React 19 · TypeScript · Tailwind 4. **Nessun backend: tutto gira nel
-browser.** Il contatto finale non è un pagamento, è un messaggio su WhatsApp già scritto.
+Next.js 16 genera le pagine statiche; Cloudflare Pages Functions gestisce autenticazione e API; Cloudflare D1 conserva account, menu salvati, richieste e statistiche aggregate. Il progetto Pages si chiama `fuelchef` nell'account Cloudflare `dotatv24`.
 
-Si pubblica come **export statico** (`output: "export"`): `npm run build` scrive il sito in `out/`
-e quella cartella va su Cloudflare. La guida passo passo è in
-[`docs/HANDOFF-CLOUDFLARE.md`](docs/HANDOFF-CLOUDFLARE.md).
-
-## Avvio
+## Avvio e pubblicazione
 
 ```bash
 npm install
-npm run dev          # http://localhost:3000
-```
-
-Per provarla come sarà in produzione (i file statici di `out/`, come li serve Cloudflare):
-
-```bash
-npm run build            # scrive out/ e sistema i file di prefetch (postbuild)
-npx wrangler dev         # http://localhost:8787, legge wrangler.jsonc
-```
-
-`npm start` / `next start` **non funziona** con l'export statico: è voluto.
-
-## Le pagine
-
-| Rotta | Cosa fa |
-|---|---|
-| `/` | Home: hero con l'atleta, tre passi, i consigli cardio/pesi, i piatti, chiusura |
-| `/menu` | I sei piatti con un filtro solo (Tutti / Cardio / Pesi) e gli alimenti per la box |
-| `/menu/[id]` | La scheda del piatto: ingredienti con i grammi, macro, perché funziona, allergeni |
-| `/settimana` | **Il compositore**: scegli come ti alleni giorno per giorno, la settimana si riempie, poi la sistemi trascinando |
-| `/scheda` | Dai tuoi macro: scrivi i numeri del nutrizionista, il matcher compone, apri nel compositore |
-| `/richiesta` | Il modulo: salva la richiesta e apre WhatsApp col messaggio già scritto |
-| `/servizi`, `/come-funziona`, `/chi-e-matteo` | Pagine di contenuto, brevi |
-| `/dashboard` | **Il pannello di Matteo** (demo): richieste, stato, numeri della settimana |
-| `/dashboard/richieste/[id]` | Il dettaglio di una richiesta: contatto, settimana con gli allenamenti, note interne |
-| `/dashboard/produzione` | Quante porzioni cucinare il lunedì e il giovedì, stampabile |
-
-## Il compositore
-
-Tre modi di mettere un piatto in una casella, un solo stato (`components/compositore/useTrascina.ts`):
-
-- **mouse**: si trascina dal banco alla casella, da una casella all'altra (sposta o scambia), da una
-  casella al banco (toglie);
-- **dito**: si tocca il piatto e poi la casella (o prima la casella vuota e poi il piatto). Niente
-  trascinamento su touch, apposta: il dito serve anche a scorrere;
-- **tastiera**: Invio prende, Invio posa, Esc annulla, Canc toglie. Ogni passo è annunciato agli screen reader.
-
-L'autoriempimento (`lib/autofill.ts`) segue i consigli di Matteo: cardio → più carboidrati, pesi →
-proteine e carboidrati misurati, riposo → più leggero. Mai lo stesso piatto due volte nello stesso
-giorno, al massimo tre volte a settimana.
-
-Il prezzo non compare: il committente vuole solo la soglia "da 8,90 € a pasto". La stima completa
-c'è già (`lib/riepilogo.ts`) e si accende con `MOSTRA_STIMA_PREZZO` in `lib/pricing.ts`.
-
-## Cosa è vero e cosa è demo
-
-**Vero:** catalogo con allergeni e macro coerenti (`kcal = P*4 + C*4 + G*9`, verificata dai test),
-matcher, autoriempimento, compositore, link da mandare al nutrizionista (porta anche gli allenamenti),
-messaggio WhatsApp.
-
-**Demo:**
-
-- **La dashboard** legge le richieste dal `localStorage` di quel browser, più 12 richieste d'esempio.
-  Tutto passa da un'interfaccia (`lib/richieste/tipi.ts`, `RepositoryRichieste`): per il backend vero
-  si aggiunge un'implementazione Supabase in `lib/richieste/` e `NEXT_PUBLIC_DATA_BACKEND` la accende,
-  senza toccare le pagine. A quel punto il controllo d'accesso va sul server (`proxy.ts`).
-- **Il PIN** del pannello (`NEXT_PUBLIC_DEMO_PIN`, predefinito `1234`) **non è sicurezza**: sta nel
-  codice del browser. Serve solo a separare il pannello dal sito. Niente dati veri di clienti finché
-  non c'è il backend.
-- **Le foto** sono Unsplash scelte a mano. Si cambiano tutte da `lib/immagini/index.ts` (foto del sito)
-  e dal campo `img` in `lib/catalogo.ts` (piatti); un percorso locale in `/public` al posto dell'id
-  funziona senza toccare altro. Il ritratto di Matteo va in `RITRATTO_MATTEO`.
-
-## Il numero WhatsApp
-
-Va nella variabile d'ambiente `NEXT_PUBLIC_WHATSAPP`.
-
-Finché è vuota, i bottoni WhatsApp restano **disabilitati con una spiegazione**: mai un link a
-`wa.me/` senza numero, perché un mezzo link sembra funzionante finché non ci si clicca sopra.
-Questo è il caso normale della demo, non un caso limite.
-
-```bash
-# in locale
-echo "NEXT_PUBLIC_WHATSAPP=39XXXXXXXXXX" >> .env.local
-
-# in produzione: variabile di BUILD su Cloudflare (Settings → Variables), poi un nuovo deploy.
-# E' letta al build: cambiarla senza ricompilare non ha effetto.
-```
-
-## Test
-
-```bash
-npx vitest run        # 180 test: catalogo, piano, autofill, riepilogo, link, messaggio, richieste
-npx tsc --noEmit
-npx eslint app components lib
-```
-
-Il controllo che conta di più però non è nella suite: `scripts/verifica.mjs` apre un Chrome vero,
-percorre tutte le rotte e **calcola il contrasto di ogni nodo di testo sul rendering reale**,
-risalendo gli antenati per trovare il fondo effettivo e fondendo i colori semitrasparenti.
-
-Serve perché questo sito è nato con il fondo scuro ed è stato portato su fondo chiaro: decine di
-colori scelti per il buio erano rimasti dov'erano. Il lime del marchio e la carta hanno **luminanza
-identica** — 1,00:1 — quindi il lime può fare da fondo, mai da testo. Cercare i colori sospetti a
-mano ha fallito cinque volte; misurarli tutti no.
-
-```bash
+npm run dev
+npm run lint
+npm test
 npm run build
-npx wrangler dev --port 4311 &     # oppure qualunque server statico su out/ alla porta 4311
-node scripts/verifica.mjs
+npm run deploy:cloudflare
 ```
 
-## Da rivedere con Matteo
+`npm run dev` mostra le pagine, mentre le API Pages e D1 richiedono Wrangler. La configurazione del database è in `wrangler.jsonc`; le migrazioni sono in `migrations/`. Per un ambiente locale completo, usa `npx wrangler pages dev out` dopo la build e le migrazioni locali.
 
-- [ ] **Il numero WhatsApp**, che ancora manca
-- [ ] **Le foto**: sostituire le Unsplash con scatti veri dei piatti
-- [ ] **I testi segnaposto**, in particolare la storia e i numeri di `/chi-e-matteo`
-- [ ] **La soglia di 8,90 €** a pasto: confermare o cambiare
-- [ ] **Il logo vettoriale** con la tagline giusta, al posto del ritaglio provvisorio
-- [ ] **Il raggio di consegna**: le pagine dicono "Pescara e provincia, entro venti
-      chilometri". Da confermare, perche e scritto nella copy in piu punti
-- [ ] **La dashboard**: la demo c'è; per usarla davvero serve il backend (Supabase) e una privacy policy
-- [ ] **I piatti cucinati il lunedì** vanno serviti solo a inizio settimana? L'autoriempimento oggi non lo considera
-- [ ] **Il ritratto di Matteo** e una foto vera della cucina
+La pubblicazione diretta usa il profilo Wrangler `fuelchef` già autorizzato sul PC. Non inserire credenziali nel repository. I segreti di produzione sono `BETTER_AUTH_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` e `RESEND_API_KEY` (quest'ultimo limitato all'invio per `fuelchef.it`). L'esempio delle variabili è in `.env.example`.
+
+## Pagine e accessi
+
+- `/menu`, `/settimana`, `/scheda`: scelta dei piatti e composizione della settimana.
+- `/accedi`: registrazione e accesso via email o Google; verifica email e recupero password tramite messaggi inviati da Resend.
+- `/account`: profilo cliente, settimana salvata e richieste. Una richiesta non equivale a un ordine confermato o a un pagamento.
+- `/dashboard`: richieste, clienti e andamento delle visite consentite, accessibile solo a Matteo.
+- `/dashboard/produzione`: preparazioni del giorno e foglio stampabile.
+- `/blog`: articoli raggiungibili dal footer; `/privacy`: informativa e preferenze Analytics.
+
+L'account amministratore è `info@fuelchef.it`. Il ruolo è assegnato nella tabella D1 `staff_roles`; l'accesso richiede anche `emailVerified=1`. Non aggiungere controlli di ruolo solo nel client. La casella in ingresso resta su Aruba; Resend invia solo email transazionali. Apple è predisposto nel codice ma apparirà soltanto quando saranno fornite le credenziali Apple Developer.
+
+Google Analytics usa l'ID `G-DNVWYB7R0C` e si carica dopo il consenso. La dashboard conta anche le visualizzazioni aggregate nello stesso caso; i dati GA4 possono comparire con ritardo nella console Google.
+
+Il numero WhatsApp non è configurato: i relativi pulsanti spiegano che sarà disponibile prossimamente. Imposta `NEXT_PUBLIC_WHATSAPP` con prefisso internazionale e ripubblica quando Matteo comunica il numero. Ragione sociale e Partita IVA sono segnaposto da completare appena disponibili.
+
+`docs/HANDOFF-CLOUDFLARE.md` descrive una vecchia versione dimostrativa con PIN e solo dati locali; è conservato come documentazione storica e non va usato per pubblicare la versione corrente.

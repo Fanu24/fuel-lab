@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type KeyboardEvent as KeyboardEventReact } from "react";
-import { usePiano } from "@/lib/piano";
+import WhatsAppCta from "@/components/ui/WhatsAppCta";
 
 /* Cio' che il browser mette nel giro di Tab dentro un pannello. */
 const FOCUSABILI =
@@ -15,6 +15,8 @@ const VOCI = [
   { href: "/settimana", label: "Componi" },
   { href: "/come-funziona", label: "Come funziona" },
   { href: "/chi-e-matteo", label: "Chi è Matteo" },
+  { href: "/richiesta", label: "Contatti" },
+  { href: "/account", label: "Area cliente" },
 ];
 
 /* Le pagine che si aprono su una foto scura a tutta altezza: li' la barra parte
@@ -25,7 +27,6 @@ export default function Nav() {
   const [aperto, setAperto] = useState(false);
   const [scorso, setScorso] = useState(false);
   const percorso = usePathname();
-  const { pasti, pronto } = usePiano();
   const pannello = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -93,7 +94,7 @@ export default function Nav() {
           </Link>
 
           <nav aria-label="Principale" className="hidden items-center gap-8 lg:flex">
-            {VOCI.map((v) => {
+            {VOCI.filter((v) => v.href !== "/account").map((v) => {
               const attiva = percorso === v.href || percorso.startsWith(v.href + "/");
               return (
                 <Link
@@ -114,17 +115,13 @@ export default function Nav() {
             })}
           </nav>
 
-          <Link href="/settimana" className="btn btn-lime btn-sm hidden sm:inline-flex">
-            {pronto && pasti > 0 ? (
-              <>
-                La tua settimana <span className="num">{pasti}</span>
-              </>
-            ) : (
-              <>
-                Componi <span className="freccia">→</span>
-              </>
-            )}
-          </Link>
+          <Link href="/account" aria-label="Area cliente" title="Area cliente" className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-full border border-current font-disp text-lg font-bold lg:inline-flex">◉</Link>
+
+          <WhatsAppCta
+            mostraAvviso={false}
+            label="WhatsApp"
+            buttonClassName="hidden !min-h-12 !px-4 !text-xs sm:inline-flex"
+          />
 
           <button
             type="button"
@@ -152,7 +149,7 @@ export default function Nav() {
         hidden={!aperto}
         tabIndex={-1}
         onKeyDown={suTasto}
-        className="notte fixed inset-0 z-50 flex flex-col justify-between px-6 pt-28 pb-10 outline-none lg:hidden"
+        className={`notte fixed inset-0 z-50 flex-col justify-between overflow-y-auto px-6 pt-28 pb-8 outline-none lg:hidden ${aperto ? "flex" : "hidden"}`}
       >
         <nav aria-label="Principale" className="flex flex-col">
           {VOCI.map((v, i) => (
@@ -160,7 +157,7 @@ export default function Nav() {
               key={v.href}
               href={v.href}
               onClick={() => setAperto(false)}
-              className="border-b py-4 font-disp text-[40px] leading-none font-bold uppercase"
+              className="border-b py-3 font-disp text-[clamp(26px,8vw,40px)] leading-none font-bold uppercase"
               style={{
                 borderColor: "var(--line)",
                 animation: aperto ? `fuel-sale .6s var(--e-out) both ${60 + i * 50}ms` : undefined,
@@ -170,9 +167,14 @@ export default function Nav() {
             </Link>
           ))}
         </nav>
-        <Link href="/richiesta" onClick={() => setAperto(false)} className="btn btn-lime w-full">
-          Scrivi a Matteo <span className="freccia">→</span>
-        </Link>
+        <div className="mt-8">
+          <WhatsAppCta
+            label="Contatta su WhatsApp"
+            onClick={() => setAperto(false)}
+            buttonClassName="w-full justify-between"
+          />
+          <a href="mailto:info@fuelchef.it" className="mt-4 inline-block py-2 text-sm underline underline-offset-4">Oppure scrivi a info@fuelchef.it</a>
+        </div>
       </div>
     </>
   );
