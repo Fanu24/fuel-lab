@@ -24,6 +24,7 @@ const COLONNE = [
     titolo: "Mangia",
     voci: [
       { href: "/menu", label: "Il menu" },
+      { href: PAGINE.abbonamento.percorso, label: "Abbonamento" },
       { href: "/settimana", label: "Componi la settimana" },
       { href: "/scheda", label: "Dai tuoi macro" },
       { href: "/servizi", label: "Servizi e prezzi" },
@@ -42,7 +43,7 @@ const COLONNE = [
     titolo: "Scopri",
     voci: [
       { href: "/come-funziona", label: "Come funziona" },
-      { href: "/chi-e-matteo", label: "Chi è Matteo" },
+      { href: PAGINE.chiSiamo.percorso, label: "Chi siamo" },
       { href: "/blog", label: "Blog" },
       { href: "/richiesta", label: "Scrivi a Matteo" },
     ],
@@ -65,8 +66,8 @@ export default function Footer() {
               />
             </Link>
             <p className="mt-8 max-w-[36ch] text-steel">
-              Meal prep fresco a Pescara per chi si allena. Matteo cucina il lunedì e il giovedì: ritiro in sede o
-              consegna in zona.
+              Meal prep fresco a Pescara per chi si allena. Matteo cucina ogni giorno: ritiro in sede o consegna in
+              zona, tutti i giorni.
             </p>
             <address className="mt-6 not-italic text-steel">
               <strong className="font-semibold text-paper">{NOME_ATTIVITA}</strong> · {TITOLARE.nome}

@@ -1,0 +1,451 @@
+/* =========================================================================
+   Le impostazioni di Matteo: come si vedono sul sito (avviso, piatti non
+   disponibili, chiusure) e la pagina /dashboard/impostazioni del pannello.
+
+   COLORI (WCAG 2.x):
+     ink su lime (striscia dell'avviso)       16.32 : 1
+     paper su ink (segno "non disponibile")   16.13 : 1
+     #6b3200 su #fff1db (piatto escluso)       ~9.6 : 1
+   ========================================================================= */
+
+@layer components {
+  /* ---------- Avviso del sito ----------
+     Fisso sotto la nav: sotto la nav (z 60) e sotto il menu del telefono
+     (z 50), sopra la pagina. Appena si scorre si ritira dietro la nav. */
+  .avviso-sito {
+    position: fixed;
+    inset: var(--nav-h) 0 auto 0;
+    z-index: 45;
+    background: var(--color-lime);
+    color: var(--color-ink);
+    border-bottom: 1px solid var(--color-ink);
+    transition: transform 0.4s var(--e-out), visibility 0s linear 0s;
+    animation: avviso-entra 0.5s var(--e-out);
+  }
+  .avviso-sito.is-ritirato:not(:focus-within) {
+    transform: translateY(calc(-100% - var(--nav-h)));
+    visibility: hidden;
+    transition: transform 0.4s var(--e-out), visibility 0s linear 0.4s;
+  }
+  .avviso-sito-riga {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+  }
+  /* Al massimo due righe (circa 52 px): la striscia resta dentro lo spazio
+     che le pagine lasciano sotto la nav. Il lettore di schermo legge tutto. */
+  .avviso-sito-testo {
+    display: -webkit-box;
+    flex: 1;
+    min-width: 0;
+    margin-block: 7px;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.35;
+  }
+  .avviso-sito-link {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+  }
+  .avviso-sito-link:hover {
+    text-decoration-thickness: 2px;
+  }
+  .avviso-sito-chiudi {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    margin-right: -10px;
+  }
+  .avviso-sito-chiudi:hover {
+    background: rgba(18, 20, 18, 0.08);
+  }
+  /* Nel pannello la stessa striscia fa da anteprima: dentro il riquadro, non fissa. */
+  .avviso-sito-anteprima {
+    position: static;
+    padding-inline: 14px;
+    border: 1px solid var(--color-ink);
+    animation: none;
+  }
+  .avviso-sito-anteprima.is-spento {
+    opacity: 0.45;
+  }
+  .pn-imp-anteprime {
+    display: grid;
+    gap: 12px;
+  }
+  .pn-imp-anteprima-etichetta {
+    margin-bottom: 4px;
+    font-size: 13px;
+    color: var(--color-muted);
+  }
+  /* Il telefono piu' stretto che il sito sostiene: 360 px meno i margini. */
+  .pn-imp-anteprima-telefono {
+    max-width: 320px;
+  }
+  @media print {
+    .avviso-sito:not(.avviso-sito-anteprima) {
+      display: none;
+    }
+  }
+
+  /* ---------- Piatto non disponibile ---------- */
+  .bollino-nd {
+    display: inline-block;
+    max-width: 62%;
+    padding: 5px 9px;
+    background: var(--color-ink);
+    color: var(--color-paper);
+    font-family: var(--font-disp);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    line-height: 1.3;
+    text-transform: uppercase;
+  }
+  .foto-piatto:has(.bollino-nd) img {
+    filter: grayscale(1);
+    opacity: 0.7;
+  }
+
+  /* Il banco del compositore: il piatto resta al suo posto ma non si prende. */
+  .piatto-banco.is-escluso {
+    cursor: not-allowed;
+    color: var(--color-muted);
+  }
+  .piatto-banco.is-escluso img {
+    filter: grayscale(1);
+    opacity: 0.55;
+  }
+  .piatto-banco.is-escluso:hover {
+    transform: none;
+    box-shadow: none;
+  }
+  .banco-togli .piatto-banco.is-escluso {
+    cursor: pointer;
+  }
+  .piatto-banco-nd,
+  .slot-nd {
+    display: inline-block;
+    padding: 1px 6px;
+    border: 1.5px solid #c98a00;
+    background: #fff1db;
+    color: #6b3200;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    line-height: 1.4;
+    text-transform: uppercase;
+  }
+  .slot-nd {
+    justify-self: start;
+  }
+  .slot.is-esclusa {
+    box-shadow: inset 0 0 0 2px #c98a00;
+  }
+  .slot.is-esclusa .slot-foto img {
+    filter: grayscale(1);
+    opacity: 0.55;
+  }
+
+  /* Il compositore avvisa se la settimana contiene un piatto escluso. */
+  .avviso-esclusi {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 20px;
+    padding: 14px 16px;
+    border-left: 5px solid #c98a00;
+    background: #fff1db;
+    color: var(--color-ink);
+    font-size: 15px;
+    line-height: 1.45;
+  }
+
+  /* =========================================================================
+     Pannello: /dashboard/impostazioni
+     ========================================================================= */
+
+  /* Nella testata accanto a "Torna al sito"; fra le schede solo dove c'e' posto. */
+  .pn-link-impostazioni {
+    min-width: 44px;
+    justify-content: center;
+  }
+  .pn-link-testata[aria-current="page"] {
+    color: var(--color-lime);
+  }
+  .pn-voce-larga {
+    display: none;
+  }
+  @media (min-width: 1280px) {
+    .pn-voce-larga {
+      display: inline-flex;
+      margin-left: auto;
+    }
+  }
+
+  .pn-imp-griglia {
+    display: grid;
+    gap: 28px;
+    align-items: start;
+  }
+  .pn-imp-colonna {
+    display: grid;
+    gap: 28px;
+    min-width: 0;
+  }
+  @media (min-width: 1100px) {
+    .pn-imp-griglia {
+      grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    }
+  }
+
+  .pn-imp-riquadro {
+    display: grid;
+    gap: 18px;
+    min-width: 0;
+    padding: 16px 12px 18px;
+    border: 2px solid var(--color-ink);
+    background: #fbf9f4;
+    scroll-margin-top: 24px;
+  }
+  @media (min-width: 768px) {
+    .pn-imp-riquadro {
+      padding: 22px 24px 24px;
+      /* la testata del pannello e' fissa da qui in su */
+      scroll-margin-top: 150px;
+    }
+  }
+  .pn-imp-testa {
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--color-ink);
+  }
+  .pn-imp-corpo {
+    display: grid;
+    gap: 18px;
+    min-width: 0;
+  }
+  .pn-imp-piede {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+  }
+  /* Vuota resta nella pagina (una regione live nascosta non verrebbe letta), ma non aggiunge spazio. */
+  .pn-imp-esito:empty {
+    margin-top: -18px;
+  }
+  .pn-imp-stato,
+  .pn-imp-conto {
+    font-size: 15px;
+    color: var(--color-muted);
+  }
+  .pn-imp-stato.is-da-salvare {
+    color: #6b3200;
+    font-weight: 700;
+  }
+  .pn-imp-stato.is-da-salvare::before {
+    content: "";
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    margin-right: 8px;
+    border-radius: 50%;
+    background: #c98a00;
+    vertical-align: 1px;
+  }
+  .pn-imp-salvo {
+    font-weight: 700;
+    color: var(--color-ink);
+  }
+
+  /* ---------- Piatti: una riga intera e' l'interruttore ---------- */
+  .pn-imp-piatti {
+    display: grid;
+    gap: 8px;
+  }
+  .pn-imp-piatto {
+    display: grid;
+    grid-template-columns: 52px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 76px;
+    padding: 8px 10px 8px 8px;
+    border: 2px solid rgba(18, 20, 18, 0.18);
+    background: #fff;
+    cursor: pointer;
+    transition: border-color 0.2s var(--e-out), background-color 0.2s var(--e-out);
+  }
+  .pn-imp-piatto:hover {
+    border-color: var(--color-ink);
+  }
+  .pn-imp-piatto[aria-checked="false"] {
+    background: var(--color-paper-2);
+    border-style: dashed;
+    border-color: rgba(18, 20, 18, 0.4);
+  }
+  @media (min-width: 480px) {
+    .pn-imp-piatto {
+      grid-template-columns: 64px minmax(0, 1fr) auto;
+      gap: 14px;
+      min-height: 80px;
+      padding-right: 14px;
+    }
+  }
+  .pn-imp-foto {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1;
+    overflow: hidden;
+    background: var(--color-paper-2);
+  }
+  .pn-imp-piatto[aria-checked="false"] .pn-imp-foto img {
+    filter: grayscale(1);
+    opacity: 0.6;
+  }
+  .pn-imp-piatto-testo {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+  }
+  .pn-imp-piatto-nome {
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.25;
+  }
+  .pn-imp-piatto-stato {
+    font-size: 13px;
+    line-height: 1.3;
+    font-weight: 600;
+    color: #0d5222;
+  }
+  .pn-imp-piatto[aria-checked="false"] .pn-imp-piatto-stato {
+    color: #8f1b12;
+  }
+
+  .pn-imp-interruttore {
+    justify-self: start;
+  }
+
+  /* ---------- Chiusure ---------- */
+  .pn-imp-scorciatoie {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .pn-imp-chiusure {
+    display: grid;
+    gap: 12px;
+  }
+  .pn-imp-chiusura {
+    display: grid;
+    gap: 10px;
+    min-width: 0;
+    padding: 10px 12px 12px;
+    border: 2px solid rgba(18, 20, 18, 0.18);
+    background: #fff;
+  }
+  .pn-imp-chiusura.is-passata {
+    background: var(--color-paper-2);
+  }
+  .pn-imp-chiusura-titolo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 0 6px;
+    margin-left: -6px;
+    font-family: var(--font-disp);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  /* Al telefono un campo per riga: due date affiancate a 360 px si tagliano. */
+  .pn-imp-chiusura-campi {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+    align-items: end;
+  }
+  @media (min-width: 480px) {
+    .pn-imp-chiusura-campi {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  .pn-imp-chiusura-campi .campo input {
+    width: 100%;
+    min-width: 0;
+  }
+  .pn-imp-motivo {
+    grid-column: 1 / -1;
+  }
+  .pn-imp-togli {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+  @media (min-width: 900px) {
+    .pn-imp-chiusura-campi {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.6fr) auto;
+    }
+    .pn-imp-motivo,
+    .pn-imp-togli {
+      grid-column: auto;
+    }
+    .pn-imp-togli {
+      min-height: 52px;
+    }
+  }
+
+  /* ---------- Avviso: anteprima ---------- */
+  .pn-imp-anteprima {
+    display: grid;
+    min-width: 0;
+  }
+
+  /* ---------- "Oggi": chiusure vicine e piatti spenti ---------- */
+  .pn-imp-nota {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    min-height: 60px;
+    padding: 12px 16px;
+    border-left: 5px solid;
+    font-size: 15px;
+    line-height: 1.4;
+  }
+  .pn-imp-nota strong {
+    font-size: 17px;
+  }
+  .pn-imp-nota:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .pn-imp-nota-allarme {
+    border-color: #b3261e;
+    background: #fbe0dc;
+    color: #6e140d;
+  }
+  .pn-imp-nota-attenzione {
+    border-color: #c98a00;
+    background: #fff1db;
+    color: #4a2400;
+  }
+}
+
+@keyframes avviso-entra {
+  from {
+    transform: translateY(-100%);
+  }
+}

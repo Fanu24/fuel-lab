@@ -51,7 +51,7 @@ export const ID = {
   cucina: `${URL_SITO}/#cucina`,
   sito: `${URL_SITO}/#website`,
   logo: `${URL_SITO}/#logo`,
-  matteo: `${URL_SITO}/chi-e-matteo#matteo`,
+  matteo: `${URL_SITO}/chi-siamo#matteo`,
   menu: `${URL_SITO}/menu#menu`,
 } as const;
 
@@ -167,14 +167,14 @@ export function grafoSito(): Nodo[] {
     publisher: rif(ID.organizzazione),
   };
 
-  // Nessuna immagine: la foto di "Chi e' Matteo" e' ancora di repertorio, e
+  // Nessuna immagine: la foto di "Chi siamo" e' ancora di repertorio, e
   // attaccarla a una persona vera sarebbe falso.
   const matteo: Nodo = {
     "@type": "Person",
     "@id": ID.matteo,
     name: TITOLARE.nome,
     jobTitle: TITOLARE.ruolo,
-    url: assoluto("/chi-e-matteo"),
+    url: assoluto("/chi-siamo"),
     worksFor: rif(ID.organizzazione),
     workLocation: rif(ID.cucina),
   };
@@ -217,6 +217,10 @@ export interface OpzioniPagina {
   faq?: DomandaTesto[];
   /** l'entita' principale (piatto, persona...); ignorata se ci sono FAQ */
   mainEntity?: Nodo;
+  /** di chi parla la pagina: la cucina se manca; "Chi siamo" parla dell'attivita' */
+  about?: Nodo;
+  /** chi altro compare nella pagina (per esempio Matteo), per @id */
+  mentions?: Nodo[];
   dataModifica?: string;
 }
 
@@ -232,8 +236,9 @@ export function nodiPagina(o: OpzioniPagina): Nodo[] {
     description: o.descrizione,
     inLanguage: "it-IT",
     isPartOf: rif(ID.sito),
-    about: rif(ID.cucina),
+    about: o.about ?? rif(ID.cucina),
   };
+  if (o.mentions?.length) pagina.mentions = o.mentions;
   if (o.immagine) pagina.primaryImageOfPage = { "@type": "ImageObject", url: assoluto(o.immagine) };
   if (o.dataModifica) pagina.dateModified = o.dataModifica;
   if (o.faq?.length) pagina.mainEntity = domandeFaq(o.faq);
@@ -260,19 +265,17 @@ export function nutrizione(p: Piatto): Nodo {
   };
 }
 
-const GIORNO_ESTESO: Record<Piatto["giorno"], string> = { lunedi: "lunedì", giovedi: "giovedì" };
-
-export function giornoPiatto(p: Piatto): string {
-  return GIORNO_ESTESO[p.giorno];
-}
-
-/** Ingredienti e allergeni in una frase: MenuItem non ha un campo ingredienti, la descrizione si'. */
+/**
+ * Ingredienti e allergeni in una frase: MenuItem non ha un campo ingredienti, la descrizione si'.
+ * Niente giorno di cottura: Matteo cucina ogni giorno, e il campo `giorno` del
+ * catalogo non e' piu' un'informazione da dare al pubblico.
+ */
 export function descrizioneEstesa(p: Piatto): string {
   const ingredienti = p.ingredienti
     .map((i) => (i.grammi ? `${i.nome.toLowerCase()} (${i.grammi} g)` : i.nome.toLowerCase()))
     .join(", ");
   const allergeni = p.allergeni.length ? p.allergeni.join(", ") : "nessuno dei 14 allergeni principali";
-  return `${p.descrizione} Porzione da ${p.grammi} g, cucinata il ${giornoPiatto(p)}. Ingredienti: ${ingredienti}. Allergeni: ${allergeni}.`;
+  return `${p.descrizione} Porzione da ${p.grammi} g, cucinata fresca. Ingredienti: ${ingredienti}. Allergeni: ${allergeni}.`;
 }
 
 /**
@@ -350,15 +353,56 @@ export interface OpzioniServizio {
   immagine?: string;
   /** soglia "da X euro a pasto"; assente per i servizi su preventivo */
   prezzoDa?: number;
+  /** prezzo fisso al mese (l'abbonamento): vince su prezzoDa */
+  prezzoMese?: number;
 }
 
 /**
- * Un servizio con la sua offerta. Il prezzo e' una soglia (minPrice), mai un
- * listino: e' l'unico numero che il committente vuole in chiaro. Senza soglia
- * (l'home cooking, su preventivo) l'offerta non c'e'.
+ * L'offerta a prezzo fisso mensile: price piu' UnitPriceSpecification riferita
+ * a un mese (referenceQuantity 1 MON, codice UN/CEFACT). Dice "X euro per un
+ * mese" senza inventare una durata minima del contratto, che il committente
+ * non ha fissato (per questo niente billingDuration).
+ */
+function offertaMensile(url: string, prezzo: number): Nodo {
+  return {
+    "@type": "Offer",
+    url,
+    price: prezzo,
+    priceCurrency: "EUR",
+    priceSpecification: {
+      "@type": "UnitPriceSpecification",
+      price: prezzo,
+      priceCurrency: "EUR",
+      unitText: "mese",
+      referenceQuantity: { "@type": "QuantitativeValue", value: 1, unitCode: "MON" },
+    },
+  };
+}
+
+/**
+ * Un servizio con la sua offerta. Il prezzo del meal prep e' una soglia
+ * (minPrice), mai un listino: e' l'unico numero a pasto che il committente
+ * vuole in chiaro. L'abbonamento ha invece un prezzo fisso al mese. Senza
+ * nessuno dei due (l'home cooking, su preventivo) l'offerta non c'e'.
  */
 export function nodoServizio(o: OpzioniServizio): Nodo {
   const url = assoluto(o.url ?? o.percorso);
+  const offerta: Nodo | null =
+    o.prezzoMese != null
+      ? offertaMensile(url, o.prezzoMese)
+      : o.prezzoDa != null
+        ? {
+            "@type": "Offer",
+            url,
+            priceCurrency: "EUR",
+            priceSpecification: {
+              "@type": "UnitPriceSpecification",
+              minPrice: o.prezzoDa,
+              priceCurrency: "EUR",
+              unitText: "pasto",
+            },
+          }
+        : null;
   return {
     "@type": "Service",
     "@id": `${assoluto(o.percorso)}#${o.id}`,
@@ -369,20 +413,6 @@ export function nodoServizio(o: OpzioniServizio): Nodo {
     ...(o.immagine ? { image: assoluto(o.immagine) } : {}),
     provider: rif(ID.cucina),
     areaServed: areaServita(),
-    ...(o.prezzoDa != null
-      ? {
-          offers: {
-            "@type": "Offer",
-            url,
-            priceCurrency: "EUR",
-            priceSpecification: {
-              "@type": "UnitPriceSpecification",
-              minPrice: o.prezzoDa,
-              priceCurrency: "EUR",
-              unitText: "pasto",
-            },
-          },
-        }
-      : {}),
+    ...(offerta ? { offers: offerta } : {}),
   };
 }

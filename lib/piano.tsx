@@ -94,6 +94,33 @@ function scriviPiano(prossimo: Piano) {
   if (prossimo !== storePiano.get()) storePiano.scrivi(prossimo);
 }
 
+/* -------------------------------------------------------------------------
+   La settimana fuori da React, per chi la tiene allineata con l'account
+   (components/account/SincronizzaPiano). Sono gli stessi store del provider:
+   quello che si scrive da qui compare subito nel compositore, e viceversa.
+   Da chiamare solo nel browser (effetti, eventi): leggono localStorage.
+   ------------------------------------------------------------------------- */
+
+export function leggiSettimana(): { piano: Piano; allenamenti: Allenamenti } {
+  return { piano: storePiano.get(), allenamenti: storeAllenamenti.get() };
+}
+
+/** Piano e allenamenti insieme; arrivano dal server, quindi passano dalle potature. */
+export function scriviSettimana(s: { piano: unknown; allenamenti: unknown }) {
+  storePiano.scrivi(potaPiano(s.piano));
+  storeAllenamenti.scrivi(potaAllenamenti(s.allenamenti));
+}
+
+/** Avvisa a ogni modifica di piano o allenamenti, anche quelle fatte in un'altra scheda. */
+export function ascoltaSettimana(f: () => void): () => void {
+  const piano = storePiano.subscribe(f);
+  const allenamenti = storeAllenamenti.subscribe(f);
+  return () => {
+    piano();
+    allenamenti();
+  };
+}
+
 export interface CtxPiano {
   piano: Piano;
   /** false durante SSR e idratazione: i numeri vanno resi solo quando e' true */

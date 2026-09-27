@@ -223,6 +223,9 @@ describe("clienti", () => {
     expect(filtraClienti(clienti, { filtro: "aperti" }).map((c) => c.name)).toEqual(["Nicolò Verdi"]);
     expect(filtraClienti(clienti, { filtro: "senza-ordini" }).map((c) => c.name)).toEqual(["Anna Bianchi"]);
     expect(filtraClienti(clienti, { filtro: "non-verificati" }).map((c) => c.name)).toEqual(["Zeno Rossi"]);
+    // Il 27 settembre: Zeno ha ordinato l'ultima volta il 1 agosto e non ha niente in corso; Nicolo' ha un ordine aperto.
+    const adesso = Date.parse("2026-09-27T12:00:00Z");
+    expect(filtraClienti(clienti, { filtro: "da-ricontattare", adesso }).map((c) => c.name)).toEqual(["Zeno Rossi"]);
     expect(filtraClienti(clienti, { ordine: "recenti" }).map((c) => c.name)).toEqual(["Anna Bianchi", "Nicolò Verdi", "Zeno Rossi"]);
     expect(filtraClienti(clienti, { ordine: "ordini" }).map((c) => c.name)).toEqual(["Zeno Rossi", "Nicolò Verdi", "Anna Bianchi"]);
     expect(filtraClienti(clienti, { ordine: "spesa" }).map((c) => c.name)).toEqual(["Nicolò Verdi", "Zeno Rossi", "Anna Bianchi"]);

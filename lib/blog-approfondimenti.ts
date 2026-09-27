@@ -71,12 +71,12 @@ export const APPROFONDIMENTI: Record<string, Approfondimento> = {
   },
   "pallotte-cacio-e-ova-versione-fit": {
     risposta: "Le pallotte cacio e ova sono polpette abruzzesi di formaggio, uova e pane, fritte e poi cotte nel sugo di pomodoro. La versione fit di FUEL LAB usa pane raffermo, uova, ricotta e parmigiano con un sugo di pomodorini: resta il sapore della tradizione, con un impasto più leggero e i valori della porzione scritti in scheda.",
-    scenario: "Il giovedì ti alleni con i pesi alle 18. Le pallotte escono dalla cucina proprio il giovedì: le ritiri o le ricevi, le conservi come indicato e la sera le mangi con un contorno di verdure. Il venerdì a pranzo scegli un piatto diverso, per non ripetere lo stesso sapore due volte di fila.",
+    scenario: "Il giovedì ti alleni con i pesi alle 18. Le pallotte le ritiri o le ricevi quel giorno stesso, perché Matteo cucina e consegna ogni giorno: le conservi come indicato e la sera le mangi con un contorno di verdure. Il venerdì a pranzo scegli un piatto diverso, per non ripetere lo stesso sapore due volte di fila.",
     passi: [
       "Apri la scheda delle pallotte fit e controlla ingredienti e allergeni.",
       "Mettile in un giorno di pesi della tua settimana, a pranzo o a cena.",
       "Abbinale a verdure di stagione per completare il pasto.",
-      "Chiedi a Matteo disponibilità del giovedì, ritiro o consegna.",
+      "Chiedi a Matteo disponibilità nel giorno che ti serve, ritiro o consegna.",
     ],
     daSapere: "Contengono glutine, uova e latte. La versione tradizionale fritta resta un piatto delle feste; quella fit è pensata per i giorni feriali, non per sostituire la tradizione.",
   },
@@ -103,8 +103,8 @@ export const APPROFONDIMENTI: Record<string, Approfondimento> = {
     daSapere: "Se hai patologie cardiache, renali o epatiche, o assumi farmaci che influenzano i liquidi, le quantità da bere vanno concordate con il medico.",
   },
   "settimana-tipo-allenamento-alimentazione": {
-    risposta: "Per organizzare una settimana tipo parti dai giorni di allenamento, individua il pasto chiave di ogni giorno (il pranzo prima del cardio, la cena dopo i pesi), cucina o ritira due volte a settimana e lascia libere le caselle dei pasti fuori. Gli schemi con tre, quattro o cinque allenamenti sono un punto di partenza da adattare.",
-    scenario: "Ti alleni quattro volte: pesi lunedì e giovedì, corsa martedì, lungo il sabato. La domenica prepari due pranzi e il lunedì ritiri i piatti per le cene di lunedì e martedì; il giovedì rifai lo stesso per il resto della settimana. Il mercoledì e il venerdì mangi quello che hai in casa, senza schemi.",
+    risposta: "Per organizzare una settimana tipo parti dai giorni di allenamento, individua il pasto chiave di ogni giorno (il pranzo prima del cardio, la cena dopo i pesi), cucina due volte a settimana o ricevi i piatti nei giorni in cui ti servono, e lascia libere le caselle dei pasti fuori. Gli schemi con tre, quattro o cinque allenamenti sono un punto di partenza da adattare.",
+    scenario: "Ti alleni quattro volte: pesi il lunedì, corsa il martedì, di nuovo pesi il giovedì e un lungo il sabato. La domenica prepari due pranzi; per le due cene dopo i pesi ricevi un piatto pronto il giorno stesso. Il mercoledì e il venerdì mangi quello che hai in casa, senza schemi.",
     passi: [
       "Scegli lo schema più vicino al numero dei tuoi allenamenti.",
       "Sposta i giorni in base al tuo calendario reale.",
@@ -156,7 +156,7 @@ export const APPROFONDIMENTI: Record<string, Approfondimento> = {
       "Prevedi dove conserverai il pasto e per quanti giorni: meglio due preparazioni a settimana.",
       "Prova il [compositore](/settimana) e chiedi a Matteo disponibilità e zona di consegna.",
     ],
-    daSapere: "FUEL LAB cucina e consegna il lunedì e il giovedì. Per un indirizzo specifico a Pescara o nei dintorni chiedi conferma prima di contare sulla consegna; per le quantità personali fai riferimento al tuo professionista.",
+    daSapere: "FUEL LAB cucina ogni giorno e consegna ogni giorno. Per un indirizzo specifico a Pescara o nei dintorni chiedi conferma prima di contare sulla consegna; per le quantità personali fai riferimento al tuo professionista.",
     correlati: ["menu-settimanale-pescara-come-pianificarlo", "conservare-pasti-preparati-frigorifero"],
   },
   "cucina-salutare-asporto-pescara": {
@@ -197,7 +197,7 @@ export const APPROFONDIMENTI: Record<string, Approfondimento> = {
   },
   "meal-prep-allenamento-cardio-pesi": {
     risposta: "Se alterni cardio e pesi, prepara in anticipo i pasti che cadono prima e dopo le sedute: stesse basi di carboidrati, proteine e verdure, proporzioni diverse secondo il giorno. Cucina due volte a settimana, porziona ed etichetta i contenitori; le quantità personali restano quelle del tuo professionista.",
-    scenario: "Pesi il lunedì e il giovedì alle 18:30, corsa il martedì alle 19. La domenica cucini riso, pollo, patate e una teglia di verdure: il contenitore di martedì ha più riso, quello di lunedì più pollo e patate. Il mercoledì sera rifai le basi per giovedì e venerdì, oppure ritiri un piatto del giovedì per la cena dopo la palestra.",
+    scenario: "Pesi il lunedì alle 18:30 e di nuovo il giovedì, corsa il martedì alle 19. La domenica cucini riso, pollo, patate e una teglia di verdure: il contenitore di martedì ha più riso, quello di lunedì più pollo e patate. Il mercoledì sera rifai le basi per giovedì e venerdì, oppure il giovedì ricevi un piatto pronto per la cena dopo la palestra.",
     passi: [
       "Inserisci gli allenamenti reali della settimana, con l’orario.",
       "Individua i pasti chiave prima e dopo le sedute.",
@@ -304,7 +304,7 @@ export const APPROFONDIMENTI: Record<string, Approfondimento> = {
     correlati: ["leggere-etichetta-nutrizionale-piatti-pronti", "piatto-equilibrato-ingredienti-varieta"],
   },
   "menu-settimanale-pescara-come-pianificarlo": {
-    risposta: "Un menu settimanale funziona se parte dai tuoi impegni reali: segna i punti fermi, conta i pasti da coprire, assegna a ciascuno una soluzione e ruota cereali, proteine e verdure. Cucina o ritira due volte a settimana e lascia una casella libera per gli imprevisti.",
+    risposta: "Un menu settimanale funziona se parte dai tuoi impegni reali: segna i punti fermi, conta i pasti da coprire, assegna a ciascuno una soluzione e ruota cereali, proteine e verdure. Cucina due volte a settimana, o fatti consegnare i piatti nei giorni che ti servono, e lascia una casella libera per gli imprevisti.",
     scenario: "Segni due pranzi in ufficio, una cena dopo la palestra e il resto della settimana aperto. Per quei tre momenti scegli piatti diversi, uno con legumi, uno con uova, uno con carne, e scrivi che cosa devi comprare e che cosa ricevere. Il mercoledì controlli la bozza: se è saltato un allenamento, sposti la cena al giorno dopo.",
     passi: [
       "Metti sul calendario lavoro, studio, sport e pasti fuori casa.",

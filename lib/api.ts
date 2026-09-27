@@ -221,6 +221,32 @@ export type NuovoMessaggio = {
 
 export type Providers = { email: boolean; emailVerification: boolean; google: boolean; apple: boolean };
 
+/** Un periodo in cui Matteo non cucina: `dal` e `al` compresi, "YYYY-MM-DD". */
+export type Chiusura = { dal: string; al: string; motivo: string };
+
+/** La striscia in cima alle pagine del sito. `link` e' un percorso interno ("/menu") o vuoto. */
+export type AvvisoSito = { attivo: boolean; testo: string; link: string };
+
+/**
+ * Le impostazioni che Matteo cambia dal pannello e che il sito pubblico legge
+ * nel browser (GET /api/settings). Una parte assente nel database vale il suo
+ * predefinito vuoto: nessun piatto escluso, nessuna chiusura, avviso spento.
+ */
+export type Impostazioni = {
+  /** Id di PIATTI (lib/catalogo.ts) che questa settimana non si possono scegliere. */
+  piattiNonDisponibili: string[];
+  /** Ordinate per data d'inizio. */
+  chiusure: Chiusura[];
+  avviso: AvvisoSito;
+};
+
+/** Sempre un oggetto nuovo: chi lo riceve lo puo' modificare senza toccare gli altri. */
+export const impostazioniVuote = (): Impostazioni => ({
+  piattiNonDisponibili: [],
+  chiusure: [],
+  avviso: { attivo: false, testo: "", link: "" },
+});
+
 /* ---------- Trasporto ---------- */
 
 export class ApiError extends Error {
@@ -270,9 +296,22 @@ export const api = {
   profilo: () => chiama<{ profile: Profilo }>("/api/profile"),
   salvaProfilo: (profile: Profilo) => chiama<{ profile: Profilo }>("/api/profile", { method: "PUT", json: profile }),
 
+  /** `updatedAt` e' anche la versione del piano (al millisecondo): serve a salvaPianoSe. */
   piano: () => chiama<{ plan: Piano | null; training: Allenamenti | null; updatedAt: string | null }>("/api/plan"),
+  /** Sovrascrive qualunque versione ci sia nell'account. */
   salvaPiano: (plan: Piano, training: Allenamenti) =>
-    chiama<{ plan: Piano; training: Allenamenti }>("/api/plan", { method: "PUT", json: { plan, training } }),
+    chiama<{ plan: Piano; training: Allenamenti; updatedAt: string }>("/api/plan", { method: "PUT", json: { plan, training } }),
+  /**
+   * Salva solo se l'account e' ancora alla versione `ifUpdatedAt` (null: "non c'e'
+   * niente"); se nel frattempo e' cambiata il server risponde 409 e non scrive.
+   * `keepalive` lascia finire la richiesta anche mentre la pagina si chiude.
+   */
+  salvaPianoSe: (plan: Piano, training: Allenamenti, ifUpdatedAt: string | null, opzioni: { keepalive?: boolean } = {}) =>
+    chiama<{ plan: Piano; training: Allenamenti; updatedAt: string }>("/api/plan", {
+      method: "PUT",
+      json: { plan, training, ifUpdatedAt },
+      keepalive: opzioni.keepalive,
+    }),
 
   /** Cliente: i suoi ultimi 50. Admin: tutti gli aperti + gli ultimi 100 chiusi. */
   ordini: () => chiama<{ orders: Ordine[]; historyLimit?: number }>("/api/orders"),
@@ -287,6 +326,14 @@ export const api = {
 
   /** Pubblico: modulo contatti, anche senza account. */
   inviaMessaggio: (messaggio: NuovoMessaggio) => chiama<{ id: string }>("/api/contact", { method: "POST", json: messaggio }),
+
+  /**
+   * Pubblico: piatti non disponibili, chiusure e avviso. Il server permette al
+   * browser di tenerle 60 secondi; `fresche` va comunque in rete e rinfresca
+   * la copia del browser (il pannello, dopo un salvataggio).
+   */
+  impostazioni: (fresche = false) =>
+    chiama<{ settings: Impostazioni }>("/api/settings", { cache: fresche ? "reload" : "default" }),
 };
 
 /* ---------- Solo Matteo ---------- */
@@ -301,6 +348,13 @@ export const adminApi = {
   messaggi: () => chiama<{ messages: MessaggioContatto[] }>("/api/admin/messages"),
   modificaMessaggio: (id: string, status: StatoMessaggio) =>
     chiama<{ message: MessaggioContatto }>(`/api/admin/messages/${encodeURIComponent(id)}`, { method: "PATCH", json: { status } }),
+  /**
+   * Salva solo le parti presenti (piatti, chiusure, avviso): le altre restano
+   * come sono. Ogni parte presente va mandata intera. Risponde con tutte le
+   * impostazioni, come le leggera' il sito.
+   */
+  salvaImpostazioni: (modifica: Partial<Impostazioni>) =>
+    chiama<{ settings: Impostazioni }>("/api/admin/settings", { method: "PUT", json: modifica }),
 };
 
 /* ---------- Etichette in italiano ---------- */

@@ -43,8 +43,8 @@ export default function LaCucina() {
               Cucina sana. <span className="evidenzia">Non triste.</span>
             </h2>
             <p className="lead mt-6">
-              Dietro ogni schiscetta c&apos;è un cuoco, non una linea di produzione. Matteo cucina due volte a
-              settimana, come faresti tu se avessi il tempo: è questo il meal prep a Pescara di FUEL LAB.
+              Dietro ogni schiscetta c&apos;è un cuoco, non una linea di produzione. Matteo cucina ogni giorno,
+              come faresti tu se avessi il tempo: è questo il meal prep a Pescara di FUEL LAB.
             </p>
           </Reveal>
           <ul className="mt-10 grid gap-6">
@@ -59,7 +59,7 @@ export default function LaCucina() {
             ))}
           </ul>
           <Reveal delay={260} className="mt-10 flex flex-wrap gap-x-8 gap-y-4">
-            <Link href="/chi-e-matteo" className="link inline-block">
+            <Link href="/chi-siamo" className="link inline-block">
               Chi c&apos;è ai fornelli
             </Link>
             <Link href="/meal-prep-pescara" className="link inline-block">

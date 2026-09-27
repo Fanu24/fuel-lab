@@ -11,6 +11,7 @@ import {
   ApiError,
   daSqlite,
   etichettaStato,
+  type Chiusura,
   type EventoOrdine,
   type Modalita,
   type NuovoOrdine,
@@ -20,6 +21,7 @@ import {
   type StatoOrdine,
 } from "./api";
 import { getExtra, getPiatto } from "./catalogo";
+import { chiusuraDi, erroreDataChiusa } from "./impostazioni";
 import {
   GIORNI,
   NOMI_GIORNO,
@@ -607,7 +609,8 @@ export const NOTE_MAX = 1500;
 /** Le stesse regole di functions/api/orders.ts, con parole che dicono cosa fare. */
 export function validaRichiesta(
   d: DatiRichiesta,
-  contesto: { piatti: number; min: string; max: string },
+  /** `chiusure`: i periodi in cui Matteo non cucina (GET /api/settings), se gia' letti. */
+  contesto: { piatti: number; min: string; max: string; chiusure?: readonly Chiusura[] },
 ): ErroriRichiesta {
   const e: ErroriRichiesta = {};
   const nome = d.nome.trim();
@@ -633,6 +636,10 @@ export function validaRichiesta(
     if (!dataValida(d.data)) e.data = "Questa data non è valida.";
     else if (d.data < contesto.min) e.data = "Scegli un giorno da domani in poi.";
     else if (d.data > contesto.max) e.data = "Puoi indicare un giorno entro i prossimi 90 giorni.";
+    else {
+      const chiusa = chiusuraDi(d.data, contesto.chiusure ?? []);
+      if (chiusa) e.data = erroreDataChiusa(chiusa, contesto.min);
+    }
   }
 
   if (d.note.length > NOTE_MAX) e.note = `Le note possono avere al massimo ${NOTE_MAX} caratteri.`;

@@ -22,6 +22,7 @@ export default function Griglia({
   toccaSlot,
   togli,
   apriExtra,
+  esclusi = [],
 }: {
   piano: Piano;
   allenamenti: Allenamenti;
@@ -31,6 +32,8 @@ export default function Griglia({
   toccaSlot: (s: TSlot, piena: boolean) => void;
   togli: (s: TSlot) => void;
   apriExtra: (s: TSlot) => void;
+  /** Id dei piatti non disponibili questa settimana: le caselle che li contengono lo dicono. */
+  esclusi?: readonly string[];
 }) {
   // con un pasto al giorno la cena resta visibile solo se qualcuno l'ha gia' riempita
   const pasti = PASTI.filter((m) => pastiAlGiorno === 2 || m === "pranzo" || GIORNI.some((g) => piano[g]?.[m]));
@@ -57,6 +60,7 @@ export default function Griglia({
                   slot={{ g, m }}
                   etichetta={`${NOMI_GIORNO[g]}, ${BREVE[m].toLowerCase()}`}
                   casella={piano[g]?.[m]}
+                  escluso={!!piano[g]?.[m]?.piatto && esclusi.includes(piano[g]?.[m]?.piatto ?? "")}
                   stato={stato}
                   inizia={inizia}
                   toccaSlot={toccaSlot}

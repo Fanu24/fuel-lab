@@ -76,7 +76,7 @@ export const SERVIZI: Servizio[] = [
     // non e' una pagina che spiega il servizio (non esiste ancora): e' un posizionamento
     // deliberato, "conosci Matteo prima di farlo entrare in casa tua". Vedi il commento
     // di LinkServizio in components/servizi/SezioneServizi.tsx per il dettaglio.
-    href: "/chi-e-matteo",
+    href: "/chi-siamo",
   },
 ];
 

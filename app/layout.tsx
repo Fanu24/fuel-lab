@@ -43,7 +43,7 @@ export const metadata: Metadata = {
   },
   description: DESCRIZIONE_ATTIVITA,
   applicationName: NOME_ATTIVITA,
-  authors: [{ name: TITOLARE.nome, url: `${URL_SITO}/chi-e-matteo` }],
+  authors: [{ name: TITOLARE.nome, url: `${URL_SITO}/chi-siamo` }],
   publisher: NOME_ATTIVITA,
   formatDetection: { telephone: false, address: false, email: false },
   robots: {
@@ -58,6 +58,12 @@ export const metadata: Metadata = {
     images: [IMMAGINE_OG],
   },
   twitter: { card: "summary_large_image" },
+  /* Verifica della proprieta' su Google Search Console e Bing Webmaster Tools:
+     i codici arrivano dalle variabili di build, senza, nessun meta. */
+  verification: {
+    ...(process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION ? { google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION } : {}),
+    ...(process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION ? { other: { "msvalidate.01": process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION } } : {}),
+  },
 };
 
 export const viewport: Viewport = {

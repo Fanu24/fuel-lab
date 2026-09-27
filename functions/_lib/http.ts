@@ -1,7 +1,8 @@
-export function json(data: unknown, status = 200) {
+/** `cache`: "no-store" per tutto cio' che dipende dall'utente; solo i dati pubblici possono restare nel browser. */
+export function json(data: unknown, status = 200, cache = "no-store") {
   return Response.json(data, {
     status,
-    headers: { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" },
+    headers: { "Cache-Control": cache, "X-Content-Type-Options": "nosniff" },
   });
 }
 

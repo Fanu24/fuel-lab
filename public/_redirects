@@ -1,0 +1,6 @@
+# Redirect permanenti per Cloudflare Pages (formato: origine destinazione codice).
+# "Chi è Matteo" è diventata "Chi siamo": il vecchio indirizzo resta valido per
+# chi lo ha salvato e passa a Google il posto in classifica.
+/chi-e-matteo /chi-siamo 301
+/chi-e-matteo/ /chi-siamo 301
+/chi-e-matteo.html /chi-siamo 301

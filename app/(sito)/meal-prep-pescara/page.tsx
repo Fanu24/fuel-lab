@@ -10,13 +10,14 @@ import JsonLd from "@/components/seo/JsonLd";
 import LinkBlog from "@/components/seo/LinkBlog";
 import { AGGIORNAMENTO, PAGINE, metadatiPagina } from "@/components/seo/pagine";
 import { nodiPagina, nodoServizio, prezzoIt, type DomandaTesto } from "@/components/seo/schema";
-import { PIATTI } from "@/lib/catalogo";
+import { PIATTI, type Allenamento } from "@/lib/catalogo";
+import { PREZZO_ABBONAMENTO_TESTO } from "@/lib/abbonamento";
 import { CONSIGLI } from "@/lib/consigli";
 import { SOGLIA_PREZZO } from "@/lib/servizi";
 import { INDIRIZZO_RIGA, LINK_MAPPA, elencoZone } from "@/lib/sito";
 
 /* La pagina pilastro del servizio: che cos'e' il meal prep di FUEL LAB, come
-   funziona, per chi, quando si cucina, come arriva e quanto costa. Le altre
+   funziona, per chi, per quale allenamento, come arriva e quanto costa. Le altre
    pagine locali (consegna, pasti proteici, cuoco a domicilio) approfondiscono
    un pezzo ciascuna; il blog spiega il meal prep in generale. */
 
@@ -50,7 +51,7 @@ const PASSI = [
     n: "04",
     titolo: "Ritiri o ricevi",
     testo:
-      "Il lunedì e il giovedì i piatti sono pronti: li ritiri in Via del Santuario 214 oppure arrivano al tuo indirizzo, se è in zona.",
+      "Matteo cucina ogni giorno e consegna ogni giorno: ritiri in Via del Santuario 214 oppure i piatti arrivano al tuo indirizzo, se è in zona.",
     link: { href: PAGINE.consegna.percorso, label: "Ritiro e consegna" },
   },
 ];
@@ -82,11 +83,11 @@ const DOMANDE: DomandaTesto[] = [
   },
   {
     q: "I piatti sono surgelati?",
-    a: "No. Sono piatti freschi, mai surgelati: Matteo li cucina il lunedì e il giovedì. Per conservarli e scaldarli segui le indicazioni che ricevi con il piatto.",
+    a: "No. Sono piatti freschi, mai surgelati: Matteo cucina ogni giorno. Per conservarli e scaldarli segui le indicazioni che ricevi con il piatto.",
   },
   {
     q: "Quando cucina Matteo?",
-    a: "Il lunedì e il giovedì. Ogni piatto del menu ha il suo giorno di cottura, scritto nella scheda del piatto.",
+    a: "Ogni giorno, e ogni giorno consegna. Il giorno del ritiro o della consegna si concorda con lui quando confermi la richiesta.",
   },
   {
     q: "Posso scegliere io i piatti?",
@@ -94,7 +95,7 @@ const DOMANDE: DomandaTesto[] = [
   },
   {
     q: "Quanto costa il meal prep a Pescara con FUEL LAB?",
-    a: `Da ${PREZZO} € a pasto. Il prezzo finale dipende dalla richiesta e te lo conferma Matteo: sul sito non c'è pagamento online.`,
+    a: `Da ${PREZZO} € a pasto. Il prezzo finale dipende dalla richiesta e te lo conferma Matteo: sul sito non c'è pagamento online. Per tutti i pranzi dal lunedì al venerdì c'è anche l'abbonamento, a ${PREZZO_ABBONAMENTO_TESTO} al mese.`,
   },
   {
     q: "Va bene anche se non mi alleno?",
@@ -106,10 +107,19 @@ const DOMANDE: DomandaTesto[] = [
   },
 ];
 
+/* I piatti raggruppati per allenamento, come il menu: il giorno di cottura non
+   si dice piu', perche' Matteo cucina ogni giorno. */
+const GRUPPI: { id: Allenamento; titolo: string }[] = [
+  { id: "cardio", titolo: "Per il cardio" },
+  { id: "pesi", titolo: "Per i pesi" },
+  { id: "entrambi", titolo: "Per cardio e pesi" },
+];
+
 export default function MealPrepPescara() {
   const briciole = [{ nome: PAGINA.breve, href: PAGINA.percorso }];
-  const lunedi = PIATTI.filter((p) => p.giorno === "lunedi");
-  const giovedi = PIATTI.filter((p) => p.giorno === "giovedi");
+  const gruppi = GRUPPI.map((g) => ({ ...g, piatti: PIATTI.filter((p) => p.allenamento === g.id) })).filter(
+    (g) => g.piatti.length > 0,
+  );
 
   return (
     <>
@@ -128,7 +138,7 @@ export default function MealPrepPescara() {
             percorso: PAGINA.percorso,
             nome: "Meal prep a Pescara",
             descrizione:
-              "Piatti freschi, mai surgelati, cucinati da Matteo Pattanè il lunedì e il giovedì per chi si allena, con ingredienti, allergeni e macro su ogni porzione. Ritiro in sede o consegna in zona.",
+              "Piatti freschi, mai surgelati, cucinati ogni giorno da Matteo Pattanè per chi si allena, con ingredienti, allergeni e macro su ogni porzione. Ritiro in sede o consegna in zona.",
             tipoServizio: "Meal prep",
             prezzoDa: SOGLIA_PREZZO,
           }),
@@ -142,8 +152,8 @@ export default function MealPrepPescara() {
           <h1 className="titolo-xl mt-6 max-w-[13ch]">Meal prep a Pescara, cucinato da Matteo.</h1>
           <p className="lead mt-6">
             FUEL LAB è il meal prep fresco di Matteo Pattanè a Pescara: piatti già composti, mai surgelati, con
-            ingredienti e macro scritti su ogni porzione. Matteo cucina il lunedì e il giovedì; tu scegli, ritiri in
-            sede o chiedi la consegna in zona.
+            ingredienti e macro scritti su ogni porzione. Matteo cucina ogni giorno: tu scegli, ritiri in sede o
+            chiedi la consegna in zona.
           </p>
           <div className="mt-9 flex flex-wrap items-center gap-x-8 gap-y-4">
             <Link href="/menu" className="btn btn-ink">
@@ -207,21 +217,17 @@ export default function MealPrepPescara() {
         <FotoPiena foto="cuoco" velo="forte" />
         <div className="wrap relative py-[var(--sezione)]">
           <Reveal>
-            <p className="occhiello">Lunedì e giovedì</p>
-            <h2 className="titolo mt-5 max-w-[14ch]">Due cotture, una settimana coperta.</h2>
+            <p className="occhiello">Cardio e pesi</p>
+            <h2 className="titolo mt-5 max-w-[14ch]">Un piatto per ogni allenamento.</h2>
             <p className="mt-6 max-w-[56ch] text-lg" style={{ color: "rgb(243 239 230 / .9)" }}>
-              Matteo cucina due volte a settimana e ogni piatto del menu ha il suo giorno. Così quello che mangi a metà
-              settimana arriva da una cottura di pochi giorni prima, non da una sola grande preparazione della
-              domenica.
+              Ogni piatto del menu è segnato per i giorni di cardio, per quelli di pesi o per entrambi. E Matteo cucina
+              ogni giorno: quello che mangi non arriva da una sola grande preparazione della domenica.
             </p>
           </Reveal>
-          <div className="mt-12 grid gap-10 md:grid-cols-2">
-            {[
-              { giorno: "Il lunedì", piatti: lunedi },
-              { giorno: "Il giovedì", piatti: giovedi },
-            ].map((g) => (
-              <Reveal key={g.giorno} className="border-t-[3px] border-lime pt-5">
-                <h3 className="occhiello">{g.giorno}</h3>
+          <div className={`mt-12 grid gap-10 ${gruppi.length > 2 ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
+            {gruppi.map((g, i) => (
+              <Reveal key={g.id} delay={i * 80} className="border-t-[3px] border-lime pt-5">
+                <h3 className="occhiello">{g.titolo}</h3>
                 <ul className="mt-5 grid gap-3">
                   {g.piatti.map((p) => (
                     <li key={p.id}>
@@ -310,7 +316,7 @@ export default function MealPrepPescara() {
             <Reveal delay={80} className="border-t-[3px] border-ink pt-6">
               <h3 className="titolo-s">Consegna</h3>
               <p className="mt-3 text-muted">
-                Il lunedì e il giovedì a {elencoZone()}. La copertura del tuo indirizzo si conferma prima
+                Ogni giorno a {elencoZone()}. La copertura del tuo indirizzo si conferma prima
                 dell&apos;ordine.
               </p>
               <Link href={PAGINE.consegna.percorso} className="link mt-5 inline-block">
@@ -321,11 +327,17 @@ export default function MealPrepPescara() {
               <h3 className="titolo-s">Prezzo</h3>
               <p className="mt-3 text-muted">
                 Da <span className="evidenzia font-semibold text-ink">{PREZZO} € a pasto</span>. Il prezzo finale te lo
-                conferma Matteo con la richiesta: sul sito non si paga niente.
+                conferma Matteo con la richiesta: sul sito non si paga niente. Per tutti i pranzi dal lunedì al
+                venerdì c&apos;è l&apos;abbonamento, a {PREZZO_ABBONAMENTO_TESTO} al mese.
               </p>
-              <Link href="/servizi" className="link mt-5 inline-block">
-                Servizi e prezzi
-              </Link>
+              <div className="mt-5 flex flex-wrap gap-x-8 gap-y-4">
+                <Link href="/servizi" className="link">
+                  Servizi e prezzi
+                </Link>
+                <Link href={PAGINE.abbonamento.percorso} className="link">
+                  L&apos;abbonamento
+                </Link>
+              </div>
             </Reveal>
           </div>
           <p className="mt-12 max-w-[64ch] text-muted">

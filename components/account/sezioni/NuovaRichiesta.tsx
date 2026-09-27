@@ -13,10 +13,13 @@ import {
   ORDINE_CAMPI_RICHIESTA,
   righePiano,
   SERVIZIO_CON_PIATTI,
+  spostaGiorni,
   validaRichiesta,
   type DatiRichiesta,
 } from "@/lib/account";
-import { api, type Modalita, type Profilo, type Servizio, type Utente } from "@/lib/api";
+import { api, type Chiusura, type Modalita, type Profilo, type Servizio, type Utente } from "@/lib/api";
+import { caselleEscluse, chiusuraDi, chiusureVicine, fraseChiusura } from "@/lib/impostazioni";
+import { useImpostazioni } from "@/components/impostazioni/useImpostazioni";
 import { GIORNI, usePiano } from "@/lib/piano";
 import { SERVIZI } from "@/lib/servizi";
 import { Avviso, Caricamento, TitoloSezione } from "../ui";
@@ -24,7 +27,14 @@ import type { Dati } from "./tipi";
 
 /* Il modulo che manda la settimana a Matteo. I recapiti partono dal profilo e,
    se cambiano, si possono salvare li'. Nessun pagamento: Matteo conferma
-   disponibilita', giorno e totale, e il cliente lo vede in "Richieste". */
+   disponibilita', giorno e totale, e il cliente lo vede in "Richieste".
+
+   Le chiusure decise da Matteo nel pannello (GET /api/settings) arrivano prima
+   del modulo: in alto quelle vicine, accanto alla data l'errore se il giorno
+   scelto cade in una chiusura. Anche il server rifiuta quel giorno. */
+
+/** Quanti giorni avanti guarda l'avviso delle chiusure in arrivo. */
+const GIORNI_AVVISO_CHIUSURE = 30;
 
 type Props = {
   utente: Utente;
@@ -34,6 +44,8 @@ type Props = {
 };
 
 export default function NuovaRichiesta({ utente, profilo, servizioIniziale, onInviata }: Props) {
+  // Il modulo aspetta anche le impostazioni: l'avviso delle chiusure non deve spingere giu' i campi dopo.
+  const impostazioni = useImpostazioni();
   return (
     <section aria-labelledby="t-nuova" className="grid gap-8">
       <div>
@@ -42,10 +54,12 @@ export default function NuovaRichiesta({ utente, profilo, servizioIniziale, onIn
           Nessun pagamento online: Matteo ti conferma disponibilità, giorno e totale prima di cucinare.
         </p>
       </div>
-      {profilo.stato === "attesa" ? (
+      {profilo.stato === "attesa" || impostazioni.stato === "attesa" ? (
         <Caricamento testo="Preparo il modulo…" righe={5} />
       ) : (
         <Modulo
+          chiusure={impostazioni.impostazioni.chiusure}
+          esclusi={impostazioni.impostazioni.piattiNonDisponibili}
           utente={utente}
           profilo={profilo.stato === "pronto" ? profilo.dati : null}
           erroreProfilo={profilo.stato === "errore" ? profilo.messaggio : null}
@@ -70,6 +84,8 @@ const NOTE_SERVIZIO: Record<Servizio, string> = {
 };
 
 function Modulo({
+  chiusure,
+  esclusi,
   utente,
   profilo,
   erroreProfilo,
@@ -77,6 +93,8 @@ function Modulo({
   servizioIniziale,
   onInviata,
 }: {
+  chiusure: readonly Chiusura[];
+  esclusi: readonly string[];
   utente: Utente;
   profilo: Profilo | null;
   erroreProfilo: string | null;
@@ -107,8 +125,13 @@ function Modulo({
   }, [errore]);
 
   const piatti = contaPiatti(piano);
-  const errori = validaRichiesta(dati, { piatti, ...limiti });
-  const visibili = provato ? errori : {};
+  const errori = validaRichiesta(dati, { piatti, ...limiti, chiusure });
+  const oggi = spostaGiorni(limiti.min, -1);
+  // Un giorno di chiusura si segnala subito, senza aspettare l'invio: e' un'informazione, non uno sbaglio.
+  const dataChiusa = !!dati.data && !!chiusuraDi(dati.data, chiusure);
+  const visibili = provato ? errori : dataChiusa && errori.data ? { data: errori.data } : {};
+  const vicine = chiusureVicine(chiusure, oggi, GIORNI_AVVISO_CHIUSURE);
+  const nonDisponibili = pronto ? caselleEscluse(piano, esclusi).length : 0;
   const conPiatti = SERVIZIO_CON_PIATTI[dati.servizio];
   const servizio = SERVIZI.find((s) => s.id === dati.servizio)!;
   const giorniAllenamento = GIORNI.filter((g) => allenamenti[g]).length;
@@ -186,6 +209,16 @@ function Modulo({
   return (
     <form noValidate onSubmit={(e) => void invia(e)} className="acc-modulo-richiesta" aria-busy={invio}>
       <div className="acc-modulo-campi grid content-start gap-8">
+        {vicine.length ? (
+          <Avviso tipo="info" titolo={vicine.length === 1 ? "Chiusura in arrivo" : "Chiusure in arrivo"}>
+            <ul className="grid gap-1">
+              {vicine.map((c) => (
+                <li key={`${c.dal}-${c.al}`}>{fraseChiusura(c, oggi)}.</li>
+              ))}
+            </ul>
+            <p className="mt-2 text-sm">In quei giorni non si cucina: scegli un giorno fuori da queste date, oppure lascialo vuoto e te lo propone Matteo.</p>
+          </Avviso>
+        ) : null}
         {erroreProfilo ? (
           <Avviso tipo="info">Non riesco a leggere il profilo: scrivi i recapiti qui sotto. {erroreProfilo}</Avviso>
         ) : null}
@@ -258,10 +291,13 @@ function Modulo({
               value={dati.data}
               onChange={(e) => aggiorna("data", e.target.value)}
               aria-invalid={visibili.data ? true : undefined}
-              aria-describedby={["nr-data-aiuto", visibili.data ? "nr-data-errore" : null].filter(Boolean).join(" ")}
+              aria-describedby={[visibili.data ? "nr-data-errore" : null, "nr-data-aiuto"].filter(Boolean).join(" ")}
             />
+            {/* Sempre presente, subito sotto il campo: l'errore della chiusura compare mentre si sceglie la data e va letto subito. */}
+            <div aria-live="polite" className="empty:-mt-2">
+              {visibili.data ? <p id="nr-data-errore" className="errore">{visibili.data}</p> : null}
+            </div>
             <p id="nr-data-aiuto" className="text-sm text-muted">Da domani a 90 giorni. Matteo cucina il lunedì e il giovedì: ti conferma lui il giorno.</p>
-            {visibili.data ? <p id="nr-data-errore" className="errore">{visibili.data}</p> : null}
           </div>
         </div>
 
@@ -322,6 +358,15 @@ function Modulo({
             </div>
             <div><dt>Giorno preferito</dt><dd>{dati.data ? formattaGiorno(dati.data, limiti.min) : "Da concordare"}</dd></div>
           </dl>
+
+          {nonDisponibili && conPiatti ? (
+            <p className="acc-avviso acc-avviso-info text-sm">
+              {nonDisponibili === 1
+                ? "Un piatto della tua settimana non è disponibile questa settimana."
+                : `${nonDisponibili} piatti della tua settimana non sono disponibili questa settimana.`}{" "}
+              <Link href="/settimana" className="link">{nonDisponibili === 1 ? "Sostituiscilo" : "Sostituiscili"} nel compositore</Link>, oppure invia lo stesso: Matteo ti propone un’alternativa.
+            </p>
+          ) : null}
 
           {conPiatti && pronto && piatti === 0 ? (
             <div id="nr-piano" tabIndex={-1} className={`acc-avviso ${provato ? "acc-avviso-errore" : "acc-avviso-info"}`}>

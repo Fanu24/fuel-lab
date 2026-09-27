@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { NOME_ATTIVITA } from "@/lib/sito";
 import { PIATTI, type Piatto } from "@/lib/catalogo";
-import { giornoPiatto } from "./schema";
+import { PREZZO_ABBONAMENTO_TESTO } from "@/lib/abbonamento";
 
 /* =========================================================================
    Titoli, descrizioni e canonical delle pagine pubbliche, in un posto solo.
@@ -59,7 +59,7 @@ export const PAGINE = {
     titolo: `${NOME_ATTIVITA} · Meal prep fresco a Pescara per chi si allena`,
     assoluto: true,
     descrizione:
-      "Meal prep fresco a Pescara, mai surgelato: piatti per chi fa cardio o pesi, con i macro su ogni porzione. Matteo cucina il lunedì e il giovedì.",
+      "Meal prep fresco a Pescara, mai surgelato: piatti per chi fa cardio o pesi, con i macro su ogni porzione. Matteo cucina e consegna ogni giorno.",
     breve: "Home",
     priorita: 1,
     frequenza: "weekly",
@@ -68,7 +68,7 @@ export const PAGINE = {
     percorso: "/meal-prep-pescara",
     titolo: "Meal prep a Pescara: pasti freschi e pronti",
     descrizione:
-      "Meal prep a Pescara: piatti freschi, mai surgelati, cucinati da Matteo il lunedì e il giovedì. Ritiro in sede o consegna in zona, da 8,90 € a pasto.",
+      "Meal prep a Pescara: piatti freschi, mai surgelati, cucinati ogni giorno da Matteo. Ritiro in sede o consegna in zona ogni giorno, da 8,90 € a pasto.",
     breve: "Meal prep a Pescara",
     priorita: 0.9,
     frequenza: "monthly",
@@ -77,7 +77,7 @@ export const PAGINE = {
     percorso: "/consegna-pasti-pescara",
     titolo: "Consegna pasti a Pescara, Montesilvano e dintorni",
     descrizione:
-      "Consegna pasti a Pescara, Montesilvano, Spoltore, Francavilla al Mare, San Giovanni Teatino e Chieti Scalo, il lunedì e il giovedì. Oppure ritiro in sede.",
+      "Consegna pasti ogni giorno a Pescara, Montesilvano, Spoltore, Francavilla al Mare, San Giovanni Teatino e Chieti Scalo. Oppure ritiro in sede.",
     breve: "Consegna pasti a Pescara",
     priorita: 0.9,
     frequenza: "monthly",
@@ -108,6 +108,14 @@ export const PAGINE = {
     priorita: 0.9,
     frequenza: "weekly",
   },
+  abbonamento: {
+    percorso: "/abbonamento",
+    titolo: `Abbonamento pranzi a Pescara: ${PREZZO_ABBONAMENTO_TESTO} al mese`,
+    descrizione: `Abbonamento meal prep a Pescara: ${PREZZO_ABBONAMENTO_TESTO} al mese, tutti i pranzi dal lunedì al venerdì composti da Matteo sulla tua scheda. Ritiro o consegna in zona.`,
+    breve: "Abbonamento",
+    priorita: 0.9,
+    frequenza: "monthly",
+  },
   servizi: {
     percorso: "/servizi",
     titolo: "Servizi e prezzi del meal prep a Pescara",
@@ -126,12 +134,12 @@ export const PAGINE = {
     priorita: 0.7,
     frequenza: "monthly",
   },
-  chiEMatteo: {
-    percorso: "/chi-e-matteo",
-    titolo: "Chi è Matteo, il cuoco del meal prep a Pescara",
+  chiSiamo: {
+    percorso: "/chi-siamo",
+    titolo: "Chi siamo: la cucina di Matteo Pattanè a Pescara",
     descrizione:
-      "Matteo Pattanè è il cuoco di FUEL LAB, meal prep fresco a Pescara in Via del Santuario 214: cucina il lunedì e il giovedì piatti per chi si allena.",
-    breve: "Chi è Matteo",
+      "FUEL LAB è il meal prep fresco di Matteo Pattanè, cuoco e fondatore, a Pescara: piatti per chi si allena, macro su ogni porzione, cucinati ogni giorno.",
+    breve: "Chi siamo",
     priorita: 0.6,
     frequenza: "monthly",
   },
@@ -200,15 +208,14 @@ export function metadatiPagina(p: PaginaSeo, altro: Partial<Metadata> = {}): Met
 /**
  * La descrizione di un piatto deve stare fra 140 e 155 caratteri, ma i nomi
  * vanno da 30 a 50: si prova dalla frase piu' ricca alla piu' asciutta e si
- * tiene la prima che entra.
+ * tiene la prima che entra. Niente giorno di cottura: Matteo cucina ogni giorno.
  */
 export function descrizionePiatto(p: Piatto): string {
   const testa = `${p.nome}: ${p.kcal} kcal e ${p.proteine} g di proteine a porzione.`;
-  const giorno = giornoPiatto(p);
   const candidate = [
-    `${testa} Ingredienti, allergeni e macro del piatto, cucinato il ${giorno} da ${NOME_ATTIVITA} a Pescara.`,
-    `${testa} Ingredienti e allergeni del piatto, cucinato il ${giorno} da ${NOME_ATTIVITA} a Pescara.`,
-    `${testa} Ingredienti e allergeni, cucinato il ${giorno} da ${NOME_ATTIVITA} a Pescara.`,
+    `${testa} Ingredienti, allergeni e macro del piatto, cucinato fresco da ${NOME_ATTIVITA} a Pescara.`,
+    `${testa} Ingredienti e allergeni del piatto, cucinato fresco da ${NOME_ATTIVITA} a Pescara.`,
+    `${testa} Ingredienti e allergeni, cucinato fresco da ${NOME_ATTIVITA} a Pescara.`,
     `${testa} Ingredienti e allergeni. Meal prep ${NOME_ATTIVITA} a Pescara.`,
     `${testa} Meal prep a Pescara.`,
   ];

@@ -271,12 +271,16 @@ export default function PastiProteiciPescara() {
                 borsa termica se serve e li scaldi quando è ora.
               </p>
               <p>
-                Con due cotture a settimana, il lunedì e il giovedì, la settimana si copre in due volte. Se ti segue un
-                nutrizionista, parti dai suoi numeri:{" "}
+                Matteo cucina ogni giorno e consegna ogni giorno, quindi il pranzo arriva fresco anche a metà settimana.
+                Se ti segue un nutrizionista, parti dai suoi numeri:{" "}
                 <Link href="/scheda" className="link">
                   scrivi i tuoi macro
                 </Link>{" "}
-                e la settimana si compone con i piatti più vicini.
+                e la settimana si compone con i piatti più vicini. Se vuoi coprire tutti i pranzi del mese,{" "}
+                <Link href={PAGINE.abbonamento.percorso} className="link">
+                  c&apos;è l&apos;abbonamento
+                </Link>
+                .
               </p>
               <p>
                 Ritiro in sede o consegna a Pescara e dintorni:{" "}

@@ -58,8 +58,12 @@ export const LINK_MAPPA = `https://www.google.com/maps/search/?api=1&query=${enc
   `${INDIRIZZO.via}, ${INDIRIZZO.cap} ${INDIRIZZO.citta}`,
 )}`;
 
-/** I giorni in cui Matteo cucina (e consegna): gli stessi del catalogo, lunedi' e giovedi'. */
-export const GIORNI_CUCINA = ["lunedì", "giovedì"] as const;
+/**
+ * Quando Matteo cucina e consegna: ogni giorno (decisione del committente, che
+ * ha superato i due giorni fissi di prima). Le pagine pubbliche lo scrivono con
+ * queste parole e non promettono orari: il ritiro in sede si concorda con lui.
+ */
+export const QUANDO_CUCINA = "Matteo cucina ogni giorno e consegna ogni giorno";
 
 export interface Zona {
   nome: string;
@@ -93,4 +97,4 @@ export function elencoZone(zone: Zona[] = ZONE_SERVITE): string {
 
 /** La descrizione di una riga: la stessa per footer, dati strutturati e anteprime. */
 export const DESCRIZIONE_ATTIVITA =
-  "Meal prep fresco a Pescara per chi si allena: piatti per il cardio e per i pesi, con i macro su ogni porzione, cucinati da Matteo Pattanè il lunedì e il giovedì.";
+  "Meal prep fresco a Pescara per chi si allena: piatti per il cardio e per i pesi, con i macro su ogni porzione, cucinati ogni giorno da Matteo Pattanè.";

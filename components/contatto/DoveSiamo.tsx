@@ -2,8 +2,8 @@ import Link from "next/link";
 import { EMAIL_CONTATTI, INDIRIZZO, linkMappa } from "@/lib/contatto";
 
 /* Dove siamo e le domande che arrivano sempre prima del primo ordine. Niente
-   orari inventati: il ritiro si concorda con Matteo, i giorni di cucina sono
-   quelli che il sito dichiara ovunque, lunedi' e giovedi'. */
+   orari inventati: il ritiro si concorda con Matteo, e si cucina e si consegna
+   ogni giorno, come il sito dichiara ovunque (lib/sito.ts). */
 
 const DOMANDE_CONTATTI: { domanda: string; risposta: React.ReactNode }[] = [
   {
@@ -37,8 +37,8 @@ const DOMANDE_CONTATTI: { domanda: string; risposta: React.ReactNode }[] = [
     domanda: "Consegnate a casa mia?",
     risposta: (
       <>
-        La consegna è in zona Pescara. Scrivi il tuo comune: Matteo ti conferma se il tuo indirizzo è coperto e in
-        quale giorno.
+        La consegna è in zona Pescara, tutti i giorni. Scrivi il tuo comune: Matteo ti conferma se il tuo indirizzo è
+        coperto e in quale giorno può arrivare.
       </>
     ),
   },
@@ -80,7 +80,7 @@ export default function DoveSiamo() {
             </div>
             <div>
               <dt className="font-disp text-xs font-semibold tracking-[.18em] uppercase">Si cucina</dt>
-              <dd className="mt-1 text-muted">Il lunedì e il giovedì, fresco e mai surgelato.</dd>
+              <dd className="mt-1 text-muted">Ogni giorno, fresco e mai surgelato. Si consegna ogni giorno.</dd>
             </div>
             <div>
               <dt className="font-disp text-xs font-semibold tracking-[.18em] uppercase">Email</dt>

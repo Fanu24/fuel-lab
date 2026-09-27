@@ -41,7 +41,7 @@ const LARGHEZZE = [
   { nome: "telefono", width: 390, height: 844, isMobile: true },
 ];
 
-const PRIVATE_ADMIN = ["/dashboard", "/dashboard/ordini", "/dashboard/produzione", "/dashboard/clienti", "/dashboard/messaggi", "/dashboard/statistiche"];
+const PRIVATE_ADMIN = ["/dashboard", "/dashboard/ordini", "/dashboard/produzione", "/dashboard/clienti", "/dashboard/messaggi", "/dashboard/statistiche", "/dashboard/impostazioni"];
 const PRIVATE_CLIENTE = ["/account"];
 const PUBBLICHE_EXTRA = ["/accedi", "/reimposta-password", "/pagina-che-non-esiste"];
 

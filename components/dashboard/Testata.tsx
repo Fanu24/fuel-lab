@@ -2,6 +2,9 @@
 
 /* La testata del pannello. Sul computer: logo e schede in alto. Sul telefono:
    logo in alto e le sei sezioni in una barra fissa in basso, sotto il pollice.
+   Le impostazioni (piatti, chiusure, avviso) si toccano di rado: stanno in
+   alto accanto a "Torna al sito" ed "Esci", non nella barra delle sei sezioni;
+   sugli schermi larghi, dove c'e' posto, sono anche una scheda.
    I numerini (richieste da confermare, messaggi nuovi) vengono da
    PannelloDati, che si aggiorna da solo ogni minuto. */
 
@@ -30,7 +33,10 @@ const ICONE: Record<string, NomeIcona> = {
   "/dashboard/clienti": "clienti",
   "/dashboard/messaggi": "messaggi",
   "/dashboard/statistiche": "numeri",
+  "/dashboard/impostazioni": "impostazioni",
 };
+
+const IMPOSTAZIONI = { href: "/dashboard/impostazioni", label: "Impostazioni" };
 
 function attiva(href: string, percorso: string) {
   const p = percorso.replace(/\/+$/, "") || "/";
@@ -74,6 +80,15 @@ export default function Testata() {
           </Link>
           <span className="pn-matteo">Matteo</span>
           <div className="ml-auto flex items-center">
+            <Link
+              href={IMPOSTAZIONI.href}
+              className="pn-link-testata pn-link-impostazioni"
+              aria-label={IMPOSTAZIONI.label}
+              aria-current={attiva(IMPOSTAZIONI.href, percorso) ? "page" : undefined}
+            >
+              <Icona nome="impostazioni" className="size-5" />
+              <span className="hidden lg:inline">{IMPOSTAZIONI.label}</span>
+            </Link>
             <Link href="/" className="pn-link-testata" aria-label="Torna al sito">
               <span className="sm:hidden">Sito</span>
               <span className="hidden sm:inline">Torna al sito</span>
@@ -100,6 +115,14 @@ export default function Testata() {
                 </Link>
               );
             })}
+            <Link
+              href={IMPOSTAZIONI.href}
+              className="pn-voce pn-voce-larga"
+              aria-current={attiva(IMPOSTAZIONI.href, percorso) ? "page" : undefined}
+            >
+              <Icona nome="impostazioni" className="size-5" />
+              {IMPOSTAZIONI.label}
+            </Link>
           </div>
         </nav>
       </header>

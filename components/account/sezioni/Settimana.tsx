@@ -2,95 +2,41 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import {
-  contaPiatti,
-  formattaMomento,
-  messaggioDa,
-  piattiNonPiuDisponibili,
-  righePiano,
-} from "@/lib/account";
-import { api } from "@/lib/api";
-import { NOMI_GIORNATA, potaPiano, usePiano } from "@/lib/piano";
-import { useSostituisciSettimana } from "../settimanaLocale";
-import { Caricamento, EsitoAzione, TitoloSezione, useConferma, useDati } from "../ui";
-import type { Esito } from "./tipi";
+import { contaPiatti, righePiano } from "@/lib/account";
+import { NOMI_GIORNATA, usePiano } from "@/lib/piano";
+import { descrizioneSincronia } from "@/lib/sincronizzaPiano";
+import { SceltaVersione, Segno, useSceltaInPagina, useSincronia } from "../SincronizzaPiano";
+import { Caricamento, TitoloSezione } from "../ui";
 
-/* La settimana che il cliente sta componendo vive nel browser (localStorage):
-   qui la vede per intero, la salva nell'account e, su un altro dispositivo, la
-   ripristina. Ripristinare sovrascrive il piano locale: si chiede prima. */
-
-const caricaSalvato = () => api.piano();
-const erroreSalvato = (e: unknown) => messaggioDa(e, "Non riesco a leggere la settimana salvata.");
+/* La settimana che il cliente sta componendo: vive nel browser e, con
+   l'accesso fatto, si salva da sola nell'account (components/account/
+   SincronizzaPiano). Qui la si vede per intero, si legge a che punto e' il
+   salvataggio e, se nell'account ce n'e' una diversa, si sceglie quale tenere. */
 
 const NOMI_PASTO = { pranzo: "Pranzo", cena: "Cena" } as const;
+const ID_STATO = "sincronia-account";
 
 export default function Settimana() {
   const { piano, allenamenti, pronto, macroSettimana } = usePiano();
-  const sostituisci = useSostituisciSettimana();
-  const salvato = useDati(caricaSalvato, erroreSalvato);
-  const [chiedi, dialogo] = useConferma();
-  const [azione, setAzione] = useState<null | "salva">(null);
-  const [esito, setEsito] = useState<Esito | null>(null);
+  const { stato, riprovaOra } = useSincronia();
+  // la scelta del conflitto sta qui dentro: quella che galleggia sulla pagina si fa da parte
+  useSceltaInPagina();
+  const [adesso] = useState(() => new Date());
 
   const righe = righePiano(piano, true);
   const piatti = contaPiatti(piano);
   const caselle = righePiano(piano).length;
-  const salvataggio = salvato.stato === "pronto" && salvato.dati.plan ? salvato.dati : null;
-  const piattiSalvati = salvataggio ? contaPiatti(potaPiano(salvataggio.plan)) : 0;
-
-  async function salva() {
-    setAzione("salva");
-    setEsito(null);
-    try {
-      await api.salvaPiano(piano, allenamenti);
-      await salvato.ricarica();
-      setEsito({ ok: true, testo: "Settimana salvata nel tuo account: la ritrovi su ogni dispositivo." });
-    } catch (e) {
-      setEsito({ ok: false, testo: messaggioDa(e, "Non riesco a salvare la settimana. Riprova tra poco.") });
-    }
-    setAzione(null);
-  }
-
-  async function ripristina() {
-    if (!salvataggio) return;
-    setEsito(null);
-    const persi = piattiNonPiuDisponibili(salvataggio.plan);
-    if (caselle > 0 || persi > 0) {
-      const ok = await chiedi({
-        titolo: "Ripristinare la versione salvata?",
-        testo: (
-          <>
-            {caselle > 0 ? (
-              <p>
-                La settimana che stai componendo su questo dispositivo ({piatti} {piatti === 1 ? "piatto" : "piatti"}) viene
-                sostituita da quella salvata il {formattaMomento(salvataggio.updatedAt)} ({piattiSalvati}{" "}
-                {piattiSalvati === 1 ? "piatto" : "piatti"}).
-              </p>
-            ) : null}
-            {persi > 0 ? (
-              <p>
-                {persi === 1 ? "Un piatto salvato non è" : `${persi} piatti salvati non sono`} più nel menu:{" "}
-                {persi === 1 ? "lo togliamo" : "li togliamo"}.
-              </p>
-            ) : null}
-          </>
-        ),
-        conferma: "Ripristina",
-      });
-      if (!ok) return;
-    }
-    sostituisci(salvataggio.plan, salvataggio.training);
-    setEsito({ ok: true, testo: "Versione salvata ripristinata. Puoi ritoccarla nel compositore." });
-  }
 
   return (
     <section aria-labelledby="t-settimana" className="grid gap-8">
       <div>
         <TitoloSezione id="t-settimana">La mia settimana.</TitoloSezione>
         <p className="lead mt-4">
-          È la settimana che stai componendo su questo dispositivo. Salvala nell’account per ritrovarla ovunque.
+          È la settimana che stai componendo. Si salva da sola nel tuo account: la ritrovi su ogni dispositivo in cui accedi.
         </p>
       </div>
+
+      {stato.fase === "conflitto" ? <SceltaVersione account={stato.account} fuocoDopo={ID_STATO} /> : null}
 
       {!pronto ? (
         <Caricamento testo="Carico la settimana…" />
@@ -111,7 +57,6 @@ export default function Settimana() {
               <h3 className="acc-card-titolo">Ancora nessun piatto</h3>
               <p className="mt-3 text-muted">
                 Nel compositore dici come ti alleni e la settimana si riempie da sola; poi la ritocchi.
-                {salvataggio ? " Oppure riprendi quella che hai salvato nell’account." : ""}
               </p>
             </div>
           ) : (
@@ -162,49 +107,35 @@ export default function Settimana() {
           <div className="acc-card grid gap-5">
             <div>
               <h3 className="acc-card-titolo">Nel tuo account</h3>
-              <p className="mt-2 text-muted" aria-live="polite">
-                {salvato.stato === "attesa"
-                  ? "Controllo la versione salvata…"
-                  : salvato.stato === "errore"
-                    ? salvato.messaggio
-                    : salvataggio
-                      ? `Ultimo salvataggio: ${formattaMomento(salvataggio.updatedAt)} · ${piattiSalvati} ${piattiSalvati === 1 ? "piatto" : "piatti"}.`
-                      : "Non hai ancora salvato una settimana nell’account."}
+              <p
+                id={ID_STATO}
+                tabIndex={-1}
+                className="mt-2 flex items-baseline gap-2 text-muted outline-none"
+                aria-live="polite"
+                aria-atomic="true"
+              >
+                <span className="translate-y-[-1px]"><Segno fase={stato.fase} /></span>
+                <span>{descrizioneSincronia(stato, adesso)}</span>
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
               <Link href="/settimana" className="btn btn-ink btn-sm">
                 Modifica nel compositore
               </Link>
-              <button
-                type="button"
-                className="btn btn-lime btn-sm"
-                disabled={caselle === 0 || azione !== null}
-                onClick={() => void salva()}
-              >
-                {azione === "salva" ? "Salvo…" : "Salva nel mio account"}
-              </button>
-              {salvato.stato === "errore" ? (
-                <button type="button" className="btn btn-linea btn-sm" onClick={() => void salvato.ricarica()}>
-                  Riprova a leggere
+              {stato.fase === "errore" && stato.motivo === "rete" ? (
+                <button type="button" className="btn btn-linea btn-sm" onClick={riprovaOra}>
+                  Riprova ora
                 </button>
-              ) : (
-                <button
-                  type="button"
-                  className="btn btn-linea btn-sm"
-                  disabled={!salvataggio || azione !== null}
-                  onClick={() => void ripristina()}
-                >
-                  Ripristina la versione salvata
-                </button>
-              )}
+              ) : null}
+              {stato.fase === "errore" && stato.motivo === "accesso" ? (
+                <Link href="/accedi" className="btn btn-linea btn-sm">
+                  Accedi di nuovo
+                </Link>
+              ) : null}
             </div>
-            {caselle === 0 ? <p className="text-sm text-muted">Aggiungi almeno un piatto per salvare.</p> : null}
-            <EsitoAzione esito={esito} />
           </div>
         </>
       )}
-      {dialogo}
     </section>
   );
 }

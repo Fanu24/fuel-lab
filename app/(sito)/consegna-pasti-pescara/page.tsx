@@ -36,8 +36,8 @@ function provincia(z: Zona): string {
 
 const DA_SAPERE = [
   {
-    titolo: "I giorni sono due",
-    testo: "Lunedì e giovedì, gli stessi in cui Matteo cucina. Ogni piatto ha il suo giorno, scritto nella scheda del piatto.",
+    titolo: "Si consegna ogni giorno",
+    testo: "Matteo cucina ogni giorno e consegna ogni giorno. Nella richiesta indica il giorno che preferisci: te lo conferma insieme alla copertura.",
   },
   {
     titolo: "L'indirizzo si conferma prima",
@@ -60,7 +60,7 @@ const DA_SAPERE = [
 const DOMANDE: DomandaTesto[] = [
   {
     q: "Consegnate a Montesilvano?",
-    a: "Sì, Montesilvano è tra i comuni in cui puoi chiedere la consegna, il lunedì e il giovedì. Come per ogni indirizzo, Matteo conferma la copertura prima dell'ordine.",
+    a: "Sì, Montesilvano è tra i comuni in cui puoi chiedere la consegna, tutti i giorni. Come per ogni indirizzo, Matteo conferma la copertura prima dell'ordine.",
   },
   {
     q: "E a Francavilla al Mare, San Giovanni Teatino o Chieti Scalo?",
@@ -74,7 +74,7 @@ const DOMANDE: DomandaTesto[] = [
   },
   {
     q: "In che giorni fate le consegne?",
-    a: "Il lunedì e il giovedì, i giorni in cui Matteo cucina.",
+    a: "Tutti i giorni: Matteo cucina ogni giorno e consegna ogni giorno. Il giorno per il tuo indirizzo si conferma con la richiesta.",
   },
   {
     q: "Consegnate anche al lavoro o in palestra?",
@@ -86,7 +86,7 @@ const DOMANDE: DomandaTesto[] = [
   },
   {
     q: "I piatti arrivano caldi?",
-    a: "Sono piatti per i giorni successivi: appena arrivano vanno in frigorifero e si scaldano quando li mangi, seguendo le istruzioni del piatto e del contenitore.",
+    a: "No, sono piatti da frigorifero: appena arrivano vanno in frigo e si scaldano quando li mangi, seguendo le istruzioni del piatto e del contenitore.",
   },
 ];
 
@@ -109,7 +109,7 @@ export default function ConsegnaPastiPescara() {
             id: "consegna",
             percorso: PAGINA.percorso,
             nome: "Ritiro e consegna dei pasti a Pescara e dintorni",
-            descrizione: `Ritiro in ${INDIRIZZO_RIGA} o consegna il lunedì e il giovedì a ${elencoZone()}, con copertura dell'indirizzo confermata prima dell'ordine.`,
+            descrizione: `Ritiro in ${INDIRIZZO_RIGA} o consegna ogni giorno a ${elencoZone()}, con copertura dell'indirizzo confermata prima dell'ordine.`,
             tipoServizio: "Consegna pasti",
           }),
         ]}
@@ -122,7 +122,7 @@ export default function ConsegnaPastiPescara() {
           <h1 className="titolo-xl mt-6 max-w-[13ch]">Consegna pasti a Pescara e dintorni.</h1>
           <p className="lead mt-6">
             I piatti di FUEL LAB si ritirano in Via del Santuario 214 oppure arrivano al tuo indirizzo, a Pescara e nei
-            comuni vicini, il lunedì e il giovedì. La copertura della tua via te la conferma Matteo prima
+            comuni vicini, tutti i giorni. La copertura della tua via te la conferma Matteo prima
             dell&apos;ordine, non dopo.
           </p>
           <div className="mt-9 flex flex-wrap items-center gap-x-8 gap-y-4">
@@ -144,9 +144,8 @@ export default function ConsegnaPastiPescara() {
               <span className="num text-sm text-muted">01</span>
               <h3 className="titolo mt-3">Ritiro in sede</h3>
               <p className="mt-5 max-w-[46ch] text-lg text-muted">
-                In <strong className="text-ink">{INDIRIZZO_RIGA}</strong>, la sede di FUEL LAB. I piatti
-                sono pronti il lunedì e il giovedì; giorno e orario del ritiro si concordano quando confermi la
-                richiesta.
+                In <strong className="text-ink">{INDIRIZZO_RIGA}</strong>, la sede di FUEL LAB. Matteo cucina
+                ogni giorno; giorno e orario del ritiro si concordano quando confermi la richiesta.
               </p>
               <a href={LINK_MAPPA} target="_blank" rel="noopener noreferrer" className="link mt-6 inline-block">
                 Apri in Google Maps
@@ -156,7 +155,7 @@ export default function ConsegnaPastiPescara() {
               <span className="num text-sm text-muted">02</span>
               <h3 className="titolo mt-3">Consegna in zona</h3>
               <p className="mt-5 max-w-[46ch] text-lg text-muted">
-                Il lunedì e il giovedì, a casa o al lavoro, nei comuni qui sotto. Scrivi l&apos;indirizzo nella
+                Ogni giorno, a casa o al lavoro, nei comuni qui sotto. Scrivi l&apos;indirizzo nella
                 richiesta e Matteo ti dice se e quando può arrivare. Le condizioni di consegna sono in{" "}
                 <Link href="/servizi" className="link">
                   Servizi e prezzi

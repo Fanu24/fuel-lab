@@ -19,6 +19,7 @@ export default function Slot({
   slot,
   etichetta,
   casella,
+  escluso = false,
   stato,
   inizia,
   toccaSlot,
@@ -29,6 +30,8 @@ export default function Slot({
   /** "Lunedì, pranzo": per chi non vede la griglia */
   etichetta: string;
   casella: Casella | undefined;
+  /** Il piatto della casella non e' disponibile questa settimana (impostazioni di Matteo). */
+  escluso?: boolean;
   stato: Stato;
   inizia: (p: Presa) => (e: PointerEventReact) => void;
   toccaSlot: (s: TSlot, piena: boolean) => void;
@@ -59,6 +62,7 @@ export default function Slot({
     sopra ? "is-sopra" : "",
     tenuta ? "is-tenuta" : "",
     cercata ? "is-cercata" : "",
+    escluso ? "is-esclusa" : "",
   ].join(" ");
 
   return (
@@ -68,7 +72,7 @@ export default function Slot({
         className="slot-corpo"
         aria-label={
           piatto
-            ? `${etichetta}: ${piatto.nome}${nExtra ? `, ${nExtra} aggiunte` : ""}. Invio per spostarlo, Canc per toglierlo.`
+            ? `${etichetta}: ${piatto.nome}${escluso ? ", non disponibile questa settimana" : ""}${nExtra ? `, ${nExtra} aggiunte` : ""}. Invio per spostarlo, Canc per toglierlo.`
             : `${etichetta}: vuota. Invio per scegliere un piatto.`
         }
         aria-pressed={tenuta || cercata}
@@ -83,7 +87,11 @@ export default function Slot({
             </span>
             <span className="slot-testo">
               <span className="slot-nome">{piatto.nome}</span>
-              <span className="num text-[11px] text-muted">{piatto.kcal} kcal · {piatto.proteine}P</span>
+              {escluso ? (
+                <span className="slot-nd">Non disponibile</span>
+              ) : (
+                <span className="num text-[11px] text-muted">{piatto.kcal} kcal · {piatto.proteine}P</span>
+              )}
             </span>
           </>
         ) : (

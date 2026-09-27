@@ -5,7 +5,7 @@ import FotoPiena from "@/components/ui/FotoPiena";
 import WhatsAppCta from "@/components/ui/WhatsAppCta";
 import { numeroConfigurato } from "@/lib/whatsapp";
 
-const FATTI = ["Fresco, mai surgelato", "Macro su ogni piatto", "Consegna lunedì e giovedì"];
+const FATTI = ["Fresco, mai surgelato", "Macro su ogni piatto", "Consegna tutti i giorni"];
 
 /* Una foto, una frase, un bottone. Chi arriva deve capire in tre secondi che
    cosa fa FUEL LAB e dove si clicca: tutto il resto sta sotto.
@@ -24,7 +24,7 @@ export default function Hero() {
         </div>
         <figcaption className="flex items-center justify-between gap-3 px-4 py-3 font-disp text-[11px] font-semibold tracking-[.16em] uppercase">
           <span>Cucinato stamattina</span>
-          <span className="whitespace-nowrap text-lime">Lun · Gio</span>
+          <span className="whitespace-nowrap text-lime">Ogni giorno</span>
         </figcaption>
       </figure>
       <div className="wrap relative pt-32 pb-10 md:pb-14">
@@ -46,7 +46,7 @@ export default function Hero() {
           style={{ animation: "fuel-sale 1s var(--e-out) both 240ms", color: "rgb(243 239 230 / .86)" }}
         >
           Dici come ti alleni, la settimana si compone da sola. Piatti freschi pensati per il cardio e per i
-          pesi, cucinati il lunedì e il giovedì.
+          pesi, cucinati ogni giorno.
         </p>
         <div
           className="mt-9 flex flex-wrap items-center gap-x-8 gap-y-4"

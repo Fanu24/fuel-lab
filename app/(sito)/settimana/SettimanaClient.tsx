@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { getPiatto } from "@/lib/catalogo";
-import { riempiSettimana } from "@/lib/autofill";
+import { riempiSettimana, sostituisciEsclusi } from "@/lib/autofill";
+import { caselleEscluse } from "@/lib/impostazioni";
 import { NOMI_GIORNO, usePiano, type Slot } from "@/lib/piano";
 import { riepilogoSettimana } from "@/lib/riepilogo";
 import { useTrascina, type Presa } from "@/components/compositore/useTrascina";
@@ -13,6 +14,7 @@ import Griglia from "@/components/compositore/Griglia";
 import FoglioExtra from "@/components/compositore/FoglioExtra";
 import BarraSettimana from "@/components/compositore/BarraSettimana";
 import AvvisoLink from "@/components/compositore/AvvisoLink";
+import { usePiattiNonDisponibili } from "@/components/impostazioni/useImpostazioni";
 
 /* Il compositore: 1) come ti alleni, 2) la settimana si riempie, 3) la
    ritocchi trascinando. La pagina tiene insieme i pezzi, la logica sta in
@@ -29,6 +31,8 @@ export default function SettimanaClient() {
   const [annuncio, setAnnuncio] = useState("");
   const [confermaSvuota, setConfermaSvuota] = useState(false);
   const link = useLinkCondiviso();
+  // I piatti che Matteo questa settimana non cucina (impostazioni del pannello).
+  const esclusi = usePiattiNonDisponibili();
 
   const nomeSlot = (s: Slot) => `${NOMI_GIORNO[s.g].toLowerCase()} ${PASTO[s.m]}`;
   const nomePresa = (x: Presa) =>
@@ -45,10 +49,16 @@ export default function SettimanaClient() {
 
   const r = useMemo(() => riepilogoSettimana(piano, "singolo"), [piano]);
   const giorniScelti = Object.keys(allenamenti).length;
+  const fuori = useMemo(() => (pronto ? caselleEscluse(piano, esclusi) : []), [pronto, piano, esclusi]);
 
   function riempi(sovrascrivi: boolean, rimescola = giro) {
-    p.riempi(riempiSettimana(piano, allenamenti, { pastiAlGiorno, sovrascrivi, rimescola }));
+    p.riempi(riempiSettimana(piano, allenamenti, { pastiAlGiorno, sovrascrivi, rimescola, esclusi }));
     setAnnuncio("Settimana riempita secondo i tuoi allenamenti.");
+  }
+
+  function sostituisci() {
+    p.riempi(sostituisciEsclusi(piano, allenamenti, esclusi, giro));
+    setAnnuncio(fuori.length === 1 ? "Piatto sostituito con uno disponibile." : "Piatti sostituiti con altri disponibili.");
   }
 
   return (
@@ -157,12 +167,31 @@ export default function SettimanaClient() {
             </p>
           ) : null}
 
+          {fuori.length ? (
+            <div role="status" className="avviso-esclusi mb-6">
+              <p className="min-w-0 flex-1">
+                <strong>
+                  {fuori.length === 1
+                    ? "Un piatto della tua settimana non è disponibile"
+                    : `${fuori.length} piatti della tua settimana non sono disponibili`}
+                </strong>{" "}
+                questa settimana: {fuori.map((c) => `${getPiatto(c.piattoId)?.nome ?? "piatto"} (${nomeSlot(c)})`).join(", ")}.{" "}
+                {fuori.length === 1 ? "Sostituiscilo con un altro" : "Sostituiscili con altri"} prima di inviare la settimana a Matteo.
+              </p>
+              <button type="button" className="btn btn-ink btn-sm" onClick={sostituisci}>
+                {fuori.length === 1 ? "Sostituiscilo" : "Sostituiscili"}
+              </button>
+            </div>
+          ) : null}
+
           <div className="tavolo">
             <Banco
               stato={stato}
               inizia={inizia}
               tocca={tocca}
               destinazione={stato.modo === "cerca" ? nomeSlot(stato.slot) : undefined}
+              esclusi={esclusi}
+              annuncia={setAnnuncio}
             />
             <Griglia
               piano={piano}
@@ -176,6 +205,7 @@ export default function SettimanaClient() {
                 setAnnuncio(`Tolto da ${nomeSlot(s)}.`);
               }}
               apriExtra={setExtraDi}
+              esclusi={esclusi}
             />
           </div>
         </div>

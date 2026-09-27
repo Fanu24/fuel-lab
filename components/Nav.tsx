@@ -13,12 +13,15 @@ import { iniziale, nomeBreve } from "@/lib/account";
 const FOCUSABILI =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
+/* "Contatti" non c'e': porta alla stessa pagina del bottone "Scrivi a Matteo"
+   che sta accanto alla nav (e in fondo al menu mobile), e con "Abbonamento" le
+   sei voci non entravano piu' nella barra sotto i 1440px. */
 const VOCI = [
   { href: "/menu", label: "Menu" },
+  { href: "/abbonamento", label: "Abbonamento" },
   { href: "/settimana", label: "Componi" },
   { href: "/come-funziona", label: "Come funziona" },
-  { href: "/chi-e-matteo", label: "Chi è Matteo" },
-  { href: "/richiesta", label: "Contatti" },
+  { href: "/chi-siamo", label: "Chi siamo" },
   { href: "/account", label: "Area cliente" },
 ];
 

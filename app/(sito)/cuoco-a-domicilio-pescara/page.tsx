@@ -12,8 +12,8 @@ import { FOTO } from "@/lib/immagini";
 import { SOGLIA_PREZZO, getServizio } from "@/lib/servizi";
 import { INDIRIZZO_RIGA, elencoZone } from "@/lib/sito";
 
-/* Il terzo servizio, l'home cooking, spiegato: finora rimandava solo a "Chi e'
-   Matteo". Qui si dice cosa e' (il meal prep fatto nella cucina del cliente),
+/* Il terzo servizio, l'home cooking, spiegato: finora rimandava solo alla pagina su
+   Matteo. Qui si dice cosa e' (il meal prep fatto nella cucina del cliente),
    come si organizza e cosa si concorda. Niente prezzo: e' su preventivo per
    scelta del committente (lib/servizi.ts), e la pagina non lo aggira. */
 
@@ -53,7 +53,7 @@ const DA_CHIARIRE = [
 
 const CONFRONTO = [
   { voce: "Dove si cucina", mealPrep: `Nella sede di FUEL LAB, ${INDIRIZZO_RIGA}`, casa: "Nella tua cucina" },
-  { voce: "Quando", mealPrep: "Il lunedì e il giovedì", casa: "Nel giorno che concordate" },
+  { voce: "Quando", mealPrep: "Ogni giorno, con ritiro o consegna", casa: "Nel giorno che concordate" },
   { voce: "Il menu", mealPrep: "I piatti del menu, con i macro pubblicati", casa: "Dal menu o su misura, da concordare" },
   { voce: "La spesa", mealPrep: "La fa Matteo", casa: "La fa Matteo, e si decide insieme" },
   { voce: "Come arriva", mealPrep: "Ritiro in sede o consegna in zona", casa: "Resta a casa tua, già porzionato" },
@@ -128,7 +128,7 @@ export default function CuocoADomicilioPescara() {
               <Link href="/richiesta?servizio=home-cooking" className="btn btn-ink">
                 Chiedi un preventivo <span className="freccia">→</span>
               </Link>
-              <Link href="/chi-e-matteo" className="link">
+              <Link href={PAGINE.chiSiamo.percorso} className="link">
                 Conosci Matteo
               </Link>
             </div>
@@ -169,8 +169,8 @@ export default function CuocoADomicilioPescara() {
             </p>
             <p>
               Prima di farlo entrare in casa, è giusto sapere chi è:{" "}
-              <Link href="/chi-e-matteo" className="link">
-                la storia di Matteo
+              <Link href={PAGINE.chiSiamo.percorso} className="link">
+                Matteo e la sua cucina
               </Link>
               .
             </p>

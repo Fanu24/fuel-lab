@@ -1,9 +1,11 @@
 import { currentUser, type Context } from "../_lib/auth";
 import { bodyJson, json, sameOrigin } from "../_lib/http";
+import { leggiImpostazioniDb } from "../_lib/impostazioni";
 import { accodaEmail, emailMatteo } from "../_lib/mail";
 import { ORDER_SELECT } from "../_lib/ordini";
 import { oggiRoma } from "../../lib/server/date";
 import { emailNuovaRichiesta } from "../../lib/server/email";
+import { controllaDataPreferita } from "../../lib/server/impostazioni";
 import { leggiNuovoOrdine, ordineDaRiga, type RigaOrdine } from "../../lib/server/ordini";
 
 export const onRequestGet = async ({ env, request }: Context) => {
@@ -34,9 +36,17 @@ export const onRequestPost = async ({ env, request, waitUntil }: Context) => {
   const body = await bodyJson(request, 30000);
   if (!body) return json({ error: "Dati non validi" }, 400);
 
-  const letto = leggiNuovoOrdine(body, user.name, oggiRoma());
+  const oggi = oggiRoma();
+  const letto = leggiNuovoOrdine(body, user.name, oggi);
   if (!letto.ok) return json({ error: letto.error }, letto.status);
   const o = letto.value;
+
+  // Il giorno preferito non puo' cadere in una chiusura decisa da Matteo nel pannello.
+  if (o.requestedDate) {
+    const { chiusure } = await leggiImpostazioniDb(env);
+    const data = controllaDataPreferita(o.requestedDate, chiusure, oggi);
+    if (!data.ok) return json({ error: data.error }, data.status);
+  }
 
   const recent = await env.DB.prepare("SELECT COUNT(*) AS n FROM orders WHERE user_id=? AND created_at > datetime('now','-1 day')")
     .bind(user.id).first<{ n: number }>();

@@ -33,10 +33,26 @@ export interface OpzioniAutofill {
   sovrascrivi: boolean;
   /** 0 o assente = la proposta migliore; ogni numero in piu' ruota le preferenze */
   rimescola?: number;
+  /**
+   * I piatti che Matteo questa settimana non cucina (impostazioni del pannello):
+   * la proposta non li usa mai, e le caselle che li contengono nei giorni con un
+   * allenamento vengono rifatte anche senza `sovrascrivi`, aggiunte comprese.
+   */
+  esclusi?: readonly string[];
 }
 
 /** Un piatto non compare piu' di tante volte a settimana: sei piatti, quattordici caselle. */
 const MAX_A_SETTIMANA = 3;
+
+/**
+ * Il primo tetto di ripetizioni da provare con `disponibili` piatti: tre,
+ * finche' bastano sulla carta a riempire le caselle. Con piatti esclusi
+ * assegna() lo alza di uno alla volta se resterebbe una casella vuota: un
+ * piatto ripetuto una volta in piu' e' meglio di un buco nella settimana.
+ */
+function tetto(caselle: number, disponibili: number): number {
+  return disponibili > 0 ? Math.max(MAX_A_SETTIMANA, Math.ceil(caselle / disponibili)) : MAX_A_SETTIMANA;
+}
 
 const quotaCarbo = (p: Piatto) => (p.carboidrati * 4) / p.kcal;
 const rapportoPC = (p: Piatto) => p.proteine / p.carboidrati;
@@ -68,12 +84,12 @@ export function candidatiPer(tipo: TipoGiornata): Piatto[] {
  * ripiego. Senza ripiego una settimana di solo cardio si fermerebbe a 9 caselle
  * (3 candidati x 3 volte): meglio un piatto meno mirato che una casella vuota.
  */
-function preferenze(tipo: TipoGiornata, rimescola: number): string[] {
-  const primi = candidatiPer(tipo);
+function preferenze(tipo: TipoGiornata, rimescola: number, esclusi: ReadonlySet<string>): string[] {
+  const primi = candidatiPer(tipo).filter((p) => !esclusi.has(p.id));
   const visti = new Set(primi.map((p) => p.id));
   const punteggio = tipo === "pesi" ? rapportoPC : tipo === "cardio" ? quotaCarbo : (p: Piatto) => -p.kcal;
   const ripiego = perPunteggio(
-    PIATTI.filter((p) => !visti.has(p.id)),
+    PIATTI.filter((p) => !visti.has(p.id) && !esclusi.has(p.id)),
     punteggio,
   );
   return [...ruota(primi, rimescola), ...ruota(ripiego, rimescola)].map((p) => p.id);
@@ -88,20 +104,68 @@ function ruota<T>(lista: T[], n: number): T[] {
 type Chiave = `${GiornoSettimana}.${Pasto}`;
 const chiave = (g: GiornoSettimana, m: Pasto): Chiave => `${g}.${m}`;
 
+type DaRiempire = { g: GiornoSettimana; m: Pasto; tipo: TipoGiornata }[];
+
 export function riempiSettimana(piano: Piano, allenamenti: Allenamenti, o: OpzioniAutofill): Piano {
   const pasti: readonly Pasto[] = o.pastiAlGiorno === 1 ? ["pranzo"] : PASTI;
-  const rimescola = o.rimescola ?? 0;
+  const esclusi = new Set(o.esclusi ?? []);
 
   // Le caselle da decidere: giorni con un allenamento, pasti richiesti, vuote o da rifare.
-  const daRiempire: { g: GiornoSettimana; m: Pasto; tipo: TipoGiornata }[] = [];
+  // Un piatto escluso e' come una casella vuota: Matteo non lo cucina.
+  const daRiempire: DaRiempire = [];
   for (const g of GIORNI) {
     const tipo = allenamenti[g];
     if (!tipo) continue;
     for (const m of pasti) {
-      if (o.sovrascrivi || !piano[g]?.[m]?.piatto) daRiempire.push({ g, m, tipo });
+      const id = piano[g]?.[m]?.piatto;
+      if (o.sovrascrivi || !id || esclusi.has(id)) daRiempire.push({ g, m, tipo });
     }
   }
   if (daRiempire.length === 0) return piano;
+  return assegna(piano, daRiempire, GIORNI.length * pasti.length, o.rimescola ?? 0, esclusi);
+}
+
+/** Per il ripiego di una casella in un giorno senza allenamento: un piatto dello stesso genere. */
+const tipoDelPiatto = (id: string): TipoGiornata => (PIATTI.find((p) => p.id === id)?.allenamento === "cardio" ? "cardio" : "pesi");
+
+/**
+ * "Sostituiscili": solo le caselle con un piatto escluso ricevono un altro
+ * piatto, con le stesse regole di riempiSettimana e le aggiunte al loro posto.
+ * Il tipo di giornata e' quello scelto dal cliente; nei giorni senza
+ * allenamento si cerca un piatto dello stesso genere di quello escluso.
+ */
+export function sostituisciEsclusi(piano: Piano, allenamenti: Allenamenti, esclusi: readonly string[], rimescola = 0): Piano {
+  const fuori = new Set(esclusi);
+  const daRiempire: DaRiempire = [];
+  for (const g of GIORNI) {
+    for (const m of PASTI) {
+      const id = piano[g]?.[m]?.piatto;
+      if (id && fuori.has(id)) daRiempire.push({ g, m, tipo: allenamenti[g] ?? tipoDelPiatto(id) });
+    }
+  }
+  if (daRiempire.length === 0) return piano;
+  return assegna(piano, daRiempire, GIORNI.length * PASTI.length, rimescola, fuori);
+}
+
+/** Il cuore dell'autoriempimento: un piatto per ogni casella di `daRiempire`, nell'ordine della settimana. */
+function assegna(piano: Piano, daRiempire: DaRiempire, caselle: number, rimescola: number, esclusi: ReadonlySet<string>): Piano {
+  const disponibili = PIATTI.filter((p) => !esclusi.has(p.id)).length;
+  let prova = assegnaCon(piano, daRiempire, rimescola, esclusi, tetto(caselle, disponibili));
+  // Senza esclusi il tetto di tre basta sempre (lo prova il test delle quattordici caselle).
+  for (let limite = tetto(caselle, disponibili) + 1; esclusi.size && prova.vuote && disponibili && limite <= caselle; limite += 1) {
+    prova = assegnaCon(piano, daRiempire, rimescola, esclusi, limite);
+  }
+  return prova.esito;
+}
+
+function assegnaCon(
+  piano: Piano,
+  daRiempire: DaRiempire,
+  rimescola: number,
+  esclusi: ReadonlySet<string>,
+  limite: number,
+): { esito: Piano; vuote: number } {
+  let vuote = 0;
 
   // Lo stato di lavoro: il piatto di ogni casella, con quelle da rifare gia' liberate.
   // I conteggi partono da cio' che resta, cosi' i piatti gia' scelti a mano contano.
@@ -124,18 +188,28 @@ export function riempiSettimana(piano: Piano, allenamenti: Allenamenti, o: Opzio
   const esito: Piano = structuredClone(piano);
   for (const { g, m, tipo } of daRiempire) {
     const lecito = (id: string) =>
-      (volte.get(id) ?? 0) < MAX_A_SETTIMANA &&
+      (volte.get(id) ?? 0) < limite &&
       PASTI.every((altro) => altro === m || scelto.get(chiave(g, altro)) !== id);
     // "niente stesso pasto in giorni consecutivi" e' una preferenza, non un divieto:
     // se l'unico piatto lecito e' quello di ieri, meglio lui che una casella vuota.
     const variato = (id: string) => vicino(g, -1, m) !== id && vicino(g, 1, m) !== id;
 
-    const ordine = preferenze(tipo, rimescola);
+    const ordine = preferenze(tipo, rimescola, esclusi);
     const id = ordine.find((x) => lecito(x) && variato(x)) ?? ordine.find(lecito);
-    // Nessun piatto lecito: la casella resta com'era, piatto originale compreso.
+    // Nessun piatto lecito: la casella resta com'era, piatto originale compreso,
+    // tranne un piatto escluso, che se ne va (le aggiunte restano).
     if (!id) {
+      vuote += 1;
       const prima = piano[g]?.[m]?.piatto;
-      if (prima) scelto.set(chiave(g, m), prima);
+      if (prima && !esclusi.has(prima)) scelto.set(chiave(g, m), prima);
+      else if (prima) {
+        const extra = [...(piano[g]?.[m]?.extra ?? [])];
+        const giorno = { ...esito[g] };
+        if (extra.length) giorno[m] = { extra };
+        else delete giorno[m];
+        if (Object.keys(giorno).length) esito[g] = giorno;
+        else delete esito[g];
+      }
       continue;
     }
 
@@ -144,5 +218,5 @@ export function riempiSettimana(piano: Piano, allenamenti: Allenamenti, o: Opzio
     const casella: Casella = { piatto: id, extra: [...(piano[g]?.[m]?.extra ?? [])] };
     esito[g] = { ...esito[g], [m]: casella };
   }
-  return esito;
+  return { esito, vuote };
 }

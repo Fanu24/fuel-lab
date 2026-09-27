@@ -1,7 +1,8 @@
 "use client";
 
 /* La pagina "Oggi" (/dashboard): in tre secondi cosa c'e' da fare.
-   Dall'alto: saluto e data, "Da fare adesso", i quattro numeri del giorno,
+   Dall'alto: saluto e data, chiusure vicine e piatti spenti (se ci sono),
+   "Da fare adesso", i quattro numeri del giorno,
    cucina e uscite di oggi, i prossimi sette giorni. Un ordine si apre sopra
    la pagina (?id=...) senza perdere il punto. */
 
@@ -12,6 +13,7 @@ import { azioniDaFare, calendario, codeOperative, plurale, sommaCentesimi, type 
 import { useAdmin } from "./AdminGate";
 import OggiCucina from "./OggiCucina";
 import OggiDaFare from "./OggiDaFare";
+import OggiImpostazioni from "./OggiImpostazioni";
 import OggiSettimana from "./OggiSettimana";
 import OggiUscite from "./OggiUscite";
 import OrdineScheda, { useSchedaUrl } from "./OrdineScheda";
@@ -62,6 +64,7 @@ export default function Oggi() {
           }
         />
         <ErroreDati />
+        <OggiImpostazioni oggi={oggi} />
         <OggiDaFare azioni={azioni} />
         <OggiNumeri code={code} />
         <div className="pn-due-colonne">

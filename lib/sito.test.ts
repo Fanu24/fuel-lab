@@ -1,16 +1,36 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { EMAIL, INDIRIZZO_RIGA, TELEFONO, URL_SITO, ZONE_SERVITE, elencoZone } from "./sito";
+import {
+  DESCRIZIONE_ATTIVITA,
+  EMAIL,
+  INDIRIZZO_RIGA,
+  QUANDO_CUCINA,
+  TELEFONO,
+  URL_SITO,
+  ZONE_SERVITE,
+  elencoZone,
+} from "./sito";
 import { PIATTI } from "./catalogo";
+import { CONSEGNA_GRATIS_DA } from "./pricing";
+import {
+  ABBONAMENTO_CONSEGNA_GRATIS,
+  LINK_RICHIEDI_ABBONAMENTO,
+  LINK_SCRIVI_ABBONAMENTO,
+  PRANZI_AL_MESE_CIRCA,
+  PREZZO_ABBONAMENTO,
+  PREZZO_ABBONAMENTO_TESTO,
+} from "./abbonamento";
 import { PAGINE, descrizionePiatto, paginaPiatto, titoloCompleto } from "@/components/seo/pagine";
 import {
   ID,
   assoluto,
+  descrizioneEstesa,
   grafoSito,
   nodiPagina,
   nodoMenu,
   nodoPiatto,
+  nodoServizio,
   serializzaJsonLd,
   type Nodo,
 } from "@/components/seo/schema";
@@ -208,5 +228,85 @@ describe("public/llms.txt", () => {
     for (const p of [PAGINE.mealPrep, PAGINE.consegna, PAGINE.proteici, PAGINE.domicilio]) {
       expect(testo).toContain(`https://fuelchef.it${p.percorso})`);
     }
+  });
+
+  it("abbonamento e chi siamo ci sono, con il prezzo di lib/abbonamento.ts", () => {
+    for (const p of [PAGINE.abbonamento, PAGINE.chiSiamo]) expect(testo).toContain(`https://fuelchef.it${p.percorso})`);
+    expect(testo).toContain(`${PREZZO_ABBONAMENTO_TESTO} al mese`);
+  });
+});
+
+/* Le tre decisioni del committente di settembre 2026: si cucina e si consegna
+   ogni giorno, l'abbonamento mensile ai pranzi, "Chi siamo" al posto di "Chi
+   e' Matteo". Questi controlli tengono ferme le parti che vivono in piu' file. */
+describe("decisioni del committente", () => {
+  const DUE_GIORNI = /luned[iì] e (il )?gioved|lun · gio|due cotture/i;
+  const llms = readFileSync(path.join(RADICE, "public/llms.txt"), "utf8");
+
+  it("si cucina e si consegna ogni giorno: nessun testo pubblico cita i due giorni fissi", () => {
+    expect(QUANDO_CUCINA).toMatch(/ogni giorno/);
+    const testi = [
+      DESCRIZIONE_ATTIVITA,
+      llms,
+      JSON.stringify(grafoSito()),
+      ...Object.values(PAGINE).flatMap((p) => [p.titolo, p.descrizione]),
+      ...PIATTI.flatMap((p) => [descrizionePiatto(p), descrizioneEstesa(p)]),
+    ];
+    for (const t of testi) expect(t).not.toMatch(DUE_GIORNI);
+    // Le schede dei piatti non dicono piu' in che giorno sono cucinati.
+    for (const p of PIATTI) expect(`${descrizionePiatto(p)} ${descrizioneEstesa(p)}`).not.toMatch(/luned|gioved/i);
+  });
+
+  it("la vecchia pagina su Matteo non c'e' piu' e reindirizza in modo permanente a /chi-siamo", () => {
+    expect(existsSync(path.join(RADICE, "app/(sito)/chi-e-matteo"))).toBe(false);
+    const regole = readFileSync(path.join(RADICE, "public/_redirects"), "utf8")
+      .split(/\r?\n/)
+      .map((r) => r.trim().split(/\s+/))
+      .filter((r) => r.length === 3 && !r[0].startsWith("#"));
+    expect(regole).toEqual(
+      expect.arrayContaining([
+        ["/chi-e-matteo", "/chi-siamo", "301"],
+        ["/chi-e-matteo/", "/chi-siamo", "301"],
+      ]),
+    );
+    const url = sitemap().map((v) => v.url);
+    expect(url).toContain(assoluto("/chi-siamo"));
+    expect(url).toContain(assoluto("/abbonamento"));
+    expect(url.some((u) => u.includes("chi-e-matteo"))).toBe(false);
+    expect(JSON.stringify(grafoSito())).not.toContain("chi-e-matteo");
+    expect(ID.matteo).toBe(`${URL_SITO}/chi-siamo#matteo`);
+  });
+
+  it("l'abbonamento costa 239 euro al mese e i dati strutturati lo dicono per un mese", () => {
+    expect(PREZZO_ABBONAMENTO).toBe(239);
+    expect(titoloCompleto(PAGINE.abbonamento)).toContain(`${PREZZO_ABBONAMENTO_TESTO} al mese`);
+    const servizio = nodoServizio({
+      id: "abbonamento",
+      percorso: PAGINE.abbonamento.percorso,
+      nome: "Abbonamento",
+      descrizione: "x",
+      tipoServizio: "x",
+      prezzoMese: PREZZO_ABBONAMENTO,
+    });
+    const offerta = servizio.offers as Nodo;
+    expect(offerta.price).toBe(239);
+    expect(offerta.priceCurrency).toBe("EUR");
+    const specifica = offerta.priceSpecification as Nodo;
+    expect(specifica["@type"]).toBe("UnitPriceSpecification");
+    expect(specifica.price).toBe(239);
+    expect(specifica.referenceQuantity).toEqual({ "@type": "QuantitativeValue", value: 1, unitCode: "MON" });
+    // Un abbonamento non e' una soglia "da X a pasto".
+    expect(specifica.minPrice).toBeUndefined();
+  });
+
+  it("la consegna gratuita dell'abbonamento discende dalla soglia di lib/pricing.ts", () => {
+    // Una ventina di pranzi al mese (dal lunedi' al venerdi') contro la soglia dei pasti.
+    expect(PRANZI_AL_MESE_CIRCA).toBe(20);
+    expect(ABBONAMENTO_CONSEGNA_GRATIS).toBe(PRANZI_AL_MESE_CIRCA >= CONSEGNA_GRATIS_DA);
+  });
+
+  it("le due strade per chiedere l'abbonamento portano all'area cliente e al modulo contatti", () => {
+    expect(LINK_RICHIEDI_ABBONAMENTO).toBe("/account?sezione=richiesta&servizio=abbonamento");
+    expect(LINK_SCRIVI_ABBONAMENTO).toBe("/richiesta?servizio=abbonamento#scrivi");
   });
 });

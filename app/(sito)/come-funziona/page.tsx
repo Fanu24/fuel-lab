@@ -7,6 +7,7 @@ import Faq from "@/components/come-funziona/Faq";
 import JsonLd from "@/components/seo/JsonLd";
 import { AGGIORNAMENTO, PAGINE, metadatiPagina } from "@/components/seo/pagine";
 import { nodiPagina, type DomandaTesto } from "@/components/seo/schema";
+import { PREZZO_ABBONAMENTO_TESTO } from "@/lib/abbonamento";
 import { EMAIL, INDIRIZZO_RIGA, elencoZone } from "@/lib/sito";
 
 const PAGINA = PAGINE.comeFunziona;
@@ -30,7 +31,7 @@ const DOMANDE: DomandaTesto[] = [
   },
   {
     q: "Devo ordinare ogni settimana?",
-    a: "Il compositore è una bozza gratuita e non invia ordini automatici. Per ordinare, chiedi disponibilità e condizioni a Matteo via email.",
+    a: `Il compositore è una bozza gratuita e non invia ordini automatici: per ordinare, chiedi disponibilità e condizioni a Matteo. Se non vuoi pensarci ogni settimana, c'è l'abbonamento: tutti i pranzi dal lunedì al venerdì a ${PREZZO_ABBONAMENTO_TESTO} al mese.`,
   },
   {
     q: "Ho un'allergia o un'intolleranza.",
@@ -71,12 +72,12 @@ export default function ComeFunziona() {
         <div className="wrap relative grid gap-12 py-[var(--sezione)] md:grid-cols-2">
           <Reveal>
             <p className="occhiello">La preparazione</p>
-            <h2 className="titolo mt-5 max-w-[12ch]">Due giorni, una settimana più semplice.</h2>
+            <h2 className="titolo mt-5 max-w-[12ch]">Ogni giorno, una cucina fresca.</h2>
           </Reveal>
           <Reveal delay={80} className="grid content-end gap-6 text-lg" >
             <p style={{ color: "rgb(243 239 230 / .9)" }}>
-              Il sito indica lunedì e giovedì come giorni di preparazione e consegna. Scegli i piatti che ti
-              interessano e chiedi conferma di disponibilità, ritiro o copertura del tuo indirizzo.
+              Matteo cucina ogni giorno e consegna ogni giorno. Scegli i piatti che ti interessano e chiedi
+              conferma di disponibilità, ritiro o copertura del tuo indirizzo.
             </p>
             <p style={{ color: "rgb(243 239 230 / .9)" }}>
               Ogni piatto ha una scheda con ingredienti e valori pubblicati. Per conservazione, allergeni e modalità
@@ -88,6 +89,9 @@ export default function ComeFunziona() {
               </Link>
               <Link href={PAGINE.consegna.percorso} className="link">
                 Zone di consegna e ritiro
+              </Link>
+              <Link href={PAGINE.abbonamento.percorso} className="link">
+                L&apos;abbonamento ai pranzi
               </Link>
             </p>
           </Reveal>

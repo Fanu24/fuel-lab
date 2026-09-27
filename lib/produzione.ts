@@ -408,7 +408,10 @@ export function inFogli<T>(voci: T[], salta = 0): (T | null)[][] {
    ========================================================================= */
 
 export type OrdineClienti = "recenti" | "ordini" | "spesa" | "nome";
-export type FiltroClienti = "tutti" | "aperti" | "senza-ordini" | "non-verificati";
+export type FiltroClienti = "tutti" | "aperti" | "da-ricontattare" | "senza-ordini" | "non-verificati";
+
+/** Dopo quanti giorni dall'ultimo ordine un cliente senza ordini aperti va ricontattato. */
+export const GIORNI_PER_RICONTATTARE = 21;
 
 /** Minuscolo e senza accenti: "Nicolò" si trova anche scrivendo "nicolo". */
 export function perCercare(s: string): string {
@@ -429,13 +432,15 @@ export function ultimaAttivita(c: ClienteAdmin): number {
 
 export function filtraClienti(
   clienti: ClienteAdmin[],
-  { cerca = "", filtro = "tutti", ordine = "recenti" }: { cerca?: string; filtro?: FiltroClienti; ordine?: OrdineClienti },
+  { cerca = "", filtro = "tutti", ordine = "recenti", adesso = Date.now() }: { cerca?: string; filtro?: FiltroClienti; ordine?: OrdineClienti; adesso?: number },
 ): ClienteAdmin[] {
   const parole = perCercare(cerca).split(/\s+/).filter(Boolean);
   const cifre = cerca.replace(/\D/g, "");
   const trovati = clienti.filter((c) => {
     if (filtro === "aperti" && c.activeOrders === 0) return false;
     if (filtro === "senza-ordini" && c.orders > 0) return false;
+    // Ha gia' ordinato, non ha niente in corso e l'ultimo ordine e' di qualche settimana fa.
+    if (filtro === "da-ricontattare" && !(c.orders > 0 && c.activeOrders === 0 && ms(c.lastOrderAt) > 0 && adesso - ms(c.lastOrderAt) > GIORNI_PER_RICONTATTARE * 86_400_000)) return false;
     if (filtro === "non-verificati" && c.emailVerified) return false;
     if (!parole.length) return true;
     const testo = perCercare([c.name, c.email, c.comune, c.address, c.preferences, c.phone].join(" "));

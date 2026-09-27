@@ -21,6 +21,7 @@ import { Avviso, Caricamento, Kpi, TestaPagina, Vuoto, faTempo } from "./ui";
 const FILTRI: { id: FiltroClienti; label: string }[] = [
   { id: "tutti", label: "Tutti" },
   { id: "aperti", label: "Con ordini aperti" },
+  { id: "da-ricontattare", label: "Da ricontattare (3+ settimane)" },
   { id: "senza-ordini", label: "Senza ordini" },
   { id: "non-verificati", label: "Email non verificata" },
 ];

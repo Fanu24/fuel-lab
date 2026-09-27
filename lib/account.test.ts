@@ -293,6 +293,15 @@ describe("nuova richiesta", () => {
     expect(validaRichiesta({ ...buona, note: "x".repeat(1501) }, limiti).note).toBeTruthy();
   });
 
+  it("rifiuta un giorno in cui Matteo e' chiuso, e dice fino a quando", () => {
+    const chiusure = [{ dal: "2026-10-05", al: "2026-10-11", motivo: "Ferie" }];
+    expect(validaRichiesta({ ...buona, data: "2026-10-08" }, { ...limiti, chiusure }).data).toBe(
+      "Matteo è chiuso dal 5 all’11 ottobre: scegli un altro giorno.",
+    );
+    expect(validaRichiesta({ ...buona, data: "2026-10-12" }, { ...limiti, chiusure })).toEqual({});
+    expect(validaRichiesta({ ...buona, data: "2026-10-08" }, limiti)).toEqual({});
+  });
+
   it("chiede i piatti solo ai servizi di meal prep", () => {
     expect(validaRichiesta(buona, { ...limiti, piatti: 0 }).piano).toBeTruthy();
     expect(validaRichiesta({ ...buona, servizio: "home-cooking" }, { ...limiti, piatti: 0 })).toEqual({});

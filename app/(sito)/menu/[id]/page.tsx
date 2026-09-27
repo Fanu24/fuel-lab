@@ -7,6 +7,7 @@ import { CONSIGLI } from "@/lib/consigli";
 import TagAllenamento from "@/components/ui/TagAllenamento";
 import { BarraComposizione, NumeriMacro } from "@/components/ui/Macro";
 import AggiungiAllaSettimana from "@/components/menu/AggiungiAllaSettimana";
+import BollinoNonDisponibile from "@/components/impostazioni/BollinoNonDisponibile";
 import CartaPiatto from "@/components/menu/CartaPiatto";
 import JsonLd from "@/components/seo/JsonLd";
 import Briciole from "@/components/seo/Briciole";
@@ -66,7 +67,7 @@ export default async function PaginaPiatto({ params }: Props) {
         <div className="wrap">
           <Briciole voci={briciole} />
           <div className="mt-8 grid gap-10 lg:grid-cols-[1.1fr_1fr] lg:gap-16">
-            <div className="smusso relative aspect-[4/5] overflow-hidden bg-paper-2 lg:sticky lg:top-[calc(var(--nav-h)+24px)] lg:self-start">
+            <div className="foto-piatto smusso relative aspect-[4/5] overflow-hidden bg-paper-2 lg:sticky lg:top-[calc(var(--nav-h)+24px)] lg:self-start">
               <Image
                 src={piatto.img}
                 alt={`Foto illustrativa per ${piatto.nome}`}
@@ -76,6 +77,8 @@ export default async function PaginaPiatto({ params }: Props) {
                 fetchPriority="high"
                 className="object-cover"
               />
+              {/* Le impostazioni di Matteo arrivano dal browser: il segno sta sopra la foto e non sposta la pagina. */}
+              <BollinoNonDisponibile piattoId={piatto.id} className="absolute top-4 left-4" />
               <span className="absolute right-3 bottom-3 bg-paper px-3 py-1 text-xs text-ink">Foto illustrativa</span>
             </div>
 

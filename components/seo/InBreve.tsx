@@ -1,5 +1,5 @@
 import { SOGLIA_PREZZO } from "@/lib/servizi";
-import { EMAIL, GIORNI_CUCINA, INDIRIZZO_RIGA, NOME_ATTIVITA, TITOLARE } from "@/lib/sito";
+import { EMAIL, INDIRIZZO_RIGA, NOME_ATTIVITA, QUANDO_CUCINA, TITOLARE } from "@/lib/sito";
 import { prezzoIt } from "./schema";
 
 /**
@@ -12,7 +12,7 @@ export default function InBreve({ className = "" }: { className?: string }) {
     { k: "Che cos'è", v: `${NOME_ATTIVITA}: meal prep fresco, mai surgelato, per chi si allena` },
     { k: "Chi cucina", v: `${TITOLARE.nome}, cuoco` },
     { k: "Dove", v: INDIRIZZO_RIGA },
-    { k: "Quando", v: `Matteo cucina il ${GIORNI_CUCINA.join(" e il ")}` },
+    { k: "Quando", v: QUANDO_CUCINA },
     { k: "Come", v: "Ritiro in sede o consegna a Pescara e dintorni, da confermare" },
     { k: "Quanto", v: `Da ${prezzoIt(SOGLIA_PREZZO)} € a pasto` },
   ];
