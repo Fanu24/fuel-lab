@@ -5,7 +5,7 @@
 
 import Link from "next/link";
 import { ETICHETTE_SERVIZIO, daSqlite, euro, type ClienteAdmin, type Ordine } from "@/lib/api";
-import { euroTondo } from "@/lib/produzione";
+import { euroTondo, nomeAbbonamento } from "@/lib/produzione";
 import { BottoniContatto } from "./ClientiContatti";
 import { Avviso, Caricamento, Kpi, Sezione, Stato, TestaPagina, Vuoto, faTempo, giorno, quando } from "./ui";
 
@@ -153,7 +153,7 @@ export default function ClientiScheda({
               <li key={o.id} className="cl-ordine">
                 <div className="grid gap-1">
                   <p className="cl-ordine-titolo">
-                    {ETICHETTE_SERVIZIO[o.service] ?? o.service}
+                    {o.service === "abbonamento" ? `Abbonamento ${nomeAbbonamento(o)}` : (ETICHETTE_SERVIZIO[o.service] ?? o.service)}
                     {o.service === "abbonamento" ? "" : ` · ${o.meals} ${o.meals === 1 ? "pasto" : "pasti"}`}
                   </p>
                   <p className="cu-riga-nota">

@@ -4,34 +4,46 @@
    Per ognuno: dove, quanti pasti, Chiama / WhatsApp e un tocco per segnare
    consegnato (con "Annulla" in basso per qualche secondo). Gli ordini gia'
    consegnati restano in fondo, cosi' si vede a che punto e' la giornata.
-   I pranzi in abbonamento escono anche loro, ma non si segnano uno per uno
-   (chiuderebbero l'abbonamento): una riga li conta e porta alle schede
-   d'imballo del foglio cucina. */
+   Le consegne degli abbonamenti (una ogni 3 giorni per abbonamento) stanno
+   nella stessa lista, con i pasti che portano. Non si segnano sul server
+   (chiuderebbero l'abbonamento): il tocco "Segna consegnato" le spunta su
+   questo dispositivo, come le spunte della cucina, e si puo' togliere. */
 
 import Link from "next/link";
 import { euro, type Ordine } from "@/lib/api";
-import { daIncassare, elencoNomi, linkMappa, nomeProprio, plurale, testoWhatsApp, type CodeOperative } from "@/lib/operazioni";
+import { daIncassare, linkMappa, nomeProprio, testoWhatsApp, type CodeOperative } from "@/lib/operazioni";
+import { consegnaDelGiorno, eAbbonamento, frasePasti, nomeAbbonamento } from "@/lib/produzione";
 import { INDIRIZZO } from "@/lib/sito";
+import { PastiConsegna } from "./AbbonamentoConsegna";
 import { Icona } from "./PannelloIcone";
 import { fraseAvviso, usePannello } from "./PannelloDati";
 import type { useAzioniVeloci } from "./PannelloStato";
-import { Sezione, Stato, Vuoto, linkWhatsAppCliente } from "./ui";
+import { SegnoAbbonamento, Sezione, Stato, Vuoto, giorno as giornoCorto, linkWhatsAppCliente } from "./ui";
 
 type Veloci = ReturnType<typeof useAzioniVeloci>;
 
-export default function OggiUscite({ code, apri, veloci }: { code: CodeOperative | null; apri: (id: string) => void; veloci: Veloci }) {
+export default function OggiUscite({
+  code,
+  oggi,
+  apri,
+  veloci,
+  consegnate,
+  onConsegnata,
+}: {
+  code: CodeOperative | null;
+  oggi: string;
+  apri: (id: string) => void;
+  veloci: Veloci;
+  /** Gli id delle consegne in abbonamento gia' fatte oggi, segnate su questo dispositivo. */
+  consegnate: ReadonlySet<string>;
+  onConsegnata: (id: string, fatta: boolean) => void;
+}) {
+  const fatta = (o: Ordine) => (eAbbonamento(o) ? consegnate.has(o.id) : o.status === "completed");
   const lista = code
-    ? [...code.usciteOggi].sort(
-        (a, b) => Number(a.status === "completed") - Number(b.status === "completed") || a.fulfillment.localeCompare(b.fulfillment),
-      )
+    ? [...code.usciteOggi].sort((a, b) => Number(fatta(a)) - Number(fatta(b)) || a.fulfillment.localeCompare(b.fulfillment))
     : null;
-  const fatti = lista?.filter((o) => o.status === "completed").length ?? 0;
-  const abbonamenti = code?.abbonamentiOggi ?? [];
-  const ritiriAbb = abbonamenti.filter((o) => o.fulfillment === "pickup").length;
-  const dettaglioAbb = [
-    ritiriAbb ? plurale(ritiriAbb, "ritiro", "ritiri") : "",
-    abbonamenti.length - ritiriAbb ? plurale(abbonamenti.length - ritiriAbb, "consegna", "consegne") : "",
-  ].filter(Boolean).join(", ");
+  const fatti = lista?.filter(fatta).length ?? 0;
+  const conAbbonamenti = !!code?.abbonamentiOggi.length;
 
   return (
     <Sezione
@@ -42,9 +54,7 @@ export default function OggiUscite({ code, apri, veloci }: { code: CodeOperative
           ? "Carico gli ordini…"
           : lista.length
             ? `${lista.length - fatti} da consegnare · ${fatti} ${fatti === 1 ? "fatto" : "fatti"}`
-            : abbonamenti.length
-              ? "Nessun ordine in uscita oggi, solo pranzi in abbonamento."
-              : "Nessun ritiro o consegna oggi."
+            : "Nessun ritiro o consegna oggi."
       }
     >
       {!lista ? (
@@ -54,20 +64,20 @@ export default function OggiUscite({ code, apri, veloci }: { code: CodeOperative
         </div>
       ) : lista.length ? (
         <ul className="pn-uscite">
-          {lista.map((o) => (
-            <Uscita key={o.id} ordine={o} apri={apri} veloci={veloci} />
-          ))}
+          {lista.map((o) =>
+            eAbbonamento(o) ? (
+              <UscitaAbbonamento key={o.id} ordine={o} oggi={oggi} apri={apri} fatta={consegnate.has(o.id)} onConsegnata={onConsegnata} />
+            ) : (
+              <Uscita key={o.id} ordine={o} apri={apri} veloci={veloci} />
+            ),
+          )}
         </ul>
-      ) : abbonamenti.length ? null : (
-        <Vuoto>Quando un ordine ha il ritiro o la consegna oggi, compare qui.</Vuoto>
+      ) : (
+        <Vuoto>Quando un ordine ha il ritiro o la consegna oggi, o un abbonamento ha la sua consegna, compare qui.</Vuoto>
       )}
-      {abbonamenti.length ? (
+      {conAbbonamenti ? (
         <p className="mt-3 text-[15px]">
-          <strong>
-            {lista?.length ? "+ " : ""}
-            {plurale(abbonamenti.length, "pranzo in abbonamento", "pranzi in abbonamento")}
-          </strong>{" "}
-          ({dettaglioAbb}): {elencoNomi(abbonamenti, 3)}.{" "}
+          Le consegne in abbonamento si segnano solo su questo dispositivo: l’abbonamento resta aperto.{" "}
           <Link href="/dashboard/produzione?scheda=ordini" className="link">
             Schede d’imballo
           </Link>
@@ -77,11 +87,122 @@ export default function OggiUscite({ code, apri, veloci }: { code: CodeOperative
   );
 }
 
+/** Come si arriva dal cliente o dove lo si aspetta: "Ritiro in Via..." oppure l'indirizzo con la mappa. */
+function Dove({ ordine: o }: { ordine: Ordine }) {
+  const ritiro = o.fulfillment === "pickup";
+  return (
+    <>
+      <strong>{ritiro ? "Ritiro" : "Consegna"}</strong>{" "}
+      {ritiro ? (
+        <>in {INDIRIZZO.via}</>
+      ) : (
+        <>
+          · {[o.address, o.comune].filter(Boolean).join(", ") || "indirizzo mancante"}{" "}
+          {o.address ? (
+            <a href={linkMappa(o.address, o.comune)} target="_blank" rel="noopener noreferrer" className="link inline-flex items-center gap-1 text-[15px]">
+              <Icona nome="mappa" className="size-4" />
+              Mappa
+            </a>
+          ) : null}
+        </>
+      )}
+    </>
+  );
+}
+
+function Contatti({ ordine: o }: { ordine: Ordine }) {
+  const telefono = o.phone.replace(/[^\d+]/g, "");
+  if (!telefono) return null;
+  return (
+    <>
+      <a href={`tel:${telefono}`} className="pn-tasto">
+        <Icona nome="telefono" className="size-5" />
+        Chiama
+      </a>
+      <a href={linkWhatsAppCliente(o.phone, testoWhatsApp(o))} target="_blank" rel="noopener noreferrer" className="pn-tasto pn-tasto-wa">
+        <Icona nome="whatsapp" className="size-5" />
+        WhatsApp
+      </a>
+    </>
+  );
+}
+
+/**
+ * Una consegna in abbonamento: chi, dove, quale consegna e' e cosa porta. Il
+ * tocco la spunta su questo dispositivo, senza toccare l'abbonamento.
+ */
+function UscitaAbbonamento({
+  ordine: o,
+  oggi,
+  apri,
+  fatta,
+  onConsegnata,
+}: {
+  ordine: Ordine;
+  oggi: string;
+  apri: (id: string) => void;
+  fatta: boolean;
+  onConsegnata: (id: string, fatta: boolean) => void;
+}) {
+  const ritiro = o.fulfillment === "pickup";
+  const c = consegnaDelGiorno(o, oggi);
+  return (
+    <li>
+      <div className="pn-uscita-testa">
+        <button type="button" className="pn-nome" onClick={() => apri(o.id)}>
+          {o.customer_name || "Cliente senza nome"}
+        </button>
+        <SegnoAbbonamento ordine={o} />
+      </div>
+
+      <p className="pn-dove">
+        <Dove ordine={o} />
+        {c ? (
+          <>
+            {" "}
+            · {frasePasti(c.pasti)}
+          </>
+        ) : null}
+      </p>
+      {c ? (
+        <p className="text-[15px] text-muted">
+          {nomeAbbonamento(o)} · consegna {c.numero} di {c.totale}, copre fino a {giornoCorto(c.fino)}
+        </p>
+      ) : null}
+      {o.dietary_preferences?.trim() ? (
+        <p className="pn-allergie py-2 text-[15px]">
+          <strong>Allergie:</strong> {o.dietary_preferences}
+        </p>
+      ) : null}
+      <PastiConsegna o={o} giorno={oggi} />
+
+      <div className="pn-bottoni">
+        <Contatti ordine={o} />
+        {fatta ? (
+          <>
+            <span className="pn-segno pn-segno-ok min-h-12 justify-center px-4 text-[15px]">
+              <Icona nome="spunta" className="size-5" />
+              {ritiro ? "Ritirato" : "Consegnato"}
+            </span>
+            <button type="button" className="pn-tasto" onClick={() => onConsegnata(o.id, false)}>
+              Togli la spunta
+            </button>
+          </>
+        ) : (
+          <button type="button" className="pn-tasto pn-tasto-pieno" onClick={() => onConsegnata(o.id, true)}>
+            <Icona nome="spunta" className="size-5" />
+            {ritiro ? "Segna ritirato" : "Segna consegnato"}
+          </button>
+        )}
+      </div>
+    </li>
+  );
+}
+
 function Uscita({ ordine: o, apri, veloci }: { ordine: Ordine; apri: (id: string) => void; veloci: Veloci }) {
   const { emailAttiva } = usePannello();
   const fatto = o.status === "completed";
   const ritiro = o.fulfillment === "pickup";
-  const telefono = o.phone.replace(/[^\d+]/g, "");
   const nome = nomeProprio(o.customer_name) || "Cliente";
   const occupato = veloci.inCorso === o.id;
 
@@ -95,21 +216,7 @@ function Uscita({ ordine: o, apri, veloci }: { ordine: Ordine; apri: (id: string
       </div>
 
       <p className="pn-dove">
-        <strong>{ritiro ? "Ritiro" : "Consegna"}</strong>{" "}
-        {ritiro ? (
-          <>in {INDIRIZZO.via}</>
-        ) : (
-          <>
-            · {[o.address, o.comune].filter(Boolean).join(", ") || "indirizzo mancante"}{" "}
-            {o.address ? (
-              <a href={linkMappa(o.address, o.comune)} target="_blank" rel="noopener noreferrer" className="link inline-flex items-center gap-1 text-[15px]">
-                <Icona nome="mappa" className="size-4" />
-                Mappa
-              </a>
-            ) : null}
-          </>
-        )}{" "}
-        · {o.meals} {o.meals === 1 ? "pasto" : "pasti"}
+        <Dove ordine={o} /> · {o.meals} {o.meals === 1 ? "pasto" : "pasti"}
       </p>
 
       {o.dietary_preferences?.trim() ? (
@@ -124,18 +231,7 @@ function Uscita({ ordine: o, apri, veloci }: { ordine: Ordine; apri: (id: string
       ) : null}
 
       <div className="pn-bottoni">
-        {telefono ? (
-          <>
-            <a href={`tel:${telefono}`} className="pn-tasto">
-              <Icona nome="telefono" className="size-5" />
-              Chiama
-            </a>
-            <a href={linkWhatsAppCliente(o.phone, testoWhatsApp(o))} target="_blank" rel="noopener noreferrer" className="pn-tasto pn-tasto-wa">
-              <Icona nome="whatsapp" className="size-5" />
-              WhatsApp
-            </a>
-          </>
-        ) : null}
+        <Contatti ordine={o} />
         {fatto ? (
           <span className="pn-segno pn-segno-ok min-h-12 justify-center px-4 text-[15px]">
             <Icona nome="spunta" className="size-5" />

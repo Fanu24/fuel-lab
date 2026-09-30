@@ -6,10 +6,14 @@ import {
   corpoRichiesta,
   dataIso,
   descriviEvento,
+  descrizioneInizioAbbonamento,
   destinazioneSicura,
   emailValida,
   erroreDiRitorno,
+  fasciaDa,
   formattaGiorno,
+  formulaDa,
+  frequenzaConsegne,
   hrefAccedi,
   hrefSezione,
   iniziale,
@@ -18,25 +22,30 @@ import {
   modoDa,
   nomeBreve,
   nomeFileDati,
+  nomeServizioRichiesta,
+  ORDINE_CAMPI_RICHIESTA,
   passiOrdine,
   passwordAccettabile,
   periodoRichiesta,
   piattiNonPiuDisponibili,
-  pranziFeriali,
   primoNome,
   prossimaConsegna,
   prossimaUscitaDi,
   SERVIZIO_CON_PIATTI,
   requisitiPassword,
   righePiano,
+  schedaAbbonamento,
   servizioDa,
   sezioneDa,
   spostaGiorni,
+  stimaAbbonamento,
   traduciErroreAuth,
   validaRichiesta,
   type DatiRichiesta,
 } from "./account";
+import { calcolaPrezzo, FASCE, FORMULE_ID, NUCLEI } from "./abbonamento";
 import { ApiError, type EventoOrdine, type Ordine } from "./api";
+import { leggiNuovoOrdine } from "./server/ordini";
 import type { Piano } from "./settimana";
 
 describe("destinazioneSicura", () => {
@@ -106,6 +115,24 @@ describe("hrefAccedi e hrefSezione", () => {
     expect(servizioDa("home-cooking")).toBe("home-cooking");
     expect(servizioDa("abbonamento")).toBe("abbonamento");
     expect(servizioDa(null)).toBe("menu-settimana");
+  });
+
+  it("legge formula e fascia dall'indirizzo, e un valore che non esiste torna al predefinito", () => {
+    expect(formulaDa("full7")).toBe("full7");
+    expect(formulaDa("pranzo")).toBe("pranzo");
+    expect(formulaDa("completo")).toBe("completo");
+    // Il consigliato dal committente: chi arriva senza scegliere trova Completo.
+    expect(formulaDa(null)).toBe("completo");
+    expect(formulaDa(undefined)).toBe("completo");
+    expect(formulaDa("")).toBe("completo");
+    expect(formulaDa("full8")).toBe("completo");
+    expect(formulaDa("<script>")).toBe("completo");
+    expect(formulaDa("COMPLETO")).toBe("completo");
+    expect(fasciaDa("plus")).toBe("plus");
+    expect(fasciaDa("standard")).toBe("standard");
+    expect(fasciaDa(null)).toBe("standard");
+    expect(fasciaDa("premium")).toBe("standard");
+    expect(fasciaDa("")).toBe("standard");
   });
 });
 
@@ -242,16 +269,78 @@ describe("stato degli ordini", () => {
     expect(passiOrdine("cancelled", "pickup", "abbonamento")).toBeNull();
   });
 
-  it("per l'abbonamento la prossima consegna e' il prossimo pranzo del periodo, e il periodo si legge", () => {
-    const abb = ordine({ id: "abb", service: "abbonamento", status: "confirmed", fulfillment_date: "2026-09-14" });
-    // dal 14 settembre al 13 ottobre: domenica 27 -> lunedi' 28
-    expect(prossimaUscitaDi(abb, "2026-09-27")).toBe("2026-09-28");
+  it("per l'abbonamento la prossima consegna e' una ogni 3 giorni dall'inizio, e il periodo si legge", () => {
+    const abb = ordine({
+      id: "abb", service: "abbonamento", status: "confirmed", fulfillment_date: "2026-09-14",
+      subscription: { plan: "completo", tier: "plus", household: "singolo", trial: true },
+    });
+    // dal 14 settembre al 13 ottobre, consegne il 14, 17, 20, 23, 26, 29 settembre, 2, 5, 8, 11 ottobre.
+    expect(prossimaUscitaDi(abb, "2026-09-14")).toBe("2026-09-14");
+    expect(prossimaUscitaDi(abb, "2026-09-27")).toBe("2026-09-29");
+    expect(prossimaUscitaDi(abb, "2026-10-12")).toBeNull();
     expect(prossimaUscitaDi(abb, "2026-10-14")).toBeNull();
     const lontana = ordine({ id: "lontana", status: "confirmed", fulfillment_date: "2026-10-10" });
     expect(prossimaConsegna([lontana, abb], "2026-09-27")?.id).toBe("abb");
     expect(periodoRichiesta(abb, "2026-09-27")).toBe("dal 14 settembre al 13 ottobre");
     expect(periodoRichiesta({ ...abb, service: "menu-settimana" }, "2026-09-27")).toBeNull();
     expect(periodoRichiesta({ ...abb, fulfillment_date: null }, "2026-09-27")).toBeNull();
+    expect(prossimaUscitaDi({ ...abb, fulfillment_date: null }, "2026-09-27")).toBeNull();
+  });
+
+  it("la formula decide quali consegne portano davvero dei pasti", () => {
+    // Dal 1 al 31 ottobre: l'ultima consegna cade sabato 31. Pranzo non copre il sabato e non la fa,
+    // Completo (tutti i giorni) si'.
+    const con = (plan: "pranzo" | "completo") => ordine({
+      service: "abbonamento", status: "confirmed", fulfillment_date: "2026-10-01",
+      subscription: { plan, tier: "standard", household: "singolo", trial: false },
+    });
+    expect(prossimaUscitaDi(con("pranzo"), "2026-10-29")).toBeNull();
+    expect(prossimaUscitaDi(con("completo"), "2026-10-29")).toBe("2026-10-31");
+    // Un abbonamento senza scelta salvata (nato prima delle formule) e' un Pranzo.
+    const vecchio = ordine({ service: "abbonamento", status: "confirmed", fulfillment_date: "2026-10-01" });
+    expect(prossimaUscitaDi(vecchio, "2026-10-29")).toBeNull();
+    expect(prossimaUscitaDi(vecchio, "2026-10-28")).toBe("2026-10-28");
+  });
+
+  it("legge un abbonamento a parole: formula e fascia, chi si abbona, prova, cosa ricevi", () => {
+    const abb = ordine({
+      service: "abbonamento",
+      subscription: { plan: "full6", tier: "plus", household: "coppia", trial: true },
+    });
+    expect(schedaAbbonamento(abb)).toEqual({
+      etichetta: "Full 6 · Plus",
+      cosaRicevi: "18 pasti a settimana, tre al giorno",
+      nucleo: "In coppia",
+      prova: true,
+    });
+    expect(nomeServizioRichiesta(abb)).toBe("Abbonamento Full 6 · Plus");
+    // Senza scelta salvata: Pranzo, senza fascia, da solo, senza prova.
+    expect(schedaAbbonamento(ordine({ service: "abbonamento" }))).toEqual({
+      etichetta: "Pranzo",
+      cosaRicevi: "5 pasti a settimana, solo il pranzo",
+      nucleo: "Da solo",
+      prova: false,
+    });
+    expect(schedaAbbonamento(ordine({ service: "menu-settimana" }))).toBeNull();
+    expect(nomeServizioRichiesta(ordine({ service: "menu-settimana" }))).toBe("Menu della settimana");
+  });
+
+  it("dice ogni quanto si consegna o si ritira, e cosa scrive il promemoria del calendario", () => {
+    expect(frequenzaConsegne("pickup")).toBe("Ritiro in laboratorio ogni 3 giorni");
+    expect(frequenzaConsegne("delivery")).toBe("Consegna a casa ogni 3 giorni");
+    const abb = ordine({
+      service: "abbonamento", status: "confirmed", fulfillment_date: "2026-10-05",
+      subscription: { plan: "completo", tier: "plus", household: "singolo", trial: false },
+    });
+    const righe = descrizioneInizioAbbonamento(abb, "2026-09-30");
+    expect(righe).toEqual([
+      "Abbonamento Completo · Plus, dal 5 ottobre al 4 novembre.",
+      "Consegna o ritiro ogni 3 giorni.",
+    ]);
+    // Le formule non sono piu' "pranzi dal lunedi' al venerdi'".
+    expect(righe.join(" ")).not.toMatch(/lunedì al venerdì/);
+    expect(descrizioneInizioAbbonamento(ordine({ service: "menu-settimana" }), "2026-09-30")).toEqual([]);
+    expect(descrizioneInizioAbbonamento({ ...abb, fulfillment_date: null }, "2026-09-30")[0]).toBe("Abbonamento Completo · Plus.");
   });
 
   it("trova la prossima consegna confermata", () => {
@@ -306,6 +395,7 @@ describe("nuova richiesta", () => {
   const buona: DatiRichiesta = {
     servizio: "menu-settimana", nome: "Maria", telefono: "333 123 4567", comune: "Pescara",
     indirizzo: "", modalita: "pickup", data: "", note: "",
+    formula: "completo", fascia: "standard", nucleo: "singolo", prova: true,
   };
 
   it("passa quando e' completa", () => {
@@ -344,13 +434,78 @@ describe("nuova richiesta", () => {
     expect(corpo).toMatchObject({ service: "abbonamento", requestedDate: "2026-10-05", notes: "Pesi lun-mer-ven" });
   });
 
-  it("conta i soli pranzi dal lunedi' al venerdi' per l'abbonamento", () => {
-    const piano: Piano = {
-      lun: { pranzo: { piatto: "noodles-sesamo-maiale", extra: [] }, cena: { piatto: "noodles-sesamo-maiale", extra: [] } },
-      mer: { pranzo: { piatto: "piatto-sparito", extra: [] } },
-      sab: { pranzo: { piatto: "noodles-sesamo-maiale", extra: [] } },
-    };
-    expect(pranziFeriali(piano)).toBe(1);
+  it("l'abbonamento vuole una formula valida, gli altri servizi la ignorano", () => {
+    const abb = { ...buona, servizio: "abbonamento" as const };
+    expect(validaRichiesta(abb, limiti)).toEqual({});
+    for (const formula of ["pranzo", "leggero", "completo", "full6", "full7"] as const) {
+      expect(validaRichiesta({ ...abb, formula }, limiti)).toEqual({});
+    }
+    // Uno stato corrotto (non puo' succedere dai radio, ma il server la rifiuterebbe) si ferma qui, con il fuoco sulla formula.
+    const rotta = validaRichiesta({ ...abb, formula: "full8" as never }, limiti);
+    expect(rotta.formula).toBe("Scegli la formula dell’abbonamento.");
+    expect(ORDINE_CAMPI_RICHIESTA.find((k) => rotta[k])).toBe("formula");
+    expect(validaRichiesta({ ...buona, formula: "full8" as never }, limiti)).toEqual({});
+    expect(validaRichiesta({ ...abb, formula: "" as never, nome: "" }, limiti).formula).toBeTruthy();
+  });
+
+  it("l'abbonamento parte con la sua scelta e senza piatti", () => {
+    const piano: Piano = { lun: { pranzo: { piatto: "noodles-sesamo-maiale", extra: [] } } };
+    const abb: DatiRichiesta = { ...buona, servizio: "abbonamento", formula: "full6", fascia: "plus", nucleo: "coppia", prova: false };
+    const corpo = corpoRichiesta(abb, piano, { lun: "pesi" });
+    expect(corpo.subscription).toEqual({ plan: "full6", tier: "plus", household: "coppia", trial: false });
+    // Il compositore non sceglie i pasti dell'abbonamento: il server scarterebbe i piatti, e non li mandiamo.
+    expect(corpo.plan).toEqual({});
+    expect(corpo.training).toEqual({ lun: "pesi" });
+    expect(corpoRichiesta({ ...abb, prova: true }, piano, {}).subscription?.trial).toBe(true);
+    // Gli altri servizi non portano la scelta e tengono il loro piano.
+    const menu = corpoRichiesta({ ...buona, formula: "full7", fascia: "plus" }, piano, {});
+    expect(menu).not.toHaveProperty("subscription");
+    expect(menu.plan).toEqual(piano);
+    expect(corpoRichiesta({ ...buona, servizio: "home-cooking" }, piano, {})).not.toHaveProperty("subscription");
+  });
+
+  it("stima il prezzo al mese con lo sconto piu' alto fra quelli che spettano", () => {
+    // Completo Plus: 676 euro di listino. Senza sconti la frase ricorda quali esistono.
+    const senza = stimaAbbonamento({ formula: "completo", fascia: "plus", nucleo: "singolo", modalita: "delivery" });
+    expect(senza).toMatchObject({ listino: "676 €", totale: "676 €", scontoPercento: 0 });
+    expect(senza.dettaglio).toBe("Prezzo di listino. Sconti: ritiro in laboratorio −10%, in coppia −8%, in famiglia −10%.");
+    expect(stimaAbbonamento({ formula: "completo", fascia: "plus", nucleo: "singolo", modalita: "pickup" })).toEqual({
+      listino: "676 €", totale: "608 €", scontoPercento: 10, dettaglio: "Listino 676 €, sconto 10% per il ritiro in laboratorio.",
+    });
+    expect(stimaAbbonamento({ formula: "pranzo", fascia: "standard", nucleo: "coppia", modalita: "delivery" })).toEqual({
+      listino: "173 €", totale: "159 €", scontoPercento: 8, dettaglio: "Listino 173 €, sconto 8% per l’abbonamento in coppia.",
+    });
+    expect(stimaAbbonamento({ formula: "pranzo", fascia: "standard", nucleo: "famiglia", modalita: "delivery" }).dettaglio).toBe(
+      "Listino 173 €, sconto 10% per l’abbonamento in famiglia.",
+    );
+    // Ritiro e coppia: non si sommano, vale il piu' alto (il ritiro), e la frase lo dice.
+    const doppio = stimaAbbonamento({ formula: "full7", fascia: "standard", nucleo: "coppia", modalita: "pickup" });
+    expect(doppio.scontoPercento).toBe(10);
+    expect(doppio.totale).toBe("655 €");
+    expect(doppio.dettaglio).toBe(
+      "Listino 728 €, sconto 10%: ti spettano il ritiro in laboratorio (−10%) e l’abbonamento in coppia (−8%), si applica il più alto.",
+    );
+  });
+
+  it("la stima del modulo e il prezzo proposto dal server coincidono, per ogni combinazione", () => {
+    // Il cliente vede la stima, il server scrive il prezzo proposto: se divergono, Matteo trova una cifra
+    // diversa da quella che il cliente ha letto. Si prova su tutte le 60 combinazioni, passando dal server vero.
+    for (const formula of FORMULE_ID) for (const fascia of FASCE) for (const nucleo of NUCLEI) {
+      for (const modalita of ["pickup", "delivery"] as const) {
+        const { totaleCentesimi } = calcolaPrezzo({ formula, fascia, ritiro: modalita === "pickup", nucleo });
+        expect(stimaAbbonamento({ formula, fascia, nucleo, modalita }).totale).toBe(`${totaleCentesimi / 100} €`);
+        const server = leggiNuovoOrdine(
+          {
+            name: "Giulia", phone: "333 123 4567", comune: "Pescara", address: "Via Roma 1", service: "abbonamento",
+            fulfillment: modalita, notes: "", plan: {}, training: {},
+            subscription: { plan: formula, tier: fascia, household: nucleo, trial: true },
+          },
+          "Account",
+          "2026-09-27",
+        );
+        expect(server.ok && server.value.priceCents).toBe(totaleCentesimi);
+      }
+    }
   });
 
   it("prepara il corpo per il server", () => {

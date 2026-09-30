@@ -9,6 +9,7 @@ import LinkBlog from "@/components/seo/LinkBlog";
 import { AGGIORNAMENTO, PAGINE, metadatiPagina } from "@/components/seo/pagine";
 import { elencoPiatti, nodiPagina, type DomandaTesto } from "@/components/seo/schema";
 import { PIATTI, extraPerReparto, type Piatto } from "@/lib/catalogo";
+import { PREZZO_DA_TESTO } from "@/lib/abbonamento";
 import { CONSIGLI } from "@/lib/consigli";
 
 /* I pasti proteici, con i numeri del catalogo e nient'altro: la tabella, le
@@ -276,11 +277,11 @@ export default function PastiProteiciPescara() {
                 <Link href="/scheda" className="link">
                   scrivi i tuoi macro
                 </Link>{" "}
-                e la settimana si compone con i piatti più vicini. Se vuoi coprire tutti i pranzi del mese,{" "}
+                e la settimana si compone con i piatti più vicini. Se vuoi coprire tutto il mese,{" "}
                 <Link href={PAGINE.abbonamento.percorso} className="link">
-                  c&apos;è l&apos;abbonamento
+                  ci sono gli abbonamenti
                 </Link>
-                .
+                : da {PREZZO_DA_TESTO} al mese, sul piano del tuo nutrizionista.
               </p>
               <p>
                 Ritiro in sede o consegna a Pescara e dintorni:{" "}

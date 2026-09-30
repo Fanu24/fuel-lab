@@ -1,7 +1,7 @@
-import { PREZZO_ABBONAMENTO } from "./abbonamento";
+import { CONSEGNA_OGNI_GIORNI, FORMULE, PREZZO_DA } from "./abbonamento";
 
 /* =========================================================================
-   I quattro servizi di FUEL LAB (spec sezione 12, piu' l'abbonamento deciso
+   I quattro servizi di FUEL LAB (spec sezione 12, piu' gli abbonamenti decisi
    dal committente a settembre 2026).
 
    Il committente non vuole prezzi in chiaro, almeno per l'inizio: qui non
@@ -9,12 +9,14 @@ import { PREZZO_ABBONAMENTO } from "./abbonamento";
    (menu della settimana e sui macro) condividono la STESSA soglia di
    ingresso (SOGLIA_PREZZO, 8,90 euro a pasto) perche' la variabile che
    cambia e' cosa arriva nel box, non il prezzo minimo. L'eccezione voluta dal
-   committente e' l'abbonamento: un prezzo fisso al mese (lib/abbonamento.ts)
-   per tutti i pranzi dal lunedi' al venerdi'. L'home cooking non ha soglia:
-   vende il tempo di Matteo dentro la cucina del cliente, non produzione in
-   serie, e la sua economia non si lascia scrivere come "a partire da X".
-   Per questo il prezzo di questo servizio e' sempre "su preventivo": mai
-   un totale, mai un calcolo, mai un numero, da nessuna parte.
+   committente sono gli abbonamenti: cinque formule con un prezzo fisso al mese
+   ciascuna (lib/abbonamento.ts), quindi qui si legge solo "da" il prezzo piu'
+   basso, e le cifre vere stanno nelle pagine degli abbonamenti. L'home
+   cooking non ha soglia: vende il tempo di Matteo dentro la cucina del
+   cliente, non produzione in serie, e la sua economia non si lascia scrivere
+   come "a partire da X". Per questo il prezzo di questo servizio e' sempre
+   "su preventivo": mai un totale, mai un calcolo, mai un numero, da nessuna
+   parte.
 
    Ogni pagina che mostra questi dati chiude con un invito a scrivere su
    WhatsApp (mai "aggiungi al carrello"), e usa lib/whatsapp.ts passando
@@ -27,12 +29,13 @@ export type ServizioId = "menu-settimana" | "abbonamento" | "sui-tuoi-macro" | "
 /**
  * Unione discriminata sul campo "tipo": "soglia" per i due servizi di meal
  * prep a scelta (un numero e un'unita, sempre presentati come minimo
- * d'ingresso), "mese" per l'abbonamento (il prezzo intero del mese),
- * "preventivo" per l'home cooking, che non porta nessun numero con se.
+ * d'ingresso), "mese-da" per gli abbonamenti (il prezzo mensile piu' basso
+ * fra le cinque formule: "da 173 euro al mese"), "preventivo" per l'home
+ * cooking, che non porta nessun numero con se.
  */
 export type Prezzo =
   | { tipo: "soglia"; valore: number; unita: string }
-  | { tipo: "mese"; valore: number }
+  | { tipo: "mese-da"; valore: number }
   | { tipo: "preventivo" };
 
 export interface Servizio {
@@ -65,10 +68,9 @@ export const SERVIZI: Servizio[] = [
   {
     id: "abbonamento",
     numero: "02",
-    nome: "L’abbonamento ai pranzi",
-    descrizione:
-      "Tutti i pranzi dal lunedì al venerdì per un mese, composti da Matteo sulla tua scheda: come ti alleni, i tuoi obiettivi o le indicazioni del nutrizionista. Niente settimana da comporre ogni volta.",
-    prezzo: { tipo: "mese", valore: PREZZO_ABBONAMENTO },
+    nome: "Gli abbonamenti",
+    descrizione: `Cinque abbonamenti mensili (${FORMULE.map((f) => f.nome).join(", ")}), in fascia Standard o Plus: Matteo cucina il piano del tuo nutrizionista e te lo porta ogni ${CONSEGNA_OGNI_GIORNI} giorni, a casa o al ritiro. La prima settimana è di prova, senza impegno.`,
+    prezzo: { tipo: "mese-da", valore: PREZZO_DA },
     img: "/foto/photo-1498837167922-ddd27525d352.webp",
     href: "/abbonamento",
   },

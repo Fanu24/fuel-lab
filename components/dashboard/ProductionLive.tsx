@@ -2,8 +2,9 @@
 
 /* La Cucina: cosa preparare in un giorno di produzione.
    Quattro schede sullo stesso insieme di ordini (confermati o in preparazione
-   con quel giorno di cucina) e di pranzi in abbonamento (gli abbonamenti in
-   corso, dal lunedi' al venerdi'): Piatti, Spesa, Etichette, Ordini. Giorno e
+   con quel giorno di cucina) e di consegne in abbonamento (gli abbonamenti in
+   corso che quel giorno consegnano: una consegna ogni 3 giorni, con i pasti
+   dei tre giorni coperti): Piatti, Spesa, Etichette, Ordini. Giorno e
    scheda stanno nell'indirizzo (?giorno=2026-09-28&scheda=spesa), cosi' un
    link o un ricarica riaprono lo stesso foglio. Stampa solo la scheda aperta.
    Si cucina ogni giorno: le scorciatoie sono Oggi, Domani e Dopodomani, e un
@@ -20,12 +21,13 @@ import {
   confermatiSenzaGiorno,
   contaPiatti,
   contaPorzioni,
+  contaPastiAbbonamenti,
   giornoPredefinito,
-  giorniConOrdini,
+  giorniDaPreparare,
   isData,
   oggiRoma,
   ordiniDelGiorno,
-  pranziComeOrdini,
+  pastiComeOrdini,
   spostaGiorni,
 } from "@/lib/produzione";
 import { useImpostazioni } from "@/components/impostazioni/useImpostazioni";
@@ -120,11 +122,13 @@ export default function ProductionLive() {
 
   const delGiorno = useMemo(() => (ordini ? ordiniDelGiorno(ordini, giorno, anchePronti) : []), [ordini, giorno, anchePronti]);
   const abbonamenti = useMemo(() => (ordini ? abbonamentiDelGiorno(ordini, giorno) : []), [ordini, giorno]);
-  // Ordini e pranzi in abbonamento insieme, per contare piatti, spesa e allergeni.
-  const perContare = useMemo(() => [...delGiorno, ...pranziComeOrdini(abbonamenti, giorno)], [delGiorno, abbonamenti, giorno]);
-  const porzioni = contaPorzioni(delGiorno) + abbonamenti.length;
+  // Ordini e pasti in abbonamento con un piatto indicato insieme, per contare piatti, spesa e allergeni.
+  const perContare = useMemo(() => [...delGiorno, ...pastiComeOrdini(abbonamenti, giorno)], [delGiorno, abbonamenti, giorno]);
+  // Ogni pasto delle consegne e' una porzione, indicato o no.
+  const pastiAbbonamenti = contaPastiAbbonamenti(abbonamenti, giorno);
+  const porzioni = contaPorzioni(delGiorno) + pastiAbbonamenti;
   const piattiDiversi = useMemo(() => contaPiatti(perContare).length, [perContare]);
-  const prossimi = useMemo(() => (ordini ? giorniConOrdini(ordini, oggi, anchePronti) : []), [ordini, oggi, anchePronti]);
+  const prossimi = useMemo(() => (ordini ? giorniDaPreparare(ordini, oggi, anchePronti) : []), [ordini, oggi, anchePronti]);
   const senzaGiorno = useMemo(() => (ordini ? confermatiSenzaGiorno(ordini) : []), [ordini]);
   const chiusura = chiusuraDi(giorno, chiusure);
   const qualcosa = delGiorno.length + abbonamenti.length > 0;
@@ -231,7 +235,7 @@ export default function ProductionLive() {
             </label>
             {prossimi.length ? (
               <div className="cu-prossimi">
-                <p className="cu-prossimi-titolo">Giorni con ordini da preparare</p>
+                <p className="cu-prossimi-titolo">Prossimi giorni con qualcosa da preparare</p>
                 <ul className="cu-prossimi-lista">
                   {prossimi.slice(0, 6).map((p) => (
                     <li key={p.giorno}>
@@ -243,7 +247,13 @@ export default function ProductionLive() {
                       >
                         <strong>{giornoCorto(p.giorno)}</strong>
                         <span>
-                          {p.ordini} {p.ordini === 1 ? "ordine" : "ordini"} · {p.porzioni} porz.
+                          {[
+                            p.ordini ? `${p.ordini} ${p.ordini === 1 ? "ordine" : "ordini"}` : "",
+                            p.abbonamenti ? `${p.abbonamenti} ${p.abbonamenti === 1 ? "abbonamento" : "abbonamenti"}` : "",
+                            `${p.porzioni} porz.`,
+                          ]
+                            .filter(Boolean)
+                            .join(" · ")}
                         </span>
                       </button>
                     </li>
@@ -279,7 +289,7 @@ export default function ProductionLive() {
                 <Avviso tipo="info">
                   Questo giorno sei chiuso ({periodo(chiusura.dal, chiusura.al, oggi)}
                   {chiusura.motivo ? `, ${chiusura.motivo}` : ""}): i clienti non possono sceglierlo.
-                  {qualcosa ? " Quello che vedi qui sotto è già confermato: sposta le date o avvisa i clienti." : ""}
+                  {qualcosa ? " Quello che vedi qui sotto è già confermato: sposta le date (o l’inizio, per gli abbonamenti) o avvisa i clienti." : ""}
                 </Avviso>
               </div>
             ) : null}
@@ -288,7 +298,8 @@ export default function ProductionLive() {
               <div className="cu-vuoto print:hidden">
                 <Vuoto>
                   Niente da preparare per {giornoLungo(giorno)}. Qui arrivano gli ordini confermati o in preparazione
-                  a cui hai assegnato questo giorno di cucina, e dal lunedì al venerdì i pranzi degli abbonamenti in corso.
+                  a cui hai assegnato questo giorno di cucina, e i giorni di consegna degli abbonamenti in corso: una
+                  consegna ogni 3 giorni, con i pasti dei tre giorni che copre.
                 </Vuoto>
                 <Link href="/dashboard/ordini" className="btn btn-linea btn-sm">
                   Vai agli ordini
@@ -298,7 +309,13 @@ export default function ProductionLive() {
               <>
                 <div className={`grid gap-3 print:hidden ${abbonamenti.length ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3"}`}>
                   <Kpi label="Ordini" valore={delGiorno.length} />
-                  {abbonamenti.length ? <Kpi label="In abbonamento" valore={abbonamenti.length} nota="pranzi" /> : null}
+                  {abbonamenti.length ? (
+                    <Kpi
+                      label="In abbonamento"
+                      valore={abbonamenti.length}
+                      nota={`${abbonamenti.length === 1 ? "consegna" : "consegne"} · ${pastiAbbonamenti} ${pastiAbbonamenti === 1 ? "pasto" : "pasti"}`}
+                    />
+                  ) : null}
                   <Kpi label="Porzioni" valore={porzioni} />
                   <Kpi label="Piatti diversi" valore={piattiDiversi} />
                 </div>
@@ -329,7 +346,7 @@ export default function ProductionLive() {
                   {scheda !== "etichette" ? (
                     <p className="cu-stampa-testa">
                       FUEL LAB · Cucina di {giornoLungo(giorno)} · {schedaAttiva.label} · {delGiorno.length} ordini
-                      {abbonamenti.length ? `, ${abbonamenti.length} pranzi in abbonamento` : ""}, {porzioni} porzioni
+                      {abbonamenti.length ? `, ${abbonamenti.length} ${abbonamenti.length === 1 ? "consegna" : "consegne"} in abbonamento (${pastiAbbonamenti} pasti)` : ""}, {porzioni} porzioni
                     </p>
                   ) : null}
                   {scheda === "piatti" ? <CucinaPiatti ordini={perContare} abbonamenti={abbonamenti} giorno={giorno} /> : null}

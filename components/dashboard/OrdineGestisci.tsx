@@ -9,15 +9,18 @@
    chiusure), con cucina e uscita nello stesso giorno, e chiede solo "va bene?".
 
    L'abbonamento mensile ha una data sola, l'inizio (scritta in entrambe le
-   date dell'ordine), e il periodo di un mese che ne discende. Il bottone
-   grande lo conferma; a mese finito propone di segnarlo concluso.
+   date dell'ordine), e il periodo di un mese che ne discende, con una consegna
+   (o un ritiro) ogni 3 giorni. Il bottone grande lo conferma; a mese finito
+   propone di segnarlo concluso. Matteo puo' cambiare formula, fascia, nucleo e
+   settimana di prova: si salvano insieme agli altri campi (PATCH con
+   `subscription`), e il totale non si ricalcola di nascosto, si propone.
 
    Il modulo avvolge anche le parti di sola lettura (`prima` e `dopo`), cosi'
    la barra dei bottoni resta ferma in fondo alla scheda mentre il resto scorre. */
 
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
-import { fineAbbonamento, periodoAbbonamento, pranziNelPeriodo } from "@/lib/abbonamento";
-import { api, ApiError, STATI_ORDINE, etichettaStato, type ModificaOrdine, type Ordine, type StatoOrdine } from "@/lib/api";
+import { fineAbbonamento, formulaDi } from "@/lib/abbonamento";
+import { api, ApiError, STATI_ORDINE, etichettaStato, type ModificaOrdine, type Ordine, type SceltaAbbonamento, type StatoOrdine } from "@/lib/api";
 import { chiusuraDi } from "@/lib/impostazioni";
 import {
   centesimiInTesto,
@@ -30,6 +33,7 @@ import {
 } from "@/lib/operazioni";
 import { eAbbonamento, isData } from "@/lib/produzione";
 import { useImpostazioni } from "@/components/impostazioni/useImpostazioni";
+import { AggiornaTotale, CalendarioConsegne, ScelteAbbonamento, type SceltaAbbonamentoCampi } from "./OrdineAbbonamento";
 import { fraseAvviso, usePannello } from "./PannelloDati";
 import { Icona } from "./PannelloIcone";
 import { Avviso, giorno, giornoLungo } from "./ui";
@@ -42,17 +46,28 @@ type Campi = {
   pagato: boolean;
   messaggio: string;
   nota: string;
-};
+} & SceltaAbbonamentoCampi;
 
-const daOrdine = (o: Ordine): Campi => ({
-  stato: o.status,
-  produzione: o.production_date ?? "",
-  uscita: o.fulfillment_date ?? "",
-  prezzo: centesimiInTesto(o.price_cents),
-  pagato: !!o.paid,
-  messaggio: o.customer_message ?? "",
-  nota: o.internal_note ?? "",
-});
+/** La scelta salvata di un abbonamento. Uno di prima delle formule e' un Pranzo Standard da solo. */
+const sceltaSalvata = (o: Ordine): SceltaAbbonamento =>
+  o.subscription ?? { plan: formulaDi(o), tier: "standard", household: "singolo", trial: false };
+
+const daOrdine = (o: Ordine): Campi => {
+  const scelta = sceltaSalvata(o);
+  return {
+    stato: o.status,
+    produzione: o.production_date ?? "",
+    uscita: o.fulfillment_date ?? "",
+    prezzo: centesimiInTesto(o.price_cents),
+    pagato: !!o.paid,
+    messaggio: o.customer_message ?? "",
+    nota: o.internal_note ?? "",
+    formula: scelta.plan,
+    fascia: scelta.tier,
+    nucleo: scelta.household,
+    prova: scelta.trial,
+  };
+};
 
 /** Solo i campi cambiati rispetto all'ordine salvato. Il prezzo illeggibile resta fuori (lo ferma la validazione). */
 function differenze(o: Ordine, c: Campi): ModificaOrdine {
@@ -65,6 +80,13 @@ function differenze(o: Ordine, c: Campi): ModificaOrdine {
   if (c.pagato !== !!o.paid) m.paid = c.pagato;
   if (c.messaggio !== (o.customer_message ?? "")) m.customerMessage = c.messaggio;
   if (c.nota !== (o.internal_note ?? "")) m.internalNote = c.nota;
+  // La formula parte sempre intera (i quattro campi), ma solo se e' cambiata qualcosa.
+  if (eAbbonamento(o)) {
+    const s = sceltaSalvata(o);
+    if (c.formula !== s.plan || c.fascia !== s.tier || c.nucleo !== s.household || c.prova !== s.trial) {
+      m.subscription = { plan: c.formula, tier: c.fascia, household: c.nucleo, trial: c.prova };
+    }
+  }
   return m;
 }
 
@@ -206,7 +228,10 @@ export default function OrdineGestisci({
   const abbonamento = eAbbonamento(base);
   // L'inizio dell'abbonamento: la data di uscita (o quella di cucina, se c'e' solo quella).
   const inizio = campi.uscita || campi.produzione;
-  const periodo = abbonamento && isData(inizio) ? periodoAbbonamento(inizio) : null;
+  const inizioValido = abbonamento && isData(inizio) ? inizio : null;
+  const salvata = sceltaSalvata(base);
+  // Il totale si propone solo se la scelta che pesa sul prezzo e' cambiata: la settimana di prova non lo tocca.
+  const sceltaCambiata = campi.formula !== salvata.plan || campi.fascia !== salvata.tier || campi.nucleo !== salvata.household;
 
   useEffect(() => onSporco(sporco), [sporco, onSporco]);
 
@@ -215,6 +240,11 @@ export default function OrdineGestisci({
     setEsito(null);
     if (k === "produzione" || k === "uscita") setErroreDate("");
     if (k === "prezzo") setErrorePrezzo("");
+  }
+
+  function cambiaScelta(cambio: Partial<SceltaAbbonamentoCampi>) {
+    setCampi((c) => ({ ...c, ...cambio }));
+    setEsito(null);
   }
 
   /** Stesso giorno in cucina e in uscita. Per l'abbonamento e' l'inizio, e le date sono sempre uguali. */
@@ -266,11 +296,13 @@ export default function OrdineGestisci({
       const testo =
         m.status && abbonamento
           ? FATTO_ABBONAMENTO[m.status]
-          : m.status === "completed" && base.fulfillment === "pickup"
-            ? "Ordine ritirato."
-            : m.status
-              ? FATTO[m.status]
-              : "Modifiche salvate.";
+          : m.subscription && !m.status
+            ? "Formula dell’abbonamento aggiornata."
+            : m.status === "completed" && base.fulfillment === "pickup"
+              ? "Ordine ritirato."
+              : m.status
+                ? FATTO[m.status]
+                : "Modifiche salvate.";
       setEsito({ tipo: "ok", testo: `${testo}${email && avvisaDavvero ? ` ${fraseAvviso(emailAttiva, iniziale(nome))}` : ""}` });
     } catch (e) {
       setEsito({ tipo: "errore", testo: e instanceof ApiError ? e.message : "Modifica non salvata. Riprova." });
@@ -327,35 +359,47 @@ export default function OrdineGestisci({
           </fieldset>
 
           {abbonamento ? (
-            <fieldset className="grid gap-3">
-              <legend className="pn-legenda">Periodo</legend>
-              <p className="pn-aiuto -mt-1">
-                {base.requested_date ? <>Il cliente vorrebbe iniziare <strong className="text-ink">{giornoLungo(base.requested_date)}</strong>. </> : null}
-                L’abbonamento vale un mese dall’inizio: tutti i pranzi dal lunedì al venerdì.
-              </p>
-              <Scorciatoie oggi={oggi} scelto={(d) => inizio === d} onScegli={scegliGiorno} etichetta="Inizio: oggi, domani o dopodomani" />
-              <div className="campo max-w-xs">
-                <label htmlFor="scheda-produzione">Inizio</label>
-                <input
-                  ref={campoProduzione}
-                  id="scheda-produzione"
-                  type="date"
-                  value={inizio}
-                  onChange={(e) => scegliGiorno(e.target.value)}
-                  aria-describedby="scheda-periodo"
-                />
+            <>
+              <div className="grid gap-4">
+                <ScelteAbbonamento prefisso="scheda" valore={campi} onCambia={cambiaScelta} />
+                {sceltaCambiata ? (
+                  <AggiornaTotale
+                    scelta={campi}
+                    ritiro={base.fulfillment === "pickup"}
+                    totaleAttuale={leggiEuro(campi.prezzo)}
+                    onAggiorna={(testo) => cambia("prezzo", testo)}
+                  />
+                ) : null}
               </div>
-              <p id="scheda-periodo" className="text-[16px]" aria-live="polite">
-                {periodo ? (
-                  <>
-                    Dal <strong>{giornoLungo(periodo.dal)}</strong> al <strong>{giornoLungo(periodo.al)}</strong> ·{" "}
-                    <span className="num">{pranziNelPeriodo(periodo)}</span> pranzi, {base.fulfillment === "pickup" ? "ritiro" : "consegna"} ogni giorno feriale
-                  </>
+
+              <fieldset className="grid gap-3">
+                <legend className="pn-legenda">Inizio e consegne</legend>
+                <p className="pn-aiuto -mt-1">
+                  {base.requested_date ? <>Il cliente vorrebbe iniziare <strong className="text-ink">{giornoLungo(base.requested_date)}</strong>. </> : null}
+                  L’abbonamento vale un mese dall’inizio, con {base.fulfillment === "pickup" ? "un ritiro" : "una consegna"} ogni 3 giorni:
+                  ogni volta cucini e {base.fulfillment === "pickup" ? "dai" : "porti"} i pasti dei tre giorni che copre.
+                </p>
+                <Scorciatoie oggi={oggi} scelto={(d) => inizio === d} onScegli={scegliGiorno} etichetta="Inizio: oggi, domani o dopodomani" />
+                <div className="campo max-w-xs">
+                  <label htmlFor="scheda-produzione">Inizio</label>
+                  <input
+                    ref={campoProduzione}
+                    id="scheda-produzione"
+                    type="date"
+                    value={inizio}
+                    onChange={(e) => scegliGiorno(e.target.value)}
+                    aria-describedby="scheda-periodo"
+                  />
+                </div>
+                {inizioValido ? (
+                  <CalendarioConsegne id="scheda-periodo" formula={campi.formula} inizio={inizioValido} oggi={oggi} elenco />
                 ) : (
-                  "Scegli l’inizio: il periodo si calcola da solo."
+                  <p id="scheda-periodo" className="text-[16px]" aria-live="polite">
+                    Scegli l’inizio: il periodo e le consegne si calcolano da soli.
+                  </p>
                 )}
-              </p>
-            </fieldset>
+              </fieldset>
+            </>
           ) : (
             <fieldset className="grid gap-3">
               <legend className="pn-legenda">Date</legend>

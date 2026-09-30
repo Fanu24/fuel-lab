@@ -48,7 +48,7 @@ export interface Preventivo {
 
 /**
  * La stima di una settimana composta nel compositore. Non c'entra con
- * l'abbonamento mensile ai pranzi, che ha un prezzo fisso suo (lib/abbonamento.ts).
+ * gli abbonamenti mensili, che hanno prezzi fissi al mese (lib/abbonamento.ts).
  */
 export function preventivo(pasti: number): Preventivo {
   const t = tagliaPer(pasti);

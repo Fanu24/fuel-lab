@@ -2,11 +2,12 @@ import { describe, expect, it } from "vitest";
 import type { ClienteAdmin } from "./api";
 import { PIATTI } from "./catalogo";
 import {
-  PREZZO_ABBONAMENTO_CAMPO,
   campiVuoti,
   cercaClienti,
   conCliente,
   conInizio,
+  conModalita,
+  conSceltaAbbonamento,
   conServizio,
   corpoNuovoOrdine,
   erroriNuovoOrdine,
@@ -14,6 +15,7 @@ import {
   leggiPorzioni,
   moduloToccato,
   piattiScelti,
+  prezzoProposto,
   porzioniOrdine,
   riempiCaselle,
   riepilogoPiatti,
@@ -190,33 +192,91 @@ describe("controlli prima di salvare", () => {
 
 describe("abbonamento a mano", () => {
   const base = (): CampiNuovoOrdine => ({ ...campiVuoti("senza-account"), nome: "Anna", telefono: "347 765 4321" });
+  /** Un abbonamento scelto: Completo Standard da solo, con ritiro (sconto 10%: 468 euro). */
+  const abb = () => conServizio(base(), "abbonamento");
 
-  it("passando all'abbonamento svuota i piatti, propone il prezzo e usa una data sola", () => {
+  it("passando all'abbonamento svuota i piatti, propone la formula consigliata col suo prezzo e usa una data sola", () => {
     const conPiatti = { ...base(), piano: { lun: { pranzo: { piatto: pollo.id, extra: [] } } }, uscita: "2026-10-05" };
-    const abb = conServizio(conPiatti, "abbonamento");
-    expect(abb).toMatchObject({ servizio: "abbonamento", piano: {}, prezzo: PREZZO_ABBONAMENTO_CAMPO, produzione: "2026-10-05", uscita: "2026-10-05" });
-    expect(PREZZO_ABBONAMENTO_CAMPO).toBe("239,00");
+    const a = conServizio(conPiatti, "abbonamento");
+    expect(a).toMatchObject({
+      servizio: "abbonamento", piano: {}, produzione: "2026-10-05", uscita: "2026-10-05",
+      formula: "completo", fascia: "standard", nucleo: "singolo", prova: false, prezzo: "468,00",
+    });
     // un prezzo gia' scritto resta
     expect(conServizio({ ...base(), prezzo: "200" }, "abbonamento").prezzo).toBe("200");
     // tornando indietro il prezzo proposto sparisce, quello scritto no
-    expect(conServizio(abb, "menu-settimana").prezzo).toBe("");
-    expect(conServizio({ ...abb, prezzo: "200" }, "menu-settimana").prezzo).toBe("200");
-    expect(conInizio(abb, "2026-10-12")).toMatchObject({ produzione: "2026-10-12", uscita: "2026-10-12" });
+    expect(conServizio(a, "menu-settimana").prezzo).toBe("");
+    expect(conServizio({ ...a, prezzo: "200" }, "menu-settimana").prezzo).toBe("200");
+    expect(conInizio(a, "2026-10-12")).toMatchObject({ produzione: "2026-10-12", uscita: "2026-10-12" });
+  });
+
+  it("il prezzo proposto e' quello di calcolaPrezzo: formula, fascia, ritiro e nucleo", () => {
+    expect(prezzoProposto(abb())).toBe("468,00"); // 520 - 10% (ritiro)
+    expect(prezzoProposto({ ...abb(), modalita: "delivery" })).toBe("520,00");
+    expect(prezzoProposto({ ...abb(), modalita: "delivery", nucleo: "coppia" })).toBe("478,00"); // 520 - 8%
+    expect(prezzoProposto({ ...abb(), formula: "full7", fascia: "plus" })).toBe("851,00"); // 946 - 10%
+  });
+
+  it("cambiando formula, fascia, nucleo o modalita' il prezzo si riallinea, finche' Matteo non lo scrive lui", () => {
+    expect(conSceltaAbbonamento(abb(), { formula: "pranzo" }).prezzo).toBe("156,00"); // 173 - 10% = 155,70
+    expect(conSceltaAbbonamento(abb(), { fascia: "plus" }).prezzo).toBe("608,00"); // 676 - 10% = 608,40
+    expect(conSceltaAbbonamento(abb(), { nucleo: "coppia" }).prezzo).toBe("468,00"); // il ritiro (10%) batte la coppia (8%)
+    expect(conModalita(abb(), "delivery").prezzo).toBe("520,00");
+    // tutto insieme, e a mano si puo' anche scrivere "468" invece di "468,00": e' ancora la proposta
+    expect(conSceltaAbbonamento({ ...abb(), prezzo: "468" }, { formula: "leggero", fascia: "plus" }).prezzo).toBe("406,00"); // 451 - 10% = 405,90
+    // un prezzo scritto a mano non si tocca, e uno cancellato resta vuoto
+    expect(conSceltaAbbonamento({ ...abb(), prezzo: "500" }, { formula: "pranzo" }).prezzo).toBe("500");
+    expect(conSceltaAbbonamento({ ...abb(), prezzo: "" }, { formula: "pranzo" }).prezzo).toBe("");
+    // la scelta si salva anche se il prezzo non cambia
+    expect(conSceltaAbbonamento(abb(), { prova: true })).toMatchObject({ prova: true, prezzo: "468,00" });
+  });
+
+  it("fuori dall'abbonamento cambiare la modalita' non tocca il prezzo", () => {
+    const c = { ...base(), prezzo: "45" };
+    expect(conModalita(c, "delivery")).toMatchObject({ modalita: "delivery", prezzo: "45" });
+    expect(conModalita({ ...c, prezzo: "" }, "delivery").prezzo).toBe("");
   });
 
   it("non chiede piatti ne' porzioni; confermato vuole l'inizio", () => {
-    const abb = conServizio(base(), "abbonamento");
-    expect(erroriNuovoOrdine(abb)).toEqual({});
-    expect(porzioniOrdine(abb)).toBe(0);
-    expect(erroriNuovoOrdine({ ...abb, stato: "confirmed" }).date).toMatch(/inizio/);
-    expect(erroriNuovoOrdine(conInizio({ ...abb, stato: "confirmed" }, "2026-10-05"))).toEqual({});
+    const a = abb();
+    expect(erroriNuovoOrdine(a)).toEqual({});
+    expect(porzioniOrdine(a)).toBe(0);
+    expect(erroriNuovoOrdine({ ...a, stato: "confirmed" }).date).toMatch(/inizio/);
+    expect(erroriNuovoOrdine(conInizio({ ...a, stato: "confirmed" }, "2026-10-05"))).toEqual({});
   });
 
-  it("manda l'inizio in entrambe le date, senza piatti", () => {
-    const corpo = corpoNuovoOrdine(conInizio(conServizio(base(), "abbonamento"), "2026-10-05"));
+  it("controlla il prezzo e la consegna anche per l'abbonamento", () => {
+    expect(erroriNuovoOrdine({ ...abb(), prezzo: "tanto" }).prezzo).toMatch(/non valido/);
+    expect(erroriNuovoOrdine({ ...abb(), modalita: "delivery" })).toMatchObject({ comune: expect.any(String), indirizzo: expect.any(String) });
+  });
+
+  it("manda l'inizio in entrambe le date, la scelta della formula e il prezzo, senza piatti", () => {
+    const scelto = conSceltaAbbonamento(abb(), { formula: "full6", fascia: "plus", nucleo: "coppia", prova: true });
+    const corpo = corpoNuovoOrdine(conInizio(scelto, "2026-10-05"));
     expect(corpo).toMatchObject({
-      service: "abbonamento", plan: {}, productionDate: "2026-10-05", fulfillmentDate: "2026-10-05", priceCents: 23900,
+      service: "abbonamento", plan: {}, productionDate: "2026-10-05", fulfillmentDate: "2026-10-05",
+      subscription: { plan: "full6", tier: "plus", household: "coppia", trial: true },
+      priceCents: 73000, // 811 - 10% (ritiro) = 729,90
     });
     expect(corpo).not.toHaveProperty("meals");
+    // Matteo puo' scrivere un altro prezzo, e quello parte
+    expect(corpoNuovoOrdine({ ...scelto, prezzo: "700,50" }).priceCents).toBe(70050);
+    // senza prezzo parte null: nessun prezzo, non quello proposto di nascosto
+    expect(corpoNuovoOrdine({ ...scelto, prezzo: "" }).priceCents).toBeNull();
+  });
+
+  it("gli altri servizi non mandano nessuna formula", () => {
+    expect(corpoNuovoOrdine({ ...base(), piano: riempiCaselle({}, pollo.id, 1, "lun").piano })).not.toHaveProperty("subscription");
+  });
+
+  it("scegliere l'abbonamento non e' toccare il modulo, ma cambiare formula, prova o prezzo si'", () => {
+    const vuoto = () => conServizio(campiVuoti("senza-account"), "abbonamento");
+    // il prezzo proposto non l'ha scritto Matteo
+    expect(moduloToccato(vuoto())).toBe(false);
+    expect(moduloToccato(conSceltaAbbonamento(vuoto(), { formula: "full7" }))).toBe(true);
+    expect(moduloToccato(conSceltaAbbonamento(vuoto(), { prova: true }))).toBe(true);
+    expect(moduloToccato({ ...vuoto(), prezzo: "200" })).toBe(true);
+    expect(moduloToccato({ ...vuoto(), prezzo: "468" })).toBe(false); // e' ancora la proposta
+    expect(moduloToccato({ ...vuoto(), prezzo: "" })).toBe(true); // l'ha cancellato lui
   });
 });

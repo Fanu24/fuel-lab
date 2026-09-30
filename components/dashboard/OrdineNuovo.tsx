@@ -11,22 +11,27 @@
    ordine (?id=...). La logica sta in lib/ordine-manuale.ts, le regole vere
    le rifa' il server (POST /api/admin/orders).
 
-   L'abbonamento mensile non ha piatti: al posto della griglia c'e' la data
-   d'inizio (con il periodo di un mese che ne discende) e il prezzo parte da
-   quello dell'abbonamento. */
+   L'abbonamento mensile non ha piatti: al posto della griglia ci sono la
+   formula (una delle cinque, la fascia, chi si abbona, la settimana di prova)
+   e la data d'inizio, con le consegne che ne discendono (una ogni 3 giorni).
+   Il prezzo parte da quello che calcolaPrezzo propone per la scelta, si
+   riallinea quando la scelta cambia finche' Matteo non lo scrive lui, e resta
+   modificabile. */
 
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type FormEvent, type MouseEvent, type ReactNode, type SyntheticEvent } from "react";
-import { periodoAbbonamento, pranziNelPeriodo } from "@/lib/abbonamento";
+import { etichettaFormula, NOMI_NUCLEO } from "@/lib/abbonamento";
 import { adminApi, ApiError, ETICHETTE_SERVIZIO, euro, type ClienteAdmin, type Modalita, type Servizio } from "@/lib/api";
 import { chiusuraDi } from "@/lib/impostazioni";
 import { leggiEuro, plurale, scorciatoieDate } from "@/lib/operazioni";
-import { isData } from "@/lib/produzione";
+import { calendarioAbbonamento, isData } from "@/lib/produzione";
 import { useImpostazioni } from "@/components/impostazioni/useImpostazioni";
 import {
   campiVuoti,
   conCliente,
   conInizio,
+  conModalita,
+  conSceltaAbbonamento,
   conServizio,
   corpoNuovoOrdine,
   erroriNuovoOrdine,
@@ -38,6 +43,7 @@ import {
   type CampoNuovoOrdine,
   type ModoCliente,
 } from "@/lib/ordine-manuale";
+import { CalendarioConsegne, PrezzoProposto, ScelteAbbonamento } from "./OrdineAbbonamento";
 import { Icona } from "./PannelloIcone";
 import { usePannello } from "./PannelloDati";
 import OrdineNuovoCliente from "./OrdineNuovoCliente";
@@ -147,7 +153,9 @@ export default function OrdineNuovo({ onChiudi, onSalvato }: { onChiudi: () => v
   const abbonamento = campi.servizio === "abbonamento";
   // L'abbonamento ha una data sola: l'inizio, scritta in entrambe le date.
   const inizio = campi.uscita || campi.produzione;
-  const periodo = abbonamento && isData(inizio) ? periodoAbbonamento(inizio) : null;
+  const inizioValido = abbonamento && isData(inizio) ? inizio : null;
+  const calendario = inizioValido ? calendarioAbbonamento(campi.formula, inizioValido) : null;
+  const nomeFormula = etichettaFormula(campi.formula, campi.fascia);
 
   // Apertura modale, focus sul titolo; alla chiusura il focus torna da dove era partito.
   useEffect(() => {
@@ -268,7 +276,10 @@ export default function OrdineNuovo({ onChiudi, onSalvato }: { onChiudi: () => v
                   { id: "pickup", label: "Ritiro" },
                   { id: "delivery", label: "Consegna a domicilio" },
                 ]}
-                onScegli={(m) => cambia({ modalita: m })}
+                onScegli={(m) => {
+                  setCampi((c) => conModalita(c, m));
+                  setErroreServer("");
+                }}
               />
               <div className="pn-due-campi">
                 <Campo id="nuovo-comune" etichetta={ritiro ? "Comune (facoltativo)" : "Comune"} errore={errori.comune}>
@@ -299,11 +310,25 @@ export default function OrdineNuovo({ onChiudi, onSalvato }: { onChiudi: () => v
                 }}
                 aiuto={
                   abbonamento
-                    ? "Tutti i pranzi dal lunedì al venerdì per un mese, sulla scheda del cliente: niente piatti da scegliere. La scheda si scrive nelle note, più in basso."
+                    ? "Un mese di pasti con una consegna (o un ritiro) ogni 3 giorni, sulla scheda del cliente: niente piatti da scegliere. La scheda si scrive nelle note, più in basso."
                     : undefined
                 }
               />
             </section>
+
+            {abbonamento ? (
+              <section aria-labelledby="nuovo-formula-titolo" className="grid gap-4">
+                <h3 id="nuovo-formula-titolo" className="pn-h3 mb-0">Formula dell’abbonamento</h3>
+                <ScelteAbbonamento
+                  prefisso="nuovo"
+                  valore={campi}
+                  onCambia={(cambio) => {
+                    setCampi((c) => conSceltaAbbonamento(c, cambio));
+                    setErroreServer("");
+                  }}
+                />
+              </section>
+            ) : null}
 
             {abbonamento ? null : (
               <OrdineNuovoPiatti
@@ -331,7 +356,7 @@ export default function OrdineNuovo({ onChiudi, onSalvato }: { onChiudi: () => v
                 aiuto={
                   abbonamento
                     ? campi.stato === "confirmed"
-                      ? "I pranzi vanno in cucina ogni giorno feriale del periodo: serve l’inizio."
+                      ? "Le consegne partono dall’inizio, una ogni 3 giorni: serve l’inizio."
                       : "Resta fra le richieste da confermare, come quelle dal sito. L’inizio è facoltativo."
                     : campi.stato === "confirmed"
                       ? "Va dritto nel calendario della cucina: servono le due date."
@@ -342,7 +367,7 @@ export default function OrdineNuovo({ onChiudi, onSalvato }: { onChiudi: () => v
                 <legend className="pn-legenda">{abbonamento ? "Inizio" : "Date"}</legend>
                 <p className="pn-aiuto -mt-1">
                   {abbonamento
-                    ? "L’abbonamento vale un mese dall’inizio."
+                    ? "L’abbonamento vale un mese dall’inizio, con una consegna o un ritiro ogni 3 giorni."
                     : `Un tocco imposta cucina e ${ritiro ? "ritiro" : "consegna"} nello stesso giorno.`}
                 </p>
                 <div className="pn-scelte" role="group" aria-label={abbonamento ? "Inizio: oggi, domani o dopodomani" : "Cucina e uscita: oggi, domani o dopodomani"}>
@@ -376,16 +401,13 @@ export default function OrdineNuovo({ onChiudi, onSalvato }: { onChiudi: () => v
                         aria-describedby={[idErroreDate, "nuovo-periodo"].filter(Boolean).join(" ")}
                       />
                     </div>
-                    <p id="nuovo-periodo" className="text-[16px]" aria-live="polite">
-                      {periodo ? (
-                        <>
-                          Dal <strong>{giornoLungo(periodo.dal)}</strong> al <strong>{giornoLungo(periodo.al)}</strong> ·{" "}
-                          <span className="num">{pranziNelPeriodo(periodo)}</span> pranzi dal lunedì al venerdì
-                        </>
-                      ) : (
-                        "Scegli l’inizio: il periodo si calcola da solo."
-                      )}
-                    </p>
+                    {inizioValido ? (
+                      <CalendarioConsegne id="nuovo-periodo" formula={campi.formula} inizio={inizioValido} oggi={oggi} />
+                    ) : (
+                      <p id="nuovo-periodo" className="text-[16px]" aria-live="polite">
+                        Scegli l’inizio: il periodo e le consegne si calcolano da soli.
+                      </p>
+                    )}
                   </>
                 ) : (
                   <div className="pn-due-campi">
@@ -441,7 +463,7 @@ export default function OrdineNuovo({ onChiudi, onSalvato }: { onChiudi: () => v
                   ) : (
                     <p id="nuovo-prezzo-aiuto" className="pn-aiuto">
                       {abbonamento
-                        ? "Il prezzo del mese, già scritto: cambialo solo se avete concordato altro."
+                        ? "Il prezzo del mese, in euro con la virgola. Lo vede anche il cliente."
                         : "In euro, con la virgola. Facoltativo: puoi scriverlo anche dopo."}
                     </p>
                   )}
@@ -457,6 +479,9 @@ export default function OrdineNuovo({ onChiudi, onSalvato }: { onChiudi: () => v
                   {campi.pagato ? "Già pagato" : "Non ancora pagato"}
                 </button>
               </div>
+              {abbonamento ? (
+                <PrezzoProposto scelta={campi} ritiro={ritiro} totaleAttuale={centesimi} onUsa={(testo) => cambia({ prezzo: testo })} />
+              ) : null}
             </section>
 
             <section aria-labelledby="nuovo-note-titolo" className="grid gap-4">
@@ -512,8 +537,11 @@ export default function OrdineNuovo({ onChiudi, onSalvato }: { onChiudi: () => v
                     : [campi.indirizzo.trim(), campi.comune.trim()].filter(Boolean).join(", ") || "Indirizzo da scrivere"}
                 </Riga>
                 {abbonamento ? (
-                  <Riga etichetta="Periodo">
-                    {periodo ? `Dal ${giornoLungo(periodo.dal)} al ${giornoLungo(periodo.al)}` : "Inizio da fissare"}
+                  <Riga etichetta="Formula">
+                    {nomeFormula}
+                    <span className="block text-[14px] text-muted">
+                      {[NOMI_NUCLEO[campi.nucleo], campi.prova ? "con la settimana di prova" : "senza settimana di prova"].join(" · ")}
+                    </span>
                   </Riga>
                 ) : (
                   <Riga etichetta="Date">
@@ -521,9 +549,23 @@ export default function OrdineNuovo({ onChiudi, onSalvato }: { onChiudi: () => v
                   </Riga>
                 )}
                 <Riga etichetta="Stato">{campi.stato === "confirmed" ? "Già confermato" : "Da confermare"}</Riga>
-                <Riga etichetta={abbonamento ? "Pranzi" : "Piatti"}>
+                {abbonamento ? (
+                  <Riga etichetta="Periodo">
+                    {calendario ? (
+                      <>
+                        {`Dal ${giornoLungo(calendario.dal)} al ${giornoLungo(calendario.al)}`}
+                        <span className="block text-[14px] text-muted">
+                          {calendario.pasti} pasti in {calendario.consegne.length} consegne, una ogni 3 giorni
+                        </span>
+                      </>
+                    ) : (
+                      "Inizio da fissare"
+                    )}
+                  </Riga>
+                ) : null}
+                <Riga etichetta={abbonamento ? "Pasti" : "Piatti"}>
                   {abbonamento ? (
-                    "Dal lunedì al venerdì, sulla scheda del cliente"
+                    "Sulla scheda del cliente: li scegli tu"
                   ) : piatti.length ? (
                     <ul>
                       {piatti.map((p) => (
@@ -560,7 +602,7 @@ export default function OrdineNuovo({ onChiudi, onSalvato }: { onChiudi: () => v
             ) : null}
             <p className="flex flex-wrap items-baseline gap-x-3 text-[15px]">
               <strong className="num text-[18px]">
-                {abbonamento ? ETICHETTE_SERVIZIO.abbonamento : plurale(porzioni, "porzione", "porzioni")}
+                {abbonamento ? `Abbonamento ${nomeFormula}` : plurale(porzioni, "porzione", "porzioni")}
               </strong>
               <span className="text-muted">
                 {abbonamento ? "Inizio" : ritiro ? "Ritiro" : "Consegna"} {giorno(inizio || null, "da fissare")}

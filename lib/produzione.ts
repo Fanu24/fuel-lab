@@ -7,7 +7,20 @@
  * sbagliato, il posto dove cercare e' questo file.
  */
 
-import { eFeriale, nelPeriodo } from "@/lib/abbonamento";
+import {
+  NOMI_NUCLEO,
+  NOMI_PASTO_ABB,
+  consegneAbbonamento,
+  eGiornoDiConsegna,
+  etichettaFormula,
+  formulaDi,
+  pastiDelBlocco,
+  pastiNelPeriodo,
+  periodoAbbonamento,
+  type FormulaId,
+  type PastoAbb,
+  type PastoDelBlocco,
+} from "@/lib/abbonamento";
 import {
   ETICHETTE_ARGOMENTO,
   daSqlite,
@@ -34,7 +47,9 @@ export function oggiRoma(adesso: Date = new Date()): string {
 }
 
 export function isData(s: string | null | undefined): s is string {
-  if (!s || !/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+  // Anni dal 2000 al 2100: un "0002-10-05" che il campo data emette mentre si digita l'anno e' un errore di
+  // battitura, non un ordine, e fa lanciare il calendario degli abbonamenti (Date non conosce l'anno 2 a 4 cifre).
+  if (!s || !/^\d{4}-\d{2}-\d{2}$/.test(s) || s < "2000-01-01" || s > "2100-12-31") return false;
   const d = new Date(`${s}T12:00:00Z`);
   return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s;
 }
@@ -93,9 +108,9 @@ function perUscita(a: Ordine, b: Ordine) {
 }
 
 /**
- * Gli ordini da cucinare in un giorno. Gli abbonamenti restano fuori: le loro
- * date sono l'inizio del mese, non un giorno di cucina, e i loro pranzi
- * arrivano da abbonamentiDelGiorno.
+ * Gli ordini da cucinare in un giorno. Gli abbonamenti restano fuori: la loro
+ * data e' l'inizio del periodo, non un giorno di cucina, e i loro pasti
+ * arrivano dai giorni di consegna (abbonamentiDelGiorno).
  */
 export function ordiniDelGiorno(ordini: Ordine[], giorno: string, anchePronti = false): Ordine[] {
   return ordini.filter((o) => !eAbbonamento(o) && o.production_date === giorno && entraInCucina(o, anchePronti)).sort(perUscita);
@@ -119,6 +134,38 @@ export function giorniConOrdini(ordini: Ordine[], daGiorno: string, anchePronti 
   return [...mappa.values()].sort((a, b) => a.giorno.localeCompare(b.giorno));
 }
 
+export type GiornoDaPreparare = {
+  giorno: string;
+  ordini: number;
+  /** Quanti abbonamenti hanno una consegna quel giorno. */
+  abbonamenti: number;
+  /** Le porzioni degli ordini piu' i pasti delle consegne degli abbonamenti. */
+  porzioni: number;
+};
+
+/**
+ * I giorni con qualcosa da preparare a partire da `daGiorno` (compreso), per
+ * `orizzonte` giorni: gli ordini con quel giorno di cucina e le consegne
+ * degli abbonamenti, che sono una ogni 3 giorni e portano i pasti di tre.
+ */
+export function giorniDaPreparare(ordini: Ordine[], daGiorno: string, anchePronti = false, orizzonte = 14): GiornoDaPreparare[] {
+  const mappa = new Map<string, GiornoDaPreparare>(
+    giorniConOrdini(ordini, daGiorno, anchePronti)
+      .filter((g) => g.giorno < spostaGiorni(daGiorno, orizzonte))
+      .map((g) => [g.giorno, { ...g, abbonamenti: 0 }]),
+  );
+  for (let i = 0; i < orizzonte; i++) {
+    const giorno = spostaGiorni(daGiorno, i);
+    const abbonamenti = abbonamentiDelGiorno(ordini, giorno);
+    if (!abbonamenti.length) continue;
+    const r = mappa.get(giorno) ?? { giorno, ordini: 0, abbonamenti: 0, porzioni: 0 };
+    r.abbonamenti = abbonamenti.length;
+    r.porzioni += contaPastiAbbonamenti(abbonamenti, giorno);
+    mappa.set(giorno, r);
+  }
+  return [...mappa.values()].sort((a, b) => a.giorno.localeCompare(b.giorno));
+}
+
 /** Ordini gia' confermati a cui manca ancora il giorno di cucina: non comparirebbero mai qui. */
 export function confermatiSenzaGiorno(ordini: Ordine[]): Ordine[] {
   return ordini.filter((o) => STATI_CUCINA.includes(o.status) && !o.production_date);
@@ -126,7 +173,7 @@ export function confermatiSenzaGiorno(ordini: Ordine[]): Ordine[] {
 
 /**
  * Il giorno che la Cucina apre da sola: oggi se oggi c'e' qualcosa da
- * preparare (ordini o pranzi in abbonamento), altrimenti il primo giorno di
+ * preparare (ordini o consegne di abbonamento), altrimenti il primo giorno di
  * cucina da oggi in poi, cioe' oggi stesso se Matteo non e' chiuso.
  */
 export function giornoPredefinito(ordini: Ordine[], oggi: string, chiusure: readonly Chiusura[] = []): string {
@@ -136,43 +183,200 @@ export function giornoPredefinito(ordini: Ordine[], oggi: string, chiusure: read
 
 /* ---------- Abbonamenti ---------- */
 
+/*
+   Come lavora Matteo con un abbonamento: ogni 3 giorni dall'inizio c'e' una
+   consegna (o un ritiro), e in quel giorno cucina e porta i pasti dei tre
+   giorni che la consegna copre (colazioni, pranzi e cene della formula, nei
+   soli giorni coperti e dentro il periodo). Il calendario vero e' in
+   lib/abbonamento.ts; qui si leggono gli ordini del pannello con quelle
+   regole: quali abbonamenti hanno una consegna in un giorno, cosa portano,
+   quali piatti il cliente ha indicato per quei pasti.
+*/
+
 export const eAbbonamento = (o: Pick<Ordine, "service">) => o.service === "abbonamento";
 
-/** Gli stati in cui un abbonamento e' in corso: i suoi pranzi vanno in cucina ogni giorno feriale del periodo. */
+/** Gli stati in cui un abbonamento e' in corso: consegna e cucina seguono il calendario. */
 export const STATI_ABBONAMENTO_ATTIVO: readonly StatoOrdine[] = ["confirmed", "preparing", "ready"];
 
 /**
- * Gli abbonamenti che hanno un pranzo in `giorno`: confermati (o in
- * preparazione, o pronti), con il periodo che comprende `giorno`, e `giorno`
- * dal lunedi' al venerdi'. Il periodo parte dalla data di ritiro o consegna
- * confermata da Matteo e dura un mese (lib/abbonamento.ts). Per nome.
+ * L'inizio di un abbonamento in corso, o null: serve lo stato attivo e una
+ * data di ritiro o consegna valida (fulfillment_date), che Matteo scrive
+ * confermando. Senza inizio non c'e' un calendario e non si consegna niente.
  */
-export function abbonamentiDelGiorno(ordini: Ordine[], giorno: string): Ordine[] {
-  if (!isData(giorno) || !eFeriale(giorno)) return [];
-  return ordini
-    .filter((o) => eAbbonamento(o) && STATI_ABBONAMENTO_ATTIVO.includes(o.status) && isData(o.fulfillment_date) && nelPeriodo(o.fulfillment_date, giorno))
-    .sort((a, b) => a.customer_name.localeCompare(b.customer_name, "it") || a.id.localeCompare(b.id));
+export function inizioAbbonamento(o: Pick<Ordine, "service" | "status" | "fulfillment_date">): string | null {
+  return eAbbonamento(o) && STATI_ABBONAMENTO_ATTIVO.includes(o.status) && isData(o.fulfillment_date) ? o.fulfillment_date : null;
 }
 
-/** Il piatto che il cliente ha indicato per il pranzo di quel giorno della settimana, se c'e'. */
-export function pranzoInAbbonamento(o: Pick<Ordine, "items">, giorno: string): VoceOrdine | null {
-  const g = giornoDelPiano(giorno);
-  return o.items.find((v) => v.day === g && v.meal === "pranzo") ?? null;
+export type ConsegnaAbbonamento = {
+  /** Il giorno della consegna o del ritiro. */
+  giorno: string;
+  /** I pasti che porta, in ordine di calendario. Mai vuoti: una consegna senza pasti non si fa. */
+  pasti: PastoDelBlocco[];
+  /** L'ultimo giorno con un pasto in questa consegna. */
+  fino: string;
+  /** Quale consegna del periodo e', da 1. */
+  numero: number;
+  /** Quante consegne ha in tutto il periodo. */
+  totale: number;
+};
+
+/**
+ * La consegna che un abbonamento ha in `giorno`, o null se quel giorno non
+ * consegna: non e' in corso, non e' ancora iniziato o e' finito, non e' un
+ * giorno di consegna (una ogni 3 giorni) o non porterebbe nessun pasto.
+ * Gli ordini vecchi, senza formula, valgono Pranzo.
+ */
+export function consegnaDelGiorno(o: Ordine, giorno: string): ConsegnaAbbonamento | null {
+  const inizio = inizioAbbonamento(o);
+  if (!inizio || !isData(giorno)) return null;
+  const formula = formulaDi(o);
+  if (!eGiornoDiConsegna(formula, inizio, giorno)) return null;
+  const pasti = pastiDelBlocco(formula, inizio, giorno);
+  const consegne = consegneAbbonamento(formula, inizio);
+  return { giorno, pasti, fino: pasti[pasti.length - 1].data, numero: consegne.indexOf(giorno) + 1, totale: consegne.length };
 }
 
 /**
- * Gli abbonamenti del giorno come ordini da una porzione: il pranzo indicato
- * dal cliente, se c'e', o nessuna voce. Servono a contare piatti, spesa e
- * allergeni insieme agli ordini: un pranzo senza piatto indicato non ha una
- * ricetta da moltiplicare e resta fuori da quei conti.
+ * Gli abbonamenti che consegnano (o hanno il ritiro) in `giorno`, per nome.
+ * Sono loro, non tutti gli abbonamenti in corso, a comparire in cucina e
+ * nelle uscite di quel giorno.
  */
-export function pranziComeOrdini(abbonamenti: Ordine[], giorno: string): Ordine[] {
+export function abbonamentiDelGiorno(ordini: Ordine[], giorno: string): Ordine[] {
+  return ordini
+    .filter((o) => consegnaDelGiorno(o, giorno))
+    .sort((a, b) => a.customer_name.localeCompare(b.customer_name, "it") || a.id.localeCompare(b.id));
+}
+
+/** I pasti che un abbonamento porta in `giorno` (vuoto se non consegna). */
+export function pastiConsegnati(o: Ordine, giorno: string): PastoDelBlocco[] {
+  return consegnaDelGiorno(o, giorno)?.pasti ?? [];
+}
+
+/**
+ * Il piatto che il cliente ha indicato nella richiesta per quel giorno della
+ * settimana e quel pasto, se c'e'. Vale come indicazione ogni volta che quel
+ * giorno della settimana ricorre: non e' una data. Il compositore ha solo
+ * pranzo e cena, quindi la colazione non ha mai un piatto indicato.
+ */
+export function vocePasto(o: Pick<Ordine, "items">, data: string, pasto: string): VoceOrdine | null {
+  const g = giornoDelPiano(data);
+  return o.items.find((v) => v.day === g && v.meal === pasto) ?? null;
+}
+
+export type PastoInConsegna = PastoDelBlocco & {
+  /** Il piatto indicato dal cliente per quel giorno della settimana e quel pasto, se c'e'. */
+  voce: VoceOrdine | null;
+  /** "Sabato · pranzo"; con la data ("Sabato 3/10 · pranzo") quando la consegna copre piu' di un giorno. */
+  quando: string;
+};
+
+/**
+ * "Sabato · pranzo", o "Sabato 3/10 · pranzo" quando la consegna copre piu' di
+ * un giorno. `breve` abbrevia il giorno ("Sab 3/10 · pranzo") per le etichette
+ * adesive, dove ogni riga in piu' non ci sta.
+ */
+function quandoPasto({ data, pasto }: PastoDelBlocco, conData: boolean, breve = false): string {
+  const nome = NOMI_GIORNO[giornoDelPiano(data)];
+  const giorno = breve ? nome.slice(0, 3) : nome;
+  return `${giorno}${conData ? ` ${Number(data.slice(8, 10))}/${Number(data.slice(5, 7))}` : ""} · ${pasto}`;
+}
+
+/** I pasti di una consegna, ciascuno con il suo piatto indicato e la sua data. */
+export function pastiInConsegna(o: Ordine, giorno: string): PastoInConsegna[] {
+  const pasti = pastiConsegnati(o, giorno);
+  const piuGiorni = new Set(pasti.map((p) => p.data)).size > 1;
+  return pasti.map((p) => ({ ...p, voce: vocePasto(o, p.data, p.pasto), quando: quandoPasto(p, piuGiorni) }));
+}
+
+/** I pasti di una consegna divisi per giorno coperto, ciascuno con il suo piatto indicato: per leggerla giorno per giorno. */
+export function pastiInConsegnaPerGiorno(o: Ordine, giorno: string): { data: string; pasti: PastoInConsegna[] }[] {
+  const giorni: { data: string; pasti: PastoInConsegna[] }[] = [];
+  for (const p of pastiInConsegna(o, giorno)) {
+    const ultimo = giorni[giorni.length - 1];
+    if (ultimo?.data === p.data) ultimo.pasti.push(p);
+    else giorni.push({ data: p.data, pasti: [p] });
+  }
+  return giorni;
+}
+
+/** Quanti pasti portano in tutto le consegne del giorno: sono le porzioni degli abbonamenti. */
+export function contaPastiAbbonamenti(abbonamenti: Ordine[], giorno: string): number {
+  return abbonamenti.reduce((n, o) => n + pastiConsegnati(o, giorno).length, 0);
+}
+
+/** Quanti di quei pasti non hanno un piatto indicato: la ricetta la sceglie Matteo, non c'e' niente da moltiplicare. */
+export function pastiDaComporre(abbonamenti: Ordine[], giorno: string): number {
+  return abbonamenti.reduce((n, o) => n + pastiInConsegna(o, giorno).filter((p) => !p.voce).length, 0);
+}
+
+/**
+ * Gli abbonamenti del giorno come ordini che portano solo i piatti indicati,
+ * uno per ogni pasto della consegna che ne ha uno. Servono a contare piatti,
+ * extra, spesa e allergeni insieme agli ordini; `meals` e' il numero dei pasti
+ * della consegna, indicati o no. Un pasto senza piatto non ha una ricetta da
+ * moltiplicare e resta fuori da quei conti.
+ */
+export function pastiComeOrdini(abbonamenti: Ordine[], giorno: string): Ordine[] {
   return abbonamenti.map((o) => {
-    const voce = pranzoInAbbonamento(o, giorno);
-    return { ...o, items: voce ? [voce] : [], meals: 1 };
+    const pasti = pastiInConsegna(o, giorno);
+    return { ...o, items: pasti.flatMap((p) => (p.voce ? [p.voce] : [])), meals: pasti.length };
   });
 }
 
+/** Le colazioni, i pranzi e le cene di una consegna a parole: "3 pranzi", "9 pasti: 3 colazioni, 3 pranzi, 3 cene". */
+export function frasePasti(pasti: readonly PastoDelBlocco[]): string {
+  const NOMI: Record<PastoAbb, [string, string]> = { colazione: ["colazione", "colazioni"], pranzo: ["pranzo", "pranzi"], cena: ["cena", "cene"] };
+  const conti = (Object.keys(NOMI) as PastoAbb[])
+    .map((p) => [p, pasti.filter((x) => x.pasto === p).length] as const)
+    .filter(([, n]) => n > 0)
+    .map(([p, n]) => `${n} ${NOMI[p][n === 1 ? 0 : 1]}`);
+  if (conti.length === 0) return "nessun pasto";
+  return conti.length === 1 ? conti[0] : `${pasti.length} pasti: ${conti.join(", ")}`;
+}
+
+/** I pasti di una consegna raggruppati per giorno, in ordine di calendario: "sab: colazione, pranzo, cena". */
+export function pastiPerGiorno(pasti: readonly PastoDelBlocco[]): { data: string; pasti: PastoAbb[] }[] {
+  const giorni: { data: string; pasti: PastoAbb[] }[] = [];
+  for (const p of pasti) {
+    const ultimo = giorni[giorni.length - 1];
+    if (ultimo?.data === p.data) ultimo.pasti.push(p.pasto);
+    else giorni.push({ data: p.data, pasti: [p.pasto] });
+  }
+  return giorni;
+}
+
+/** "Completo · Plus": la formula e la fascia di un abbonamento, com'e' scritta nelle liste. Uno senza formula (vecchio) e' un Pranzo. */
+export function nomeAbbonamento(o: Pick<Ordine, "subscription">): string {
+  return etichettaFormula(formulaDi(o), o.subscription?.tier);
+}
+
+/** "Completo · Plus · in coppia · con la settimana di prova": tutta la scelta, per la scheda. */
+export function dettaglioAbbonamento(o: Pick<Ordine, "subscription">): string {
+  const s = o.subscription;
+  if (!s) return nomeAbbonamento(o);
+  return [nomeAbbonamento(o), NOMI_NUCLEO[s.household].toLowerCase(), s.trial ? "con la settimana di prova" : ""].filter(Boolean).join(" · ");
+}
+
+export type CalendarioAbbonamento = {
+  /** Il primo e l'ultimo giorno del periodo. */
+  dal: string;
+  al: string;
+  /** Quanti pasti copre tutto il periodo. */
+  pasti: number;
+  /** I giorni di consegna (o di ritiro): l'inizio e poi ogni 3 giorni, saltando quelle senza pasti. */
+  consegne: string[];
+};
+
+/** Il periodo di un abbonamento che parte da `inizio`, con i pasti che copre e le consegne che ha. */
+export function calendarioAbbonamento(formula: FormulaId, inizio: string): CalendarioAbbonamento {
+  const p = periodoAbbonamento(inizio);
+  return { ...p, pasti: pastiNelPeriodo(formula, p), consegne: consegneAbbonamento(formula, inizio) };
+}
+
+/** Quanti pasti copre il periodo di un abbonamento con l'inizio scritto; null senza inizio o per gli altri servizi. */
+export function pastiDelPeriodo(o: Pick<Ordine, "service" | "fulfillment_date" | "subscription">): number | null {
+  return eAbbonamento(o) && isData(o.fulfillment_date) ? pastiNelPeriodo(formulaDi(o), periodoAbbonamento(o.fulfillment_date)) : null;
+}
 
 /* ---------- Piatti, extra, allergeni ---------- */
 
@@ -399,8 +603,12 @@ export function listaSpesa(ordini: Ordine[]): ListaSpesa {
 
 /* ---------- Etichette ---------- */
 
-/** Il nome sull'etichetta di un pranzo in abbonamento senza piatto indicato dal cliente. */
-export const PRANZO_IN_ABBONAMENTO = "Pranzo in abbonamento";
+/** Il nome sull'etichetta di un pasto in abbonamento senza piatto indicato dal cliente. */
+export const PASTO_IN_ABBONAMENTO: Record<PastoAbb, string> = {
+  colazione: `${NOMI_PASTO_ABB.colazione} in abbonamento`,
+  pranzo: `${NOMI_PASTO_ABB.pranzo} in abbonamento`,
+  cena: `${NOMI_PASTO_ABB.cena} in abbonamento`,
+};
 
 export type Etichetta = {
   chiave: string;
@@ -448,23 +656,27 @@ export function etichette(ordini: Ordine[]): Etichetta[] {
 }
 
 /**
- * Una etichetta per ogni pranzo in abbonamento del giorno: il piatto indicato
- * dal cliente per quel giorno della settimana, oppure "Pranzo in abbonamento"
- * (e allergeni da verificare, perche' il piatto lo decide Matteo sulla scheda).
+ * Una etichetta per ogni pasto che le consegne in abbonamento del giorno
+ * portano (una consegna copre tre giorni: 9 etichette per un Full 7): il
+ * piatto indicato dal cliente per quel giorno e quel pasto, oppure
+ * "Colazione/Pranzo/Cena in abbonamento" con gli allergeni da verificare,
+ * perche' il piatto lo decide Matteo sulla scheda. Cliente per cliente, i
+ * pasti in ordine di calendario.
  */
 export function etichetteAbbonamenti(abbonamenti: Ordine[], giorno: string): Etichetta[] {
-  const quando = `${NOMI_GIORNO[giornoDelPiano(giorno)]} · pranzo · abbonamento`;
-  return abbonamenti.map((o) => {
-    const voce = pranzoInAbbonamento(o, giorno);
-    return {
-      chiave: `${o.id}-abbonamento-${giorno}`,
+  return abbonamenti.flatMap((o) => {
+    const pasti = pastiInConsegna(o, giorno);
+    const piuGiorni = new Set(pasti.map((p) => p.data)).size > 1;
+    return pasti.map((p) => ({
+      chiave: `${o.id}-abbonamento-${p.data}-${p.pasto}`,
       ordineId: o.id,
       cliente: o.customer_name,
-      piatto: voce ? (getPiatto(voce.id)?.nome ?? voce.name) : PRANZO_IN_ABBONAMENTO,
-      quando,
-      extra: voce?.extras ?? [],
-      allergeni: voce ? allergeniVoce(voce) : null,
-    };
+      piatto: p.voce ? (getPiatto(p.voce.id)?.nome ?? p.voce.name) : PASTO_IN_ABBONAMENTO[p.pasto],
+      // Con la data sull'adesivo il giorno e' abbreviato: "Mer 14/10 · colazione · abbonamento" sta su una riga sola.
+      quando: `${quandoPasto(p, piuGiorni, piuGiorni)} · abbonamento`,
+      extra: p.voce?.extras ?? [],
+      allergeni: p.voce ? allergeniVoce(p.voce) : null,
+    }));
   });
 }
 

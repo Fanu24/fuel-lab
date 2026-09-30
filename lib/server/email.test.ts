@@ -71,40 +71,93 @@ describe("email", () => {
     expect(msg.text).toContain("Rispondi a questa email per scrivere direttamente a luca@example.com.");
   });
 
-  it("per l'abbonamento dice l'inizio desiderato, il prezzo proposto e la scheda", () => {
-    const abb: RichiestaPerEmail = { ...richiesta, service: "abbonamento", meals: 1, notes: "Pesi lun-mer-ven", price_cents: 23900,
-      items: [{ id: "c", name: "Manzo", day: "lun", meal: "pranzo", extras: [] }] };
+  it("per l'abbonamento dice formula, fascia, chi si abbona, la prova, il prezzo proposto e la scheda", () => {
+    const abb: RichiestaPerEmail = { ...richiesta, service: "abbonamento", meals: 0, notes: "Pesi lun-mer-ven", price_cents: 60800,
+      subscription: { plan: "completo", tier: "plus", household: "coppia", trial: true }, items: [] };
     const mail = emailNuovaRichiesta(abb);
-    expect(mail.subject).toBe("Nuova richiesta: Giulia <b>Rossi</b> · Abbonamento mensile");
+    expect(mail.subject).toBe("Nuova richiesta: Giulia <b>Rossi</b> · Abbonamento Completo · Plus");
+    expect(mail.text).toContain("Nuova richiesta di abbonamento dal sito");
     expect(mail.text).toContain("Servizio: Abbonamento mensile");
+    expect(mail.text).toContain("Formula: Completo · Plus");
+    expect(mail.text).toContain("Cosa chiede: 15 pasti a settimana, pranzo e cena");
+    expect(mail.text).toContain("Chi si abbona: In coppia");
+    expect(mail.text).toContain("Settimana di prova: Sì");
+    expect(mail.text).toContain("Prezzo proposto: € 608,00 al mese");
     expect(mail.text).toContain("Inizio desiderato: giovedì 1 ottobre 2026");
-    expect(mail.text).toContain("Prezzo proposto: 239 € al mese");
-    expect(mail.text).toContain("PRANZI INDICATI DAL CLIENTE");
     expect(mail.text).toContain("La scheda del cliente:");
     expect(mail.text).not.toContain("Pasti:");
+    // Niente piatti dal compositore: niente sezione dei pranzi, e niente "pranzi dal lunedi' al venerdi'".
+    expect(mail.text).not.toMatch(/PRANZI INDICATI|PIATTI INDICATI/);
+    expect(mail.text).not.toMatch(/lunedì al venerdì/);
+    expect(mail.text).not.toContain("239");
     expect(emailAnnullataDalCliente(abb).text).toContain("Inizio desiderato: giovedì 1 ottobre 2026");
+    expect(emailAnnullataDalCliente(abb).text).toContain("Formula: Completo · Plus");
+    expect(emailAnnullataDalCliente(abb).text).not.toContain("Cosa chiede");
   });
 
-  it("al cliente dell'abbonamento scrive il periodo, e chiama proposta il prezzo non ancora confermato", () => {
+  it("l'oggetto e le righe seguono la formula e la prova", () => {
+    const base: RichiestaPerEmail = { ...richiesta, service: "abbonamento", meals: 0, items: [], notes: "", price_cents: 17300 };
+    const pranzo = emailNuovaRichiesta({ ...base, subscription: { plan: "pranzo", tier: "standard", household: "singolo", trial: false } });
+    expect(pranzo.subject).toBe("Nuova richiesta: Giulia <b>Rossi</b> · Abbonamento Pranzo · Standard");
+    expect(pranzo.text).toContain("Cosa chiede: 5 pasti a settimana, solo il pranzo");
+    expect(pranzo.text).toContain("Chi si abbona: Da solo");
+    expect(pranzo.text).toContain("Settimana di prova: No");
+    expect(pranzo.text).toContain("Prezzo proposto: € 173,00 al mese");
+    const full = emailNuovaRichiesta({ ...base, price_cents: 72800, subscription: { plan: "full7", tier: "standard", household: "famiglia", trial: true } });
+    expect(full.subject).toContain("Abbonamento Full 7 · Standard");
+    expect(full.text).toContain("Cosa chiede: 21 pasti a settimana, tre al giorno");
+    expect(full.text).toContain("Chi si abbona: In famiglia");
+    // La prova e la formula arrivano anche nell'HTML.
+    expect(full.html).toContain("Full 7 · Standard");
+    expect(full.html).toContain("Settimana di prova");
+    // Nessun prezzo salvato: la riga non c'e' (non si inventa un numero).
+    expect(emailNuovaRichiesta({ ...base, price_cents: null, subscription: { plan: "full6", tier: "plus", household: "singolo", trial: true } }).text)
+      .not.toContain("Prezzo proposto");
+    // Con dei piatti allegati (un altro client) la sezione resta, con il nome giusto.
+    const conPiatti = emailNuovaRichiesta({ ...base, subscription: { plan: "leggero", tier: "standard", household: "singolo", trial: true },
+      items: [{ id: "c", name: "Manzo", day: "lun", meal: "pranzo", extras: [] }] });
+    expect(conPiatti.text).toContain("PIATTI INDICATI DAL CLIENTE");
+    // Un abbonamento vecchio, senza scelta salvata, e' un Pranzo e non porta righe inventate.
+    const vecchio = emailNuovaRichiesta({ ...base, subscription: null });
+    expect(vecchio.text).toContain("Formula: Pranzo");
+    expect(vecchio.text).not.toContain("Chi si abbona");
+    expect(vecchio.text).not.toContain("Settimana di prova");
+  });
+
+  it("al cliente dell'abbonamento nomina la formula, scrive il periodo e la consegna ogni 3 giorni, e chiama proposta il prezzo non ancora confermato", () => {
+    const sub = { plan: "completo", tier: "plus", household: "singolo", trial: true } as const;
+    const base = { service: "abbonamento" as const, subscription: sub, customer_name: "Giulia", fulfillment: "pickup" as const, fulfillment_date: null,
+      address: "", comune: "", customer_message: "", price_cents: null, paid: 0 as const };
     const confermato = emailAggiornamentoCliente({
-      service: "abbonamento", customer_name: "Giulia Rossi", status: "confirmed", fulfillment: "pickup", fulfillment_date: "2026-10-05",
-      address: "", comune: "Pescara", customer_message: "", price_cents: 23900, paid: 0,
+      ...base, customer_name: "Giulia Rossi", status: "confirmed", fulfillment_date: "2026-10-05", comune: "Pescara", price_cents: 60800,
     }, true);
     expect(confermato.subject).toBe("Aggiornamento FUEL LAB: abbonamento confermato");
-    expect(confermato.text).toContain("Matteo ha confermato il tuo abbonamento ai pranzi.");
-    expect(confermato.text).toContain("Periodo: dal lunedì 5 ottobre 2026 al mercoledì 4 novembre 2026, pranzi dal lunedì al venerdì");
-    expect(confermato.text).toContain("Totale concordato: € 239,00");
-    const concluso = emailAggiornamentoCliente({
-      service: "abbonamento", customer_name: "Giulia", status: "completed", fulfillment: "pickup", fulfillment_date: "2026-10-05",
-      address: "", comune: "", customer_message: "", price_cents: 23900, paid: 1,
+    expect(confermato.text).toContain("Matteo ha confermato il tuo abbonamento Completo · Plus.");
+    expect(confermato.text).toContain("Formula: Completo · Plus");
+    expect(confermato.text).toContain("Periodo: dal lunedì 5 ottobre 2026 al mercoledì 4 novembre 2026");
+    expect(confermato.text).toContain("Ritiro: ogni 3 giorni, a partire da lunedì 5 ottobre 2026");
+    expect(confermato.text).toContain("Totale concordato: € 608,00");
+    expect(confermato.text).not.toContain("al mese");
+    expect(confermato.text).not.toMatch(/lunedì al venerdì/);
+    const consegna = emailAggiornamentoCliente({
+      ...base, status: "confirmed", fulfillment: "delivery", fulfillment_date: "2026-10-05", address: "Via Roma 1", comune: "Pescara",
     }, true);
+    expect(consegna.text).toContain("Consegna: ogni 3 giorni, a partire da lunedì 5 ottobre 2026");
+    expect(consegna.text).toContain("Dove: Via Roma 1, Pescara");
+    const concluso = emailAggiornamentoCliente({ ...base, status: "completed", fulfillment_date: "2026-10-05", price_cents: 60800, paid: 1 }, true);
     expect(concluso.subject).toBe("Aggiornamento FUEL LAB: abbonamento concluso");
+    expect(concluso.text).toContain("Il tuo abbonamento Completo · Plus si è concluso. Grazie!");
     expect(concluso.text).toContain("Stato: Concluso");
-    const proposta = emailAggiornamentoCliente({
-      service: "abbonamento", customer_name: "Giulia", status: "requested", fulfillment: "pickup", fulfillment_date: null,
-      address: "", comune: "", customer_message: "Ci sentiamo domani", price_cents: 23900, paid: 0,
-    }, false);
-    expect(proposta.text).toContain("Prezzo proposto: € 239,00");
+    const proposta = emailAggiornamentoCliente({ ...base, status: "requested", customer_message: "Ci sentiamo domani", price_cents: 60800 }, false);
+    expect(proposta.text).toContain("Prezzo proposto: € 608,00 al mese");
+    expect(emailAggiornamentoCliente({ ...base, status: "requested" }, true).text)
+      .toContain("La tua richiesta di abbonamento Completo · Plus è in attesa di conferma");
+    // In corso, annullata: la formula c'e' sempre.
+    expect(emailAggiornamentoCliente({ ...base, status: "preparing" }, true).text).toContain("Il tuo abbonamento Completo · Plus è in corso.");
+    expect(emailAggiornamentoCliente({ ...base, status: "cancelled" }, true).text)
+      .toContain("La tua richiesta di abbonamento Completo · Plus è stata annullata.");
+    // Un abbonamento senza scelta salvata e' un Pranzo.
+    expect(emailAggiornamentoCliente({ ...base, subscription: null, status: "confirmed" }, true).text).toContain("il tuo abbonamento Pranzo.");
   });
 
   it("mantiene il testo dell'email di accesso", () => {

@@ -14,22 +14,40 @@ import {
 import { PIATTI } from "./catalogo";
 import { ETICHETTE_SERVIZIO } from "./api";
 import { SERVIZI } from "./servizi";
-import { CONSEGNA_GRATIS_DA } from "./pricing";
 import {
-  ABBONAMENTO_CONSEGNA_GRATIS,
+  BOX_DEL_GIORNO_TESTO,
+  CONSEGNA_OGNI_GIORNI,
+  DIETE,
+  FASCE,
+  FORMULE,
   LINK_RICHIEDI_ABBONAMENTO,
   LINK_SCRIVI_ABBONAMENTO,
-  PRANZI_AL_MESE_CIRCA,
-  PREZZO_ABBONAMENTO,
-  PREZZO_ABBONAMENTO_TESTO,
+  PREZZO_DA,
+  PREZZO_DA_TESTO,
+  PREZZO_FINO_A,
+  RAGGIO_CONSEGNA_KM,
+  etichettaFormula,
+  linkRichiediAbbonamento,
+  percorsoFormula,
 } from "./abbonamento";
-import { PAGINE, descrizionePiatto, paginaPiatto, titoloCompleto } from "@/components/seo/pagine";
+import {
+  AGGIORNAMENTO,
+  PAGINE,
+  PAGINE_FORMULE,
+  descrizionePiatto,
+  paginaFormula,
+  paginaPiatto,
+  titoloCompleto,
+} from "@/components/seo/pagine";
 import {
   ID,
   assoluto,
   descrizioneEstesa,
   grafoSito,
+  idFormula,
   nodiPagina,
+  nodoAbbonamenti,
+  nodoFormula,
   nodoMenu,
   nodoPiatto,
   nodoServizio,
@@ -41,6 +59,14 @@ import robots from "@/app/robots";
 import manifest from "@/app/manifest";
 
 const RADICE = path.resolve(__dirname, "..");
+
+/** Tutti i sorgenti (pagine, componenti, logica, Functions) di una cartella, test esclusi: le regole sui testi si scrivono qui apposta. */
+const sorgenti = (cartella: string): string[] =>
+  readdirSync(path.join(RADICE, cartella), { withFileTypes: true }).flatMap((voce) => {
+    const relativo = path.join(cartella, voce.name);
+    if (voce.isDirectory()) return sorgenti(relativo);
+    return /\.(ts|tsx)$/.test(voce.name) && !/\.test\.ts$/.test(voce.name) ? [relativo] : [];
+  });
 
 /** Tutti i valori "@id" definiti e tutti i riferimenti {"@id"} usati, a qualunque profondita'. */
 function raccogliId(nodo: unknown, definiti: Set<string>, riferiti: Set<string>) {
@@ -74,7 +100,7 @@ describe("dati dell'attivita'", () => {
 });
 
 describe("metadata delle pagine", () => {
-  const pagine = [...Object.values(PAGINE), ...PIATTI.map(paginaPiatto)];
+  const pagine = [...Object.values(PAGINE), ...PAGINE_FORMULE, ...PIATTI.map(paginaPiatto)];
 
   it.each(pagine.map((p) => [p.percorso, p]))("%s: titolo entro 60 e descrizione fra 140 e 155", (_, p) => {
     expect(titoloCompleto(p).length).toBeLessThanOrEqual(60);
@@ -98,6 +124,41 @@ describe("metadata delle pagine", () => {
     for (const p of Object.values(PAGINE)) {
       const file = p.percorso === "/" ? "app/(sito)/page.tsx" : `app/(sito)${p.percorso}/page.tsx`;
       expect(existsSync(path.join(RADICE, file)), file).toBe(true);
+    }
+  });
+
+  it("le cinque schede degli abbonamenti hanno titolo, descrizione e canonical di /abbonamento/<formula>", () => {
+    expect(PAGINE_FORMULE).toHaveLength(5);
+    for (const f of FORMULE) {
+      const p = paginaFormula(f.id);
+      expect(p.percorso).toBe(`/abbonamento/${f.id}`);
+      expect(p.percorso).toBe(percorsoFormula(f.id));
+      expect(p.breve).toBe(f.nome);
+      // Il nome, il prezzo Standard (il piu' basso della formula) e la citta' stanno gia' nel titolo.
+      expect(p.titolo).toContain(f.nome);
+      expect(p.titolo).toContain(`${f.prezzo.standard} €`);
+      expect(p.titolo).toContain("Pescara");
+      // La descrizione dice quanti pasti sono e quanto costa, in entrambe le fasce.
+      expect(p.descrizione).toContain(`${f.pastiSettimana} pasti a settimana`);
+      expect(p.descrizione).toContain(`${f.prezzo.standard} € al mese`);
+      expect(p.descrizione).toContain(`Plus ${f.prezzo.plus} €`);
+      expect(PAGINE_FORMULE.map((x) => x.percorso)).toContain(p.percorso);
+    }
+  });
+
+  it("l'elenco degli abbonamenti non parla piu' di un prezzo solo: dice 'da' e cita le cinque formule", () => {
+    const { titolo, descrizione } = PAGINE.abbonamento;
+    expect(titolo).toContain(`da ${PREZZO_DA_TESTO} al mese`);
+    expect(descrizione).toContain(`${PREZZO_DA_TESTO} al mese`);
+    expect(descrizione).toContain(`ogni ${CONSEGNA_OGNI_GIORNI} giorni`);
+    expect(PAGINE.servizi.descrizione).toContain(`${PREZZO_DA_TESTO} al mese`);
+  });
+
+  it("le schede degli abbonamenti hanno la loro pagina", () => {
+    // Una cartella per formula oppure una rotta dinamica [formula], con generateStaticParams.
+    for (const f of FORMULE) {
+      const file = [`app/(sito)/abbonamento/${f.id}/page.tsx`, "app/(sito)/abbonamento/[formula]/page.tsx"];
+      expect(file.some((x) => existsSync(path.join(RADICE, x))), f.id).toBe(true);
     }
   });
 
@@ -154,6 +215,80 @@ describe("dati strutturati", () => {
     for (const a of p.allergeni) expect(d).toContain(a);
   });
 
+  it("la scheda di una formula ha due offerte mensili, Standard e Plus, ai prezzi del volantino", () => {
+    for (const f of FORMULE) {
+      const nodo = nodoFormula(f.id);
+      expect(nodo["@type"]).toBe("Service");
+      expect(nodo["@id"]).toBe(idFormula(f.id));
+      expect(nodo.url).toBe(`${URL_SITO}/abbonamento/${f.id}`);
+      expect(nodo.provider).toEqual({ "@id": ID.cucina });
+      const offerte = nodo.offers as Nodo[];
+      expect(offerte).toHaveLength(2);
+      expect(offerte.map((o) => o.name)).toEqual([etichettaFormula(f.id, "standard"), etichettaFormula(f.id, "plus")]);
+      expect(offerte.map((o) => o.price)).toEqual([f.prezzo.standard, f.prezzo.plus]);
+      for (const o of offerte) {
+        expect(o["@type"]).toBe("Offer");
+        expect(o.priceCurrency).toBe("EUR");
+        expect(o.url).toBe(`${URL_SITO}/abbonamento/${f.id}`);
+        // Un prezzo fisso al mese, non una soglia "da X a pasto", e nessuna durata minima inventata.
+        const specifica = o.priceSpecification as Nodo;
+        expect(specifica["@type"]).toBe("UnitPriceSpecification");
+        expect(specifica.price).toBe(o.price);
+        expect(specifica.priceCurrency).toBe("EUR");
+        expect(specifica.unitText).toBe("mese");
+        expect(specifica.referenceQuantity).toEqual({ "@type": "QuantitativeValue", value: 1, unitCode: "MON" });
+        expect(specifica.minPrice).toBeUndefined();
+        expect(o.billingDuration).toBeUndefined();
+      }
+    }
+    // Il nome dell'offerta e' quello che si legge in pannello e nelle liste.
+    expect((nodoFormula("completo").offers as Nodo[])[1].name).toBe("Completo · Plus");
+  });
+
+  it("gli abbonamenti insieme: da 173 a 946 euro al mese, con le cinque formule nel catalogo", () => {
+    const nodo = nodoAbbonamenti();
+    expect(nodo["@type"]).toBe("Service");
+    expect(nodo["@id"]).toBe(ID.abbonamenti);
+    expect(nodo.url).toBe(`${URL_SITO}/abbonamento`);
+    expect(nodo.provider).toEqual({ "@id": ID.cucina });
+    const aggregata = nodo.offers as Nodo;
+    expect(aggregata["@type"]).toBe("AggregateOffer");
+    expect(aggregata.priceCurrency).toBe("EUR");
+    expect(aggregata.lowPrice).toBe(PREZZO_DA);
+    expect(aggregata.highPrice).toBe(PREZZO_FINO_A);
+    expect(aggregata.lowPrice).toBe(173);
+    expect(aggregata.highPrice).toBe(946);
+    expect(aggregata.offerCount).toBe(FORMULE.length * FASCE.length);
+
+    const catalogo = nodo.hasOfferCatalog as Nodo;
+    expect(catalogo["@type"]).toBe("OfferCatalog");
+    const voci = catalogo.itemListElement as Nodo[];
+    expect(voci.map((v) => v.url)).toEqual(FORMULE.map((f) => `${URL_SITO}/abbonamento/${f.id}`));
+    for (const [i, f] of FORMULE.entries()) {
+      const offerte = voci[i].itemListElement as Nodo[];
+      expect(offerte.map((o) => o.price)).toEqual([f.prezzo.standard, f.prezzo.plus]);
+      expect(offerte.every((o) => o.priceCurrency === "EUR")).toBe(true);
+    }
+    // Il prezzo minimo e massimo dell'aggregato sono davvero il minimo e il massimo delle offerte del catalogo.
+    const prezzi = voci.flatMap((v) => (v.itemListElement as Nodo[]).map((o) => o.price as number));
+    expect(Math.min(...prezzi)).toBe(aggregata.lowPrice);
+    expect(Math.max(...prezzi)).toBe(aggregata.highPrice);
+  });
+
+  it("i nodi degli abbonamenti non inventano niente e i loro riferimenti @id si risolvono", () => {
+    const nodi = [nodoAbbonamenti(), ...FORMULE.map((f) => nodoFormula(f.id))];
+    const testo = JSON.stringify(nodi);
+    for (const vietato of ["aggregateRating", "review", "telephone", "billingDuration", "geo", "openingHours"]) {
+      expect(testo).not.toContain(`"${vietato}`);
+    }
+    const definiti = new Set<string>();
+    const riferiti = new Set<string>();
+    raccogliId([...grafoSito(), ...nodi], definiti, riferiti);
+    for (const r of riferiti) expect(definiti.has(r), r).toBe(true);
+    // Sopravvivono alla serializzazione: il JSON-LD e' JSON valido.
+    expect(() => JSON.parse(serializzaJsonLd(nodi))).not.toThrow();
+  });
+
   it("le briciole partono dalla home e finiscono sulla pagina", () => {
     const [, briciole] = nodiPagina({
       percorso: "/menu/x",
@@ -182,6 +317,17 @@ describe("sitemap, robots e manifest", () => {
       expect(voce?.images).toEqual([`${URL_SITO}${p.img}`]);
     }
     expect(new Set(url).size).toBe(url.length);
+  });
+
+  it("la sitemap ha le cinque schede degli abbonamenti, con la data dell'ultima revisione", () => {
+    expect(AGGIORNAMENTO).toBe("2026-09-30");
+    for (const f of FORMULE) {
+      const voce = voci.find((v) => v.url === `${URL_SITO}/abbonamento/${f.id}`);
+      expect(voce, f.id).toBeDefined();
+      expect(voce?.lastModified).toBe(AGGIORNAMENTO);
+      expect(voce?.priority).toBeGreaterThan(0);
+      expect(voce?.priority).toBeLessThanOrEqual(1);
+    }
   });
 
   it("niente pagine private in sitemap, e robots le esclude", () => {
@@ -232,9 +378,35 @@ describe("public/llms.txt", () => {
     }
   });
 
-  it("abbonamento e chi siamo ci sono, con il prezzo di lib/abbonamento.ts", () => {
+  it("abbonamenti e chi siamo ci sono, con il prezzo 'da' di lib/abbonamento.ts e senza il vecchio prezzo unico", () => {
     for (const p of [PAGINE.abbonamento, PAGINE.chiSiamo]) expect(testo).toContain(`https://fuelchef.it${p.percorso})`);
-    expect(testo).toContain(`${PREZZO_ABBONAMENTO_TESTO} al mese`);
+    expect(testo).toContain(`${PREZZO_DA_TESTO} al mese`);
+    expect(testo).toContain(`${PREZZO_FINO_A} €`);
+    expect(testo).not.toMatch(/\b239\b/);
+  });
+
+  it("le cinque formule ci sono, ciascuna con la sua scheda, i pasti a settimana e i due prezzi", () => {
+    for (const f of FORMULE) {
+      const riga = testo.split("\n").find((r) => r.includes(`(https://fuelchef.it${percorsoFormula(f.id)})`));
+      expect(riga, f.id).toBeDefined();
+      expect(riga).toContain(`[Abbonamento ${f.nome}]`);
+      expect(riga).toContain(`${f.pastiSettimana} pasti a settimana`);
+      expect(riga).toContain(`${f.prezzo.standard} € al mese in fascia Standard`);
+      expect(riga).toContain(`${f.prezzo.plus} € in fascia Plus`);
+    }
+  });
+
+  it("dice degli abbonamenti quello che ha detto il committente: piano del nutrizionista, ogni 3 giorni, prova, sconti, diete, box", () => {
+    expect(testo).toContain("piano scritto dal suo nutrizionista");
+    expect(testo).toContain(`ogni ${CONSEGNA_OGNI_GIORNI} giorni`);
+    expect(testo).toContain(`fino a ${RAGGIO_CONSEGNA_KM} km`);
+    expect(testo).toContain("prima settimana è di prova, senza impegno");
+    expect(testo).toContain("10% con il ritiro in laboratorio, 8% in coppia, 10% in famiglia");
+    expect(testo).toContain(BOX_DEL_GIORNO_TESTO);
+    for (const d of DIETE) expect(testo).toContain(d);
+    // Nessun pagamento online e nessuna consegna gratuita inventata per gli abbonamenti.
+    expect(testo).toContain("Nessun pagamento online");
+    expect(testo).not.toMatch(/abbonament[^\n]*consegna gratuit|consegna gratuit[^\n]*abbonament/i);
   });
 });
 
@@ -260,13 +432,6 @@ describe("decisioni del committente", () => {
   });
 
   it("nemmeno il pannello, l'area cliente o le email parlano piu' dei due giorni fissi", () => {
-    // Tutti i sorgenti (pagine, componenti, logica, Functions), test esclusi: qui la regola e' scritta apposta.
-    const sorgenti = (cartella: string): string[] =>
-      readdirSync(path.join(RADICE, cartella), { withFileTypes: true }).flatMap((voce) => {
-        const relativo = path.join(cartella, voce.name);
-        if (voce.isDirectory()) return sorgenti(relativo);
-        return /\.(ts|tsx)$/.test(voce.name) && !/\.test\.ts$/.test(voce.name) ? [relativo] : [];
-      });
     const colpevoli = ["app", "components", "lib", "functions"]
       .flatMap(sorgenti)
       // Anche nei commenti, dove i giorni si scrivono con l'apostrofo ("lunedi' e giovedi'").
@@ -274,12 +439,15 @@ describe("decisioni del committente", () => {
     expect(colpevoli).toEqual([]);
   });
 
-  it("l'abbonamento e' il secondo servizio, con il prezzo al mese di lib/abbonamento.ts", () => {
+  it("gli abbonamenti sono il secondo servizio, 'da' il prezzo piu' basso di lib/abbonamento.ts", () => {
     expect(SERVIZI.map((s) => s.id)).toEqual(["menu-settimana", "abbonamento", "sui-tuoi-macro", "home-cooking"]);
     expect(SERVIZI.map((s) => s.numero)).toEqual(["01", "02", "03", "04"]);
-    expect(SERVIZI[1].prezzo).toEqual({ tipo: "mese", valore: PREZZO_ABBONAMENTO });
+    expect(SERVIZI[1].prezzo).toEqual({ tipo: "mese-da", valore: PREZZO_DA });
     expect(SERVIZI[1].href).toBe(PAGINE.abbonamento.percorso);
     expect(ETICHETTE_SERVIZIO.abbonamento).toBe("Abbonamento mensile");
+    // La descrizione cita le cinque formule per nome e la consegna ogni 3 giorni.
+    for (const f of FORMULE) expect(SERVIZI[1].descrizione).toContain(f.nome);
+    expect(SERVIZI[1].descrizione).toContain(`ogni ${CONSEGNA_OGNI_GIORNI} giorni`);
   });
 
   it("la vecchia pagina su Matteo non c'e' piu' e reindirizza in modo permanente a /chi-siamo", () => {
@@ -302,36 +470,39 @@ describe("decisioni del committente", () => {
     expect(ID.matteo).toBe(`${URL_SITO}/chi-siamo#matteo`);
   });
 
-  it("l'abbonamento costa 239 euro al mese e i dati strutturati lo dicono per un mese", () => {
-    expect(PREZZO_ABBONAMENTO).toBe(239);
-    expect(titoloCompleto(PAGINE.abbonamento)).toContain(`${PREZZO_ABBONAMENTO_TESTO} al mese`);
+  it("gli abbonamenti partono da 173 euro al mese e il vecchio prezzo unico non c'e' piu'", () => {
+    expect(PREZZO_DA).toBe(173);
+    expect(PREZZO_DA_TESTO).toBe("173 €");
+    expect(PREZZO_FINO_A).toBe(946);
+    expect(titoloCompleto(PAGINE.abbonamento)).toContain(`${PREZZO_DA_TESTO} al mese`);
+    // nodoServizio resta per i servizi a soglia (da X a pasto): un prezzo mensile non passa piu' di qui.
     const servizio = nodoServizio({
-      id: "abbonamento",
-      percorso: PAGINE.abbonamento.percorso,
-      nome: "Abbonamento",
+      id: "menu-settimana",
+      percorso: PAGINE.servizi.percorso,
+      nome: "Menu",
       descrizione: "x",
       tipoServizio: "x",
-      prezzoMese: PREZZO_ABBONAMENTO,
+      prezzoDa: 8.9,
     });
-    const offerta = servizio.offers as Nodo;
-    expect(offerta.price).toBe(239);
-    expect(offerta.priceCurrency).toBe("EUR");
-    const specifica = offerta.priceSpecification as Nodo;
-    expect(specifica["@type"]).toBe("UnitPriceSpecification");
-    expect(specifica.price).toBe(239);
-    expect(specifica.referenceQuantity).toEqual({ "@type": "QuantitativeValue", value: 1, unitCode: "MON" });
-    // Un abbonamento non e' una soglia "da X a pasto".
-    expect(specifica.minPrice).toBeUndefined();
+    const specifica = (servizio.offers as Nodo).priceSpecification as Nodo;
+    expect(specifica.minPrice).toBe(8.9);
+    expect(specifica.unitText).toBe("pasto");
   });
 
-  it("la consegna gratuita dell'abbonamento discende dalla soglia di lib/pricing.ts", () => {
-    // Una ventina di pranzi al mese (dal lunedi' al venerdi') contro la soglia dei pasti.
-    expect(PRANZI_AL_MESE_CIRCA).toBe(20);
-    expect(ABBONAMENTO_CONSEGNA_GRATIS).toBe(PRANZI_AL_MESE_CIRCA >= CONSEGNA_GRATIS_DA);
+  it("nessun sorgente, nemmeno README e llms.txt, presenta ancora 239 euro come prezzo dell'abbonamento", () => {
+    // "239 €", "239 euro", "239,00" e i centesimi "23900": non i colori tipo "rgb(243 239 230)".
+    const VECCHIO_PREZZO = /\b239(?:,00| ?€| euro)|\b23900\b/;
+    const colpevoli = [...["app", "components", "lib", "functions"].flatMap(sorgenti), "README.md", "public/llms.txt"].filter((f) =>
+      VECCHIO_PREZZO.test(readFileSync(path.join(RADICE, f), "utf8")),
+    );
+    expect(colpevoli).toEqual([]);
   });
 
-  it("le due strade per chiedere l'abbonamento portano all'area cliente e al modulo contatti", () => {
+  it("le strade per chiedere un abbonamento portano all'area cliente, con formula e fascia se si sanno, e al modulo contatti", () => {
     expect(LINK_RICHIEDI_ABBONAMENTO).toBe("/account?sezione=richiesta&servizio=abbonamento");
+    expect(linkRichiediAbbonamento({ formula: "completo", fascia: "plus" })).toBe(
+      "/account?sezione=richiesta&servizio=abbonamento&formula=completo&fascia=plus",
+    );
     expect(LINK_SCRIVI_ABBONAMENTO).toBe("/richiesta?servizio=abbonamento#scrivi");
   });
 });

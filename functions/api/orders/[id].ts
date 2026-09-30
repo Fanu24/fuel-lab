@@ -113,6 +113,7 @@ export const onRequestPatch = async ({ env, request, params, waitUntil }: Contex
     customer_message: current.customer_message,
     price_cents: current.price_cents,
     paid: current.paid,
+    subscription: current.subscription ?? null,
   };
   const esito = leggiModificaAdmin(body, stato, current.fulfillment, current.service);
   if (!esito.ok) return json({ error: esito.error }, esito.status);
@@ -122,8 +123,12 @@ export const onRequestPatch = async ({ env, request, params, waitUntil }: Contex
     // UPDATE condizionato allo stato appena letto, eventi con la stessa condizione (vedi eventoSeInStato).
     const risultati = await env.DB.batch([
       ...cambi.map((cambio) => eventoSeInStato(env, id, "admin", cambio, current.status)),
-      env.DB.prepare("UPDATE orders SET status=?,production_date=?,fulfillment_date=?,internal_note=?,customer_message=?,price_cents=?,paid=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND status=?")
-        .bind(next.status, next.production_date, next.fulfillment_date, next.internal_note, next.customer_message, next.price_cents, next.paid, id, current.status),
+      env.DB.prepare("UPDATE orders SET status=?,production_date=?,fulfillment_date=?,internal_note=?,customer_message=?,price_cents=?,paid=?,sub_plan=?,sub_tier=?,sub_household=?,sub_trial=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND status=?")
+        .bind(
+          next.status, next.production_date, next.fulfillment_date, next.internal_note, next.customer_message, next.price_cents, next.paid,
+          next.subscription?.plan ?? null, next.subscription?.tier ?? null, next.subscription?.household ?? null, next.subscription?.trial ? 1 : 0,
+          id, current.status,
+        ),
     ]);
     if (!risultati[risultati.length - 1].meta.changes) {
       const ora = await leggiOrdine(env, id);

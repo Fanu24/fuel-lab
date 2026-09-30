@@ -11,10 +11,10 @@
    fa mai saltare o ripetere una data.
    ========================================================================= */
 
-import { fineAbbonamento, frasePeriodo, periodoAbbonamento } from "@/lib/abbonamento";
+import { NOMI_FASCIA, fineAbbonamento, formulaDi, frasePeriodo, getFormula, periodoAbbonamento } from "@/lib/abbonamento";
 import { etichettaStato, ETICHETTE_SERVIZIO, type Chiusura, type Ordine, type Servizio, type StatoOrdine, type VoceOrdine } from "@/lib/api";
 import { chiusuraDi } from "@/lib/impostazioni";
-import { abbonamentiDelGiorno, eAbbonamento, isData } from "@/lib/produzione";
+import { abbonamentiDelGiorno, contaPastiAbbonamenti, dettaglioAbbonamento, eAbbonamento, isData, nomeAbbonamento } from "@/lib/produzione";
 import { GIORNI, NOMI_GIORNATA, NOMI_GIORNO, type Allenamenti, type GiornoSettimana, type TipoGiornata } from "@/lib/settimana";
 
 /* ---------- Stati ---------- */
@@ -31,8 +31,8 @@ type Azione = { stato: StatoOrdine; verbo: string; fatto: string };
 /**
  * Il passo successivo naturale di un ordine: il bottone grande della scheda.
  * Per l'abbonamento `fine` e' l'ultimo giorno del periodo: finche' il mese e'
- * in corso non c'e' niente da premere (i pranzi escono ogni giorno), a mese
- * finito il passo e' chiuderlo.
+ * in corso non c'e' niente da premere (le consegne seguono il calendario ogni
+ * 3 giorni), a mese finito il passo e' chiuderlo.
  */
 export function prossimaAzione(
   stato: StatoOrdine,
@@ -202,15 +202,23 @@ const esce = (o: Ordine) => o.status !== "requested" && o.status !== "cancelled"
 const pasti = (ordini: Ordine[]) => ordini.reduce((s, o) => s + o.meals, 0);
 
 /**
- * Le code della giornata. Gli abbonamenti non entrano in cucina e uscite come
- * ordini (la loro data e' l'inizio del mese): i loro pranzi di oggi stanno in
- * `abbonamentiOggi` e si sommano alle porzioni.
+ * Le code della giornata. Un abbonamento non e' un ordine in cucina il giorno
+ * della sua data (e' l'inizio del periodo): entra nella giornata quando ha una
+ * consegna, una ogni 3 giorni, e porta i pasti dei tre giorni coperti. Quegli
+ * abbonamenti stanno in `abbonamentiOggi`, le loro consegne fra le uscite e i
+ * loro pasti si sommano alle porzioni.
+ *
+ * Una consegna di abbonamento non ha uno stato "consegnato" (chiuderebbe
+ * l'abbonamento): quelle gia' fatte le segna Matteo sul telefono e arrivano
+ * qui come `abbonamentiConsegnati`, un insieme di id, cosi' non risultano piu'
+ * "da fare".
  */
-export function codeOperative(ordini: Ordine[], oggi: string) {
+export function codeOperative(ordini: Ordine[], oggi: string, abbonamentiConsegnati: ReadonlySet<string> = new Set()) {
   const aperti = ordini.filter(aperto);
   const cucinaOggi = aperti.filter((o) => !eAbbonamento(o) && o.production_date === oggi && inCucina(o));
-  const usciteOggi = ordini.filter((o) => !eAbbonamento(o) && o.fulfillment_date === oggi && esce(o));
   const abbonamentiOggi = abbonamentiDelGiorno(ordini, oggi);
+  const pastiAbbonamentiOggi = contaPastiAbbonamenti(abbonamentiOggi, oggi);
+  const usciteOggi = [...ordini.filter((o) => !eAbbonamento(o) && o.fulfillment_date === oggi && esce(o)), ...abbonamentiOggi];
   const nonPagati = ordini.filter(daIncassare);
   return {
     aperti,
@@ -219,12 +227,15 @@ export function codeOperative(ordini: Ordine[], oggi: string) {
     /** Tutti gli aperti con una data passata, richieste comprese. */
     inRitardo: aperti.filter((o) => inRitardo(o, oggi)),
     cucinaOggi,
-    /** Un pranzo per abbonamento attivo, dal lunedi' al venerdi'. */
+    /** Gli abbonamenti in corso che hanno una consegna (o un ritiro) oggi. */
     abbonamentiOggi,
-    /** Le porzioni degli ordini di oggi piu' i pranzi in abbonamento. */
-    porzioniOggi: pasti(cucinaOggi) + abbonamentiOggi.length,
+    /** I pasti che portano le consegne di oggi in abbonamento. */
+    pastiAbbonamentiOggi,
+    /** Le porzioni degli ordini di oggi piu' i pasti delle consegne in abbonamento. */
+    porzioniOggi: pasti(cucinaOggi) + pastiAbbonamentiOggi,
+    /** Ritiri e consegne di oggi: gli ordini e, fra loro, le consegne degli abbonamenti. */
     usciteOggi,
-    usciteDaFare: usciteOggi.filter((o) => o.status !== "completed"),
+    usciteDaFare: usciteOggi.filter((o) => (eAbbonamento(o) ? !abbonamentiConsegnati.has(o.id) : o.status !== "completed")),
     pronti: aperti.filter((o) => o.status === "ready"),
     nonPagati,
     consegnatiNonPagati: nonPagati.filter((o) => o.status === "completed"),
@@ -268,8 +279,13 @@ const formatoEuro = (c: number) => new Intl.NumberFormat("it-IT", { style: "curr
  * Le cose da fare, dalla piu' urgente: ogni voce e' una frase con un verbo e un
  * link che porta dritto al lavoro (un ordine solo si apre, piu' ordini si filtrano).
  */
-export function azioniDaFare(ordini: Ordine[], oggi: string, messaggiNuovi = 0): AzioneDaFare[] {
-  const c = codeOperative(ordini, oggi);
+export function azioniDaFare(
+  ordini: Ordine[],
+  oggi: string,
+  messaggiNuovi = 0,
+  abbonamentiConsegnati: ReadonlySet<string> = new Set(),
+): AzioneDaFare[] {
+  const c = codeOperative(ordini, oggi, abbonamentiConsegnati);
   const azioni: AzioneDaFare[] = [];
 
   const ritardo = c.inRitardo.filter((o) => o.status !== "requested");
@@ -307,7 +323,9 @@ export function azioniDaFare(ordini: Ordine[], oggi: string, messaggiNuovi = 0):
   if (c.cucinaOggi.length || c.abbonamentiOggi.length) {
     const parti = [
       c.cucinaOggi.length ? plurale(c.cucinaOggi.length, "ordine", "ordini") : "",
-      c.abbonamentiOggi.length ? plurale(c.abbonamentiOggi.length, "pranzo in abbonamento", "pranzi in abbonamento") : "",
+      c.abbonamentiOggi.length
+        ? `${plurale(c.abbonamentiOggi.length, "consegna di abbonamento", "consegne di abbonamento")} (${plurale(c.pastiAbbonamentiOggi, "pasto", "pasti")})`
+        : "",
     ].filter(Boolean);
     azioni.push({
       id: "cucina",
@@ -322,10 +340,11 @@ export function azioniDaFare(ordini: Ordine[], oggi: string, messaggiNuovi = 0):
     const ritiri = c.usciteDaFare.filter((o) => o.fulfillment === "pickup").length;
     const consegne = c.usciteDaFare.length - ritiri;
     const parti = [ritiri ? plurale(ritiri, "ritiro", "ritiri") : "", consegne ? plurale(consegne, "consegna a domicilio", "consegne a domicilio") : ""];
+    const inAbbonamento = c.usciteDaFare.filter(eAbbonamento).length;
     azioni.push({
       id: "uscite",
       testo: `Consegna ${plurale(c.usciteDaFare.length, "ordine", "ordini")} oggi`,
-      dettaglio: parti.filter(Boolean).join(" · "),
+      dettaglio: parti.filter(Boolean).join(" · ") + (inAbbonamento ? ` (di cui ${inAbbonamento} in abbonamento)` : ""),
       href: "/dashboard#oggi-uscita",
       tono: "info",
       quanti: c.usciteDaFare.length,
@@ -364,9 +383,11 @@ export type GiornoCalendario = {
   /** Porzioni con produzione in quel giorno (confermati e in preparazione). */
   porzioni: number;
   ordiniInCucina: number;
-  /** Pranzi in abbonamento di quel giorno (solo dal lunedi' al venerdi'). */
+  /** Abbonamenti che hanno una consegna (o un ritiro) quel giorno: una ogni 3 giorni ciascuno. */
   abbonamenti: number;
-  /** Ritiri e consegne con uscita in quel giorno. */
+  /** I pasti che portano quelle consegne. */
+  pastiAbbonamenti: number;
+  /** Ritiri e consegne con uscita in quel giorno, comprese quelle degli abbonamenti. */
   uscite: number;
   ritiri: number;
   consegne: number;
@@ -379,7 +400,8 @@ export function calendario(ordini: Ordine[], oggi: string, giorni = 7, chiusure:
   return Array.from({ length: giorni }, (_, i) => {
     const data = spostaGiorni(oggi, i);
     const cucina = ordini.filter((o) => !eAbbonamento(o) && o.production_date === data && inCucina(o));
-    const uscite = ordini.filter((o) => !eAbbonamento(o) && o.fulfillment_date === data && esce(o));
+    const abbonamenti = abbonamentiDelGiorno(ordini, data);
+    const uscite = [...ordini.filter((o) => !eAbbonamento(o) && o.fulfillment_date === data && esce(o)), ...abbonamenti];
     const ritiri = uscite.filter((o) => o.fulfillment === "pickup").length;
     return {
       data,
@@ -387,7 +409,8 @@ export function calendario(ordini: Ordine[], oggi: string, giorni = 7, chiusure:
       chiusura: chiusuraDi(data, chiusure),
       porzioni: pasti(cucina),
       ordiniInCucina: cucina.length,
-      abbonamenti: abbonamentiDelGiorno(ordini, data).length,
+      abbonamenti: abbonamenti.length,
+      pastiAbbonamenti: contaPastiAbbonamenti(abbonamenti, data),
       uscite: uscite.length,
       ritiri,
       consegne: uscite.length - ritiri,
@@ -488,13 +511,15 @@ export function passaSpeciale(o: Ordine, filtro: FiltroSpeciale | null, oggi: st
 
 const semplifica = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLocaleLowerCase("it").trim();
 
-/** Cerca in nome, email, comune, indirizzo, id e telefono (il telefono per sole cifre). */
+/** Cerca in nome, email, comune, indirizzo, id, formula (per gli abbonamenti) e telefono (il telefono per sole cifre). */
 export function corrisponde(o: Ordine, ricerca: string) {
   const q = semplifica(ricerca);
   if (!q) return true;
   const cifre = q.replace(/\D/g, "");
   if (cifre.length >= 3 && o.phone.replace(/\D/g, "").includes(cifre)) return true;
-  return [o.customer_name, o.email, o.comune, o.address, o.id].some((campo) => semplifica(campo ?? "").includes(q));
+  return [o.customer_name, o.email, o.comune, o.address, o.id, eAbbonamento(o) ? nomeAbbonamento(o) : ""].some((campo) =>
+    semplifica(campo ?? "").includes(q),
+  );
 }
 
 export type Filtri = { stato: FiltroStato; speciale: FiltroSpeciale | null; ricerca: string };
@@ -542,12 +567,16 @@ const dataLunga = (d: string) =>
 
 export const nomeProprio = (nome: string) => nome.trim().split(/\s+/)[0] ?? "";
 
-/** Il messaggio WhatsApp precompilato: nome, pasti e giorno di ritiro o consegna (o il periodo dell'abbonamento). */
-export function testoWhatsApp(o: Pick<Ordine, "customer_name" | "meals" | "fulfillment" | "fulfillment_date"> & { service?: Servizio }) {
+/** Il messaggio WhatsApp precompilato: nome, pasti e giorno di ritiro o consegna (o la formula e il periodo dell'abbonamento). */
+export function testoWhatsApp(
+  o: Pick<Ordine, "customer_name" | "meals" | "fulfillment" | "fulfillment_date"> & { service?: Servizio; subscription?: Ordine["subscription"] },
+) {
   const nome = nomeProprio(o.customer_name);
   if (o.service === "abbonamento") {
     const periodo = isData(o.fulfillment_date) ? ` ${frasePeriodo(periodoAbbonamento(o.fulfillment_date), o.fulfillment_date)}` : "";
-    return `Ciao${nome ? ` ${nome}` : ""}, sono Matteo di FUEL LAB. Ti scrivo per il tuo abbonamento ai pranzi${periodo}.`;
+    // Un abbonamento di prima delle formule e' un Pranzo.
+    const formula = `${getFormula(formulaDi(o)).nome}${o.subscription ? ` ${NOMI_FASCIA[o.subscription.tier]}` : ""}`;
+    return `Ciao${nome ? ` ${nome}` : ""}, sono Matteo di FUEL LAB. Ti scrivo per il tuo abbonamento ${formula}${periodo}.`;
   }
   const quando = o.fulfillment_date
     ? ` con ${o.fulfillment === "pickup" ? "ritiro" : "consegna"} ${dataLunga(o.fulfillment_date)}`
@@ -582,7 +611,7 @@ const BOM = String.fromCharCode(0xfeff);
  */
 export function ordiniCsv(ordini: Ordine[]) {
   const intestazione = [
-    "ID", "Ricevuto", "Cliente", "Telefono", "Email", "Comune", "Indirizzo", "Servizio", "Modalità", "Stato",
+    "ID", "Ricevuto", "Cliente", "Telefono", "Email", "Comune", "Indirizzo", "Servizio", "Formula", "Modalità", "Stato",
     "Pasti", "Data preferita", "Cucina", "Ritiro/consegna", "Prezzo (€)", "Pagato", "Note cliente", "Nota interna", "Piatti",
   ];
   const righe = ordini.map((o) => [
@@ -594,6 +623,7 @@ export function ordiniCsv(ordini: Ordine[]) {
     o.comune,
     o.address,
     ETICHETTE_SERVIZIO[o.service] ?? o.service,
+    eAbbonamento(o) ? dettaglioAbbonamento(o) : "",
     o.fulfillment === "pickup" ? "Ritiro" : "Consegna",
     o.status === "completed" && o.fulfillment === "pickup" ? "Ritirato" : etichettaStato(o.status),
     o.meals,

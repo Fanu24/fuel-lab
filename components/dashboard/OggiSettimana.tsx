@@ -1,6 +1,7 @@
-/* "Prossimi 7 giorni": per ogni giorno le porzioni da cucinare, i pranzi in
-   abbonamento e i ritiri o le consegne. Si cucina e si consegna ogni giorno:
-   in evidenza restano solo i giorni di chiusura segnati in Impostazioni. */
+/* "Prossimi 7 giorni": per ogni giorno le porzioni da cucinare, le consegne
+   in abbonamento con i pasti che portano (una ogni 3 giorni per abbonamento)
+   e i ritiri o le consegne. Si cucina e si consegna ogni giorno: in evidenza
+   restano solo i giorni di chiusura segnati in Impostazioni. */
 
 import type { GiornoCalendario } from "@/lib/operazioni";
 import { Sezione, giorno } from "./ui";
@@ -9,12 +10,13 @@ const iniziale = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
 
 export default function OggiSettimana({ giorni }: { giorni: GiornoCalendario[] | null }) {
   const chiusi = giorni?.filter((g) => g.chiusura).length ?? 0;
-  const abbonamenti = giorni?.reduce((n, g) => n + g.abbonamenti, 0) ?? 0;
+  const consegne = giorni?.reduce((n, g) => n + g.abbonamenti, 0) ?? 0;
+  const pasti = giorni?.reduce((n, g) => n + g.pastiAbbonamenti, 0) ?? 0;
   const sotto = [
     "Si cucina e si consegna ogni giorno.",
     chiusi ? `${chiusi === 1 ? "Un giorno di chiusura" : `${chiusi} giorni di chiusura`} in vista.` : "",
-    abbonamenti
-      ? `Porzioni dagli ordini confermati, più ${abbonamenti} ${abbonamenti === 1 ? "pranzo" : "pranzi"} in abbonamento.`
+    consegne
+      ? `Porzioni dagli ordini confermati, più ${consegne === 1 ? "1 consegna" : `${consegne} consegne`} in abbonamento (${pasti} ${pasti === 1 ? "pasto" : "pasti"}): ogni abbonamento consegna una volta ogni 3 giorni.`
       : "Porzioni dagli ordini confermati.",
   ]
     .filter(Boolean)
@@ -39,10 +41,12 @@ export default function OggiSettimana({ giorni }: { giorni: GiornoCalendario[] |
                 ) : null}
               </div>
               <p className="pn-giorno-dato">
-                <strong className="num">{g.porzioni + g.abbonamenti}</strong>
-                {g.porzioni + g.abbonamenti === 1 ? "porzione" : "porzioni"}
+                <strong className="num">{g.porzioni + g.pastiAbbonamenti}</strong>
+                {g.porzioni + g.pastiAbbonamenti === 1 ? "porzione" : "porzioni"}
                 {g.ordiniInCucina ? ` · ${g.ordiniInCucina} ${g.ordiniInCucina === 1 ? "ordine" : "ordini"}` : ""}
-                {g.abbonamenti ? ` · ${g.abbonamenti} in abbonamento` : ""}
+                {g.abbonamenti
+                  ? ` · ${g.abbonamenti} ${g.abbonamenti === 1 ? "abbonamento" : "abbonamenti"} (${g.pastiAbbonamenti} ${g.pastiAbbonamenti === 1 ? "pasto" : "pasti"})`
+                  : ""}
               </p>
               <p className="pn-giorno-dato">
                 <strong className="num">{g.uscite}</strong>

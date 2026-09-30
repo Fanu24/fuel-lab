@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { PIATTI } from "@/lib/catalogo";
 import { ARTICOLI, CATEGORIE, articoliPerCategoria } from "@/lib/blog";
-import { AGGIORNAMENTO, IMMAGINE_OG, PAGINE, paginaPiatto, type PaginaSeo } from "@/components/seo/pagine";
+import { AGGIORNAMENTO, IMMAGINE_OG, PAGINE, PAGINE_FORMULE, paginaPiatto, type PaginaSeo } from "@/components/seo/pagine";
 import { assoluto } from "@/components/seo/schema";
 
 // Export statico: il file si genera una volta, al build.
@@ -28,6 +28,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     voce(home, [IMMAGINE_OG.url]),
     ...Object.values(interne).map((p) => voce(p)),
+    // Le cinque schede degli abbonamenti, /abbonamento/<formula>.
+    ...PAGINE_FORMULE.map((p) => voce(p)),
     ...PIATTI.map((p) => voce(paginaPiatto(p), [p.img])),
     // Pagine di altri reparti del sito: pubbliche, quindi in mappa.
     { url: assoluto("/richiesta"), lastModified: AGGIORNAMENTO, changeFrequency: "yearly", priority: 0.5 },

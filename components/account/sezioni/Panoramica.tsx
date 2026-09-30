@@ -8,12 +8,16 @@ import {
   formattaGiorno,
   formattaGiornoDa,
   hrefSezione,
+  nomeServizioRichiesta,
+  periodoRichiesta,
   prossimaConsegna,
   prossimaUscitaDi,
+  schedaAbbonamento,
   spostaGiorni,
   traduciErroreAuth,
 } from "@/lib/account";
-import { ETICHETTE_SERVIZIO, type Ordine } from "@/lib/api";
+import { CONSEGNA_OGNI_GIORNI } from "@/lib/abbonamento";
+import { euro, type Ordine } from "@/lib/api";
 import { authClient } from "@/lib/auth-client";
 import { CASELLE_TOTALI, usePiano } from "@/lib/piano";
 import Passi from "../Passi";
@@ -175,13 +179,15 @@ function ProssimaConsegna({ ordini, oggi }: Pick<PropsArea, "ordini" | "oggi">) 
   }
 
   const ritiro = prossima.fulfillment === "pickup";
-  const abbonamento = prossima.service === "abbonamento";
-  // Per un abbonamento in corso conta il prossimo pranzo del periodo, non il giorno d'inizio.
-  const data = prossimaUscitaDi(prossima, oggi) ?? prossima.fulfillment_date;
-  const quando = !data ? "Giorno da definire"
+  const scheda = schedaAbbonamento(prossima);
+  // Per un abbonamento in corso conta la prossima consegna del periodo (una ogni 3 giorni), non il giorno d'inizio.
+  const uscita = prossimaUscitaDi(prossima, oggi);
+  const data = uscita ?? (scheda ? null : prossima.fulfillment_date);
+  const quando = !data ? (scheda && prossima.fulfillment_date ? "Consegne concluse" : "Giorno da definire")
     : data === oggi ? `Oggi, ${formattaGiorno(data, oggi)}`
     : data === spostaGiorni(oggi, 1) ? `Domani, ${formattaGiorno(data, oggi)}`
     : formattaGiorno(data, oggi);
+  const periodo = periodoRichiesta(prossima, oggi);
 
   return (
     <article className="acc-card notte" aria-labelledby="t-prossima">
@@ -190,8 +196,20 @@ function ProssimaConsegna({ ordini, oggi }: Pick<PropsArea, "ordini" | "oggi">) 
       <p className="mt-3 text-steel">
         {ritiro ? "Ritiro in Via del Santuario 214, Pescara" : `Consegna a ${prossima.comune || "domicilio"}`}
         {" · "}
-        {prossima.meals && !abbonamento ? `${prossima.meals} pasti` : ETICHETTE_SERVIZIO[prossima.service]}
+        {prossima.meals && !scheda ? `${prossima.meals} pasti` : nomeServizioRichiesta(prossima)}
       </p>
+      {scheda ? (
+        <dl className="acc-fatti mt-6">
+          <div><dt>Cosa ricevi</dt><dd>{scheda.cosaRicevi}</dd></div>
+          <div><dt>{ritiro ? "Ritiro" : "Consegna"}</dt><dd>Ogni {CONSEGNA_OGNI_GIORNI} giorni</dd></div>
+          {periodo ? <div><dt>Periodo</dt><dd>{periodo}</dd></div> : null}
+          <div><dt>Chi si abbona</dt><dd>{scheda.nucleo}</dd></div>
+          <div><dt>Settimana di prova</dt><dd>{scheda.prova ? "Sì" : "No"}</dd></div>
+          {prossima.price_cents !== null && prossima.price_cents !== undefined ? (
+            <div><dt>Totale concordato</dt><dd className="num">{euro(prossima.price_cents)}</dd></div>
+          ) : null}
+        </dl>
+      ) : null}
       <div className="mt-7">
         <Passi stato={prossima.status} modalita={prossima.fulfillment} servizio={prossima.service} />
       </div>
@@ -221,7 +239,8 @@ function InAttesa({ ordini, oggi }: { ordini: Ordine[]; oggi: string }) {
             <Link href={hrefSezione("richieste", { apri: o.id })} scroll={false} className="acc-riga">
               <span className="font-semibold">Inviata il {formattaGiornoDa(o.created_at)}</span>
               <span className="text-sm text-muted">
-                {o.meals && o.service !== "abbonamento" ? `${o.meals} pasti` : ETICHETTE_SERVIZIO[o.service]}
+                {o.meals && o.service !== "abbonamento" ? `${o.meals} pasti` : nomeServizioRichiesta(o)}
+                {o.service === "abbonamento" && o.price_cents !== null && o.price_cents !== undefined ? ` · proposto ${euro(o.price_cents)} al mese` : ""}
                 {o.requested_date ? ` · ${o.service === "abbonamento" ? "inizio" : "preferito"} ${formattaGiorno(o.requested_date, oggi)}` : ""}
               </span>
             </Link>

@@ -3,8 +3,9 @@
 /* Scheda Piatti: la lavagna della cucina. Numeri grandi, da leggere a un metro
    dal telefono appoggiato sul piano: quante porzioni di ogni piatto, quanti
    extra, quali allergeni girano oggi e chi ha allergie da non dimenticare.
-   I pranzi in abbonamento hanno la loro sezione (per chi, con la scheda); se
-   il cliente ha indicato il piatto del giorno, conta anche nelle porzioni. */
+   Le consegne in abbonamento hanno la loro sezione (per chi, con i pasti dei
+   tre giorni coperti e la scheda); se il cliente ha indicato il piatto di un
+   pasto, conta anche nelle porzioni. */
 
 import { useMemo } from "react";
 import type { Ordine } from "@/lib/api";
@@ -15,8 +16,9 @@ import { Vuoto } from "./ui";
 const maiuscola = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 /**
- * `ordini`: gli ordini del giorno piu' i pranzi in abbonamento come ordini da
- * una porzione (pranziComeOrdini); `abbonamenti`: gli abbonamenti del giorno.
+ * `ordini`: gli ordini del giorno piu' i pasti in abbonamento con un piatto
+ * indicato, come ordini (pastiComeOrdini); `abbonamenti`: gli abbonamenti che
+ * consegnano nel giorno.
  */
 export default function CucinaPiatti({ ordini, abbonamenti = [], giorno }: { ordini: Ordine[]; abbonamenti?: Ordine[]; giorno: string }) {
   const piatti = useMemo(() => contaPiatti(ordini), [ordini]);
@@ -68,7 +70,7 @@ export default function CucinaPiatti({ ordini, abbonamenti = [], giorno }: { ord
             </ul>
           ) : (
             <Vuoto>
-              Nessun piatto del menu da contare (home cooking, o pranzi in abbonamento ancora da comporre): guarda la scheda Ordini.
+              Nessun piatto del menu da contare (home cooking, o pasti in abbonamento ancora da comporre): guarda la scheda Ordini.
             </Vuoto>
           )}
         </section>

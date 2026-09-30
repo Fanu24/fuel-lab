@@ -1,6 +1,8 @@
+import { eFascia, eFormulaId } from "./abbonamento";
 import { ApiError, ETICHETTE_ARGOMENTO, type ArgomentoMessaggio, type NuovoMessaggio } from "./api";
 import { getExtra, getPiatto } from "./catalogo";
 import { GIORNI, NOMI_GIORNO, PASTI, type Pasto, type Piano } from "./settimana";
+import { messaggioAbbonamento, senzaSaluto, type SceltaMessaggio } from "./whatsapp";
 
 /* =========================================================================
    Il modulo contatti: la parte pura, senza React.
@@ -72,6 +74,30 @@ export function etichettaArgomento(a: ArgomentoMessaggio): string {
  */
 export function argomentoDaParam(valore: string | null | undefined): ArgomentoMessaggio {
   return ARGOMENTI.find((a) => a === valore) ?? "info";
+}
+
+/**
+ * `?formula=` e `?fascia=` dei link di contatto: cio' che il visitatore ha gia'
+ * scelto sul sito. A differenza dell'area cliente non c'e' un valore di
+ * partenza da proporre: un valore che non esiste (o assente) semplicemente non
+ * entra nel messaggio, che dice solo quello che la persona ha scelto davvero.
+ */
+export function sceltaAbbonamentoDaParam(
+  formula: string | null | undefined,
+  fascia: string | null | undefined,
+): SceltaMessaggio {
+  return { ...(eFormulaId(formula) ? { formula } : {}), ...(eFascia(fascia) ? { fascia } : {}) };
+}
+
+/**
+ * Il testo con cui parte il modulo quando si arriva per un abbonamento con la
+ * formula (o la fascia) gia' scelte: la stessa frase del messaggio per WhatsApp,
+ * senza il saluto. Per gli altri argomenti, o senza scelta, il campo resta
+ * vuoto: non si scrive al posto della persona piu' di quanto ha detto.
+ */
+export function messaggioInizialeModulo(argomento: ArgomentoMessaggio, scelta: SceltaMessaggio): string {
+  if (argomento !== "abbonamento" || (!scelta.formula && !scelta.fascia)) return "";
+  return senzaSaluto(messaggioAbbonamento(scelta));
 }
 
 /* ---------- Validazione ---------- */

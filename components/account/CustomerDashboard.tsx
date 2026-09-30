@@ -6,6 +6,10 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import {
   dataIso,
   erroreDiRitorno,
+  fasciaDa,
+  formulaDa,
+  modalitaDa,
+  nucleoDa,
   hrefSezione,
   messaggioDa,
   primoNome,
@@ -50,7 +54,14 @@ export default function CustomerDashboard() {
     const q = new URLSearchParams(parametri.toString());
     q.delete("error");
     const qui = q.toString() ? `/account?${q}` : "/account";
-    return <Invito qui={qui} sezione={sezioneDa(parametri.get("sezione"))} errore={erroreDiRitorno(parametri.get("error"))} />;
+    return (
+      <Invito
+        qui={qui}
+        sezione={sezioneDa(parametri.get("sezione"))}
+        servizio={servizioDa(parametri.get("servizio"))}
+        errore={erroreDiRitorno(parametri.get("error"))}
+      />
+    );
   }
   return <AreaCliente utente={sessione.utente} onEliminato={onEliminato} />;
 }
@@ -201,9 +212,16 @@ function AreaCliente({ utente, onEliminato }: { utente: Utente; onEliminato: () 
         {sezione === "richieste" ? <Richieste ordini={ordini} apri={apri} appenaInviata={appenaInviata} oggi={oggi} /> : null}
         {sezione === "richiesta" ? (
           <NuovaRichiesta
+            // Il modulo prende servizio, formula e fascia solo all'apertura: se l'indirizzo cambia (un altro
+            // link "Richiedi" del sito) va rimontato, altrimenti resterebbe la scelta di prima.
+            key={`${parametri.get("servizio")}-${parametri.get("formula")}-${parametri.get("fascia")}-${parametri.get("modalita")}-${parametri.get("nucleo")}`}
             utente={utente}
             profilo={profilo}
             servizioIniziale={servizioDa(parametri.get("servizio"))}
+            formulaIniziale={formulaDa(parametri.get("formula"))}
+            fasciaIniziale={fasciaDa(parametri.get("fascia"))}
+            modalitaIniziale={modalitaDa(parametri.get("modalita"))}
+            nucleoIniziale={nucleoDa(parametri.get("nucleo"))}
             onInviata={inviata}
           />
         ) : null}

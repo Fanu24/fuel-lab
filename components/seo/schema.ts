@@ -9,7 +9,20 @@ import {
   URL_SITO,
   ZONE_SERVITE,
 } from "@/lib/sito";
-import { SOGLIA_PREZZO } from "@/lib/servizi";
+import { SOGLIA_PREZZO, getServizio } from "@/lib/servizi";
+import {
+  FASCE,
+  FORMULE,
+  NOTE_FASCIA,
+  PREZZO_DA,
+  PREZZO_FINO_A,
+  etichettaFormula,
+  getFormula,
+  percorsoFormula,
+  type Fascia,
+  type Formula,
+  type FormulaId,
+} from "@/lib/abbonamento";
 import type { Allenamento, Piatto } from "@/lib/catalogo";
 
 /* =========================================================================
@@ -53,9 +66,11 @@ export const ID = {
   logo: `${URL_SITO}/#logo`,
   matteo: `${URL_SITO}/chi-siamo#matteo`,
   menu: `${URL_SITO}/menu#menu`,
+  abbonamenti: `${URL_SITO}/abbonamento#abbonamenti`,
 } as const;
 
 export const idPiatto = (id: string) => `${URL_SITO}/menu/${id}#piatto`;
+export const idFormula = (id: FormulaId) => `${assoluto(percorsoFormula(id))}#abbonamento`;
 
 const rif = (id: string) => ({ "@id": id });
 
@@ -352,8 +367,6 @@ export interface OpzioniServizio {
   immagine?: string;
   /** soglia "da X euro a pasto"; assente per i servizi su preventivo */
   prezzoDa?: number;
-  /** prezzo fisso al mese (l'abbonamento): vince su prezzoDa */
-  prezzoMese?: number;
 }
 
 /**
@@ -381,27 +394,26 @@ function offertaMensile(url: string, prezzo: number): Nodo {
 /**
  * Un servizio con la sua offerta. Il prezzo del meal prep e' una soglia
  * (minPrice), mai un listino: e' l'unico numero a pasto che il committente
- * vuole in chiaro. L'abbonamento ha invece un prezzo fisso al mese. Senza
- * nessuno dei due (l'home cooking, su preventivo) l'offerta non c'e'.
+ * vuole in chiaro. Senza soglia (l'home cooking, su preventivo) l'offerta non
+ * c'e'. Gli abbonamenti, che hanno prezzi fissi al mese, hanno i loro nodi:
+ * nodoAbbonamenti e nodoFormula, piu' sotto.
  */
 export function nodoServizio(o: OpzioniServizio): Nodo {
   const url = assoluto(o.url ?? o.percorso);
   const offerta: Nodo | null =
-    o.prezzoMese != null
-      ? offertaMensile(url, o.prezzoMese)
-      : o.prezzoDa != null
-        ? {
-            "@type": "Offer",
-            url,
+    o.prezzoDa != null
+      ? {
+          "@type": "Offer",
+          url,
+          priceCurrency: "EUR",
+          priceSpecification: {
+            "@type": "UnitPriceSpecification",
+            minPrice: o.prezzoDa,
             priceCurrency: "EUR",
-            priceSpecification: {
-              "@type": "UnitPriceSpecification",
-              minPrice: o.prezzoDa,
-              priceCurrency: "EUR",
-              unitText: "pasto",
-            },
-          }
-        : null;
+            unitText: "pasto",
+          },
+        }
+      : null;
   return {
     "@type": "Service",
     "@id": `${assoluto(o.percorso)}#${o.id}`,
@@ -413,5 +425,79 @@ export function nodoServizio(o: OpzioniServizio): Nodo {
     provider: rif(ID.cucina),
     areaServed: areaServita(),
     ...(offerta ? { offers: offerta } : {}),
+  };
+}
+
+/* ---- gli abbonamenti ---- */
+
+const TIPO_ABBONAMENTO = "Meal prep in abbonamento";
+
+/**
+ * Una formula in una fascia: "Completo · Plus", al suo prezzo di listino al
+ * mese. Niente sconti: ritiro, coppia e famiglia si concordano con Matteo e
+ * il prezzo che finisce nei dati strutturati e' quello che la pagina mostra.
+ */
+function offertaFormula(f: Formula, fascia: Fascia): Nodo {
+  return {
+    ...offertaMensile(assoluto(percorsoFormula(f.id)), f.prezzo[fascia]),
+    name: etichettaFormula(f.id, fascia),
+    description: `${f.cosaRicevi}. ${NOTE_FASCIA[fascia]}`,
+  };
+}
+
+/**
+ * Tutti gli abbonamenti in un servizio solo (sta su /abbonamento e su /servizi,
+ * con lo stesso @id). Il prezzo e' un AggregateOffer, dal piu' basso (Pranzo
+ * Standard) al piu' alto (Full 7 Plus): l'elenco delle cinque formule, ognuna
+ * con le sue due offerte, sta nel catalogo. Nome, descrizione e foto sono
+ * quelli della voce di lib/servizi.ts, gli stessi che si leggono in /servizi.
+ */
+export function nodoAbbonamenti(): Nodo {
+  const servizio = getServizio("abbonamento");
+  const url = assoluto("/abbonamento");
+  return {
+    "@type": "Service",
+    "@id": ID.abbonamenti,
+    name: servizio.nome,
+    description: servizio.descrizione,
+    serviceType: TIPO_ABBONAMENTO,
+    url,
+    image: assoluto(servizio.img),
+    provider: rif(ID.cucina),
+    areaServed: areaServita(),
+    offers: {
+      "@type": "AggregateOffer",
+      url,
+      priceCurrency: "EUR",
+      lowPrice: PREZZO_DA,
+      highPrice: PREZZO_FINO_A,
+      offerCount: FORMULE.length * FASCE.length,
+    },
+    hasOfferCatalog: {
+      "@type": "OfferCatalog",
+      name: `Gli abbonamenti di ${NOME_ATTIVITA}`,
+      itemListElement: FORMULE.map((f) => ({
+        "@type": "OfferCatalog",
+        name: `Abbonamento ${f.nome}`,
+        url: assoluto(percorsoFormula(f.id)),
+        itemListElement: FASCE.map((fascia) => offertaFormula(f, fascia)),
+      })),
+    },
+  };
+}
+
+/** La scheda di una formula: un servizio con due offerte, Standard e Plus, ciascuna a prezzo mensile. */
+export function nodoFormula(id: FormulaId): Nodo {
+  const f = getFormula(id);
+  return {
+    "@type": "Service",
+    "@id": idFormula(id),
+    name: `Abbonamento ${f.nome}`,
+    description: `${f.slogan} ${f.descrizione}`,
+    serviceType: TIPO_ABBONAMENTO,
+    url: assoluto(percorsoFormula(id)),
+    provider: rif(ID.cucina),
+    areaServed: areaServita(),
+    offers: FASCE.map((fascia) => offertaFormula(f, fascia)),
   };
 }

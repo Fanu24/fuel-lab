@@ -4,8 +4,9 @@
    3 colonne x 7 righe (70 x 42,3 mm, 21 per foglio, senza margini: il formato
    piu' comune in cartoleria). L'anteprima e' lo stesso foglio della stampa, in
    scala: le misure sono in millimetri del foglio (vedi .cu-foglio in
-   app/styles/cucina.css). Dopo gli ordini, una etichetta per ogni pranzo in
-   abbonamento: il piatto indicato dal cliente o "Pranzo in abbonamento". */
+   app/styles/cucina.css). Dopo gli ordini, una etichetta per ogni pasto delle
+   consegne in abbonamento (ne servono 9 per un Full 7): il piatto indicato
+   dal cliente o "Colazione/Pranzo/Cena in abbonamento". */
 
 import { useMemo, useState } from "react";
 import type { Ordine } from "@/lib/api";
@@ -77,7 +78,7 @@ export default function CucinaEtichette({ ordini, abbonamenti = [], giorno }: { 
         {senzaAllergeni ? (
           <Avviso>
             {senzaAllergeni === 1 ? "1 etichetta non ha" : `${senzaAllergeni} etichette non hanno`} un piatto del catalogo (piatto
-            fuori catalogo o pranzo in abbonamento da comporre): gli allergeni risultano “da verificare”. Controllali e scrivili
+            fuori catalogo o pasto in abbonamento da comporre): gli allergeni risultano “da verificare”. Controllali e scrivili
             prima di consegnare.
           </Avviso>
         ) : null}

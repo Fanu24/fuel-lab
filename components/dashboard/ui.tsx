@@ -3,7 +3,8 @@
    forma. Le classi .pn-* stanno in app/styles/pannello.css. */
 
 import type { ReactNode } from "react";
-import { daSqlite, etichettaStato, type StatoOrdine } from "@/lib/api";
+import { daSqlite, etichettaStato, type Ordine, type StatoOrdine } from "@/lib/api";
+import { nomeAbbonamento } from "@/lib/produzione";
 
 /* ---------- Formati ---------- */
 
@@ -74,9 +75,16 @@ export function Stato({
   );
 }
 
-/** "Abbonamento": il segno che distingue un abbonamento mensile in elenchi e schede. */
-export function SegnoAbbonamento() {
-  return <span className="pn-segno pn-segno-abbonamento">Abbonamento</span>;
+/**
+ * "Abbonamento Completo · Plus": il segno che distingue un abbonamento mensile
+ * in elenchi e schede, con la formula e la fascia quando l'ordine si passa.
+ */
+export function SegnoAbbonamento({ ordine }: { ordine?: Pick<Ordine, "subscription"> }) {
+  return (
+    <span className="pn-segno pn-segno-abbonamento">
+      Abbonamento{ordine ? <> <b className="font-extrabold">{nomeAbbonamento(ordine)}</b></> : null}
+    </span>
+  );
 }
 
 /** Un numero grande con la sua etichetta. `tono` colora il bordo sinistro quando serve attenzione. */

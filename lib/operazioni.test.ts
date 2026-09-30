@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { FormulaId } from "./abbonamento";
 import type { Chiusura, Ordine } from "./api";
 import {
   azioniDaFare,
@@ -29,6 +30,7 @@ import {
   testoWhatsApp,
   vociPerGiorno,
 } from "./operazioni";
+import { abbonamentiDelGiorno, contaPastiAbbonamenti, contaPorzioni, etichette, etichetteAbbonamenti, ordiniDelGiorno } from "./produzione";
 
 /* Domenica 27 settembre 2026. */
 const OGGI = "2026-09-27";
@@ -64,6 +66,19 @@ const ordine = (id: string, modifiche: Partial<Ordine> = {}): Ordine => ({
   ],
   ...modifiche,
 });
+
+/* Un abbonamento in corso: la data d'inizio e' sia il giorno di cucina sia quello di ritiro o consegna. */
+const abbonamento = (id: string, inizio: string | null, plan: FormulaId | null = "pranzo", modifiche: Partial<Ordine> = {}): Ordine =>
+  ordine(id, {
+    service: "abbonamento",
+    status: "confirmed",
+    production_date: inizio,
+    fulfillment_date: inizio,
+    meals: 0,
+    items: [],
+    subscription: plan ? { plan, tier: "standard", household: "singolo", trial: false } : null,
+    ...modifiche,
+  });
 
 describe("date e giorni di cucina", () => {
   it("oggi e' calcolato nel fuso di Roma", () => {
@@ -220,18 +235,64 @@ describe("code operative di Matteo", () => {
     expect(inRitardo(ordine("b", { requested_date: OGGI }), OGGI)).toBe(false);
   });
 
-  it("gli abbonamenti non entrano in cucina e uscite come ordini: i loro pranzi di oggi si contano a parte", () => {
+  it("un abbonamento esce e va in cucina solo nel giorno di consegna, con i pasti che porta", () => {
     const lunedi = "2026-09-28";
     const c = codeOperative([
       ordine("normale", { status: "confirmed", production_date: lunedi, fulfillment_date: lunedi, meals: 2 }),
-      // inizia oggi: la sua data non e' un giorno di cucina o di uscita
-      ordine("abb", { service: "abbonamento", status: "confirmed", production_date: lunedi, fulfillment_date: lunedi, meals: 0, items: [] }),
-      ordine("abb-vecchio", { service: "abbonamento", status: "confirmed", production_date: "2026-09-14", fulfillment_date: "2026-09-14", meals: 0, items: [] }),
+      // Pranzo dal 28: la consegna e' oggi e copre lun-mar-mer, tre pranzi (la data d'inizio non e' un giorno di cucina "da ordine")
+      abbonamento("abb", lunedi),
+      // un abbonamento di prima delle formule, dal 25: consegna il 25 e poi ogni 3 giorni, quindi anche oggi
+      abbonamento("abb-vecchio", "2026-09-25", null),
+      // dal 26 le consegne cadono il 26 e il 29: oggi niente
+      abbonamento("abb-in-mezzo", "2026-09-26"),
+      // dal 28 ma ancora da confermare, oppure annullato o concluso: non consegnano
+      abbonamento("abb-richiesto", lunedi, "pranzo", { status: "requested" }),
+      abbonamento("abb-annullato", lunedi, "pranzo", { status: "cancelled" }),
+      abbonamento("abb-concluso", lunedi, "pranzo", { status: "completed" }),
     ], lunedi);
     expect(c.cucinaOggi.map((o) => o.id)).toEqual(["normale"]);
-    expect(c.usciteOggi.map((o) => o.id)).toEqual(["normale"]);
     expect(c.abbonamentiOggi.map((o) => o.id)).toEqual(["abb", "abb-vecchio"]);
-    expect(c.porzioniOggi).toBe(4);
+    expect(c.pastiAbbonamentiOggi).toBe(6);
+    // le uscite di oggi comprendono le consegne degli abbonamenti
+    expect(c.usciteOggi.map((o) => o.id)).toEqual(["normale", "abb", "abb-vecchio"]);
+    expect(c.usciteDaFare.map((o) => o.id)).toEqual(["normale", "abb", "abb-vecchio"]);
+    // le porzioni sommano i pasti delle consegne: 2 + 3 + 3
+    expect(c.porzioniOggi).toBe(8);
+  });
+
+  it("Oggi, foglio cucina ed etichette contano le stesse porzioni", () => {
+    const lunedi = "2026-09-28";
+    const lista = [
+      ordine("normale", { status: "confirmed", production_date: lunedi, fulfillment_date: lunedi, meals: 2 }), // due piatti
+      abbonamento("completo", lunedi, "completo"), // lun-mar-mer: 6 pasti
+      abbonamento("full7", lunedi, "full7"), // 9 pasti, colazioni comprese
+      abbonamento("pranzo", "2026-09-25"), // 3 pranzi
+    ];
+    const c = codeOperative(lista, lunedi);
+    const abb = abbonamentiDelGiorno(lista, lunedi);
+    const etichetteTotali = etichette(ordiniDelGiorno(lista, lunedi)).length + etichetteAbbonamenti(abb, lunedi).length;
+    expect(c.porzioniOggi).toBe(2 + 6 + 9 + 3);
+    expect(etichetteTotali).toBe(c.porzioniOggi);
+    const oggi = calendario(lista, lunedi, 1)[0];
+    expect(oggi.porzioni + oggi.pastiAbbonamenti).toBe(c.porzioniOggi);
+    expect(contaPorzioni(ordiniDelGiorno(lista, lunedi)) + contaPastiAbbonamenti(abb, lunedi)).toBe(c.porzioniOggi);
+  });
+
+  it("nei giorni fra due consegne un abbonamento non compare", () => {
+    const c = codeOperative([abbonamento("abb", "2026-09-28", "completo")], "2026-09-29");
+    expect(c.abbonamentiOggi).toEqual([]);
+    expect(c.usciteOggi).toEqual([]);
+    expect(c.porzioniOggi).toBe(0);
+  });
+
+  it("una consegna in abbonamento gia' fatta (segnata sul telefono) non e' piu' da fare, ma resta fra le uscite", () => {
+    const lunedi = "2026-09-28";
+    const lista = [abbonamento("abb", lunedi), abbonamento("abb2", lunedi)];
+    const c = codeOperative(lista, lunedi, new Set(["abb"]));
+    expect(c.usciteOggi.map((o) => o.id)).toEqual(["abb", "abb2"]);
+    expect(c.usciteDaFare.map((o) => o.id)).toEqual(["abb2"]);
+    // un id che non e' un'uscita di oggi non cambia niente
+    expect(codeOperative(lista, lunedi, new Set(["altro"])).usciteDaFare).toHaveLength(2);
   });
 
   it("un abbonamento in corso e' in ritardo solo a mese finito", () => {
@@ -271,14 +332,29 @@ describe("da fare adesso", () => {
     expect(azioni[1].dettaglio).toBe("1 ritiro · 1 consegna a domicilio");
   });
 
-  it("somma i pranzi in abbonamento alle porzioni da cucinare", () => {
+  it("somma i pasti delle consegne in abbonamento alle porzioni da cucinare", () => {
     const lunedi = "2026-09-28";
     const azioni = azioniDaFare([
       ordine("a", { status: "confirmed", production_date: lunedi, fulfillment_date: lunedi, meals: 5 }),
-      ordine("abb", { service: "abbonamento", status: "confirmed", production_date: lunedi, fulfillment_date: lunedi, meals: 0, items: [] }),
+      abbonamento("abb", lunedi, "leggero"), // lun-mar-mer: pranzo e cena, 6 pasti
     ], lunedi);
-    expect(azioni.map((a) => a.testo)).toEqual(["Cucina 6 porzioni oggi", "Consegna 1 ordine oggi"]);
-    expect(azioni[0].dettaglio).toBe("1 ordine e 1 pranzo in abbonamento · apri il foglio cucina con piatti ed extra.");
+    expect(azioni.map((a) => a.testo)).toEqual(["Cucina 11 porzioni oggi", "Consegna 2 ordini oggi"]);
+    expect(azioni[0].dettaglio).toBe("1 ordine e 1 consegna di abbonamento (6 pasti) · apri il foglio cucina con piatti ed extra.");
+    expect(azioni[0].quanti).toBe(2);
+    expect(azioni[1].dettaglio).toBe("2 ritiri (di cui 1 in abbonamento)");
+  });
+
+  it("una consegna in abbonamento segnata come fatta esce dalle cose da fare", () => {
+    const lunedi = "2026-09-28";
+    const lista = [abbonamento("abb", lunedi)];
+    expect(azioniDaFare(lista, lunedi).map((a) => a.id)).toEqual(["cucina", "uscite"]);
+    expect(azioniDaFare(lista, lunedi, 0, new Set(["abb"])).map((a) => a.id)).toEqual(["cucina"]);
+  });
+
+  it("solo abbonamenti: si dice quante consegne e quanti pasti", () => {
+    const azioni = azioniDaFare([abbonamento("a", "2026-09-28"), abbonamento("b", "2026-09-28", "full7")], "2026-09-28");
+    expect(azioni[0].testo).toBe("Cucina 12 porzioni oggi"); // 3 pranzi + 9 pasti
+    expect(azioni[0].dettaglio).toBe("2 consegne di abbonamento (12 pasti) · apri il foglio cucina con piatti ed extra.");
   });
 
   it("niente da fare: lista vuota", () => {
@@ -309,16 +385,22 @@ describe("calendario dei prossimi 7 giorni", () => {
     expect(giorni[4]).toMatchObject({ data: "2026-10-01", richieste: 1 });
   });
 
-  it("segna i giorni di chiusura e conta i pranzi in abbonamento dal lunedi' al venerdi'", () => {
-    const giorni = calendario([
-      ordine("abb", { service: "abbonamento", status: "confirmed", production_date: "2026-09-29", fulfillment_date: "2026-09-29", items: [] }),
-    ], OGGI, 7, CHIUSO);
+  it("segna i giorni di chiusura e conta le consegne in abbonamento con i pasti che portano", () => {
+    // Completo dal 30 settembre: consegne il 30 (mercoledi') e il 3 ottobre (sabato), sei pasti ciascuna
+    const giorni = calendario([abbonamento("abb", "2026-09-30", "completo")], OGGI, 7, CHIUSO);
     expect(giorni.map((g) => !!g.chiusura)).toEqual([false, true, true, false, false, false, false]);
     expect(giorni[1].chiusura?.motivo).toBe("ferie");
-    // domenica 27 e lunedi' 28 prima dell'inizio, poi mar-ven, sabato no
-    expect(giorni.map((g) => g.abbonamenti)).toEqual([0, 0, 1, 1, 1, 1, 0]);
-    // l'abbonamento non e' un ordine in cucina il giorno d'inizio
-    expect(giorni[2]).toMatchObject({ porzioni: 0, ordiniInCucina: 0, uscite: 0 });
+    // domenica 27 ... sabato 3 ottobre
+    expect(giorni.map((g) => g.abbonamenti)).toEqual([0, 0, 0, 1, 0, 0, 1]);
+    expect(giorni.map((g) => g.pastiAbbonamenti)).toEqual([0, 0, 0, 6, 0, 0, 6]);
+    // non e' un ordine in cucina, ma la consegna e' un'uscita di quel giorno
+    expect(giorni[3]).toMatchObject({ porzioni: 0, ordiniInCucina: 0, uscite: 1, ritiri: 1, consegne: 0 });
+    expect(giorni[4]).toMatchObject({ uscite: 0, abbonamenti: 0 });
+  });
+
+  it("conta le consegne a domicilio degli abbonamenti fra le consegne del giorno", () => {
+    const giorni = calendario([abbonamento("abb", "2026-09-28", "pranzo", { fulfillment: "delivery" })], OGGI);
+    expect(giorni[1]).toMatchObject({ data: "2026-09-28", abbonamenti: 1, pastiAbbonamenti: 3, uscite: 1, consegne: 1, ritiri: 0 });
   });
 });
 
@@ -372,9 +454,18 @@ describe("filtri e ricerca", () => {
   });
 
   it("il filtro rapido Abbonamenti tiene solo gli abbonamenti", () => {
-    const conAbb = [...lista, ordine("abb", { service: "abbonamento", status: "confirmed", production_date: "2026-10-01", fulfillment_date: "2026-10-01" })];
+    const conAbb = [...lista, abbonamento("abb", "2026-10-01")];
     expect(filtraOrdini(conAbb, { stato: "aperti", speciale: "abbonamenti", ricerca: "" }, OGGI).map((o) => o.id)).toEqual(["abb"]);
     expect(leggiFiltroSpeciale("abbonamenti")).toBe("abbonamenti");
+  });
+
+  it("si trova un abbonamento anche scrivendo la formula o la fascia", () => {
+    const completo = abbonamento("abb", "2026-10-01", "completo", { subscription: { plan: "completo", tier: "plus", household: "coppia", trial: true } });
+    expect(corrisponde(completo, "completo")).toBe(true);
+    expect(corrisponde(completo, "PLUS")).toBe(true);
+    expect(corrisponde(completo, "full")).toBe(false);
+    // la formula si cerca solo negli abbonamenti
+    expect(corrisponde(ordine("x", { comune: "Pescara" }), "completo")).toBe(false);
   });
 
   it("conta ogni chip con la ricerca applicata", () => {
@@ -399,10 +490,19 @@ describe("testi pronti", () => {
       .toBe("Ciao, sono Matteo di FUEL LAB. Ti scrivo per il tuo ordine.");
   });
 
-  it("per l'abbonamento dice il periodo, non i pasti", () => {
-    const abb = { customer_name: "Giulia Rossi", meals: 3, fulfillment: "pickup" as const, fulfillment_date: "2026-10-05", service: "abbonamento" as const };
-    expect(testoWhatsApp(abb)).toBe("Ciao Giulia, sono Matteo di FUEL LAB. Ti scrivo per il tuo abbonamento ai pranzi dal 5 ottobre al 4 novembre.");
-    expect(testoWhatsApp({ ...abb, fulfillment_date: null })).toBe("Ciao Giulia, sono Matteo di FUEL LAB. Ti scrivo per il tuo abbonamento ai pranzi.");
+  it("per l'abbonamento dice la formula e il periodo, non i pasti", () => {
+    const abb = {
+      customer_name: "Giulia Rossi",
+      meals: 3,
+      fulfillment: "pickup" as const,
+      fulfillment_date: "2026-10-05",
+      service: "abbonamento" as const,
+      subscription: { plan: "completo" as const, tier: "plus" as const, household: "singolo" as const, trial: false },
+    };
+    expect(testoWhatsApp(abb)).toBe("Ciao Giulia, sono Matteo di FUEL LAB. Ti scrivo per il tuo abbonamento Completo Plus dal 5 ottobre al 4 novembre.");
+    expect(testoWhatsApp({ ...abb, fulfillment_date: null })).toBe("Ciao Giulia, sono Matteo di FUEL LAB. Ti scrivo per il tuo abbonamento Completo Plus.");
+    // un abbonamento di prima delle formule e' un Pranzo
+    expect(testoWhatsApp({ ...abb, subscription: null })).toBe("Ciao Giulia, sono Matteo di FUEL LAB. Ti scrivo per il tuo abbonamento Pranzo dal 5 ottobre al 4 novembre.");
     expect(periodoDi(abb, OGGI)).toBe("dal 5 ottobre al 4 novembre");
     expect(periodoDi({ ...abb, service: "menu-settimana" }, OGGI)).toBeNull();
   });
@@ -420,6 +520,17 @@ describe("CSV per Excel", () => {
     expect(csv).toContain('"Senza ""glutine""\nper favore"');
     expect(riga).toContain(";45,50;Sì;");
     expect(riga).toContain("2026-09-26 12:00");
+  });
+
+  it("scrive la formula dell'abbonamento in una colonna a parte", () => {
+    const csv = ordiniCsv([
+      abbonamento("abb", "2026-10-05", "completo", { subscription: { plan: "completo", tier: "plus", household: "coppia", trial: true } }),
+      ordine("x"),
+    ]);
+    const [intestazione, riga, altra] = csv.slice(1).split("\r\n");
+    expect(intestazione).toContain(";Servizio;Formula;");
+    expect(riga).toContain(";Abbonamento mensile;Completo · Plus · in coppia · con la settimana di prova;");
+    expect(altra).toContain(";Menu della settimana;;");
   });
 
   it("neutralizza le formule scritte dal cliente", () => {

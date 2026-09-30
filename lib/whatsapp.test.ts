@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
-import { componiMessaggio, messaggioServizio, senzaDomandaFinale, senzaSaluto } from "./whatsapp";
+import { componiMessaggio, messaggioAbbonamento, messaggioServizio, senzaDomandaFinale, senzaSaluto } from "./whatsapp";
 import type { DatiContatto } from "./whatsapp";
 import { GIORNI } from "./settimana";
 import type { Piano } from "./settimana";
@@ -36,10 +36,28 @@ describe("whatsapp", () => {
     const b = messaggioServizio("home-cooking");
     expect(a).not.toBe(b);
     expect(a.length).toBeGreaterThan(20);
-    // l'abbonamento ha il suo, con il prezzo del mese preso da lib/abbonamento.ts
+    // l'abbonamento ha il suo: cinque formule, niente prezzo unico, si parte dalla settimana di prova
     const c = messaggioServizio("abbonamento");
     expect(new Set([a, b, c, messaggioServizio("sui-tuoi-macro")]).size).toBe(4);
-    expect(c).toContain("239 € al mese");
+    expect(c).toBe("Ciao Matteo! Mi interessa un abbonamento FUEL LAB e vorrei prenotare la settimana di prova.");
+    expect(c).not.toMatch(/239|al mese|lunedì al venerdì/);
+  });
+
+  it("l'abbonamento nomina la formula e la fascia se il visitatore le ha gia' scelte", () => {
+    expect(messaggioAbbonamento({ formula: "completo", fascia: "plus" })).toBe(
+      "Ciao Matteo! Mi interessa l'abbonamento Completo (Plus) di FUEL LAB e vorrei prenotare la settimana di prova.",
+    );
+    expect(messaggioAbbonamento({ formula: "full6", fascia: "standard" })).toContain("l'abbonamento Full 6 (Standard)");
+    expect(messaggioAbbonamento({ formula: "pranzo" })).toBe(
+      "Ciao Matteo! Mi interessa l'abbonamento Pranzo di FUEL LAB e vorrei prenotare la settimana di prova.",
+    );
+    expect(messaggioAbbonamento({ fascia: "plus" })).toBe(
+      "Ciao Matteo! Mi interessa un abbonamento FUEL LAB in fascia Plus e vorrei prenotare la settimana di prova.",
+    );
+    expect(messaggioAbbonamento({})).toBe(messaggioAbbonamento());
+    // messaggioServizio passa la scelta solo all'abbonamento: per gli altri servizi non cambia nulla.
+    expect(messaggioServizio("abbonamento", { formula: "leggero", fascia: "plus" })).toBe(messaggioAbbonamento({ formula: "leggero", fascia: "plus" }));
+    expect(messaggioServizio("home-cooking", { formula: "leggero" })).toBe(messaggioServizio("home-cooking"));
   });
 
   // --- normalizzazione: il punto piu' delicato del task -------------------
@@ -216,6 +234,35 @@ describe("componiMessaggio saluta una volta sola", () => {
   });
 });
 
+describe("componiMessaggio con l'abbonamento scelto sul sito", () => {
+  it("porta la formula e la fascia nel messaggio, con un saluto e una domanda soli", () => {
+    const msg = componiMessaggio({
+      servizioId: "abbonamento",
+      richiedePiano: false,
+      piano: PIANO_VUOTO,
+      macro: MACRO_ZERO,
+      contatto: { ...CONTATTO_BASE, note: "Da lunedì 5 ottobre" },
+      abbonamento: { formula: "completo", fascia: "plus" },
+    });
+    expect(msg).toContain("l'abbonamento Completo (Plus)");
+    expect(msg).toContain("settimana di prova");
+    expect(msg).toContain("Da lunedì 5 ottobre");
+    expect(msg.startsWith("Ciao Matteo, sono Marco!")).toBe(true);
+    expect(msg.split("Ciao Matteo").length - 1).toBe(1);
+    expect((msg.match(/\?/g) ?? []).length).toBe(1);
+    expect(msg.trim().endsWith("?")).toBe(true);
+    expect(msg).not.toMatch(/undefined|239/);
+  });
+
+  it("senza scelta e' il messaggio generico, e la scelta non tocca gli altri servizi", () => {
+    const base = { richiedePiano: false, piano: PIANO_VUOTO, macro: MACRO_ZERO, contatto: CONTATTO_BASE };
+    expect(componiMessaggio({ ...base, servizioId: "abbonamento" })).toContain("Mi interessa un abbonamento FUEL LAB");
+    const conScelta = componiMessaggio({ ...base, servizioId: "home-cooking", abbonamento: { formula: "full7", fascia: "plus" } });
+    expect(conScelta).toBe(componiMessaggio({ ...base, servizioId: "home-cooking" }));
+    expect(conScelta).not.toContain("Full 7");
+  });
+});
+
 describe("senzaDomandaFinale: il guardiano dei testi che non finiscono con '?'", () => {
   // Nessuno di questi testi ha spazi bordo: senzaDomandaFinale() esegue un
   // trim() come primo passo, quindi il confronto "identico carattere per
@@ -236,7 +283,7 @@ describe("senzaDomandaFinale: il guardiano dei testi che non finiscono con '?'",
 });
 
 describe("senzaDomandaFinale(senzaSaluto(...)) non perde mai il corpo di un servizio reale", () => {
-  const idServiziReali = ["menu-settimana", "sui-tuoi-macro", "home-cooking"];
+  const idServiziReali = ["menu-settimana", "abbonamento", "sui-tuoi-macro", "home-cooking"];
 
   it.each(idServiziReali)("il corpo di %s resta non vuoto dopo saluto e domanda tolti", (servizioId) => {
     const corpo = senzaDomandaFinale(senzaSaluto(messaggioServizio(servizioId)));

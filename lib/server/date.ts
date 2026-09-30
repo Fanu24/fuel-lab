@@ -44,9 +44,13 @@ export function oggiRoma(now = new Date()): string {
   return FORMATO_ROMA.format(now);
 }
 
-/** "YYYY-MM-DD" che esiste davvero nel calendario (niente 31 febbraio). */
+/**
+ * "YYYY-MM-DD" che esiste davvero nel calendario (niente 31 febbraio), con l'anno fra il 2000 e il 2100: fuori
+ * da li' e' un errore di battitura, e il calendario degli abbonamenti (Date.UTC tratta gli anni 0-99 come 19xx)
+ * darebbe risposte sbagliate o lancerebbe.
+ */
 export function dataValida(value: unknown): value is string {
-  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value) || value < "2000-01-01" || value > "2100-12-31") return false;
   const d = new Date(`${value}T00:00:00Z`);
   return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === value;
 }

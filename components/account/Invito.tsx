@@ -1,25 +1,41 @@
 import Link from "next/link";
 import { hrefAccedi, type SezioneAccount } from "@/lib/account";
+import { LINK_SCRIVI_ABBONAMENTO } from "@/lib/abbonamento";
+import type { Servizio } from "@/lib/api";
 import Vantaggi from "./Vantaggi";
 
 /* /account senza sessione: cosa si guadagna con un account e due strade,
    accedi o crea. Si torna esattamente dove si era, query compresa (per esempio
    al modulo "Nuova richiesta" aperto dal compositore). */
 
-export function Invito({ qui, sezione, errore }: { qui: string; sezione: SezioneAccount; errore: string | null }) {
+export function Invito({
+  qui,
+  sezione,
+  servizio,
+  errore,
+}: {
+  qui: string;
+  sezione: SezioneAccount;
+  servizio: Servizio;
+  errore: string | null;
+}) {
   const perInviare = sezione === "richiesta";
+  // L'abbonamento non si compone: si sceglie la formula e la si chiede. Il muro non deve parlare di piatti e settimana.
+  const abbonamento = perInviare && servizio === "abbonamento";
   return (
     <section className="acc-testata wrap pb-[var(--sezione)]">
       <div className="notte acc-invito">
         <div>
           <p className="occhiello">Area cliente</p>
           <h1 className="titolo mt-5 max-w-[14ch]">
-            {perInviare ? "Accedi per inviare la settimana." : "Entra nel tuo spazio."}
+            {abbonamento ? "Accedi per chiedere l’abbonamento." : perInviare ? "Accedi per inviare la settimana." : "Entra nel tuo spazio."}
           </h1>
           <p className="mt-6 max-w-[48ch] text-steel">
-            {perInviare
-              ? "La richiesta arriva a Matteo dal tuo account: così ti conferma giorno e dettagli, e tu segui ogni passo. Dopo l’accesso torni qui, con i piatti già pronti."
-              : "Con un account gratuito la settimana non resta chiusa in questo telefono, e le richieste a Matteo le segui da qui."}
+            {abbonamento
+              ? "La richiesta arriva a Matteo dal tuo account: così ti conferma inizio e dettagli, e tu segui ogni passo. Dopo l’accesso torni qui, con la formula già scelta."
+              : perInviare
+                ? "La richiesta arriva a Matteo dal tuo account: così ti conferma giorno e dettagli, e tu segui ogni passo. Dopo l’accesso torni qui, con i piatti già pronti."
+                : "Con un account gratuito la settimana non resta chiusa in questo telefono, e le richieste a Matteo le segui da qui."}
           </p>
           {errore ? (
             <p role="alert" className="acc-avviso acc-avviso-errore mt-6">
@@ -35,12 +51,19 @@ export function Invito({ qui, sezione, errore }: { qui: string; sezione: Sezione
             </Link>
           </div>
         </div>
-        <Vantaggi />
+        <Vantaggi abbonamento={abbonamento} />
       </div>
-      <p className="mt-6 max-w-[62ch] text-muted">
-        Puoi comporre la settimana anche senza account: resta salvata su questo dispositivo.{" "}
-        <Link href="/settimana" className="link text-ink">Componi la settimana</Link>
-      </p>
+      {abbonamento ? (
+        <p className="mt-6 max-w-[62ch] text-muted">
+          Preferisci scrivere prima a Matteo? Puoi farlo anche senza account.{" "}
+          <Link href={LINK_SCRIVI_ABBONAMENTO} className="link text-ink">Scrivi a Matteo</Link>
+        </p>
+      ) : (
+        <p className="mt-6 max-w-[62ch] text-muted">
+          Puoi comporre la settimana anche senza account: resta salvata su questo dispositivo.{" "}
+          <Link href="/settimana" className="link text-ink">Componi la settimana</Link>
+        </p>
+      )}
     </section>
   );
 }

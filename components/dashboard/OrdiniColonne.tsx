@@ -7,7 +7,7 @@
 import type { Ordine, StatoOrdine } from "@/lib/api";
 import { inRitardo, nomeProprio, perStato, prossimaAzioneDi, servonoDate } from "@/lib/operazioni";
 import { eAbbonamento } from "@/lib/produzione";
-import { DateOrdine } from "./OrdiniElenco";
+import { DateOrdine, RiepilogoOrdine } from "./OrdiniElenco";
 import { fraseAvviso, usePannello } from "./PannelloDati";
 import type { useAzioniVeloci } from "./PannelloStato";
 import { SegnoAbbonamento, Stato } from "./ui";
@@ -66,15 +66,14 @@ function Carta({ ordine: o, oggi, apri, veloci }: { ordine: Ordine; oggi: string
         {o.customer_name || "Cliente senza nome"}
       </button>
       <p className="text-[15px] text-muted">
-        {abbonamento ? "Pranzi lun–ven" : `${o.meals} ${o.meals === 1 ? "pasto" : "pasti"}`} · {o.fulfillment === "pickup" ? "Ritiro" : "Consegna"}
-        {o.comune ? ` · ${o.comune}` : ""}
+        <RiepilogoOrdine ordine={o} />
       </p>
       <p className="text-[15px]">
-        <DateOrdine ordine={o} />
+        <DateOrdine ordine={o} oggi={oggi} />
       </p>
       {abbonamento || inRitardo(o, oggi) || o.dietary_preferences?.trim() ? (
         <p className="flex flex-wrap gap-2">
-          {abbonamento ? <SegnoAbbonamento /> : null}
+          {abbonamento ? <SegnoAbbonamento ordine={o} /> : null}
           {inRitardo(o, oggi) ? <span className="pn-segno pn-segno-allarme">{abbonamento && o.status !== "requested" ? "Mese finito" : "In ritardo"}</span> : null}
           {o.dietary_preferences?.trim() ? <span className="pn-segno pn-segno-allarme">Allergie</span> : null}
         </p>

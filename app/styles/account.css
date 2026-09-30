@@ -111,6 +111,17 @@
   }
   .acc-scelta-nota { display: block; margin-top: 4px; font-size: 13px; color: var(--color-muted); }
   .acc-scelta:has(input:checked) .acc-scelta-nota { color: var(--color-steel); }
+  /* Il testo di una scelta puo' essere lungo (le formule dell'abbonamento): senza min-width va a capo invece di uscire dalla carta a 360 px. */
+  .acc-scelta > span:last-child { min-width: 0; }
+  /* "Consigliato" accanto al nome di una formula: il lime resta superficie, il testo e' ink. */
+  .acc-scelta-tag {
+    display: inline-block; margin-left: 10px; padding: 3px 8px; vertical-align: middle;
+    background: var(--color-lime); color: var(--color-ink);
+    font-size: 10px; line-height: 1.2; letter-spacing: 0.14em;
+  }
+  /* Pasti a settimana e prezzi di una formula su una riga, che va a capo per intero (mai un prezzo spezzato). */
+  .acc-scelta-riga { display: flex; flex-wrap: wrap; gap: 0 16px; }
+  .acc-scelta-riga > span { white-space: nowrap; }
   .acc-spunta { display: flex; align-items: flex-start; gap: 12px; min-height: 44px; cursor: pointer; }
   .acc-spunta input { flex: none; width: 20px; height: 20px; margin-top: 3px; accent-color: var(--color-ink); }
 
@@ -319,7 +330,15 @@
       grid-template-areas: "campi riepilogo" "invio riepilogo";
     }
     .acc-modulo-riepilogo { position: sticky; top: calc(var(--nav-h) + 84px); }
+    /* Il riepilogo dell'abbonamento (stima, sette righe, avvisi) puo' essere piu' alto dello schermo di un portatile:
+       si scorre dentro, cosi' non resta mai una parte fuori portata mentre e' incollato in alto. */
+    .acc-modulo-riepilogo {
+      max-height: calc(100dvh - var(--nav-h) - 100px); overflow-y: auto; overscroll-behavior: contain;
+    }
   }
+  /* Il prezzo stimato dell'abbonamento: e' l'informazione che si guarda a ogni scelta, quindi il numero piu' grande del riepilogo. */
+  .acc-stima { padding: 16px 18px; background: var(--color-paper); border-left: 4px solid var(--color-ink); }
+  .acc-stima-totale { margin-top: 8px; font-size: clamp(34px, 5vw, 44px); line-height: 1; }
   .acc-dettagli-piatti summary {
     display: flex; align-items: center; min-height: 44px; cursor: pointer; font-weight: 700;
     text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 5px;

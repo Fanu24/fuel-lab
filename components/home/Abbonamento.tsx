@@ -2,80 +2,69 @@ import Link from "next/link";
 import Reveal from "@/components/Reveal";
 import { PAGINE } from "@/components/seo/pagine";
 import {
-  ABBONAMENTO_CONSEGNA_GRATIS,
-  COMPRENDE_ABBONAMENTO,
+  CONSEGNA_OGNI_GIORNI,
+  FORMULE,
   LINK_RICHIEDI_ABBONAMENTO,
-  PREZZO_ABBONAMENTO,
-  SOGLIA_CONSEGNA_GRATIS,
+  PREZZO_DA_TESTO,
+  percorsoFormula,
 } from "@/lib/abbonamento";
-
-/**
- * Il riquadro del prezzo, lo stesso in home e su /abbonamento: prezzo, cosa
- * comprende, il bottone per richiederlo. Sta sulla notte perche' il prezzo e'
- * la prima cosa da leggere e il lime come testo e' legale solo li' (vedi
- * app/styles/tokens.css).
- */
-export function RiquadroAbbonamento({ delay = 0, className = "" }: { delay?: number; className?: string }) {
-  return (
-    <Reveal delay={delay} className={`notte smusso p-7 md:p-10 ${className}`}>
-      <p className="occhiello">Il prezzo</p>
-      <p className="mt-6 flex flex-wrap items-end gap-x-4 gap-y-2">
-        <span className="num text-[clamp(64px,9vw,120px)] leading-[.8] font-medium text-lime">
-          {/* Niente spazio: nel carattere monospaziato diventa una casella vuota larga come una cifra. */}
-          {PREZZO_ABBONAMENTO}
-          <span className="ml-[.08em]">€</span>
-        </span>
-        <span className="font-disp text-lg font-semibold tracking-[.12em] uppercase">al mese</span>
-      </p>
-      <ul className="mt-8 grid gap-3 border-t pt-6" style={{ borderColor: "var(--line)" }}>
-        {COMPRENDE_ABBONAMENTO.map((voce) => (
-          <li key={voce} className="flex gap-3">
-            <span aria-hidden="true" className="mt-2.5 h-2 w-2 shrink-0 bg-lime" />
-            <span>{voce}</span>
-          </li>
-        ))}
-      </ul>
-      {ABBONAMENTO_CONSEGNA_GRATIS ? (
-        <p className="mt-6 text-sm text-steel">
-          Una ventina di pranzi al mese: sei sopra i {SOGLIA_CONSEGNA_GRATIS} pasti da cui la consegna è gratis.
-        </p>
-      ) : null}
-      <Link href={LINK_RICHIEDI_ABBONAMENTO} className="btn btn-lime mt-8 w-full justify-between sm:w-auto sm:min-w-[300px]">
-        Richiedi l&apos;abbonamento <span aria-hidden="true" className="freccia">→</span>
-      </Link>
-      <p className="mt-5 text-sm text-steel">
-        Nessun pagamento online: inizio, consegna o ritiro e pagamento si concordano con Matteo.
-      </p>
-    </Reveal>
-  );
-}
+import { ZONA_A_PAROLE } from "@/components/abbonamento/righe";
 
 /* Subito dopo i piatti, come ha chiesto Matteo: chi ha appena guardato il menu
-   trova la strada per non pensarci piu' per un mese. Il testo sta sulla carta,
-   il prezzo nel riquadro di notte. */
+   trova la strada per non pensarci piu'. Il testo sta sulla carta, le cinque
+   formule sulla notte, perche' il prezzo e' la prima cosa da leggere e il lime
+   come testo e' legale solo li' (vedi app/styles/tokens.css). Nomi, pasti e
+   prezzi arrivano tutti da lib/abbonamento.ts. */
 export default function Abbonamento() {
   return (
     <section className="sezione" aria-labelledby="abbonamento-home-titolo">
       <div className="wrap grid items-center gap-12 lg:grid-cols-[1fr_1.05fr] lg:gap-20">
         <Reveal>
-          <p className="occhiello">Abbonamento mensile</p>
+          <p className="occhiello">Abbonamenti</p>
           <h2 id="abbonamento-home-titolo" className="titolo mt-5 max-w-[13ch]">
-            Tutti i pranzi del mese. <span className="evidenzia">Un prezzo.</span>
+            Cinque abbonamenti, <span className="evidenzia">uno è il tuo.</span>
           </h2>
           <p className="lead mt-6">
-            Dal lunedì al venerdì, per tutto il mese, Matteo compone i tuoi pranzi sulla tua scheda: come ti alleni,
-            cosa vuoi ottenere o i numeri del tuo nutrizionista. Niente settimana da comporre ogni volta: ci pensa lui.
+            Il piano del tuo nutrizionista, cucinato. Ci lasci la dieta, noi la prepariamo ai grammi nel nostro
+            laboratorio e te la portiamo pronta ogni {CONSEGNA_OGNI_GIORNI} giorni. {ZONA_A_PAROLE}.
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-x-8 gap-y-4">
-            <Link href={PAGINE.abbonamento.percorso} className="link">
-              Come funziona l&apos;abbonamento
+            <Link href={PAGINE.abbonamento.percorso} className="btn btn-ink">
+              Tutti gli abbonamenti <span aria-hidden="true" className="freccia">→</span>
             </Link>
-            <Link href="/scheda" className="link">
-              Hai la scheda del nutrizionista?
+            <Link href={LINK_RICHIEDI_ABBONAMENTO} className="link">
+              Prenota la tua settimana di prova
             </Link>
           </div>
         </Reveal>
-        <RiquadroAbbonamento delay={100} />
+
+        <Reveal delay={100} className="notte smusso p-7 md:p-10">
+          <p className="occhiello">Da {PREZZO_DA_TESTO} al mese</p>
+          <ul className="mt-6">
+            {FORMULE.map((f) => (
+              <li key={f.id}>
+                <Link href={percorsoFormula(f.id)} className="abb-mini">
+                  <span>
+                    <span className="abb-mini-nome">
+                      {f.nome}
+                      {f.consigliato ? <span className="ml-3 align-middle text-[11px] tracking-[.16em] text-lime">Consigliato</span> : null}
+                    </span>
+                    <span className="mt-1 block text-sm text-steel">{f.pastiSettimana} pasti a settimana</span>
+                  </span>
+                  <span className="abb-cifra text-[28px] text-lime">
+                    {f.prezzo.standard}
+                    <span className="ml-[.08em]">€</span>
+                    <span className="sr-only"> al mese, fascia Standard</span>
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-6 border-t pt-6 text-sm text-steel" style={{ borderColor: "var(--line)" }}>
+            Prezzi al mese in fascia Standard. Ogni formula c&apos;è anche in fascia Plus, con porzioni e proteine
+            maggiorate per chi si allena. La prima settimana è di prova, senza impegno.
+          </p>
+        </Reveal>
       </div>
     </section>
   );

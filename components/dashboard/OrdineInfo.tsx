@@ -137,11 +137,13 @@ export function OrdinePiatti({ ordine, allenamenti }: { ordine: Ordine; allename
   const abbonamento = ordine.service === "abbonamento";
   return (
     <section aria-labelledby="scheda-piatti">
-      <h3 id="scheda-piatti" className="pn-h3">{abbonamento ? "Pranzi indicati e allenamenti" : "Piatti"}</h3>
+      <h3 id="scheda-piatti" className="pn-h3">{abbonamento ? "Piatti indicati e allenamenti" : "Piatti"}</h3>
       {abbonamento ? (
         <p className="pn-aiuto mb-2">
-          I pranzi dal lunedì al venerdì si compongono sulla scheda del cliente.
-          {ordine.items.length ? " Dove ha indicato un piatto, finisce così sull’etichetta; negli altri giorni scegli tu." : ""}
+          I pasti della formula si compongono sulla scheda del cliente.
+          {ordine.items.length
+            ? " Dove ha indicato un piatto, vale per quel giorno della settimana e quel pasto in ogni consegna, e finisce così sull’etichetta; negli altri pasti scegli tu."
+            : ""}
         </p>
       ) : null}
       {ordine.items.length && !abbonamento ? (
@@ -196,7 +198,9 @@ function descrivi(e: EventoOrdine) {
     case "schedule":
       return `Date: ${e.detail || "aggiornate"}`;
     case "note":
-      return "Nota interna aggiornata";
+      // Il cambio di formula di un abbonamento viaggia come nota (order_events non ha un tipo suo, e aggiungerlo
+      // vorrebbe una migrazione): il dettaglio e' la traccia di un cambio che incide sul prezzo, si legge.
+      return e.detail.startsWith("Formula: ") ? e.detail : "Nota interna aggiornata";
     case "message":
       return e.detail ? `Messaggio al cliente: “${e.detail}”` : "Messaggio al cliente aggiornato";
     case "price":

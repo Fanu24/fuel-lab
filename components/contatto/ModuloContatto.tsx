@@ -12,8 +12,10 @@ import {
   bloccoSettimana,
   emailDaModulo,
   etichettaArgomento,
+  messaggioInizialeModulo,
   preparaMessaggio,
   primoErrore,
+  sceltaAbbonamentoDaParam,
   spazioPerMessaggio,
   spiegaErroreInvio,
   validaModulo,
@@ -120,7 +122,14 @@ function Esito({
   );
 }
 
-export default function ModuloContatto({ argomentoIniziale = "info" }: { argomentoIniziale?: ArgomentoMessaggio }) {
+export default function ModuloContatto({
+  argomentoIniziale = "info",
+  messaggioIniziale = "",
+}: {
+  argomentoIniziale?: ArgomentoMessaggio;
+  /** Il testo con cui parte il messaggio (un abbonamento con la formula gia' scelta); la persona lo puo' cambiare. */
+  messaggioIniziale?: string;
+}) {
   const utente = useUtente();
   const { piano, pasti, pronto } = usePiano();
 
@@ -130,7 +139,7 @@ export default function ModuloContatto({ argomentoIniziale = "info" }: { argomen
     telefono: "",
     comune: "",
     argomento: argomentoIniziale,
-    messaggio: "",
+    messaggio: messaggioIniziale,
   }));
   const [allega, setAllega] = useState(true);
   const [esca, setEsca] = useState("");
@@ -144,7 +153,10 @@ export default function ModuloContatto({ argomentoIniziale = "info" }: { argomen
 
   const allegato = useMemo(() => (pronto ? bloccoSettimana(piano) : ""), [piano, pronto]);
   const haSettimana = allegato !== "";
-  const allegatoInviato = allega && haSettimana ? allegato : "";
+  // L'abbonamento non parte dalla settimana del compositore: il piano lo scrive il nutrizionista del cliente e
+  // Matteo lo cucina sulla formula. Allegarla farebbe credere che quei piatti facciano parte dell'abbonamento.
+  const senzaAllegato = campi.argomento === "abbonamento";
+  const allegatoInviato = allega && haSettimana && !senzaAllegato ? allegato : "";
   const pastiAllegati = haSettimana ? allegato.split("\n").length - 1 : 0;
 
   const dati: DatiModulo = {
@@ -224,7 +236,7 @@ export default function ModuloContatto({ argomentoIniziale = "info" }: { argomen
       </p>
 
       {stato === "inviato" && inviato ? (
-        <Esito inviato={inviato} proponiAccount={!utente && pasti > 0} titolo={titoloEsito} onAltro={unAltro} />
+        <Esito inviato={inviato} proponiAccount={!utente && pasti > 0 && !senzaAllegato} titolo={titoloEsito} onAltro={unAltro} />
       ) : (
         <form onSubmit={invia} noValidate aria-busy={inviando} className="relative grid content-start gap-6">
           <div className="grid gap-5 sm:grid-cols-2">
@@ -348,7 +360,7 @@ export default function ModuloContatto({ argomentoIniziale = "info" }: { argomen
               maxLength={Math.max(massimo, scritti)}
               placeholder={
                 dati.argomento === "abbonamento"
-                  ? "Da quando vorresti iniziare, come e quando ti alleni, i tuoi obiettivi o le indicazioni del nutrizionista. Allergie o domande sulla consegna."
+                  ? "Da quando vorresti iniziare, il piano del tuo nutrizionista (o come ti alleni e cosa vuoi ottenere). Allergie o domande sulla consegna."
                   : "Cosa ti serve, per quanti pasti, da quando. Allergie o domande sulla consegna."
               }
               aria-invalid={!!mostra("messaggio")}
@@ -367,39 +379,48 @@ export default function ModuloContatto({ argomentoIniziale = "info" }: { argomen
           </div>
 
           <div className="bg-paper-2 p-4 md:p-5">
-            <label className="flex min-h-11 cursor-pointer items-center gap-3 font-semibold has-[:disabled]:cursor-default">
-              <input
-                type="checkbox"
-                className="h-5 w-5 shrink-0 accent-[#121412]"
-                checked={allega && haSettimana}
-                disabled={!haSettimana}
-                onChange={(e) => setAllega(e.target.checked)}
-                aria-describedby="c-allega-h"
-              />
-              Allega la mia settimana
-            </label>
-            <p id="c-allega-h" className="min-h-[3.1em] text-sm text-muted sm:min-h-[1.55em]">
-              {!pronto
-                ? "Cerco la settimana su questo dispositivo…"
-                : haSettimana
-                  ? `${pastiAllegati} ${pastiAllegati === 1 ? "pasto" : "pasti"} dal compositore, in fondo al messaggio.`
-                  : "Il compositore è vuoto: componi la settimana per allegarla."}
-            </p>
-            {haSettimana ? (
-              <details className="mt-1">
-                <summary className="flex min-h-11 cursor-pointer items-center text-sm font-bold underline decoration-2 underline-offset-4">
-                  Vedi cosa viene allegato
-                </summary>
-                <pre className="mt-2 max-h-56 overflow-auto bg-paper p-3 font-mono text-xs leading-relaxed whitespace-pre-wrap">
-                  {allegato}
-                </pre>
-              </details>
-            ) : (
-              <p className="mt-1 flex min-h-11 items-center text-sm">
-                <Link href="/settimana" className="link">
-                  Componi la settimana
-                </Link>
+            {senzaAllegato ? (
+              <p className="text-sm text-muted">
+                <strong className="text-ink">Per l’abbonamento non serve allegare la settimana.</strong> Nel messaggio scrivi il piano del
+                tuo nutrizionista, oppure come ti alleni e cosa vuoi ottenere: Matteo lo cucina sulla formula che indichi nel messaggio.
               </p>
+            ) : (
+              <>
+                <label className="flex min-h-11 cursor-pointer items-center gap-3 font-semibold has-[:disabled]:cursor-default">
+                  <input
+                    type="checkbox"
+                    className="h-5 w-5 shrink-0 accent-[#121412]"
+                    checked={allega && haSettimana}
+                    disabled={!haSettimana}
+                    onChange={(e) => setAllega(e.target.checked)}
+                    aria-describedby="c-allega-h"
+                  />
+                  Allega la mia settimana
+                </label>
+                <p id="c-allega-h" className="min-h-[3.1em] text-sm text-muted sm:min-h-[1.55em]">
+                  {!pronto
+                    ? "Cerco la settimana su questo dispositivo…"
+                    : haSettimana
+                      ? `${pastiAllegati} ${pastiAllegati === 1 ? "pasto" : "pasti"} dal compositore, in fondo al messaggio.`
+                      : "Il compositore è vuoto: componi la settimana per allegarla."}
+                </p>
+                {haSettimana ? (
+                  <details className="mt-1">
+                    <summary className="flex min-h-11 cursor-pointer items-center text-sm font-bold underline decoration-2 underline-offset-4">
+                      Vedi cosa viene allegato
+                    </summary>
+                    <pre className="mt-2 max-h-56 overflow-auto bg-paper p-3 font-mono text-xs leading-relaxed whitespace-pre-wrap">
+                      {allegato}
+                    </pre>
+                  </details>
+                ) : (
+                  <p className="mt-1 flex min-h-11 items-center text-sm">
+                    <Link href="/settimana" className="link">
+                      Componi la settimana
+                    </Link>
+                  </p>
+                )}
+              </>
             )}
           </div>
 
@@ -465,8 +486,13 @@ export default function ModuloContatto({ argomentoIniziale = "info" }: { argomen
   );
 }
 
-/** La stessa cosa, con l'argomento preso da `?servizio=` o `?argomento=`. Va dentro <Suspense>. */
+/**
+ * La stessa cosa, con l'argomento preso da `?servizio=` o `?argomento=` e, per
+ * l'abbonamento, la formula e la fascia da `?formula=` e `?fascia=`. Va dentro <Suspense>.
+ */
 export function ModuloContattoDaQuery() {
   const p = useSearchParams();
-  return <ModuloContatto argomentoIniziale={argomentoDaParam(p.get("argomento") ?? p.get("servizio"))} />;
+  const argomento = argomentoDaParam(p.get("argomento") ?? p.get("servizio"));
+  const scelta = sceltaAbbonamentoDaParam(p.get("formula"), p.get("fascia"));
+  return <ModuloContatto argomentoIniziale={argomento} messaggioIniziale={messaggioInizialeModulo(argomento, scelta)} />;
 }

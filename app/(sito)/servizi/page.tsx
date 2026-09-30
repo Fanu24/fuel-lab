@@ -4,8 +4,8 @@ import Reveal from "@/components/Reveal";
 import ChiusuraCta from "@/components/home/ChiusuraCta";
 import JsonLd from "@/components/seo/JsonLd";
 import { AGGIORNAMENTO, PAGINE, metadatiPagina } from "@/components/seo/pagine";
-import { nodiPagina, nodoServizio } from "@/components/seo/schema";
-import { LINK_RICHIEDI_ABBONAMENTO } from "@/lib/abbonamento";
+import { nodiPagina, nodoAbbonamenti, nodoServizio } from "@/components/seo/schema";
+import { CONSEGNA_OGNI_GIORNI, LINK_RICHIEDI_ABBONAMENTO } from "@/lib/abbonamento";
 import { SERVIZI, type Prezzo, type Servizio, type ServizioId } from "@/lib/servizi";
 
 const PAGINA = PAGINE.servizi;
@@ -13,19 +13,20 @@ const PAGINA = PAGINE.servizi;
 export const metadata = metadatiPagina(PAGINA);
 
 /* Niente listino: il committente vuole una soglia, non prezzi in chiaro
-   (vedi lib/servizi.ts). L'abbonamento ha il suo prezzo al mese, l'home
-   cooking nemmeno la soglia. */
+   (vedi lib/servizi.ts). Gli abbonamenti hanno cinque prezzi al mese: qui si
+   legge il piu' basso, "da", e il resto sta nella loro pagina. L'home cooking
+   nemmeno la soglia. */
 function testoPrezzo(p: Prezzo): string {
   if (p.tipo === "preventivo") return "Su preventivo";
-  if (p.tipo === "mese") return `${p.valore} € al mese`;
+  if (p.tipo === "mese-da") return `Da ${p.valore} € al mese`;
   return `Da ${p.valore.toFixed(2).replace(".", ",")} € ${p.unita}`;
 }
 
 /* Per i dati strutturati: che tipo di servizio e', e la pagina che lo spiega
-   meglio (l'home cooking ha la sua pagina locale). */
-const SCHEMA_SERVIZIO: Record<ServizioId, { tipo: string; url: string }> = {
+   meglio (l'home cooking ha la sua pagina locale). Gli abbonamenti non ci sono:
+   hanno un nodo tutto loro, con le cinque formule (nodoAbbonamenti). */
+const SCHEMA_SERVIZIO: Record<Exclude<ServizioId, "abbonamento">, { tipo: string; url: string }> = {
   "menu-settimana": { tipo: "Meal prep", url: "/settimana" },
-  abbonamento: { tipo: "Meal prep in abbonamento", url: PAGINE.abbonamento.percorso },
   "sui-tuoi-macro": { tipo: "Meal prep sui macro del nutrizionista", url: "/scheda" },
   "home-cooking": { tipo: "Cuoco a domicilio", url: PAGINE.domicilio.percorso },
 };
@@ -43,7 +44,7 @@ const QUANTI: Record<number, string> = { 2: "Due", 3: "Tre", 4: "Quattro", 5: "C
 /* Il testo del bottone principale di ogni servizio. */
 const BOTTONE: Record<ServizioId, string> = {
   "menu-settimana": "Inizia",
-  abbonamento: "Scopri l’abbonamento",
+  abbonamento: "Scopri gli abbonamenti",
   "sui-tuoi-macro": "Inizia",
   "home-cooking": "Conosci Matteo",
 };
@@ -61,17 +62,18 @@ export default function Servizi() {
             dataModifica: AGGIORNAMENTO,
           }),
           ...SERVIZI.map((s) =>
-            nodoServizio({
-              id: s.id,
-              percorso: PAGINA.percorso,
-              nome: s.nome,
-              descrizione: s.descrizione,
-              tipoServizio: SCHEMA_SERVIZIO[s.id].tipo,
-              url: SCHEMA_SERVIZIO[s.id].url,
-              immagine: s.img,
-              prezzoDa: s.prezzo.tipo === "soglia" ? s.prezzo.valore : undefined,
-              prezzoMese: s.prezzo.tipo === "mese" ? s.prezzo.valore : undefined,
-            }),
+            s.id === "abbonamento"
+              ? nodoAbbonamenti()
+              : nodoServizio({
+                  id: s.id,
+                  percorso: PAGINA.percorso,
+                  nome: s.nome,
+                  descrizione: s.descrizione,
+                  tipoServizio: SCHEMA_SERVIZIO[s.id].tipo,
+                  url: SCHEMA_SERVIZIO[s.id].url,
+                  immagine: s.img,
+                  prezzoDa: s.prezzo.tipo === "soglia" ? s.prezzo.valore : undefined,
+                }),
           ),
         ]}
       />
@@ -82,8 +84,9 @@ export default function Servizi() {
             <span className="titolo-xl mt-6 block max-w-[11ch]">{QUANTI[SERVIZI.length] ?? SERVIZI.length} modi di mangiare bene.</span>
           </h1>
           <p className="lead mt-6">
-            Matteo cucina ogni giorno e consegna ogni giorno: ritiri in Via del Santuario 214 o ricevi a Pescara e
-            dintorni, con la consegna gratis dai dieci pasti in su.{" "}
+            Matteo cucina ogni giorno. Il menu si ritira in Via del Santuario 214 o arriva a Pescara e dintorni ogni
+            giorno, con la consegna gratis dai dieci pasti in su; gli abbonamenti hanno una consegna (o un ritiro) ogni{" "}
+            {CONSEGNA_OGNI_GIORNI} giorni.{" "}
             <Link href={PAGINE.consegna.percorso} className="link">
               Zone e ritiro
             </Link>
@@ -120,7 +123,7 @@ export default function Servizi() {
                   ) : null}
                   {s.id === "abbonamento" ? (
                     <Link href={LINK_RICHIEDI_ABBONAMENTO} className="link">
-                      Richiedilo
+                      Richiedi un abbonamento
                     </Link>
                   ) : null}
                 </div>

@@ -7,7 +7,7 @@ import Faq from "@/components/come-funziona/Faq";
 import JsonLd from "@/components/seo/JsonLd";
 import { AGGIORNAMENTO, PAGINE, metadatiPagina } from "@/components/seo/pagine";
 import { nodiPagina, type DomandaTesto } from "@/components/seo/schema";
-import { PREZZO_ABBONAMENTO_TESTO } from "@/lib/abbonamento";
+import { CONSEGNA_OGNI_GIORNI, PREZZO_DA_TESTO } from "@/lib/abbonamento";
 import { EMAIL, INDIRIZZO_RIGA, elencoZone } from "@/lib/sito";
 
 const PAGINA = PAGINE.comeFunziona;
@@ -31,7 +31,7 @@ const DOMANDE: DomandaTesto[] = [
   },
   {
     q: "Devo ordinare ogni settimana?",
-    a: `Il compositore è una bozza gratuita e non invia ordini automatici: per ordinare, chiedi disponibilità e condizioni a Matteo. Se non vuoi pensarci ogni settimana, c'è l'abbonamento: tutti i pranzi dal lunedì al venerdì a ${PREZZO_ABBONAMENTO_TESTO} al mese.`,
+    a: `Il compositore è una bozza gratuita e non invia ordini automatici: per ordinare, chiedi disponibilità e condizioni a Matteo. Se non vuoi pensarci ogni settimana, ci sono gli abbonamenti: cinque formule da ${PREZZO_DA_TESTO} al mese, con il piano del tuo nutrizionista cucinato da Matteo e portato ogni ${CONSEGNA_OGNI_GIORNI} giorni.`,
   },
   {
     q: "Ho un'allergia o un'intolleranza.",
@@ -91,7 +91,7 @@ export default function ComeFunziona() {
                 Zone di consegna e ritiro
               </Link>
               <Link href={PAGINE.abbonamento.percorso} className="link">
-                L&apos;abbonamento ai pranzi
+                Gli abbonamenti
               </Link>
             </p>
           </Reveal>

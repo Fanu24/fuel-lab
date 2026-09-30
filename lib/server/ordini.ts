@@ -5,10 +5,10 @@
  * cliente puo' vedere si decide qui.
  */
 
-import { fineAbbonamento, PREZZO_ABBONAMENTO_CENTESIMI } from "../abbonamento";
-import { etichettaStato, type DettaglioOrdine, type EventoOrdine, type Modalita, type Ordine, type Servizio, type StatoOrdine, type VoceOrdine } from "../api";
+import { calcolaPrezzo, eFascia, eFormulaId, eNucleo, etichettaFormula, fineAbbonamento, getFormula, NOMI_NUCLEO, type FormulaId } from "../abbonamento";
+import { etichettaStato, type DettaglioOrdine, type EventoOrdine, type Modalita, type Ordine, type SceltaAbbonamento, type Servizio, type StatoOrdine, type VoceOrdine } from "../api";
 import { getExtra, getPiatto } from "../catalogo";
-import { GIORNI, PASTI, potaAllenamenti, potaPiano, type Allenamenti, type GiornoSettimana, type Piano } from "../settimana";
+import { GIORNI, PASTI, potaAllenamenti, potaPiano, type Allenamenti, type Piano } from "../settimana";
 import { dataEstesa, dataValida, spostaGiorno, tsSqlite } from "./date";
 
 export const STATI: readonly StatoOrdine[] = ["requested", "confirmed", "preparing", "ready", "completed", "cancelled"];
@@ -46,6 +46,20 @@ function leggiJson<T>(raw: unknown, fallback: T): T {
 export type RigaOrdine = Record<string, unknown>;
 
 /**
+ * La scelta di un abbonamento dalle colonne sub_*. Prima della migrazione 0006
+ * (e per gli abbonamenti nati prima delle cinque formule) mancano: erano pranzi
+ * dal lunedi' al venerdi', cioe' la formula Pranzo, Standard, da soli.
+ */
+export function sceltaDaRiga(row: RigaOrdine): SceltaAbbonamento {
+  return {
+    plan: eFormulaId(row.sub_plan) ? row.sub_plan : "pranzo",
+    tier: eFascia(row.sub_tier) ? row.sub_tier : "standard",
+    household: eNucleo(row.sub_household) ? row.sub_household : "singolo",
+    trial: Number(row.sub_trial) === 1,
+  };
+}
+
+/**
  * Da riga del database a `Ordine`, campo per campo: niente spread della riga,
  * cosi' plan_json, colonne future o note interne non escono per sbaglio.
  */
@@ -72,7 +86,9 @@ export function ordineDaRiga(row: RigaOrdine, admin: boolean): Ordine {
     created_at: tsSqlite(row.created_at) ?? testo(row.created_at),
     updated_at: tsSqlite(row.updated_at) ?? testo(row.updated_at),
     items: leggiJson<VoceOrdine[]>(row.items_json, []),
+    subscription: null,
   };
+  if (ordine.service === "abbonamento") ordine.subscription = sceltaDaRiga(row);
   if (admin) {
     ordine.production_date = testoONull(row.production_date);
     ordine.internal_note = testo(row.internal_note);
@@ -131,22 +147,47 @@ export function vociDalPiano(plan: Piano): VoceOrdine[] {
   return voci;
 }
 
-/** I giorni dei pranzi in abbonamento. */
-const FERIALI: readonly GiornoSettimana[] = ["lun", "mar", "mer", "gio", "ven"];
-
 /**
- * Per l'abbonamento il piano allegato vale solo per i pranzi dal lunedi' al
- * venerdi': le cene e il fine settimana non fanno parte dell'abbonamento, e
- * lasciarli nella richiesta farebbe credere a Matteo che vadano cucinati.
+ * Per l'abbonamento il piano allegato vale solo per i pasti della formula: i
+ * giorni e i pasti che non ne fanno parte (la cena per Pranzo, il fine
+ * settimana per Leggero...) non si cucinano, e lasciarli nella richiesta farebbe
+ * credere a Matteo che vadano cucinati. Il compositore ha solo pranzo e cena:
+ * la colazione non e' mai nel piano.
  */
-export function soloPranziFeriali(plan: Piano): Piano {
+export function soloPastiDellaFormula(plan: Piano, formula: FormulaId): Piano {
+  const { giorni, pasti } = getFormula(formula);
   const out: Piano = {};
-  for (const g of FERIALI) {
-    const pranzo = plan[g]?.pranzo;
-    if (pranzo) out[g] = { pranzo };
-  }
+  GIORNI.forEach((g, i) => {
+    // GIORNI parte dal lunedi' (indice 0): getUTCDay() vuole 1 per il lunedi', 0 per la domenica.
+    if (!giorni.includes((i + 1) % 7)) return;
+    for (const pasto of PASTI) {
+      const casella = plan[g]?.[pasto];
+      if (casella && pasti.includes(pasto)) out[g] = { ...out[g], [pasto]: casella };
+    }
+  });
   return out;
 }
+
+/**
+ * La scelta dell'abbonamento dal corpo della richiesta: la formula e' obbligatoria,
+ * fascia, nucleo e prova hanno un valore di partenza (Standard, da solo, senza
+ * prova). Un valore che non esiste e' un errore, non un default silenzioso.
+ */
+export function leggiSceltaAbbonamento(value: unknown): Esito<SceltaAbbonamento> {
+  const v = value && typeof value === "object" ? value as Record<string, unknown> : {};
+  if (!eFormulaId(v.plan)) return errore(400, "Scegli la formula dell'abbonamento");
+  if (v.tier !== undefined && !eFascia(v.tier)) return errore(400, "Fascia non valida: Standard o Plus");
+  if (v.household !== undefined && !eNucleo(v.household)) return errore(400, "Scegli se ti abboni da solo, in coppia o in famiglia");
+  if (v.trial !== undefined && typeof v.trial !== "boolean") return errore(400, "Scelta della settimana di prova non valida");
+  return {
+    ok: true,
+    value: { plan: v.plan, tier: v.tier ?? "standard", household: v.household ?? "singolo", trial: v.trial === true },
+  };
+}
+
+/** Il prezzo che parte con un abbonamento, in centesimi: una proposta finche' Matteo non conferma. */
+export const prezzoProposto = (scelta: SceltaAbbonamento, fulfillment: Modalita) =>
+  calcolaPrezzo({ formula: scelta.plan, fascia: scelta.tier, ritiro: fulfillment === "pickup", nucleo: scelta.household }).totaleCentesimi;
 
 export type NuovoOrdineValido = {
   name: string;
@@ -160,14 +201,17 @@ export type NuovoOrdineValido = {
   plan: Piano;
   training: Allenamenti;
   items: VoceOrdine[];
-  /** La proposta che parte con la richiesta: solo per l'abbonamento (prezzo fisso), altrimenti null. */
+  /** La proposta che parte con la richiesta: solo per l'abbonamento (prezzo della formula, con lo sconto che spetta), altrimenti null. */
   priceCents: number | null;
+  /** La formula scelta: solo per l'abbonamento. */
+  subscription: SceltaAbbonamento | null;
 };
 
 /**
  * Valida il corpo di POST /api/orders. `oggi` e' il giorno a Pescara.
  * Per l'abbonamento `requestedDate` e' l'inizio desiderato, i piatti non
- * servono e il prezzo proposto e' quello di lib/abbonamento.ts.
+ * servono, la formula e' obbligatoria e il prezzo proposto e' quello di
+ * calcolaPrezzo (lib/abbonamento.ts) per formula, fascia, ritiro e nucleo.
  */
 export function leggiNuovoOrdine(body: Record<string, unknown>, nomeAccount: string, oggi: string): Esito<NuovoOrdineValido> {
   const name = campo(body.name, 100) || nomeAccount.trim().slice(0, 100);
@@ -185,12 +229,18 @@ export function leggiNuovoOrdine(body: Record<string, unknown>, nomeAccount: str
     return errore(400, "Scegli una data nei prossimi 90 giorni");
   }
   const abbonamento = service === "abbonamento";
-  const plan = abbonamento ? soloPranziFeriali(potaPiano(body.plan)) : potaPiano(body.plan);
+  let subscription: SceltaAbbonamento | null = null;
+  if (abbonamento) {
+    const scelta = leggiSceltaAbbonamento(body.subscription);
+    if (!scelta.ok) return scelta;
+    subscription = scelta.value;
+  }
+  const plan = subscription ? soloPastiDellaFormula(potaPiano(body.plan), subscription.plan) : potaPiano(body.plan);
   const training = potaAllenamenti(body.training);
   const items = vociDalPiano(plan);
   if (!SERVIZI_SENZA_PIATTI.includes(service) && !items.length) return errore(400, "Componi almeno un piatto prima di inviare");
-  const priceCents = abbonamento ? PREZZO_ABBONAMENTO_CENTESIMI : null;
-  return { ok: true, value: { name, phone, comune, address, notes, service, fulfillment, requestedDate, plan, training, items, priceCents } };
+  const priceCents = subscription ? prezzoProposto(subscription, fulfillment) : null;
+  return { ok: true, value: { name, phone, comune, address, notes, service, fulfillment, requestedDate, plan, training, items, priceCents, subscription } };
 }
 
 /* ---------- Modifiche di Matteo ---------- */
@@ -204,6 +254,8 @@ export type StatoModificabile = {
   customer_message: string;
   price_cents: number | null;
   paid: 0 | 1;
+  /** La formula dell'abbonamento; null (o assente) per gli altri servizi. */
+  subscription?: SceltaAbbonamento | null;
 };
 
 export type Cambio = Pick<EventoOrdine, "type" | "from_status" | "to_status" | "detail">;
@@ -229,6 +281,11 @@ export function euroTesto(centesimi: number): string {
   const euro = Math.floor(Math.abs(centesimi) / 100).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   const cent = String(Math.abs(centesimi) % 100).padStart(2, "0");
   return `${centesimi < 0 ? "-" : ""}€ ${euro},${cent}`;
+}
+
+/** La scelta a parole per la cronologia: "Formula: Completo · Plus, in coppia, con la settimana di prova". */
+export function descriviFormula(scelta: SceltaAbbonamento): string {
+  return `Formula: ${etichettaFormula(scelta.plan, scelta.tier)}, ${NOMI_NUCLEO[scelta.household].toLowerCase()}${scelta.trial ? ", con la settimana di prova" : ""}`;
 }
 
 /** L'evento delle date nella cronologia. Per l'abbonamento le date sono l'inizio, e si scrive fin quando vale. */
@@ -291,6 +348,17 @@ export function leggiModificaAdmin(
 
   if (body.notify !== undefined && typeof body.notify !== "boolean") return errore(400, "Scelta di avviso non valida");
 
+  // La formula si puo' cambiare solo su un abbonamento (il cliente passa da Completo a Full 6...): il totale
+  // resta quello scritto, e' un campo a parte che Matteo aggiorna insieme.
+  let formula = current.subscription ?? null;
+  if (body.subscription !== undefined) {
+    if (servizio !== "abbonamento") return errore(400, "La formula si sceglie solo per gli abbonamenti");
+    const scelta = leggiSceltaAbbonamento(body.subscription);
+    if (!scelta.ok) return scelta;
+    formula = scelta.value;
+  }
+  const formulaCambiata = JSON.stringify(formula) !== JSON.stringify(current.subscription ?? null);
+
   const cambi: Cambio[] = [];
   const evento = (type: Cambio["type"], detail: string, from_status: StatoOrdine | null = null, to_status: StatoOrdine | null = null) =>
     cambi.push({ type, detail, from_status, to_status });
@@ -301,6 +369,7 @@ export function leggiModificaAdmin(
   if (messaggioCambiato) evento("message", messaggio || "Messaggio rimosso");
   if (prezzo !== current.price_cents) evento("price", prezzo === null ? "Totale rimosso" : `Totale concordato: ${euroTesto(prezzo)}`);
   if (pagato !== current.paid) evento("payment", pagato ? "Segnato come pagato" : "Segnato come non pagato");
+  if (formulaCambiata && formula) evento("note", descriviFormula(formula));
 
   return {
     ok: true,
@@ -313,6 +382,7 @@ export function leggiModificaAdmin(
         customer_message: messaggio,
         price_cents: prezzo,
         paid: pagato,
+        subscription: formula,
       },
       cambi,
       avvisaCliente: body.notify === true && (statoCambiato || (messaggioCambiato && messaggio !== "")),

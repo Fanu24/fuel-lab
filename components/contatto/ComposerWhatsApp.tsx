@@ -3,17 +3,19 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
+import { getFormula, NOMI_FASCIA } from "@/lib/abbonamento";
 import { getPiatto } from "@/lib/catalogo";
+import { sceltaAbbonamentoDaParam } from "@/lib/contatto";
 import { GIORNI, NOMI_GIORNATA, NOMI_GIORNO, PASTI, usePiano } from "@/lib/piano";
 import { SERVIZI, getServizio, type ServizioId } from "@/lib/servizi";
-import { componiMessaggio, linkWhatsApp, numeroConfigurato, type DatiContatto } from "@/lib/whatsapp";
+import { componiMessaggio, linkWhatsApp, numeroConfigurato, type DatiContatto, type SceltaMessaggio } from "@/lib/whatsapp";
 
 /* Il messaggio per WhatsApp: i dati restano nella pagina finche' l'utente non
    sceglie di aprire WhatsApp, il sito non li invia ne' li archivia. La pagina
    lo mostra solo quando NEXT_PUBLIC_WHATSAPP e' configurata; se il numero
    manca comunque, il bottone resta spento con la spiegazione accanto. */
 
-/* L'abbonamento non chiede la settimana composta: i pranzi li compone Matteo sulla scheda. */
+/* L'abbonamento non chiede la settimana composta: il piano lo scrive il nutrizionista del cliente e Matteo lo cucina. */
 const RICHIEDE_PIANO: Record<ServizioId, boolean> = {
   "menu-settimana": true,
   abbonamento: false,
@@ -39,7 +41,14 @@ function valida(m: DatiContatto): Errori {
 
 const ORDINE: (keyof DatiContatto)[] = ["nome", "telefono", "comune"];
 
-export default function ComposerWhatsApp({ servizioIniziale = "menu-settimana" }: { servizioIniziale?: ServizioId }) {
+export default function ComposerWhatsApp({
+  servizioIniziale = "menu-settimana",
+  abbonamento = {},
+}: {
+  servizioIniziale?: ServizioId;
+  /** La formula e la fascia gia' scelte sul sito (?formula=&fascia=): entrano nel messaggio dell'abbonamento. */
+  abbonamento?: SceltaMessaggio;
+}) {
   const { piano, allenamenti, pasti, macroSettimana, pronto } = usePiano();
   const [servizioId, setServizioId] = useState<ServizioId>(servizioIniziale);
   const [dati, setDati] = useState<DatiContatto>({ nome: "", telefono: "", comune: "", note: "" });
@@ -68,6 +77,7 @@ export default function ComposerWhatsApp({ servizioIniziale = "menu-settimana" }
       macro: macroSettimana,
       contatto: dati,
       allenamenti,
+      abbonamento,
     });
 
     const href = linkWhatsApp(testo);
@@ -117,6 +127,11 @@ export default function ComposerWhatsApp({ servizioIniziale = "menu-settimana" }
   }
 
   const servizio = getServizio(servizioId);
+  // Con la formula scelta sul sito il riquadro la nomina, come sara' nel messaggio: "Abbonamento Completo (Plus)".
+  const titoloNelMessaggio =
+    servizioId === "abbonamento" && abbonamento.formula
+      ? `Abbonamento ${getFormula(abbonamento.formula).nome}${abbonamento.fascia ? ` (${NOMI_FASCIA[abbonamento.fascia]})` : ""}`
+      : servizio.nome;
 
   return (
     <div className="wrap grid gap-14 lg:grid-cols-[1.3fr_1fr]">
@@ -157,7 +172,11 @@ export default function ComposerWhatsApp({ servizioIniziale = "menu-settimana" }
             rows={3}
             value={dati.note}
             onChange={(e) => setDati({ ...dati, note: e.target.value })}
-            placeholder={servizioId === "abbonamento" ? "Da quando vorresti iniziare, come ti alleni, i tuoi obiettivi, allergie" : "Allergie, orari, domande"}
+            placeholder={
+              servizioId === "abbonamento"
+                ? "Da quando vorresti iniziare, il piano del tuo nutrizionista (o come ti alleni), allergie"
+                : "Allergie, orari, domande"
+            }
           />
         </div>
 
@@ -191,7 +210,7 @@ export default function ComposerWhatsApp({ servizioIniziale = "menu-settimana" }
 
       <aside className="self-start bg-paper-2 p-6 md:p-8">
         <p className="occhiello">Nel messaggio</p>
-        <h3 className="titolo-s mt-4">{servizio.nome}</h3>
+        <h3 className="titolo-s mt-4">{titoloNelMessaggio}</h3>
         {richiedePiano && pasti > 0 ? (
           <>
             <p className="num mt-4 text-sm text-muted">
@@ -225,7 +244,13 @@ export default function ComposerWhatsApp({ servizioIniziale = "menu-settimana" }
   );
 }
 
-/** La stessa cosa, col servizio preso da `?servizio=`. Va dentro <Suspense>. */
+/** La stessa cosa, col servizio preso da `?servizio=` e la formula e la fascia da `?formula=` e `?fascia=`. Va dentro <Suspense>. */
 export function ComposerWhatsAppDaQuery() {
-  return <ComposerWhatsApp servizioIniziale={servizioDaParam(useSearchParams().get("servizio"))} />;
+  const p = useSearchParams();
+  return (
+    <ComposerWhatsApp
+      servizioIniziale={servizioDaParam(p.get("servizio"))}
+      abbonamento={sceltaAbbonamentoDaParam(p.get("formula"), p.get("fascia"))}
+    />
+  );
 }

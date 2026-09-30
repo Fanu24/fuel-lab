@@ -1,9 +1,10 @@
 /* La vista "elenco": una riga per ordine, tutta cliccabile. Sul telefono nome
    e prezzo in alto, date sotto; sul computer tre colonne. */
 
+import { NOMI_NUCLEO, formulaDi, prossimaConsegna } from "@/lib/abbonamento";
 import { euro, type Ordine } from "@/lib/api";
 import { aperto, fineDi, inRitardo } from "@/lib/operazioni";
-import { eAbbonamento } from "@/lib/produzione";
+import { eAbbonamento, inizioAbbonamento, pastiDelPeriodo } from "@/lib/produzione";
 import { SegnoAbbonamento, Stato, giorno } from "./ui";
 
 export default function OrdiniElenco({ ordini, oggi, apri }: { ordini: Ordine[]; oggi: string; apri: (id: string) => void }) {
@@ -18,7 +19,32 @@ export default function OrdiniElenco({ ordini, oggi, apri }: { ordini: Ordine[];
   );
 }
 
-export function DateOrdine({ ordine: o }: { ordine: Ordine }) {
+/**
+ * La riga sotto il nome: i pasti e come escono. Per un abbonamento la cadenza
+ * (una consegna o un ritiro ogni 3 giorni), i pasti del periodo e chi si abbona.
+ */
+export function RiepilogoOrdine({ ordine: o }: { ordine: Ordine }) {
+  const uscita = o.fulfillment === "pickup" ? "Ritiro" : "Consegna";
+  if (!eAbbonamento(o)) return <>{o.meals} {o.meals === 1 ? "pasto" : "pasti"} · {uscita}{o.comune ? ` · ${o.comune}` : ""}</>;
+  const pasti = pastiDelPeriodo(o);
+  const s = o.subscription;
+  return (
+    <>
+      {[
+        `${uscita} ogni 3 giorni`,
+        pasti !== null ? `${pasti} pasti` : "",
+        s && s.household !== "singolo" ? NOMI_NUCLEO[s.household].toLowerCase() : "",
+        s?.trial ? "con la settimana di prova" : "",
+        o.comune,
+      ]
+        .filter(Boolean)
+        .join(" · ")}
+    </>
+  );
+}
+
+/** `oggi`: per un abbonamento in corso aggiunge la prossima consegna. */
+export function DateOrdine({ ordine: o, oggi }: { ordine: Ordine; oggi?: string }) {
   const uscita = o.fulfillment === "pickup" ? "Ritiro" : "Consegna";
   if (eAbbonamento(o)) {
     // L'abbonamento ha un periodo: dall'inizio confermato a un mese dopo.
@@ -30,9 +56,17 @@ export function DateOrdine({ ordine: o }: { ordine: Ordine }) {
         </>
       );
     }
+    const inizio = inizioAbbonamento(o);
+    const prossima = oggi && inizio ? prossimaConsegna(formulaDi(o), inizio, oggi) : null;
     return (
       <>
-        Dal <strong>{giorno(o.fulfillment_date)}</strong> al <strong>{giorno(fine)}</strong> · {uscita.toLowerCase()}
+        Dal <strong>{giorno(o.fulfillment_date)}</strong> al <strong>{giorno(fine)}</strong>
+        {prossima ? (
+          <>
+            {" "}
+            · {o.fulfillment === "pickup" ? "prossimo ritiro" : "prossima consegna"} <strong>{giorno(prossima)}</strong>
+          </>
+        ) : null}
       </>
     );
   }
@@ -61,19 +95,18 @@ function RigaOrdine({ ordine: o, oggi, apri }: { ordine: Ordine; oggi: string; a
         <span className="pn-ordine-nome">{o.customer_name || "Cliente senza nome"}</span>
         <span className="pn-ordine-riga">
           <Stato stato={o.status} ritiro={o.fulfillment === "pickup"} abbonamento={abbonamento} />
-          {abbonamento ? <SegnoAbbonamento /> : null}
+          {abbonamento ? <SegnoAbbonamento ordine={o} /> : null}
           {ritardo ? <span className="pn-segno pn-segno-allarme">{abbonamento && o.status !== "requested" ? "Mese finito" : "In ritardo"}</span> : null}
           {senzaDate ? <span className="pn-segno pn-segno-attenzione">Senza date</span> : null}
           {allergie ? <span className="pn-segno pn-segno-allarme">Allergie</span> : null}
           {o.source === "manual" ? <span className="pn-segno pn-segno-neutro">Inserito a mano</span> : null}
         </span>
         <span className="pn-ordine-riga">
-          {abbonamento ? "Pranzi lun–ven" : `${o.meals} ${o.meals === 1 ? "pasto" : "pasti"}`} · {o.fulfillment === "pickup" ? "Ritiro" : "Consegna"}
-          {o.comune ? ` · ${o.comune}` : ""}
+          <RiepilogoOrdine ordine={o} />
         </span>
       </span>
       <span className="pn-ordine-date">
-        <DateOrdine ordine={o} />
+        <DateOrdine ordine={o} oggi={oggi} />
       </span>
       <span className="pn-ordine-soldi">
         {o.price_cents !== null ? <strong className="num">{euro(o.price_cents)}</strong> : null}

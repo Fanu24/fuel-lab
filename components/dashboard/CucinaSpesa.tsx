@@ -3,12 +3,13 @@
 /* Scheda Spesa: gli ingredienti della ricetta base moltiplicati per le
    porzioni del giorno, divisi per reparto. Le spunte restano sul telefono
    (una lista per giorno), cosi' al supermercato si spunta e a casa si
-   ritrova il segno. I pranzi in abbonamento entrano con il piatto indicato
-   dal cliente; quelli ancora da comporre restano fuori, e la scheda lo dice. */
+   ritrova il segno. I pasti delle consegne in abbonamento entrano con il
+   piatto indicato dal cliente per quel giorno e quel pasto; quelli ancora da
+   comporre (le colazioni sempre) restano fuori, e la scheda lo dice. */
 
 import { useMemo } from "react";
 import type { Ordine } from "@/lib/api";
-import { formattaPeso, formattaPezzi, listaSpesa, pranzoInAbbonamento } from "@/lib/produzione";
+import { formattaPeso, formattaPezzi, listaSpesa, pastiDaComporre } from "@/lib/produzione";
 import { useSpunte } from "./CucinaMemoria";
 import { Avviso } from "./ui";
 
@@ -26,7 +27,7 @@ export default function CucinaSpesa({
   abbonamenti?: Ordine[];
 }) {
   const lista = useMemo(() => listaSpesa(ordini), [ordini]);
-  const daComporre = abbonamenti.filter((o) => !pranzoInAbbonamento(o, giorno)).length;
+  const daComporre = pastiDaComporre(abbonamenti, giorno);
   const contate = porzioni - daComporre;
   const { spunte, cambia, azzera } = useSpunte(`fuellab:cucina:spesa:${giorno}`);
 
@@ -62,7 +63,7 @@ export default function CucinaSpesa({
         Quantità della ricetta base per una porzione, moltiplicate per {contate} {contate === 1 ? "porzione" : "porzioni"}.
         Gli extra non sono compresi: li trovi contati nella scheda Piatti.
         {daComporre
-          ? ` ${daComporre === 1 ? "Un pranzo in abbonamento è" : `${daComporre} pranzi in abbonamento sono`} ancora da comporre sulla scheda del cliente: aggiungi tu la spesa.`
+          ? ` ${daComporre === 1 ? "Un pasto in abbonamento è" : `${daComporre} pasti in abbonamento sono`} ancora da comporre sulla scheda del cliente (senza piatto indicato non c’è una ricetta da moltiplicare): aggiungi tu la spesa.`
           : ""}
       </Avviso>
 

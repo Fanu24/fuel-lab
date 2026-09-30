@@ -7,6 +7,7 @@ import Briciole from "@/components/seo/Briciole";
 import JsonLd from "@/components/seo/JsonLd";
 import { AGGIORNAMENTO, PAGINE, metadatiPagina } from "@/components/seo/pagine";
 import { ID, nodiPagina } from "@/components/seo/schema";
+import { CONSEGNA_OGNI_GIORNI, PREZZO_DA_TESTO } from "@/lib/abbonamento";
 import { PIATTI } from "@/lib/catalogo";
 import { CONSIGLI } from "@/lib/consigli";
 import { FOTO, RITRATTO_MATTEO } from "@/lib/immagini";
@@ -87,8 +88,8 @@ const SERVIZI_PAGINA = [
   },
   {
     href: PAGINE.abbonamento.percorso,
-    titolo: "Abbonamento ai pranzi",
-    testo: "Tutti i pranzi dal lunedì al venerdì per un mese, composti sulla tua scheda.",
+    titolo: "Gli abbonamenti",
+    testo: `Cinque formule da ${PREZZO_DA_TESTO} al mese: il piano del tuo nutrizionista, cucinato e portato ogni ${CONSEGNA_OGNI_GIORNI} giorni.`,
   },
   {
     href: PAGINE.scheda.percorso,

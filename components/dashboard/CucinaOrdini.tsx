@@ -1,15 +1,16 @@
 "use client";
 
 /* Scheda Ordini: una scheda per ogni ordine da preparare, in ordine di uscita,
-   poi una per ogni pranzo in abbonamento del giorno. Allergie e preferenze in
-   evidenza, i piatti giorno per giorno (o il pranzo di oggi e la scheda, per
-   l'abbonamento), e la spunta "Imballato" che resta sul telefono (una lista
-   per giorno). */
+   poi una per ogni consegna in abbonamento del giorno. Allergie e preferenze
+   in evidenza, i piatti giorno per giorno (per l'abbonamento, i pasti dei tre
+   giorni che la consegna copre e la scheda del cliente), e la spunta
+   "Imballato" che resta sul telefono (una lista per giorno). */
 
 import Link from "next/link";
 import { fineAbbonamento } from "@/lib/abbonamento";
 import { ETICHETTE_SERVIZIO, type Ordine } from "@/lib/api";
-import { PRANZO_IN_ABBONAMENTO, giornoDelPiano, nomeGiornoPasto, pranzoInAbbonamento, vociInOrdine } from "@/lib/produzione";
+import { PASTO_IN_ABBONAMENTO, dettaglioAbbonamento, nomeGiornoPasto, pastiInConsegna, vociInOrdine } from "@/lib/produzione";
+import { fraseConsegna } from "./AbbonamentoConsegna";
 import { BottoniContatto } from "./ClientiContatti";
 import { useSpunte } from "./CucinaMemoria";
 import { SegnoAbbonamento, Stato, giorno as giornoCorto, giornoLungo } from "./ui";
@@ -25,7 +26,7 @@ export default function CucinaOrdini({ ordini, abbonamenti = [], giorno }: { ord
     <div className="cu-pagina grid gap-6">
       <p className="cu-conto print:hidden" aria-live="polite">
         <strong className="num">{imballati}</strong> di {tutti} {tutti === 1 ? "scheda imballata" : "schede imballate"}
-        {abbonamenti.length ? ` (${abbonamenti.length} in abbonamento)` : ""}
+        {abbonamenti.length ? ` (${abbonamenti.length} ${abbonamenti.length === 1 ? "consegna" : "consegne"} in abbonamento)` : ""}
       </p>
       <ul className="cu-ordini">
         {ordini.map((o) => (
@@ -39,7 +40,11 @@ export default function CucinaOrdini({ ordini, abbonamenti = [], giorno }: { ord
   );
 }
 
-/** La scheda d'imballo di un pranzo in abbonamento: chi, dove, il pranzo di oggi e la scheda del cliente. */
+/**
+ * La scheda d'imballo di una consegna in abbonamento: chi, dove, quale consegna
+ * e' e i pasti dei tre giorni coperti, con la scheda del cliente. Un Full 7
+ * porta 9 pasti: una riga ciascuno, cosi' si imballa spuntando dall'alto.
+ */
 function SchedaAbbonamento({
   o,
   giorno,
@@ -51,7 +56,7 @@ function SchedaAbbonamento({
   imballato: boolean;
   onImballato: (v: boolean) => void;
 }) {
-  const voce = pranzoInAbbonamento(o, giorno);
+  const pasti = pastiInConsegna(o, giorno);
   const titoloId = `cu-abb-${o.id}`;
   const primoNome = o.customer_name.trim().split(/\s+/)[0] ?? "";
   return (
@@ -62,7 +67,7 @@ function SchedaAbbonamento({
         </h3>
         <div className="flex flex-wrap items-center gap-2">
           {imballato ? <span className="cu-bollino">Imballato</span> : null}
-          <SegnoAbbonamento />
+          <SegnoAbbonamento ordine={o} />
         </div>
       </div>
 
@@ -74,9 +79,10 @@ function SchedaAbbonamento({
       {o.fulfillment === "delivery" ? (
         <p className="cu-ordine-indirizzo">{[o.address, o.comune].filter(Boolean).join(", ") || "Indirizzo mancante"}</p>
       ) : null}
+      <p className="cu-ordine-uscita">{fraseConsegna(o, giorno)}</p>
       <p className="cu-ordine-contatti">
         {[o.phone, o.email].filter(Boolean).join(" · ")}
-        {o.fulfillment_date ? ` · abbonamento fino a ${giornoCorto(fineAbbonamento(o.fulfillment_date))}` : ""}
+        {o.fulfillment_date ? ` · ${dettaglioAbbonamento(o)} · abbonamento fino a ${giornoCorto(fineAbbonamento(o.fulfillment_date))}` : ""}
       </p>
       <BottoniContatto
         nome={o.customer_name}
@@ -92,21 +98,23 @@ function SchedaAbbonamento({
       ) : null}
 
       <table className="cu-voci">
-        <caption className="sr-only">Pranzo in abbonamento di {o.customer_name}</caption>
+        <caption className="sr-only">Pasti in abbonamento di {o.customer_name}</caption>
         <thead>
           <tr>
             <th scope="col">Quando</th>
-            <th scope="col">Pranzo (1 porzione)</th>
+            <th scope="col">Pasto ({pasti.length} {pasti.length === 1 ? "porzione" : "porzioni"})</th>
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td className="cu-voce-quando">{nomeGiornoPasto(voce ?? { day: giornoDelPiano(giorno), meal: "pranzo" })}</td>
-            <td>
-              {voce ? voce.name : `${PRANZO_IN_ABBONAMENTO}: da comporre sulla scheda`}
-              {voce?.extras.length ? <span className="cu-voce-extra"> + {voce.extras.join(", ")}</span> : null}
-            </td>
-          </tr>
+          {pasti.map((p) => (
+            <tr key={`${p.data}-${p.pasto}`}>
+              <td className="cu-voce-quando">{p.quando}</td>
+              <td>
+                {p.voce ? p.voce.name : `${PASTO_IN_ABBONAMENTO[p.pasto]}: da comporre sulla scheda`}
+                {p.voce?.extras.length ? <span className="cu-voce-extra"> + {p.voce.extras.join(", ")}</span> : null}
+              </td>
+            </tr>
+          ))}
         </tbody>
       </table>
 

@@ -7,7 +7,10 @@ import {
   leggiAnnullamentoCliente,
   leggiModificaAdmin,
   leggiNuovoOrdine,
+  leggiSceltaAbbonamento,
   ordineDaRiga,
+  sceltaDaRiga,
+  soloPastiDellaFormula,
   type StatoModificabile,
 } from "./ordini";
 import type { EventoOrdine } from "../api";
@@ -80,27 +83,107 @@ describe("nuova richiesta", () => {
     expect(leggiNuovoOrdine({ ...corpo, plan: {} }, "", "2026-09-27").ok).toBe(false);
   });
 
-  it("l'abbonamento non vuole piatti, parte con il prezzo proposto e tiene solo i pranzi feriali", () => {
-    const esito = leggiNuovoOrdine({ ...corpo, service: "abbonamento", plan: {} }, "Account", "2026-09-27");
+  const abb = { plan: "completo", tier: "standard", household: "singolo", trial: false };
+
+  it("l'abbonamento non vuole piatti e parte con il prezzo proposto per la formula", () => {
+    const esito = leggiNuovoOrdine({ ...corpo, service: "abbonamento", plan: {}, subscription: abb, fulfillment: "delivery", address: "Via Roma 1" }, "Account", "2026-09-27");
     expect(esito.ok).toBe(true);
     if (!esito.ok) return;
-    expect(esito.value).toMatchObject({ service: "abbonamento", requestedDate: "2026-10-01", priceCents: 23900, items: [] });
-    const conPiano = leggiNuovoOrdine({
-      ...corpo,
-      service: "abbonamento",
-      plan: {
-        lun: { pranzo: { piatto: piatto.id, extra: [] }, cena: { piatto: piatto.id, extra: [] } },
-        sab: { pranzo: { piatto: piatto.id, extra: [] } },
-      },
-    }, "Account", "2026-09-27");
-    expect(conPiano.ok && conPiano.value.items.map((v) => `${v.day}-${v.meal}`)).toEqual(["lun-pranzo"]);
-    expect(conPiano.ok && conPiano.value.plan).toEqual({ lun: { pranzo: { piatto: piatto.id, extra: [] } } });
-    // gli altri servizi non partono con un prezzo
-    const normale = leggiNuovoOrdine(corpo, "Account", "2026-09-27");
+    expect(esito.value).toMatchObject({
+      service: "abbonamento", requestedDate: "2026-10-01", priceCents: 52000, items: [],
+      subscription: { plan: "completo", tier: "standard", household: "singolo", trial: false },
+    });
+    // gli altri servizi non partono con un prezzo ne' con una formula
+    const normale = leggiNuovoOrdine({ ...corpo, subscription: abb }, "Account", "2026-09-27");
     expect(normale.ok && normale.value.priceCents).toBeNull();
+    expect(normale.ok && normale.value.subscription).toBeNull();
     // un servizio sconosciuto torna al menu della settimana
     const strano = leggiNuovoOrdine({ ...corpo, service: "boh" }, "Account", "2026-09-27");
     expect(strano.ok && strano.value.service).toBe("menu-settimana");
+  });
+
+  it("il prezzo proposto segue formula, fascia, ritiro e nucleo", () => {
+    const prezzo = (subscription: Record<string, unknown>, fulfillment = "delivery") => {
+      const e = leggiNuovoOrdine({ ...corpo, service: "abbonamento", plan: {}, subscription, fulfillment, address: "Via Roma 1" }, "Account", "2026-09-27");
+      return e.ok ? e.value.priceCents : e.error;
+    };
+    expect(prezzo({ plan: "pranzo" })).toBe(17300); // Standard, da solo: i valori di partenza
+    expect(prezzo({ plan: "full7", tier: "plus" })).toBe(94600);
+    expect(prezzo({ plan: "completo" }, "pickup")).toBe(46800); // ritiro -10%
+    expect(prezzo({ plan: "completo", household: "coppia" })).toBe(47800); // coppia -8%
+    expect(prezzo({ plan: "completo", household: "coppia" }, "pickup")).toBe(46800); // non si sommano: il piu' alto
+  });
+
+  it("l'abbonamento vuole una formula valida", () => {
+    const errore = (subscription: unknown) => {
+      const e = leggiNuovoOrdine({ ...corpo, service: "abbonamento", plan: {}, subscription }, "Account", "2026-09-27");
+      return e.ok ? null : e.error;
+    };
+    expect(errore(undefined)).toMatch(/formula/);
+    expect(errore({})).toMatch(/formula/);
+    expect(errore({ plan: "full8" })).toMatch(/formula/);
+    expect(errore({ plan: "pranzo", tier: "oro" })).toMatch(/Fascia/);
+    expect(errore({ plan: "pranzo", household: "tribu" })).toMatch(/coppia/);
+    expect(errore({ plan: "pranzo", trial: "si" })).toMatch(/prova/);
+  });
+
+  it("la formula ha valori di partenza: Standard, da solo, senza prova", () => {
+    const e = leggiSceltaAbbonamento({ plan: "leggero" });
+    expect(e).toEqual({ ok: true, value: { plan: "leggero", tier: "standard", household: "singolo", trial: false } });
+    const p = leggiSceltaAbbonamento({ plan: "full6", tier: "plus", household: "famiglia", trial: true });
+    expect(p).toEqual({ ok: true, value: { plan: "full6", tier: "plus", household: "famiglia", trial: true } });
+  });
+
+  it("il piano allegato all'abbonamento tiene solo i pasti della formula", () => {
+    const casella = { piatto: piatto.id, extra: [] };
+    const settimana = {
+      lun: { pranzo: casella, cena: casella },
+      sab: { pranzo: casella, cena: casella },
+      dom: { pranzo: casella },
+    };
+    expect(soloPastiDellaFormula(settimana, "pranzo")).toEqual({ lun: { pranzo: casella } });
+    expect(soloPastiDellaFormula(settimana, "leggero")).toEqual({ lun: { pranzo: casella, cena: casella } });
+    expect(soloPastiDellaFormula(settimana, "completo")).toEqual(settimana);
+    // Full 6 salta la domenica; il compositore non ha la colazione, quindi restano pranzo e cena
+    expect(soloPastiDellaFormula(settimana, "full6")).toEqual({ lun: { pranzo: casella, cena: casella }, sab: { pranzo: casella, cena: casella } });
+    const conPiano = leggiNuovoOrdine({ ...corpo, service: "abbonamento", plan: settimana, subscription: { plan: "pranzo" } }, "Account", "2026-09-27");
+    expect(conPiano.ok && conPiano.value.items.map((v) => `${v.day}-${v.meal}`)).toEqual(["lun-pranzo"]);
+  });
+
+  it("la formula si legge dalle colonne sub_*; senza colonne e' il Pranzo di prima", () => {
+    expect(sceltaDaRiga({ sub_plan: "full6", sub_tier: "plus", sub_household: "coppia", sub_trial: 1 }))
+      .toEqual({ plan: "full6", tier: "plus", household: "coppia", trial: true });
+    expect(sceltaDaRiga({})).toEqual({ plan: "pranzo", tier: "standard", household: "singolo", trial: false });
+    expect(sceltaDaRiga({ sub_plan: "boh", sub_tier: "oro", sub_household: "x", sub_trial: 9 }))
+      .toEqual({ plan: "pranzo", tier: "standard", household: "singolo", trial: false });
+    // solo gli abbonamenti hanno una formula
+    expect(ordineDaRiga({ ...riga, sub_plan: "full7" }, false).subscription).toBeNull();
+    expect(ordineDaRiga({ ...riga, service: "abbonamento", sub_plan: "full7", sub_tier: "plus" }, false).subscription)
+      .toEqual({ plan: "full7", tier: "plus", household: "singolo", trial: false });
+    expect(ordineDaRiga({ ...riga, service: "abbonamento" }, true).subscription?.plan).toBe("pranzo");
+  });
+
+  it("Matteo puo' cambiare la formula di un abbonamento, e la cronologia lo scrive", () => {
+    const attuale = stato({ subscription: { plan: "completo", tier: "standard", household: "singolo", trial: false } });
+    const cambio = leggiModificaAdmin({ subscription: { plan: "full6", tier: "plus", household: "coppia", trial: true } }, attuale, "pickup", "abbonamento");
+    expect(cambio.ok).toBe(true);
+    if (!cambio.ok) return;
+    expect(cambio.value.next.subscription).toEqual({ plan: "full6", tier: "plus", household: "coppia", trial: true });
+    expect(cambio.value.cambi).toEqual([
+      { type: "note", detail: "Formula: Full 6 · Plus, in coppia, con la settimana di prova", from_status: null, to_status: null },
+    ]);
+    // stessa scelta: nessun evento; altro servizio: rifiutata; scelta malformata: rifiutata
+    const uguale = leggiModificaAdmin({ subscription: attuale.subscription }, attuale, "pickup", "abbonamento");
+    expect(uguale.ok && uguale.value.cambi).toEqual([]);
+    expect(leggiModificaAdmin({ subscription: { plan: "pranzo" } }, stato(), "pickup", "menu-settimana").ok).toBe(false);
+    expect(leggiModificaAdmin({ subscription: { plan: "nessuna" } }, attuale, "pickup", "abbonamento").ok).toBe(false);
+  });
+
+  it("una data con l'anno fuori dal 2000-2100 e' un errore 400, non un'eccezione del calendario", () => {
+    for (const data of ["0002-10-05", "9999-12-31", "1999-12-31", "2101-01-01"]) {
+      const esito = leggiModificaAdmin({ fulfillmentDate: data }, stato(), "pickup", "abbonamento");
+      expect(esito).toMatchObject({ ok: false, status: 400 });
+    }
   });
 
   it("per l'abbonamento la cronologia scrive l'inizio e fin quando vale", () => {

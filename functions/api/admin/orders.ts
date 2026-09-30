@@ -49,12 +49,14 @@ export const onRequestPost = async ({ env, request }: Context) => {
   const id = crypto.randomUUID();
   await env.DB.batch([
     env.DB.prepare(`INSERT INTO orders (id,user_id,status,service,fulfillment,requested_date,production_date,fulfillment_date,
-        customer_name,phone,comune,address,notes,plan_json,training_json,items_json,meals,internal_note,price_cents,paid,source)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'manual')`)
+        customer_name,phone,comune,address,notes,plan_json,training_json,items_json,meals,internal_note,price_cents,paid,source,
+        sub_plan,sub_tier,sub_household,sub_trial)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'manual',?,?,?,?)`)
       .bind(
         id, o.customerId ?? user.id, o.status, o.service, o.fulfillment, o.requestedDate, o.productionDate, o.fulfillmentDate,
         o.name, o.phone, o.comune, o.address, o.notes, JSON.stringify(o.plan), "{}", JSON.stringify(o.items), o.meals,
         o.internalNote, o.priceCents, o.paid,
+        o.subscription?.plan ?? null, o.subscription?.tier ?? null, o.subscription?.household ?? null, o.subscription?.trial ? 1 : 0,
       ),
     eventoStmt(env, id, "admin", { type: "created", from_status: null, to_status: o.status, detail: "Inserito a mano da Matteo" }),
   ]);

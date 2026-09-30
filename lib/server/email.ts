@@ -7,13 +7,14 @@
  * nell'HTML, e da unaRiga prima di finire in un oggetto.
  */
 
-import { PREZZO_ABBONAMENTO_TESTO, periodoAbbonamento } from "../abbonamento";
+import { CONSEGNA_OGNI_GIORNI, etichettaFormula, formulaDi, getFormula, NOMI_NUCLEO, periodoAbbonamento } from "../abbonamento";
 import {
   ETICHETTE_ARGOMENTO,
   ETICHETTE_SERVIZIO,
   etichettaStato,
   type ArgomentoMessaggio,
   type Modalita,
+  type SceltaAbbonamento,
   type Servizio,
   type StatoOrdine,
   type VoceOrdine,
@@ -125,6 +126,8 @@ export type RichiestaPerEmail = {
   items: VoceOrdine[];
   /** La proposta di prezzo partita con la richiesta (l'abbonamento ne ha una). */
   price_cents?: number | null;
+  /** La formula scelta: solo per l'abbonamento. Senza, si legge come un Pranzo (gli abbonamenti nati prima delle formule). */
+  subscription?: SceltaAbbonamento | null;
 };
 
 export const linkPannello = (id: string) => `${SITO}/dashboard/ordini?id=${encodeURIComponent(id)}`;
@@ -150,14 +153,24 @@ export function piattiPerGiorno(items: VoceOrdine[]): string[] {
   return righe;
 }
 
+/** "Completo · Plus": la formula di un abbonamento come si legge in una riga. */
+const nomeAbbonamento = (o: { subscription?: SceltaAbbonamento | null }) => etichettaFormula(formulaDi(o), o.subscription?.tier);
+
 /** "Pasti: 3" o, per l'abbonamento, cosa chiede davvero: la data e' l'inizio, non un giorno di ritiro. */
 function righeRichiesta(o: RichiestaPerEmail): Array<[string, string]> {
   if (o.service === "abbonamento") {
-    return [
-      ["Inizio desiderato", o.requested_date ? dataEstesa(o.requested_date) : "Da concordare"],
-      ["Cosa chiede", "Tutti i pranzi dal lunedì al venerdì per un mese, sulla sua scheda"],
-      ["Prezzo proposto", `${PREZZO_ABBONAMENTO_TESTO} al mese`],
+    const scelta = o.subscription;
+    const righe: Array<[string, string]> = [
+      ["Formula", nomeAbbonamento(o)],
+      ["Cosa chiede", getFormula(formulaDi(o)).cosaRicevi],
     ];
+    // Chi si abbona e la prova li porta la scelta salvata: senza (un abbonamento vecchio) non si inventano.
+    if (scelta) {
+      righe.push(["Chi si abbona", NOMI_NUCLEO[scelta.household]], ["Settimana di prova", scelta.trial ? "Sì" : "No"]);
+    }
+    if (o.price_cents !== null && o.price_cents !== undefined) righe.push(["Prezzo proposto", `${euroTesto(o.price_cents)} al mese`]);
+    righe.push(["Inizio desiderato", o.requested_date ? dataEstesa(o.requested_date) : "Da concordare"]);
+    return righe;
   }
   return [
     ["Data preferita", o.requested_date ? dataEstesa(o.requested_date) : "Nessuna preferenza"],
@@ -182,11 +195,11 @@ export function emailNuovaRichiesta(o: RichiestaPerEmail): ContenutoEmail {
   ];
   const giorni = piattiPerGiorno(o.items);
   if (giorni.length) {
-    blocchi.push({ tipo: "sezione", titolo: abbonamento ? "Pranzi indicati dal cliente" : "Piatti per giorno" }, { tipo: "elenco", voci: giorni });
+    blocchi.push({ tipo: "sezione", titolo: abbonamento ? "Piatti indicati dal cliente" : "Piatti per giorno" }, { tipo: "elenco", voci: giorni });
   }
   if (o.notes) blocchi.push({ tipo: "citazione", titolo: abbonamento ? "La scheda del cliente" : "Note del cliente", testo: o.notes });
   blocchi.push({ tipo: "link", url: linkPannello(o.id), etichetta: "Apri la richiesta nel pannello" });
-  const cosa = abbonamento ? ETICHETTE_SERVIZIO.abbonamento : `${o.meals} ${o.meals === 1 ? "pasto" : "pasti"}`;
+  const cosa = abbonamento ? `Abbonamento ${nomeAbbonamento(o)}` : `${o.meals} ${o.meals === 1 ? "pasto" : "pasti"}`;
   return componi(`Nuova richiesta: ${nome} · ${cosa}`, abbonamento ? "Nuova richiesta di abbonamento dal sito" : "Nuova richiesta dal sito", blocchi);
 }
 
@@ -217,15 +230,15 @@ const FRASI_STATO: Record<StatoOrdine, string> = {
   cancelled: "La tua richiesta è stata annullata.",
 };
 
-/** Le stesse frasi per l'abbonamento: non si prepara un ordine, parte un mese di pranzi. */
-const FRASI_STATO_ABBONAMENTO: Record<StatoOrdine, string> = {
-  requested: "La tua richiesta di abbonamento è in attesa di conferma: Matteo la guarda al più presto.",
-  confirmed: "Matteo ha confermato il tuo abbonamento ai pranzi.",
-  preparing: "Il tuo abbonamento ai pranzi è in corso.",
-  ready: "Il tuo abbonamento ai pranzi è in corso.",
-  completed: "Il tuo abbonamento ai pranzi si è concluso. Grazie!",
-  cancelled: "La tua richiesta di abbonamento è stata annullata.",
-};
+/** Le stesse frasi per l'abbonamento, con la formula: non si prepara un ordine, parte un mese di consegne. */
+const frasiStatoAbbonamento = (formula: string): Record<StatoOrdine, string> => ({
+  requested: `La tua richiesta di abbonamento ${formula} è in attesa di conferma: Matteo la guarda al più presto.`,
+  confirmed: `Matteo ha confermato il tuo abbonamento ${formula}.`,
+  preparing: `Il tuo abbonamento ${formula} è in corso.`,
+  ready: `Il tuo abbonamento ${formula} è in corso.`,
+  completed: `Il tuo abbonamento ${formula} si è concluso. Grazie!`,
+  cancelled: `La tua richiesta di abbonamento ${formula} è stata annullata.`,
+});
 
 const OGGETTO_ABBONAMENTO: Record<StatoOrdine, string> = {
   requested: "abbonamento in attesa di conferma",
@@ -248,6 +261,8 @@ export type AggiornamentoPerEmail = {
   customer_message: string;
   price_cents: number | null;
   paid: 0 | 1;
+  /** La formula scelta: solo per l'abbonamento. */
+  subscription?: SceltaAbbonamento | null;
 };
 
 /** (c) Aggiornamento dell'ordine -> al cliente. Mai dati interni: niente data di produzione, niente note di Matteo per se'. */
@@ -256,11 +271,15 @@ export function emailAggiornamentoCliente(o: AggiornamentoPerEmail, statoCambiat
   const etichetta = etichettaStato(o.status, "cliente");
   const abbonamento = o.service === "abbonamento";
   const righe: Array<[string, string]> = [["Stato", abbonamento && o.status === "completed" ? "Concluso" : etichetta]];
-  if (abbonamento) righe.push(["Servizio", ETICHETTE_SERVIZIO.abbonamento]);
+  if (abbonamento) righe.push(["Servizio", ETICHETTE_SERVIZIO.abbonamento], ["Formula", nomeAbbonamento(o)]);
   if (o.status !== "cancelled") {
     if (o.fulfillment_date && abbonamento) {
+      // Il periodo e' un mese dall'inizio; la prima consegna (o ritiro) e' il primo giorno, poi una ogni 3 giorni.
       const { dal, al } = periodoAbbonamento(o.fulfillment_date);
-      righe.push(["Periodo", `dal ${dataEstesa(dal)} al ${dataEstesa(al)}, pranzi dal lunedì al venerdì`]);
+      righe.push(
+        ["Periodo", `dal ${dataEstesa(dal)} al ${dataEstesa(al)}`],
+        [o.fulfillment === "delivery" ? "Consegna" : "Ritiro", `ogni ${CONSEGNA_OGNI_GIORNI} giorni, a partire da ${dataEstesa(dal)}`],
+      );
     } else if (o.fulfillment_date) {
       righe.push([o.fulfillment === "delivery" ? "Consegna" : "Ritiro", dataEstesa(o.fulfillment_date)]);
     }
@@ -269,9 +288,11 @@ export function emailAggiornamentoCliente(o: AggiornamentoPerEmail, statoCambiat
   if (o.price_cents !== null) {
     // Su una richiesta ancora da confermare il prezzo e' una proposta, come nel pannello e nell'area cliente.
     const proposto = o.status === "requested";
-    righe.push([proposto ? "Prezzo proposto" : "Totale concordato", `${euroTesto(o.price_cents)}${o.paid ? " · pagato" : ""}`]);
+    // La proposta di un abbonamento e' un prezzo al mese; il totale concordato lo scrive Matteo.
+    const alMese = proposto && abbonamento ? " al mese" : "";
+    righe.push([proposto ? "Prezzo proposto" : "Totale concordato", `${euroTesto(o.price_cents)}${alMese}${o.paid ? " · pagato" : ""}`]);
   }
-  const frasi = abbonamento ? FRASI_STATO_ABBONAMENTO : FRASI_STATO;
+  const frasi = abbonamento ? frasiStatoAbbonamento(nomeAbbonamento(o)) : FRASI_STATO;
   const blocchi: Blocco[] = [
     { tipo: "paragrafo", testo: statoCambiato ? frasi[o.status] : "Matteo ti ha scritto un messaggio sulla tua richiesta." },
     { tipo: "righe", righe },

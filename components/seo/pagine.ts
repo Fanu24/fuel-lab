@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { NOME_ATTIVITA } from "@/lib/sito";
 import { PIATTI, type Piatto } from "@/lib/catalogo";
-import { PREZZO_ABBONAMENTO_TESTO } from "@/lib/abbonamento";
+import { CONSEGNA_OGNI_GIORNI, FORMULE, PREZZO_DA_TESTO, getFormula, percorsoFormula, type FormulaId } from "@/lib/abbonamento";
 
 /* =========================================================================
    Titoli, descrizioni e canonical delle pagine pubbliche, in un posto solo.
@@ -19,7 +19,7 @@ import { PREZZO_ABBONAMENTO_TESTO } from "@/lib/abbonamento";
 export const TEMPLATE_TITOLO = `%s · ${NOME_ATTIVITA}`;
 
 /** Data dell'ultima revisione dei contenuti: finisce in sitemap e dati strutturati. */
-export const AGGIORNAMENTO = "2026-09-27";
+export const AGGIORNAMENTO = "2026-09-30";
 
 export const IMMAGINE_OG = {
   url: "/opengraph-image.jpg",
@@ -110,9 +110,9 @@ export const PAGINE = {
   },
   abbonamento: {
     percorso: "/abbonamento",
-    titolo: `Abbonamento pranzi a Pescara: ${PREZZO_ABBONAMENTO_TESTO} al mese`,
-    descrizione: `Abbonamento meal prep a Pescara: ${PREZZO_ABBONAMENTO_TESTO} al mese, tutti i pranzi dal lunedì al venerdì composti da Matteo sulla tua scheda. Ritiro o consegna in zona.`,
-    breve: "Abbonamento",
+    titolo: `Abbonamenti meal prep a Pescara da ${PREZZO_DA_TESTO} al mese`,
+    descrizione: `Cinque abbonamenti meal prep a Pescara da ${PREZZO_DA_TESTO} al mese: Matteo cucina il piano del tuo nutrizionista e lo porta ogni ${CONSEGNA_OGNI_GIORNI} giorni. Prima settimana di prova.`,
+    breve: "Abbonamenti",
     priorita: 0.9,
     frequenza: "monthly",
   },
@@ -120,7 +120,7 @@ export const PAGINE = {
     percorso: "/servizi",
     titolo: "Servizi e prezzi del meal prep a Pescara",
     descrizione:
-      `Menu della settimana da 8,90 € a pasto, abbonamento ai pranzi a ${PREZZO_ABBONAMENTO_TESTO} al mese, piano sui macro o Matteo che cucina da te: i servizi di FUEL LAB a Pescara.`,
+      `Menu della settimana da 8,90 € a pasto, cinque abbonamenti da ${PREZZO_DA_TESTO} al mese, piano sui macro o Matteo che cucina da te: i servizi di FUEL LAB a Pescara.`,
     breve: "Servizi e prezzi",
     priorita: 0.8,
     frequenza: "monthly",
@@ -237,3 +237,41 @@ export function paginaPiatto(p: Piatto): PaginaSeo {
     immagine: { url: p.img, alt: `${p.nome}, foto illustrativa` },
   };
 }
+
+/* ---- le schede degli abbonamenti ---- */
+
+/**
+ * Anche qui la descrizione deve stare fra 140 e 155 caratteri e i nomi delle
+ * formule e le cifre cambiano da una scheda all'altra: si prova la frase piu'
+ * ricca e, se sfora, quella piu' asciutta. Il prezzo in evidenza e' quello
+ * Standard, il piu' basso della formula; il Plus sta fra parentesi.
+ */
+function descrizioneFormula(id: FormulaId): string {
+  const f = getFormula(id);
+  const testa = `Abbonamento ${f.nome} a Pescara: ${f.pastiSettimana} pasti a settimana, ${f.prezzo.standard} € al mese (Plus ${f.prezzo.plus} €).`;
+  const candidate = [
+    `${testa} Matteo cucina il piano del tuo nutrizionista e lo porta ogni ${CONSEGNA_OGNI_GIORNI} giorni.`,
+    `${testa} Matteo cucina il piano del tuo nutrizionista.`,
+  ];
+  return (
+    candidate.find((c) => c.length >= 140 && c.length <= 155) ??
+    candidate.find((c) => c.length <= 155) ??
+    candidate[candidate.length - 1]
+  );
+}
+
+/** La scheda SEO di /abbonamento/<formula>: `breve` e' il nome della formula, per briciole e llms.txt. */
+export function paginaFormula(id: FormulaId): PaginaSeo {
+  const f = getFormula(id);
+  return {
+    percorso: percorsoFormula(id),
+    titolo: `Abbonamento ${f.nome} a Pescara da ${f.prezzo.standard} € al mese`,
+    descrizione: descrizioneFormula(id),
+    breve: f.nome,
+    priorita: 0.7,
+    frequenza: "monthly",
+  };
+}
+
+/** Le cinque schede, nell'ordine del volantino: la sitemap e i test le scorrono da qui. */
+export const PAGINE_FORMULE: readonly PaginaSeo[] = FORMULE.map((f) => paginaFormula(f.id));

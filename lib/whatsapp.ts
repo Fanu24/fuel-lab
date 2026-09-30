@@ -2,7 +2,7 @@ import { GIORNI, NOMI_GIORNATA, NOMI_GIORNO, PASTI } from "./settimana";
 import type { Allenamenti, Casella, GiornoSettimana, Piano } from "./settimana";
 import { getPiatto, getExtra, etichettaPrezzo } from "./catalogo";
 import type { Macros } from "./types";
-import { PREZZO_ABBONAMENTO_TESTO } from "./abbonamento";
+import { getFormula, NOMI_FASCIA, type Fascia, type FormulaId } from "./abbonamento";
 
 /* =========================================================================
    Il contatto finale non e' un checkout, e' una conversazione su WhatsApp.
@@ -76,18 +76,40 @@ export function linkWhatsAppA(telefono: string, testo: string): string | null {
 }
 
 /**
+ * Cio' che chi scrive ha gia' scelto sul sito prima di arrivare al contatto
+ * (?formula= e ?fascia= nell'indirizzo): entrambe facoltative, perche' si puo'
+ * arrivare da una pagina che non ne ha scelta nessuna.
+ */
+export type SceltaMessaggio = { formula?: FormulaId; fascia?: Fascia };
+
+/**
+ * Il messaggio per l'abbonamento. Non ha piu' un prezzo unico: le formule sono
+ * cinque, in due fasce, e il prezzo lo si legge sul sito. Il primo passo che
+ * chiede il cliente e' la settimana di prova, quindi il messaggio la nomina.
+ * Con la formula (e la fascia) scelte le scrive: "l'abbonamento Completo (Plus)".
+ */
+export function messaggioAbbonamento({ formula, fascia }: SceltaMessaggio = {}): string {
+  const prova = "e vorrei prenotare la settimana di prova";
+  if (formula) {
+    const nome = getFormula(formula).nome;
+    return `Ciao Matteo! Mi interessa l'abbonamento ${fascia ? `${nome} (${NOMI_FASCIA[fascia]})` : nome} di FUEL LAB ${prova}.`;
+  }
+  if (fascia) return `Ciao Matteo! Mi interessa un abbonamento FUEL LAB in fascia ${NOMI_FASCIA[fascia]} ${prova}.`;
+  return `Ciao Matteo! Mi interessa un abbonamento FUEL LAB ${prova}.`;
+}
+
+/**
  * Un testo diverso per ciascuno dei quattro servizi: e' cosi' che Matteo capisce
  * da quale pagina arriva il contatto, senza altro tracciamento. `servizioId`
  * e' una stringa e non l'union di lib/servizi.ts di proposito: questo modulo
  * non dipende da quale altro file definisce i servizi, quindi un id ignoto
  * (o non ancora esistente, mentre un altro task lavora su lib/servizi.ts)
  * ottiene comunque un messaggio sensato invece di un errore o una stringa vuota.
+ * L'abbonamento e' a parte (messaggioAbbonamento): dipende dalla formula.
  */
 const TESTI_SERVIZIO: Record<string, string> = {
   "menu-settimana":
     "Ciao Matteo! Ho visto il Menu della settimana su FUEL LAB e vorrei qualche informazione per iniziare.",
-  abbonamento:
-    `Ciao Matteo! Mi interessa l'abbonamento mensile ai pranzi di FUEL LAB (${PREZZO_ABBONAMENTO_TESTO} al mese, dal lunedì al venerdì) e vorrei sapere come partire.`,
   "sui-tuoi-macro":
     "Ciao Matteo! Vorrei un piano costruito sui miei macro (servizio Sui tuoi macro): mi dici come funziona e come partire?",
   "home-cooking":
@@ -97,7 +119,8 @@ const TESTI_SERVIZIO: Record<string, string> = {
 const TESTO_SERVIZIO_GENERICO =
   "Ciao Matteo! Ho visto FUEL LAB e vorrei qualche informazione sui vostri servizi.";
 
-export function messaggioServizio(servizioId: string): string {
+export function messaggioServizio(servizioId: string, scelta: SceltaMessaggio = {}): string {
+  if (servizioId === "abbonamento") return messaggioAbbonamento(scelta);
   return TESTI_SERVIZIO[servizioId] ?? TESTO_SERVIZIO_GENERICO;
 }
 
@@ -281,13 +304,15 @@ export function componiMessaggio(args: {
   contatto: DatiContatto;
   /** facoltativo: senza, il messaggio e' identico a quello di prima */
   allenamenti?: Allenamenti;
+  /** facoltativo, solo per l'abbonamento: la formula e la fascia gia' scelte sul sito */
+  abbonamento?: SceltaMessaggio;
 }): string {
-  const { servizioId, richiedePiano, piano, macro, contatto, allenamenti } = args;
+  const { servizioId, richiedePiano, piano, macro, contatto, allenamenti, abbonamento } = args;
   const nome = contatto.nome.trim();
 
   const blocchi: string[] = [nome ? `Ciao Matteo, sono ${nome}!` : "Ciao Matteo!"];
 
-  const corpoServizio = senzaDomandaFinale(senzaSaluto(messaggioServizio(servizioId)));
+  const corpoServizio = senzaDomandaFinale(senzaSaluto(messaggioServizio(servizioId, abbonamento)));
   if (corpoServizio) blocchi.push(corpoServizio);
 
   if (richiedePiano) {

@@ -8,16 +8,16 @@
  * cosi' un ordine a mano arriva in Oggi, nel foglio Cucina, nella spesa e
  * nelle etichette esattamente come una richiesta dal sito.
  *
- * L'abbonamento a mano non ha piatti (i pranzi si compongono sulla scheda del
- * cliente, scritta nelle note) e, se Matteo non scrive un prezzo, prende
- * quello di lib/abbonamento.ts. Le due date sono entrambe l'inizio.
+ * L'abbonamento a mano non ha piatti (i pasti si compongono sulla scheda del
+ * cliente, scritta nelle note), vuole la formula (con fascia, nucleo e prova)
+ * e, se Matteo non scrive un prezzo, prende quello proposto da
+ * lib/abbonamento.ts per quella scelta. Le due date sono entrambe l'inizio.
  */
 
-import { PREZZO_ABBONAMENTO_CENTESIMI } from "../abbonamento";
-import type { Modalita, Servizio, VoceOrdine } from "../api";
+import type { Modalita, SceltaAbbonamento, Servizio, VoceOrdine } from "../api";
 import { potaPiano, type Piano } from "../settimana";
 import { dataValida, spostaGiorno } from "./date";
-import { MAX_NOTA_INTERNA, MAX_PREZZO_CENTESIMI, SERVIZI, vociDalPiano, type Esito } from "./ordini";
+import { MAX_NOTA_INTERNA, MAX_PREZZO_CENTESIMI, SERVIZI, leggiSceltaAbbonamento, prezzoProposto, vociDalPiano, type Esito } from "./ordini";
 
 /** Gli stati da cui puo' partire un ordine a mano. */
 export const STATI_INIZIALI = ["requested", "confirmed"] as const;
@@ -54,6 +54,8 @@ export type OrdineManualeValido = {
   plan: Piano;
   items: VoceOrdine[];
   meals: number;
+  /** La formula: solo per l'abbonamento. */
+  subscription: SceltaAbbonamento | null;
 };
 
 const errore = (status: number, error: string) => ({ ok: false as const, status, error });
@@ -129,8 +131,15 @@ export function leggiOrdineManuale(
     return errore(400, "Per l'abbonamento le due date sono l'inizio: devono coincidere");
   }
 
-  // Un prezzo assente vale il prezzo dell'abbonamento; null resta "senza prezzo", scelto da Matteo.
-  let priceCents: number | null = abbonamento && body.priceCents === undefined ? PREZZO_ABBONAMENTO_CENTESIMI : null;
+  let subscription: SceltaAbbonamento | null = null;
+  if (abbonamento) {
+    const scelta = leggiSceltaAbbonamento(body.subscription);
+    if (!scelta.ok) return scelta;
+    subscription = scelta.value;
+  }
+
+  // Un prezzo assente vale quello proposto per la formula; null resta "senza prezzo", scelto da Matteo.
+  let priceCents: number | null = subscription && body.priceCents === undefined ? prezzoProposto(subscription, fulfillment) : null;
   if (body.priceCents !== undefined && body.priceCents !== null) {
     if (typeof body.priceCents !== "number" || !Number.isInteger(body.priceCents) || body.priceCents < 0 || body.priceCents > MAX_PREZZO_CENTESIMI) {
       return errore(400, "Totale non valido: usa i centesimi, da 0 a 10.000 €");
@@ -148,7 +157,7 @@ export function leggiOrdineManuale(
   if (notes === null) return errore(400, "Note non valide");
   if (notes.length > MAX_NOTE_CLIENTE) return errore(400, `Le note possono avere al massimo ${MAX_NOTE_CLIENTE} caratteri`);
 
-  // Abbonamento: niente piatti e niente porzioni, i pranzi del mese li conta il pannello dal periodo.
+  // Abbonamento: niente piatti e niente porzioni, i pasti del mese li conta il pannello dalla formula e dal periodo.
   const plan = abbonamento ? {} : potaPiano(body.plan);
   const items = vociDalPiano(plan);
   let meals = items.length;
@@ -185,6 +194,7 @@ export function leggiOrdineManuale(
       plan,
       items,
       meals,
+      subscription,
     },
   };
 }

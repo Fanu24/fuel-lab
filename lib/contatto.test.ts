@@ -13,9 +13,11 @@ import {
   emailValida,
   linkEmail,
   linkMappa,
+  messaggioInizialeModulo,
   preparaMessaggio,
   primoErrore,
   righeSettimana,
+  sceltaAbbonamentoDaParam,
   spazioPerMessaggio,
   spiegaErroreInvio,
   telefonoValido,
@@ -48,6 +50,36 @@ describe("argomenti", () => {
     expect(argomentoDaParam("")).toBe("info");
     expect(argomentoDaParam(null)).toBe("info");
     expect(argomentoDaParam(undefined)).toBe("info");
+  });
+});
+
+describe("formula e fascia dai link di contatto", () => {
+  it("legge ?formula= e ?fascia=, e un valore che non esiste non entra nel messaggio", () => {
+    expect(sceltaAbbonamentoDaParam("completo", "plus")).toEqual({ formula: "completo", fascia: "plus" });
+    expect(sceltaAbbonamentoDaParam("full6", null)).toEqual({ formula: "full6" });
+    expect(sceltaAbbonamentoDaParam(undefined, "standard")).toEqual({ fascia: "standard" });
+    expect(sceltaAbbonamentoDaParam("full8", "premium")).toEqual({});
+    expect(sceltaAbbonamentoDaParam("<script>", "")).toEqual({});
+    expect(sceltaAbbonamentoDaParam(null, null)).toEqual({});
+    // Nessun valore di partenza: chi non ha scelto niente non trova una formula scritta al suo posto.
+    expect(Object.keys(sceltaAbbonamentoDaParam("boh", "boh"))).toHaveLength(0);
+  });
+
+  it("il modulo parte con la frase dell'abbonamento solo se c'e' una scelta e l'argomento e' l'abbonamento", () => {
+    expect(messaggioInizialeModulo("abbonamento", { formula: "completo", fascia: "plus" })).toBe(
+      "Mi interessa l'abbonamento Completo (Plus) di FUEL LAB e vorrei prenotare la settimana di prova.",
+    );
+    expect(messaggioInizialeModulo("abbonamento", { formula: "pranzo" })).toBe(
+      "Mi interessa l'abbonamento Pranzo di FUEL LAB e vorrei prenotare la settimana di prova.",
+    );
+    expect(messaggioInizialeModulo("abbonamento", { fascia: "plus" })).toContain("fascia Plus");
+    expect(messaggioInizialeModulo("abbonamento", {})).toBe("");
+    expect(messaggioInizialeModulo("info", { formula: "completo" })).toBe("");
+    expect(messaggioInizialeModulo("home-cooking", { formula: "completo", fascia: "plus" })).toBe("");
+    // Il testo che parte non e' un saluto (il modulo va a Matteo) e passa la validazione del messaggio.
+    const testo = messaggioInizialeModulo("abbonamento", { formula: "full7", fascia: "standard" });
+    expect(testo).not.toMatch(/^Ciao/);
+    expect(validaModulo({ ...buono, argomento: "abbonamento", messaggio: testo })).toEqual({});
   });
 });
 

@@ -14,6 +14,7 @@
  * - gli importi sono in centesimi di euro, interi.
  */
 
+import type { Fascia, FormulaId, Nucleo } from "@/lib/abbonamento";
 import type { Allenamenti, Piano } from "@/lib/settimana";
 
 /* ---------- Tipi di base ---------- */
@@ -35,12 +36,19 @@ export type Profilo = { phone: string; comune: string; address: string; preferen
 
 export type StatoOrdine = "requested" | "confirmed" | "preparing" | "ready" | "completed" | "cancelled";
 /**
- * "abbonamento": l'abbonamento mensile ai pranzi (lib/abbonamento.ts). Non vuole
- * piatti; la data preferita e' l'inizio desiderato, la data di ritiro o
+ * "abbonamento": uno dei cinque abbonamenti mensili (lib/abbonamento.ts). Non
+ * vuole piatti; la data preferita e' l'inizio desiderato, la data di ritiro o
  * consegna confermata da Matteo e' l'inizio del periodo di un mese.
  */
 export type Servizio = "menu-settimana" | "abbonamento" | "sui-tuoi-macro" | "home-cooking";
 export type Modalita = "pickup" | "delivery";
+
+/**
+ * Cosa ha scelto chi si abbona: la formula, la fascia, con chi (da solo, in
+ * coppia, in famiglia: per lo sconto) e se parte dalla settimana di prova.
+ * Solo per il servizio "abbonamento".
+ */
+export type SceltaAbbonamento = { plan: FormulaId; tier: Fascia; household: Nucleo; trial: boolean };
 
 export type VoceOrdine = { id: string; name: string; day: string; meal: string; extras: string[] };
 
@@ -88,6 +96,8 @@ export type Ordine = {
   items: VoceOrdine[];
   /** Solo admin: "web" se arriva dal sito, "manual" se Matteo l'ha inserito dal pannello. */
   source?: "web" | "manual";
+  /** La scelta dell'abbonamento; null per tutti gli altri servizi. */
+  subscription?: SceltaAbbonamento | null;
 };
 
 /** GET /api/orders/:id — per l'admin o per il proprietario. */
@@ -111,6 +121,8 @@ export type ModificaOrdine = {
   customerMessage?: string;
   priceCents?: number | null;
   paid?: boolean;
+  /** Solo abbonamenti: cambia formula, fascia, nucleo o prova (tutti e quattro i campi). Il totale non si ricalcola da solo. */
+  subscription?: SceltaAbbonamento;
   /** Se true e lo stato cambia (o cambia il messaggio), il server scrive al cliente via email. */
   notify?: boolean;
   /**
@@ -131,9 +143,11 @@ export type NuovoOrdine = {
   /** Il giorno preferito; per l'abbonamento, l'inizio desiderato. */
   requestedDate: string | null;
   notes: string;
-  /** Per l'abbonamento contano solo i pranzi dal lunedi' al venerdi' (facoltativi). */
+  /** Per l'abbonamento contano solo i pasti della formula (facoltativi). */
   plan: Piano;
   training: Allenamenti;
+  /** Obbligatoria per l'abbonamento (la formula), ignorata per gli altri servizi. */
+  subscription?: SceltaAbbonamento;
 };
 
 /**
@@ -150,15 +164,17 @@ export type NuovoOrdineManuale = {
   address: string;
   service: Servizio;
   fulfillment: Modalita;
-  /** Ignorato per l'abbonamento: i pranzi si compongono sulla scheda del cliente. */
+  /** Ignorato per l'abbonamento: i pasti si compongono sulla scheda del cliente. */
   plan: Piano;
+  /** Obbligatoria per l'abbonamento (la formula), ignorata per gli altri servizi. */
+  subscription?: SceltaAbbonamento;
   /** Solo home cooking: porzioni concordate, anche senza piatti del menu. */
   meals?: number;
   productionDate?: string | null;
   fulfillmentDate?: string | null;
   /** "confirmed" vuole entrambe le date (per l'abbonamento sono entrambe l'inizio). */
   status: "requested" | "confirmed";
-  /** Assente per l'abbonamento: vale il prezzo di lib/abbonamento.ts. */
+  /** Assente per l'abbonamento: vale il prezzo proposto da calcolaPrezzo (lib/abbonamento.ts). */
   priceCents?: number | null;
   paid?: boolean;
   internalNote?: string;

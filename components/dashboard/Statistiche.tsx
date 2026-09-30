@@ -6,6 +6,7 @@
 
 import { useEffect, useState } from "react";
 import { STATI_ORDINE, adminApi, euro, type Metriche } from "@/lib/api";
+import { FORMULE } from "@/lib/abbonamento";
 import { getPiatto } from "@/lib/catalogo";
 import { euroTondo, somma } from "@/lib/produzione";
 import GraficoBarre from "./GraficoBarre";
@@ -43,6 +44,10 @@ function nomePagina(percorso: string) {
   if (PAGINE[p]) return PAGINE[p];
   const piatto = p.match(/^\/menu\/([^/]+)$/);
   if (piatto) return `Piatto: ${getPiatto(piatto[1])?.nome ?? piatto[1]}`;
+  // Le cinque schede degli abbonamenti: /abbonamento/completo -> "Abbonamento Completo".
+  const scheda = p.match(/^\/abbonamento\/([^/]+)$/);
+  const formula = scheda ? FORMULE.find((f) => f.id === scheda[1]) : undefined;
+  if (formula) return `Abbonamento ${formula.nome}`;
   if (p.startsWith("/blog/")) return "Articolo del blog";
   return null;
 }

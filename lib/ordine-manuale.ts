@@ -10,11 +10,13 @@
    campo giusto.
 
    L'abbonamento mensile non ha piatti ne' porzioni: ha una data d'inizio
-   (scritta in entrambe le date dell'ordine) e il prezzo di lib/abbonamento.ts,
-   che il modulo propone e Matteo puo' cambiare.
+   (scritta in entrambe le date dell'ordine), la scelta della formula (una
+   delle cinque, la fascia, chi si abbona, la settimana di prova) e un prezzo
+   che il modulo propone con calcolaPrezzo (lib/abbonamento.ts) e Matteo puo'
+   cambiare.
    ========================================================================= */
 
-import { PREZZO_ABBONAMENTO_CENTESIMI } from "@/lib/abbonamento";
+import { FORMULA_CONSIGLIATA, calcolaPrezzo, type Fascia, type FormulaId, type Nucleo } from "@/lib/abbonamento";
 import type { ClienteAdmin, Modalita, NuovoOrdineManuale, Servizio } from "@/lib/api";
 import { getPiatto } from "@/lib/catalogo";
 import { centesimiInTesto, leggiEuro } from "@/lib/operazioni";
@@ -33,6 +35,11 @@ export type CampiNuovoOrdine = {
   indirizzo: string;
   servizio: Servizio;
   modalita: Modalita;
+  /** Solo abbonamento: la formula, la fascia, chi si abbona e se parte dalla settimana di prova. */
+  formula: FormulaId;
+  fascia: Fascia;
+  nucleo: Nucleo;
+  prova: boolean;
   piano: Piano;
   /** Solo home cooking: porzioni concordate, scritte a mano. */
   porzioni: string;
@@ -60,6 +67,10 @@ export function campiVuoti(modo: ModoCliente = "registrato"): CampiNuovoOrdine {
     indirizzo: "",
     servizio: "menu-settimana",
     modalita: "pickup",
+    formula: FORMULA_CONSIGLIATA,
+    fascia: "standard",
+    nucleo: "singolo",
+    prova: false,
     piano: {},
     porzioni: "",
     stato: "requested",
@@ -87,22 +98,51 @@ export function conCliente(campi: CampiNuovoOrdine, cliente: ClienteAdmin): Camp
 
 /* ---------- Servizio ---------- */
 
-/** "239,00": il prezzo dell'abbonamento come lo scrive il campo. */
-export const PREZZO_ABBONAMENTO_CAMPO = centesimiInTesto(PREZZO_ABBONAMENTO_CENTESIMI);
+/** Le scelte da cui dipende il prezzo di un abbonamento. */
+type SceltaPrezzo = Pick<CampiNuovoOrdine, "formula" | "fascia" | "nucleo" | "modalita">;
+
+const centesimiProposti = (c: SceltaPrezzo) =>
+  calcolaPrezzo({ formula: c.formula, fascia: c.fascia, ritiro: c.modalita === "pickup", nucleo: c.nucleo }).totaleCentesimi;
+
+/** "468,00": il prezzo al mese che si propone per la scelta fatta, come lo scrive il campo. */
+export const prezzoProposto = (c: SceltaPrezzo) => centesimiInTesto(centesimiProposti(c));
 
 /**
- * Cambia servizio. Passando all'abbonamento la griglia si svuota (i pranzi si
+ * Il prezzo e' ancora quello proposto per `c`? "468" e "468,00" sono la stessa
+ * cosa. Un prezzo vuoto no: se Matteo l'ha cancellato vuol dire che non lo vuole.
+ */
+const eIlProposto = (c: SceltaPrezzo & { prezzo: string }) => leggiEuro(c.prezzo) === centesimiProposti(c);
+
+/**
+ * Cambia formula, fascia, nucleo, prova o modalita' di un abbonamento. Il prezzo
+ * segue la scelta (si riallinea alla nuova proposta) finche' e' ancora quello
+ * proposto; se Matteo l'ha scritto o cancellato, resta come l'ha lasciato.
+ */
+export function conSceltaAbbonamento(
+  campi: CampiNuovoOrdine,
+  cambio: Partial<Pick<CampiNuovoOrdine, "formula" | "fascia" | "nucleo" | "prova" | "modalita">>,
+): CampiNuovoOrdine {
+  const nuovi = { ...campi, ...cambio };
+  if (campi.servizio !== "abbonamento" || !eIlProposto(campi)) return nuovi;
+  return { ...nuovi, prezzo: prezzoProposto(nuovi) };
+}
+
+/** Ritiro o consegna: per l'abbonamento cambia lo sconto, quindi il prezzo proposto. */
+export const conModalita = (campi: CampiNuovoOrdine, modalita: Modalita): CampiNuovoOrdine => conSceltaAbbonamento(campi, { modalita });
+
+/**
+ * Cambia servizio. Passando all'abbonamento la griglia si svuota (i pasti si
  * compongono sulla scheda), le due date diventano l'inizio e, se il prezzo e'
- * vuoto, si propone quello dell'abbonamento; tornando indietro quel prezzo
- * proposto sparisce, uno scritto da Matteo resta.
+ * vuoto, si propone quello della formula scelta; tornando indietro quel
+ * prezzo proposto sparisce, uno scritto da Matteo resta.
  */
 export function conServizio(campi: CampiNuovoOrdine, servizio: Servizio): CampiNuovoOrdine {
   if (servizio === campi.servizio) return campi;
   if (servizio === "abbonamento") {
     const inizio = campi.uscita || campi.produzione;
-    return { ...campi, servizio, piano: {}, porzioni: "", produzione: inizio, uscita: inizio, prezzo: campi.prezzo.trim() ? campi.prezzo : PREZZO_ABBONAMENTO_CAMPO };
+    return { ...campi, servizio, piano: {}, porzioni: "", produzione: inizio, uscita: inizio, prezzo: campi.prezzo.trim() ? campi.prezzo : prezzoProposto(campi) };
   }
-  const prezzo = campi.servizio === "abbonamento" && campi.prezzo === PREZZO_ABBONAMENTO_CAMPO ? "" : campi.prezzo;
+  const prezzo = campi.servizio === "abbonamento" && eIlProposto(campi) ? "" : campi.prezzo;
   return { ...campi, servizio, prezzo };
 }
 
@@ -155,7 +195,7 @@ export function leggiPorzioni(testo: string): number | null | undefined {
   return n <= MAX_PORZIONI ? n : undefined;
 }
 
-/** Le porzioni dell'ordine, come le contera' il server (l'abbonamento non ne ha: i pranzi li conta il periodo). */
+/** Le porzioni dell'ordine, come le contera' il server (l'abbonamento non ne ha: i pasti li conta il periodo). */
 export function porzioniOrdine(campi: Pick<CampiNuovoOrdine, "servizio" | "piano" | "porzioni">): number {
   if (campi.servizio === "abbonamento") return 0;
   const piatti = piattiScelti(campi.piano);
@@ -247,7 +287,7 @@ export function erroriNuovoOrdine(c: CampiNuovoOrdine): ErroriNuovoOrdine {
 export function corpoNuovoOrdine(c: CampiNuovoOrdine): NuovoOrdineManuale {
   const porzioni = c.servizio === "home-cooking" ? leggiPorzioni(c.porzioni) : null;
   if (c.servizio === "abbonamento") {
-    // Una data sola, l'inizio, in entrambe le date; niente piatti.
+    // Una data sola, l'inizio, in entrambe le date; niente piatti, ma la formula scelta.
     const inizio = c.uscita || c.produzione || null;
     return {
       customerId: c.modo === "registrato" ? (c.cliente?.id ?? null) : null,
@@ -258,6 +298,7 @@ export function corpoNuovoOrdine(c: CampiNuovoOrdine): NuovoOrdineManuale {
       service: "abbonamento",
       fulfillment: c.modalita,
       plan: {},
+      subscription: { plan: c.formula, tier: c.fascia, household: c.nucleo, trial: c.prova },
       productionDate: inizio,
       fulfillmentDate: inizio,
       status: c.stato,
@@ -290,10 +331,15 @@ export function corpoNuovoOrdine(c: CampiNuovoOrdine): NuovoOrdineManuale {
 /** Il modulo e' stato toccato: chiudere chiede conferma. */
 export function moduloToccato(c: CampiNuovoOrdine): boolean {
   const vuoto = campiVuoti(c.modo);
+  const abbonamento = c.servizio === "abbonamento";
+  // Il prezzo proposto per un abbonamento non l'ha scritto Matteo: conta solo se e' diverso.
+  const prezzoToccato = abbonamento ? !eIlProposto(c) : c.prezzo.trim() !== vuoto.prezzo;
   return (
     !!c.cliente ||
     piattiScelti(c.piano) > 0 ||
-    (["nome", "telefono", "comune", "indirizzo", "porzioni", "produzione", "uscita", "prezzo", "nota", "note"] as const).some((k) => c[k].trim() !== vuoto[k]) ||
+    (["nome", "telefono", "comune", "indirizzo", "porzioni", "produzione", "uscita", "nota", "note"] as const).some((k) => c[k].trim() !== vuoto[k]) ||
+    prezzoToccato ||
+    (abbonamento && (c.formula !== vuoto.formula || c.fascia !== vuoto.fascia || c.nucleo !== vuoto.nucleo || c.prova !== vuoto.prova)) ||
     c.pagato
   );
 }

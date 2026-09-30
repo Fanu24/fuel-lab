@@ -4,7 +4,12 @@
    Dall'alto: saluto e data, chiusure vicine e piatti spenti (se ci sono),
    "Da fare adesso", i quattro numeri del giorno,
    cucina e uscite di oggi, i prossimi sette giorni. Un ordine si apre sopra
-   la pagina (?id=...) senza perdere il punto. */
+   la pagina (?id=...) senza perdere il punto.
+
+   Gli abbonamenti compaiono nei loro giorni di consegna (una ogni 3 giorni),
+   con i pasti che portano. Una consegna in abbonamento non ha uno stato
+   "consegnato" (chiuderebbe l'abbonamento): quelle fatte oggi si segnano sul
+   dispositivo, come le spunte della cucina. */
 
 import Link from "next/link";
 import { useMemo, type ReactNode } from "react";
@@ -13,6 +18,7 @@ import { chiusuraDi } from "@/lib/impostazioni";
 import { azioniDaFare, calendario, codeOperative, plurale, sommaCentesimi, type CodeOperative } from "@/lib/operazioni";
 import { useImpostazioni } from "@/components/impostazioni/useImpostazioni";
 import { useAdmin } from "./AdminGate";
+import { useSpunte } from "./CucinaMemoria";
 import OggiCucina from "./OggiCucina";
 import OggiDaFare from "./OggiDaFare";
 import OggiImpostazioni from "./OggiImpostazioni";
@@ -41,10 +47,18 @@ export default function Oggi() {
   // Le chiusure di Impostazioni: si cucina ogni giorno, tranne quelli.
   const { chiusure } = useImpostazioni({ fresche: true }).impostazioni;
 
-  const code = useMemo(() => (ordini ? codeOperative(ordini, oggi) : null), [ordini, oggi]);
-  const azioni = useMemo(() => (ordini ? azioniDaFare(ordini, oggi, messaggiNuovi ?? 0) : null), [ordini, oggi, messaggiNuovi]);
+  // Le consegne in abbonamento gia' fatte oggi, segnate su questo dispositivo (una lista per giorno).
+  const { spunte: consegnate, cambia: segnaConsegnata } = useSpunte(`fuellab:oggi:consegne-abbonamenti:${oggi}`);
+
+  const code = useMemo(() => (ordini ? codeOperative(ordini, oggi, consegnate) : null), [ordini, oggi, consegnate]);
+  const azioni = useMemo(
+    () => (ordini ? azioniDaFare(ordini, oggi, messaggiNuovi ?? 0, consegnate) : null),
+    [ordini, oggi, messaggiNuovi, consegnate],
+  );
   const settimana = useMemo(() => (ordini ? calendario(ordini, oggi, 7, chiusure) : null), [ordini, oggi, chiusure]);
-  const abbonamentiSettimana = settimana ? settimana.reduce((n, g) => n + g.abbonamenti, 0) : null;
+  const abbonamentiSettimana = settimana
+    ? { consegne: settimana.reduce((n, g) => n + g.abbonamenti, 0), pasti: settimana.reduce((n, g) => n + g.pastiAbbonamenti, 0) }
+    : null;
 
   const nome = utente?.name.trim().split(/\s+/)[0] || "Matteo";
   const riassunto = code && azioni
@@ -81,7 +95,7 @@ export default function Oggi() {
             chiusura={chiusuraDi(oggi, chiusure)}
             abbonamentiSettimana={abbonamentiSettimana}
           />
-          <OggiUscite code={code} apri={apri} veloci={veloci} />
+          <OggiUscite code={code} oggi={oggi} apri={apri} veloci={veloci} consegnate={consegnate} onConsegnata={segnaConsegnata} />
         </div>
         <OggiSettimana giorni={settimana} />
       </div>
@@ -140,7 +154,9 @@ export function OggiNumeri({ code }: { code: CodeOperative | null }) {
             ? code.cucinaOggi.length || code.abbonamentiOggi.length
               ? [
                   code.cucinaOggi.length ? plurale(code.cucinaOggi.length, "ordine in cucina", "ordini in cucina") : "",
-                  code.abbonamentiOggi.length ? `${code.abbonamentiOggi.length} in abbonamento` : "",
+                  code.abbonamentiOggi.length
+                    ? plurale(code.abbonamentiOggi.length, "consegna in abbonamento", "consegne in abbonamento")
+                    : "",
                 ].filter(Boolean).join(" · ")
               : "niente da cucinare"
             : "…"

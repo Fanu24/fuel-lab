@@ -7,24 +7,43 @@ import {
   contaPiatti,
   corpoRichiesta,
   formattaGiorno,
+  frequenzaConsegne,
   limitiDataRichiesta,
   messaggioDa,
   NOTE_MAX,
   ORDINE_CAMPI_RICHIESTA,
-  pranziFeriali,
   righePiano,
   SERVIZIO_CON_PIATTI,
   spostaGiorni,
+  stimaAbbonamento,
   validaRichiesta,
   type DatiRichiesta,
 } from "@/lib/account";
-import { PREZZO_ABBONAMENTO_TESTO } from "@/lib/abbonamento";
+import {
+  CONSEGNA_OGNI_GIORNI,
+  etichettaFormula,
+  FASCE,
+  FORMULE,
+  getFormula,
+  NOMI_FASCIA,
+  NOMI_NUCLEO,
+  NOTE_FASCIA,
+  NUCLEI,
+  PREZZO_DA_TESTO,
+  prezzoListino,
+  RAGGIO_CONSEGNA_KM,
+  SCONTI,
+  SCONTO_NUCLEO,
+  type Fascia,
+  type FormulaId,
+  type Nucleo,
+} from "@/lib/abbonamento";
 import { api, type Chiusura, type Modalita, type Profilo, type Servizio, type Utente } from "@/lib/api";
 import { caselleEscluse, chiusuraDi, chiusureVicine, fraseChiusura } from "@/lib/impostazioni";
 import { useImpostazioni } from "@/components/impostazioni/useImpostazioni";
 import { GIORNI, usePiano } from "@/lib/piano";
 import { SERVIZI } from "@/lib/servizi";
-import { Avviso, Caricamento, TitoloSezione } from "../ui";
+import { Avviso, Caricamento, Stato, TitoloSezione } from "../ui";
 import type { Dati } from "./tipi";
 
 /* Il modulo che manda la settimana a Matteo. I recapiti partono dal profilo e,
@@ -36,9 +55,12 @@ import type { Dati } from "./tipi";
    scelto cade in una chiusura. Anche il server rifiuta quel giorno.
 
    L'abbonamento mensile (?servizio=abbonamento) non vuole la settimana
-   composta: la data diventa l'inizio desiderato e le note diventano la scheda
-   (allenamenti, obiettivi, indicazioni del nutrizionista). Dal compositore
-   partono solo i pranzi dal lunedi' al venerdi', se ci sono. */
+   composta: chiede la formula (una delle cinque), la fascia (Standard o Plus),
+   con chi ci si abbona (per lo sconto) e se si parte dalla settimana di prova.
+   La data diventa l'inizio desiderato e le note diventano la scheda: il piano
+   del nutrizionista, gli allenamenti, le allergie. Il prezzo che si legge e' una
+   stima (lib/account.ts, stimaAbbonamento): il server propone lo stesso numero,
+   il totale lo conferma Matteo. Dal compositore non parte nessun piatto. */
 
 /** Quanti giorni avanti guarda l'avviso delle chiusure in arrivo. */
 const GIORNI_AVVISO_CHIUSURE = 30;
@@ -47,10 +69,27 @@ type Props = {
   utente: Utente;
   profilo: Dati<Profilo>;
   servizioIniziale: Servizio;
+  /** Da ?formula=: la formula gia' scelta quando si arriva da una scheda del sito. */
+  formulaIniziale: FormulaId;
+  /** Da ?fascia=. */
+  fasciaIniziale: Fascia;
+  /** Da ?modalita=: il simulatore del sito ha gia' scelto ritiro o consegna. */
+  modalitaIniziale?: Modalita;
+  /** Da ?nucleo=: e con chi ci si abbona. */
+  nucleoIniziale?: Nucleo;
   onInviata: (id: string) => void;
 };
 
-export default function NuovaRichiesta({ utente, profilo, servizioIniziale, onInviata }: Props) {
+export default function NuovaRichiesta({
+  utente,
+  profilo,
+  servizioIniziale,
+  formulaIniziale,
+  fasciaIniziale,
+  modalitaIniziale = "pickup",
+  nucleoIniziale = "singolo",
+  onInviata,
+}: Props) {
   // Il modulo aspetta anche le impostazioni: l'avviso delle chiusure non deve spingere giu' i campi dopo.
   const impostazioni = useImpostazioni();
   return (
@@ -76,6 +115,10 @@ export default function NuovaRichiesta({ utente, profilo, servizioIniziale, onIn
           erroreProfilo={profilo.stato === "errore" ? profilo.messaggio : null}
           onProfilo={profilo.imposta}
           servizioIniziale={servizioIniziale}
+          formulaIniziale={formulaIniziale}
+          fasciaIniziale={fasciaIniziale}
+          modalitaIniziale={modalitaIniziale}
+          nucleoIniziale={nucleoIniziale}
           onInviata={onInviata}
         />
       )}
@@ -88,11 +131,28 @@ const MODALITA: { id: Modalita; titolo: string; nota: string }[] = [
   { id: "delivery", titolo: "Consegna", nota: "A domicilio, da confermare con Matteo" },
 ];
 
+/* Per l'abbonamento le stesse due strade, con cio' che cambia: lo sconto del ritiro e la cadenza di ogni 3 giorni. */
+const MODALITA_ABBONAMENTO: { id: Modalita; titolo: string; nota: string }[] = [
+  { id: "pickup", titolo: "Ritiro", nota: `In Via del Santuario 214, Pescara, ogni ${CONSEGNA_OGNI_GIORNI} giorni · sconto −${SCONTI.ritiro}%` },
+  {
+    id: "delivery",
+    titolo: "Consegna",
+    nota: `A domicilio ogni ${CONSEGNA_OGNI_GIORNI} giorni, Pescara e dintorni fino a ${RAGGIO_CONSEGNA_KM} km: da confermare con Matteo`,
+  },
+];
+
 const NOTE_SERVIZIO: Record<Servizio, string> = {
   "menu-settimana": "Con i piatti che hai scelto",
-  abbonamento: `${PREZZO_ABBONAMENTO_TESTO} al mese · pranzi dal lunedì al venerdì sulla tua scheda`,
+  abbonamento: `Da ${PREZZO_DA_TESTO} al mese · cinque formule, sul piano del tuo nutrizionista`,
   "sui-tuoi-macro": "Sui numeri della tua scheda",
   "home-cooking": "Su preventivo, niente piatti da scegliere",
+};
+
+/* Con chi ci si abbona: lo sconto accanto, letto da lib/abbonamento.ts. */
+const NOTE_NUCLEO: Record<Nucleo, string> = {
+  singolo: "Prezzo di listino",
+  coppia: `Sconto −${SCONTO_NUCLEO.coppia}% se vi abbonate in due`,
+  famiglia: `Sconto −${SCONTO_NUCLEO.famiglia}% se vi abbonate in famiglia`,
 };
 
 function Modulo({
@@ -103,6 +163,10 @@ function Modulo({
   erroreProfilo,
   onProfilo,
   servizioIniziale,
+  formulaIniziale,
+  fasciaIniziale,
+  modalitaIniziale,
+  nucleoIniziale,
   onInviata,
 }: {
   chiusure: readonly Chiusura[];
@@ -112,6 +176,10 @@ function Modulo({
   erroreProfilo: string | null;
   onProfilo: (p: Profilo) => void;
   servizioIniziale: Servizio;
+  formulaIniziale: FormulaId;
+  fasciaIniziale: Fascia;
+  modalitaIniziale: Modalita;
+  nucleoIniziale: Nucleo;
   onInviata: (id: string) => void;
 }) {
   const { piano, allenamenti, pronto, macroSettimana } = usePiano();
@@ -121,9 +189,14 @@ function Modulo({
     telefono: profilo?.phone ?? "",
     comune: profilo?.comune ?? "",
     indirizzo: profilo?.address ?? "",
-    modalita: "pickup",
+    modalita: modalitaIniziale,
     data: "",
     note: "",
+    formula: formulaIniziale,
+    fascia: fasciaIniziale,
+    nucleo: nucleoIniziale,
+    // La prima settimana e' di prova per tutti, "senza impegno": si parte da li' salvo che il cliente lo tolga.
+    prova: true,
   }));
   const [limiti] = useState(() => limitiDataRichiesta(new Date()));
   const [provato, setProvato] = useState(false);
@@ -148,8 +221,9 @@ function Modulo({
   const abbonamento = dati.servizio === "abbonamento";
   const servizio = SERVIZI.find((s) => s.id === dati.servizio)!;
   const giorniAllenamento = GIORNI.filter((g) => allenamenti[g]).length;
-  // Per l'abbonamento partono solo i pranzi dal lunedi' al venerdi' (il server tiene quelli).
-  const pranzi = pronto ? pranziFeriali(piano) : 0;
+  const formula = getFormula(dati.formula);
+  const stima = abbonamento ? stimaAbbonamento(dati) : null;
+  const ritiro = dati.modalita === "pickup";
 
   // Recapiti diversi da quelli del profilo: si propone di aggiornarlo. Solo se il
   // profilo e' stato letto, altrimenti si rischierebbe di cancellarne le preferenze.
@@ -259,6 +333,100 @@ function Modulo({
           </div>
         </Gruppo>
 
+        {abbonamento ? (
+          <>
+            <Gruppo legenda="Formula" errore={visibili.formula} idErrore="nr-formula-errore">
+              <div className="grid gap-2">
+                {FORMULE.map((f, i) => (
+                  <label key={f.id} className="acc-scelta">
+                    <input
+                      id={i === 0 ? "nr-formula" : undefined}
+                      type="radio"
+                      name="nr-formula"
+                      value={f.id}
+                      checked={dati.formula === f.id}
+                      onChange={() => aggiorna("formula", f.id)}
+                    />
+                    <span>
+                      <span className="acc-scelta-titolo">
+                        {f.nome}
+                        {f.consigliato ? <span className="acc-scelta-tag">Consigliato</span> : null}
+                      </span>
+                      <span className="acc-scelta-nota">{f.slogan}</span>
+                      <span className="acc-scelta-nota acc-scelta-riga">
+                        <span>{f.pastiSettimana} pasti a settimana</span>
+                        <span className="num">Standard {f.prezzo.standard} €</span>
+                        <span className="num">Plus {f.prezzo.plus} €</span>
+                      </span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+              <p className="mt-3 text-sm text-muted">Prezzi al mese, di listino. Il piano lo porti tu, scritto dal tuo nutrizionista: Matteo lo cucina ai grammi.</p>
+            </Gruppo>
+
+            <Gruppo legenda="Fascia">
+              <div className="grid gap-2 sm:grid-cols-2">
+                {FASCE.map((f, i) => (
+                  <label key={f} className="acc-scelta">
+                    <input
+                      id={i === 0 ? "nr-fascia" : undefined}
+                      type="radio"
+                      name="nr-fascia"
+                      value={f}
+                      checked={dati.fascia === f}
+                      onChange={() => aggiorna("fascia", f)}
+                    />
+                    <span>
+                      <span className="acc-scelta-titolo">{NOMI_FASCIA[f]}</span>
+                      <span className="acc-scelta-nota">{NOTE_FASCIA[f]}</span>
+                      <span className="acc-scelta-nota num">{prezzoListino(dati.formula, f)} € al mese</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </Gruppo>
+
+            <Gruppo legenda="Come ti abboni">
+              <div className="grid gap-2 sm:grid-cols-3">
+                {NUCLEI.map((n, i) => (
+                  <label key={n} className="acc-scelta">
+                    <input
+                      id={i === 0 ? "nr-nucleo" : undefined}
+                      type="radio"
+                      name="nr-nucleo"
+                      value={n}
+                      checked={dati.nucleo === n}
+                      onChange={() => aggiorna("nucleo", n)}
+                    />
+                    <span>
+                      <span className="acc-scelta-titolo">{NOMI_NUCLEO[n]}</span>
+                      <span className="acc-scelta-nota">{NOTE_NUCLEO[n]}</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+              <p className="mt-3 text-sm text-muted">Lo sconto vale se vi abbonate insieme: lo conferma Matteo.</p>
+            </Gruppo>
+
+            <label className="acc-spunta">
+              <input
+                id="nr-prova"
+                type="checkbox"
+                checked={dati.prova}
+                onChange={(e) => aggiorna("prova", e.target.checked)}
+                aria-describedby="nr-prova-aiuto"
+              />
+              <span>
+                <span className="font-semibold">Parto con la settimana di prova</span>
+                <span id="nr-prova-aiuto" className="block text-sm text-muted">
+                  La prima settimana è di prova, senza impegno. Come si svolge lo concordi con Matteo.
+                </span>
+              </span>
+            </label>
+          </>
+        ) : null}
+
         <Gruppo legenda="I tuoi recapiti">
           <div className="grid gap-5 sm:grid-cols-2">
             <div className="sm:col-span-2">
@@ -271,7 +439,7 @@ function Modulo({
 
         <Gruppo legenda="Ritiro o consegna" errore={visibili.modalita} idErrore="nr-modalita-errore">
           <div className="grid gap-2 sm:grid-cols-2">
-            {MODALITA.map((m, i) => (
+            {(abbonamento ? MODALITA_ABBONAMENTO : MODALITA).map((m, i) => (
               <label key={m.id} className="acc-scelta">
                 <input
                   id={i === 0 ? "nr-modalita" : undefined}
@@ -341,7 +509,7 @@ function Modulo({
           />
           <p id="nr-note-aiuto" className="text-sm text-muted">
             {abbonamento
-              ? "Su questa scheda Matteo compone i tuoi pranzi: scrivi come ti alleni, cosa vuoi ottenere e, se ti segue un nutrizionista, i suoi numeri. "
+              ? "Su questa scheda Matteo cucina i tuoi pasti: scrivi o incolla il piano del tuo nutrizionista, oppure come ti alleni e cosa vuoi ottenere. "
               : ""}
             {profilo?.preferences
               ? "Preferenze e allergie del tuo profilo arrivano a Matteo insieme alla richiesta."
@@ -363,46 +531,75 @@ function Modulo({
       <aside className="acc-modulo-riepilogo" aria-labelledby="t-riepilogo">
         <div className="acc-card grid gap-5">
           <h3 id="t-riepilogo" className="acc-card-titolo">Cosa invii</h3>
-          {abbonamento ? (
-            <p className="text-sm">
-              Chiedi l’abbonamento mensile: tutti i pranzi dal lunedì al venerdì per un mese, composti da Matteo sulla tua
-              scheda, a <strong className="num">{PREZZO_ABBONAMENTO_TESTO}</strong> al mese.
-            </p>
+
+          {stima ? (
+            <>
+              {/* Regione live sempre presente nell'abbonamento: il prezzo cambia a ogni scelta e chi usa un lettore di schermo lo sente. */}
+              <Stato className="acc-stima">
+                <p className="acc-etichetta">Prezzo stimato al mese</p>
+                <p className="acc-stima-totale num">{stima.totale}</p>
+                <p className="mt-2 text-sm text-muted">{stima.dettaglio}</p>
+              </Stato>
+              <p className="text-sm text-muted">
+                Stima: applica lo sconto più alto fra quelli che ti spettano. Il prezzo finale lo conferma Matteo; sul sito non si paga niente.
+              </p>
+            </>
           ) : null}
+
           <dl className="acc-fatti acc-fatti-colonna">
-            <div><dt>Servizio</dt><dd>{servizio.nome}</dd></div>
             {abbonamento ? (
               <>
-                <div><dt>Prezzo</dt><dd>{PREZZO_ABBONAMENTO_TESTO} al mese</dd></div>
                 <div>
-                  <dt>Pranzi indicati</dt>
-                  <dd>{pronto ? (pranzi ? `${pranzi} su 5, dal compositore` : "Li compone Matteo sulla tua scheda") : "…"}</dd>
+                  <dt>Formula</dt>
+                  <dd>
+                    {etichettaFormula(dati.formula, dati.fascia)}
+                    <span className="block text-sm font-normal text-muted">{formula.cosaRicevi}</span>
+                  </dd>
+                </div>
+                <div><dt>Chi si abbona</dt><dd>{NOMI_NUCLEO[dati.nucleo]}</dd></div>
+                <div><dt>Settimana di prova</dt><dd>{dati.prova ? "Sì, parto dalla prova" : "No"}</dd></div>
+                <div>
+                  <dt>Ritiro o consegna</dt>
+                  <dd>
+                    {frequenzaConsegne(dati.modalita)}
+                    <span className="block text-sm font-normal text-muted">
+                      {ritiro ? "Via del Santuario 214, Pescara" : dati.indirizzo.trim() || "Indirizzo da scrivere"}
+                    </span>
+                  </dd>
+                </div>
+                <div>
+                  <dt>Inizio desiderato</dt>
+                  <dd>{dati.data ? formattaGiorno(dati.data, limiti.min) : "Da concordare"}</dd>
                 </div>
                 <div><dt>La tua scheda</dt><dd>{dati.note.trim() ? "Scritta nelle note" : "Da scrivere nelle note"}</dd></div>
+                <div><dt>Allenamenti</dt><dd>{giorniAllenamento ? `${giorniAllenamento} giorni indicati` : "Non indicati"}</dd></div>
               </>
             ) : (
-              <div>
-                <dt>Piatti</dt>
-                <dd>{pronto ? (piatti ? `${piatti} su 14` : conPiatti ? "Nessuno, per ora" : "Nessuno: non servono") : "…"}</dd>
-              </div>
+              <>
+                <div><dt>Servizio</dt><dd>{servizio.nome}</dd></div>
+                <div>
+                  <dt>Piatti</dt>
+                  <dd>{pronto ? (piatti ? `${piatti} su 14` : conPiatti ? "Nessuno, per ora" : "Nessuno: non servono") : "…"}</dd>
+                </div>
+                {pronto && piatti ? (
+                  <div>
+                    <dt>Macro della settimana</dt>
+                    <dd className="num text-sm">
+                      {Math.round(macroSettimana.kcal).toLocaleString("it-IT")} kcal · P {Math.round(macroSettimana.proteine)} · C {Math.round(macroSettimana.carboidrati)} · G {Math.round(macroSettimana.grassi)}
+                    </dd>
+                  </div>
+                ) : null}
+                <div><dt>Allenamenti</dt><dd>{giorniAllenamento ? `${giorniAllenamento} giorni indicati` : "Non indicati"}</dd></div>
+                <div>
+                  <dt>{ritiro ? "Ritiro" : "Consegna"}</dt>
+                  <dd>{ritiro ? "Via del Santuario 214, Pescara" : dati.indirizzo.trim() || "Indirizzo da scrivere"}</dd>
+                </div>
+                <div>
+                  <dt>Giorno preferito</dt>
+                  <dd>{dati.data ? formattaGiorno(dati.data, limiti.min) : "Da concordare"}</dd>
+                </div>
+              </>
             )}
-            {pronto && piatti && !abbonamento ? (
-              <div>
-                <dt>Macro della settimana</dt>
-                <dd className="num text-sm">
-                  {Math.round(macroSettimana.kcal).toLocaleString("it-IT")} kcal · P {Math.round(macroSettimana.proteine)} · C {Math.round(macroSettimana.carboidrati)} · G {Math.round(macroSettimana.grassi)}
-                </dd>
-              </div>
-            ) : null}
-            <div><dt>Allenamenti</dt><dd>{giorniAllenamento ? `${giorniAllenamento} giorni indicati` : "Non indicati"}</dd></div>
-            <div>
-              <dt>{dati.modalita === "pickup" ? "Ritiro" : "Consegna"}</dt>
-              <dd>{dati.modalita === "pickup" ? "Via del Santuario 214, Pescara" : dati.indirizzo.trim() || "Indirizzo da scrivere"}</dd>
-            </div>
-            <div>
-              <dt>{abbonamento ? "Inizio desiderato" : "Giorno preferito"}</dt>
-              <dd>{dati.data ? formattaGiorno(dati.data, limiti.min) : "Da concordare"}</dd>
-            </div>
           </dl>
 
           {nonDisponibili && conPiatti ? (
@@ -423,8 +620,7 @@ function Modulo({
             </div>
           ) : abbonamento ? (
             <p className="text-sm text-muted">
-              Sul sito non si paga niente: Matteo ti ricontatta per concordare inizio, consegna o ritiro e pagamento.
-              {pranzi ? " Alleghiamo i pranzi dal lunedì al venerdì che hai composto, come idea di partenza." : ""}
+              Matteo ti ricontatta per concordare inizio, consegna o ritiro e pagamento.
             </p>
           ) : !conPiatti ? (
             <p className="text-sm text-muted">
@@ -499,4 +695,3 @@ function Gruppo({
     </fieldset>
   );
 }
-

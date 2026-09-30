@@ -1,155 +1,129 @@
 import Link from "next/link";
 import Reveal from "@/components/Reveal";
 import Faq from "@/components/come-funziona/Faq";
-import { RiquadroAbbonamento } from "@/components/home/Abbonamento";
-import FotoPiena from "@/components/ui/FotoPiena";
+import BoxDelGiorno from "@/components/abbonamento/BoxDelGiorno";
+import ChiusuraAbbonamento from "@/components/abbonamento/ChiusuraAbbonamento";
+import Formule from "@/components/abbonamento/Formule";
+import Passi from "@/components/abbonamento/Passi";
+import PerOgniDieta from "@/components/abbonamento/PerOgniDieta";
+import { RiquadroDa } from "@/components/abbonamento/RiquadroPrezzi";
+import ScontiEProva from "@/components/abbonamento/ScontiEProva";
+import { FasciaProvider } from "@/components/abbonamento/FasciaScelta";
+import Simulatore from "@/components/abbonamento/Simulatore";
+import {
+  PASTI_SETTIMANA_MAX,
+  PASTI_SETTIMANA_MIN,
+  ZONA_A_PAROLE,
+  inLettere,
+  percentuale,
+} from "@/components/abbonamento/righe";
 import Briciole from "@/components/seo/Briciole";
 import JsonLd from "@/components/seo/JsonLd";
 import LinkBlog from "@/components/seo/LinkBlog";
 import { AGGIORNAMENTO, PAGINE, metadatiPagina } from "@/components/seo/pagine";
-import { nodiPagina, nodoServizio, prezzoIt, type DomandaTesto } from "@/components/seo/schema";
+import { nodiPagina, nodoAbbonamenti, prezzoIt, type DomandaTesto } from "@/components/seo/schema";
 import {
-  ABBONAMENTO_CONSEGNA_GRATIS,
-  LINK_RICHIEDI_ABBONAMENTO,
+  BOX_DEL_GIORNO_TESTO,
+  CONSEGNA_OGNI_GIORNI,
+  DIETE,
+  FORMULE,
   LINK_SCRIVI_ABBONAMENTO,
-  PREZZO_ABBONAMENTO,
-  PREZZO_ABBONAMENTO_TESTO,
-  SOGLIA_CONSEGNA_GRATIS,
+  NOTE_FASCIA,
+  PASTO_STANDARD_CIRCA,
+  PREZZO_DA_TESTO,
+  SCONTI,
 } from "@/lib/abbonamento";
 import { CONSIGLI } from "@/lib/consigli";
 import { SOGLIA_PREZZO } from "@/lib/servizi";
-import { INDIRIZZO, INDIRIZZO_RIGA, elencoZone } from "@/lib/sito";
+import { INDIRIZZO_RIGA } from "@/lib/sito";
 
-/* L'abbonamento mensile ai pranzi: 239 euro al mese per tutti i pranzi dal
-   lunedi' al venerdi', composti da Matteo sulla scheda del cliente. Una pagina
-   di vendita che dice solo quello che il committente ha deciso: niente durate
-   minime, disdette o pagamenti online, perche' non esistono. Inizio, consegna
-   o ritiro e pagamento si concordano con Matteo, e la pagina lo scrive. */
+/* Gli abbonamenti: "Cinque tagli, uno è il tuo." Cinque formule (dal pranzo dal
+   lunedi' al venerdi' ai tre pasti tutti i giorni), ognuna in fascia Standard o
+   Plus, con il piano del nutrizionista cucinato ai grammi e portato ogni 3
+   giorni. Prezzi, sconti, nomi e testi delle formule non sono scritti qui: li
+   legge tutti da lib/abbonamento.ts, come le schede singole in ./[formula].
+   Una pagina di vendita che dice solo quello che il committente ha deciso:
+   niente durate minime, disdette o pagamenti online, perche' il committente non li ha detti.
+   Inizio, consegna o ritiro e pagamento si concordano con Matteo. */
 
 const PAGINA = PAGINE.abbonamento;
 const PREZZO_PASTO = prezzoIt(SOGLIA_PREZZO);
 
 export const metadata = metadatiPagina(PAGINA);
 
-const PASSI = [
-  {
-    n: "01",
-    titolo: "Mandi la scheda",
-    testo:
-      "La scheda del tuo nutrizionista, con calorie, proteine, carboidrati e grassi. Oppure racconti a Matteo come ti alleni e cosa vuoi ottenere.",
-    link: { href: "/scheda", label: "Dai tuoi macro" },
-  },
-  {
-    n: "02",
-    titolo: "Matteo compone i pranzi",
-    testo:
-      "Sulla tua scheda compone i pranzi del mese, dal lunedì al venerdì, pensati per i giorni di cardio e per quelli di pesi. Con i macro scritti su ogni piatto.",
-    link: { href: "/menu", label: "I piatti del menu" },
-  },
-  {
-    n: "03",
-    titolo: "Ritiri o ricevi, ogni giorno",
-    testo: `Matteo cucina ogni giorno e consegna ogni giorno: ritiri in ${INDIRIZZO.via} o ricevi a casa o al lavoro, se sei in zona.`,
-    link: { href: PAGINE.consegna.percorso, label: "Ritiro e consegna" },
-  },
-  {
-    n: "04",
-    titolo: "Si rinnova con Matteo",
-    testo:
-      "A fine mese si rinnova d'accordo con lui. Inizio, consegna o ritiro e pagamento si concordano insieme: sul sito non si paga niente.",
-    link: { href: LINK_SCRIVI_ABBONAMENTO, label: "Scrivi a Matteo" },
-  },
-];
-
-const PER_CHI = [
-  {
-    titolo: "Chi pranza al lavoro",
-    testo:
-      "Un pranzo pronto per ogni giorno feriale, già porzionato: niente cucina la sera prima e niente improvvisazione in pausa pranzo.",
-  },
-  {
-    titolo: "Chi segue una scheda",
-    testo:
-      "I numeri del nutrizionista servono se li rispetti anche a pranzo, tutti i giorni, non solo quando hai tempo di cucinare.",
-  },
-  {
-    titolo: "Chi si allena con costanza",
-    testo: `Pranzi pensati per l'allenamento del giorno. Nei giorni di cardio, ${CONSIGLI.cardio.regola.toLowerCase()} Nei giorni di pesi, ${CONSIGLI.pesi.regola.toLowerCase()}`,
-  },
-  {
-    titolo: "Chi non vuole pensarci",
-    testo:
-      "Niente settimana da comporre e niente scelte da rifare a ogni ordine: un prezzo al mese e i pranzi sono decisi.",
-  },
-];
+const PREZZI_STANDARD = FORMULE.map((f) => `${f.nome} ${f.prezzo.standard} €`).join(", ");
+const PLUS_DA = Math.min(...FORMULE.map((f) => f.prezzo.plus));
+const PLUS_FINO_A = Math.max(...FORMULE.map((f) => f.prezzo.plus));
 
 const CONFRONTO = [
   {
     voce: "Cosa copre",
     menu: "I pasti che scegli, anche solo per qualche giorno",
-    abbonamento: "Tutti i pranzi dal lunedì al venerdì, per il mese",
+    abbonamento: `I pasti del tuo piano, da ${PASTI_SETTIMANA_MIN} a ${PASTI_SETTIMANA_MAX} a settimana, secondo la formula`,
   },
   {
     voce: "Chi sceglie i piatti",
     menu: "Tu, dal menu o con il compositore",
-    abbonamento: "Matteo, sulla tua scheda",
+    abbonamento: "Il piano scritto dal tuo nutrizionista, che Matteo cucina ai grammi",
   },
   {
     voce: "Prezzo",
     menu: `Da ${PREZZO_PASTO} € a pasto`,
-    abbonamento: `${PREZZO_ABBONAMENTO_TESTO} al mese`,
-  },
-  {
-    voce: "Quando si decide",
-    menu: "A ogni settimana che componi",
-    abbonamento: "Una volta al mese, con Matteo",
+    abbonamento: `Da ${PREZZO_DA_TESTO} al mese, in base alla formula e alla fascia`,
   },
   {
     voce: "Consegna",
-    menu: `Gratis dai ${SOGLIA_CONSEGNA_GRATIS} pasti in su`,
-    abbonamento: ABBONAMENTO_CONSEGNA_GRATIS
-      ? `Una ventina di pranzi: sopra la soglia dei ${SOGLIA_CONSEGNA_GRATIS} pasti`
-      : "Da concordare con Matteo",
+    menu: "Ogni giorno, a casa o al ritiro",
+    abbonamento: `Ogni ${CONSEGNA_OGNI_GIORNI} giorni, a casa o al ritiro (ritiro in laboratorio ${percentuale(SCONTI.ritiro)})`,
+  },
+  {
+    voce: "Per iniziare",
+    menu: "Componi la settimana e scrivi a Matteo",
+    abbonamento: "Prenoti la settimana di prova, senza impegno",
   },
 ];
 
 /* Solo testo: le stesse stringhe finiscono nei dati strutturati FAQPage. */
 const DOMANDE: DomandaTesto[] = [
   {
-    q: "Quanto costa l'abbonamento ai pranzi?",
-    a: `${PREZZO_ABBONAMENTO_TESTO} al mese. Comprende tutti i pranzi dal lunedì al venerdì per tutto il mese, composti sulla tua scheda. Sul sito non si paga niente: inizio, consegna o ritiro e pagamento si concordano con Matteo.`,
+    q: "Quanto costa un abbonamento?",
+    a: `Dipende dalla formula e dalla fascia. In fascia Standard, al mese: ${PREZZI_STANDARD}, circa ${PASTO_STANDARD_CIRCA} € a pasto. La fascia Plus costa di più: da ${PLUS_DA} a ${PLUS_FINO_A} € al mese. Ritiro in laboratorio ${percentuale(SCONTI.ritiro)}, in coppia ${percentuale(SCONTI.coppia)}, in famiglia ${percentuale(SCONTI.famiglia)}. Il prezzo finale lo conferma Matteo: sul sito non si paga niente.`,
   },
   {
-    q: "Che cosa comprende, esattamente?",
-    a: "I pranzi di tutti i giorni feriali, dal lunedì al venerdì, per l'intero mese: piatti freschi, mai surgelati, con ingredienti, allergeni e macro dichiarati. Se ti servono anche altri pasti, per esempio le cene, puoi aggiungerli con il menu della settimana.",
+    q: "Che differenza c'è fra Standard e Plus?",
+    a: `Standard: ${NOTE_FASCIA.standard} Circa ${PASTO_STANDARD_CIRCA} € a pasto. Plus: ${NOTE_FASCIA.plus} Ogni formula esiste in tutte e due le fasce.`,
   },
   {
-    q: "Che cosa vuol dire che i pranzi sono sulla mia scheda?",
-    a: "Che si compongono su quello che sai di te. Se ti segue un nutrizionista, bastano i suoi quattro numeri: calorie, proteine, carboidrati e grassi. Non è una dieta: i numeri li decide il professionista che ti segue, Matteo li cucina.",
+    q: "Che cosa devo portare?",
+    a: "Il piano scritto dal tuo nutrizionista. Ce lo lasci e noi lo prepariamo ai grammi, nel nostro laboratorio a Pescara: nessuna dieta da inventare, niente spesa, niente bilancia. Non è una dieta e non è una consulenza: i numeri li decide il professionista che ti segue, Matteo li cucina.",
   },
   {
     q: "Non ho un nutrizionista: posso abbonarmi lo stesso?",
-    a: `Sì. Racconti a Matteo come ti alleni, quante volte e cosa vuoi ottenere, e i pranzi seguono la stessa regola del menu: nei giorni di cardio, ${CONSIGLI.cardio.regola.toLowerCase()} Nei giorni di pesi, ${CONSIGLI.pesi.regola.toLowerCase()}`,
+    a: `Sì. Racconti a Matteo come ti alleni, quante volte e cosa vuoi ottenere, e i pasti seguono la stessa regola del menu: nei giorni di cardio, ${CONSIGLI.cardio.regola.toLowerCase()} Nei giorni di pesi, ${CONSIGLI.pesi.regola.toLowerCase()}`,
   },
   {
-    q: "Come arrivano i pranzi?",
-    a: `Matteo cucina ogni giorno e consegna ogni giorno. Puoi ritirarli in ${INDIRIZZO_RIGA} oppure riceverli a casa o al lavoro a ${elencoZone()}: la copertura del tuo indirizzo si conferma prima di iniziare.`,
+    q: "Per quali diete cucinate?",
+    a: `Per ogni dieta: ${DIETE.join(", ")}. Qualunque sia il piano, lo cuciniamo noi.`,
   },
-  ...(ABBONAMENTO_CONSEGNA_GRATIS
-    ? [
-        {
-          q: "La consegna si paga a parte?",
-          a: `Con una ventina di pranzi al mese sei sopra la soglia dei ${SOGLIA_CONSEGNA_GRATIS} pasti da cui la consegna è gratis, come indicato in Servizi e prezzi. Resta da confermare che il tuo indirizzo sia in zona; in alternativa c'è il ritiro in sede.`,
-        },
-      ]
-    : []),
+  {
+    q: "Come arrivano i pasti?",
+    a: `Ogni ${CONSEGNA_OGNI_GIORNI} giorni te li portiamo a casa, oppure li ritiri in laboratorio in ${INDIRIZZO_RIGA} con ${percentuale(SCONTI.ritiro)}: sono i pasti dei ${inLettere(CONSEGNA_OGNI_GIORNI)} giorni successivi, già pronti da scaldare. ${ZONA_A_PAROLE}. Giorno e orario si concordano con Matteo, e la copertura del tuo indirizzo si conferma prima di iniziare.`,
+  },
+  {
+    q: "Come funziona la settimana di prova?",
+    a: "La prima settimana è di prova, senza impegno. Inizio, consegna o ritiro e pagamento si concordano con Matteo: sul sito non si paga niente.",
+  },
   {
     q: "Ho un'allergia o un'intolleranza: posso abbonarmi?",
-    a: "Dillo a Matteo prima di iniziare. Gli allergeni sono dichiarati in ogni scheda del menu, ma per sostituzioni e possibili contaminazioni serve la sua conferma: la scheda online da sola non basta.",
+    a: "Dillo a Matteo prima di iniziare e parlane anche con il tuo medico o nutrizionista. Per sostituzioni e possibili contaminazioni serve la conferma di Matteo: la scheda online da sola non basta.",
   },
   {
     q: "Che differenza c'è con il menu della settimana?",
-    a: `Con il menu della settimana scegli tu i piatti, anche solo per qualche giorno, da ${PREZZO_PASTO} € a pasto. Con l'abbonamento Matteo compone tutti i tuoi pranzi dal lunedì al venerdì sulla tua scheda, a ${PREZZO_ABBONAMENTO_TESTO} al mese.`,
+    a: `Con il menu della settimana scegli tu i piatti, anche solo per qualche giorno, da ${PREZZO_PASTO} € a pasto, con consegna ogni giorno. Con l'abbonamento Matteo cucina il piano scritto dal tuo nutrizionista, a un prezzo al mese (da ${PREZZO_DA_TESTO}), e te lo porta ogni ${CONSEGNA_OGNI_GIORNI} giorni.`,
+  },
+  {
+    q: "Cosa sono le box del giorno?",
+    a: `Ogni giorno cuciniamo qualcosa in più. Quello che avanza diventa una box pronta a prezzo piccolo, ${BOX_DEL_GIORNO_TESTO}: mangi bene anche senza abbonarti, e niente si spreca.`,
   },
 ];
 
@@ -168,15 +142,7 @@ export default function AbbonamentoPage() {
             faq: DOMANDE,
             dataModifica: AGGIORNAMENTO,
           }),
-          nodoServizio({
-            id: "abbonamento",
-            percorso: PAGINA.percorso,
-            nome: "Abbonamento mensile ai pranzi",
-            descrizione:
-              "Tutti i pranzi dal lunedì al venerdì per un mese, composti da Matteo Pattanè sulla scheda del cliente (allenamento, obiettivi o numeri del nutrizionista) e cucinati freschi a Pescara. Ritiro in sede o consegna in zona.",
-            tipoServizio: "Meal prep in abbonamento",
-            prezzoMese: PREZZO_ABBONAMENTO,
-          }),
+          nodoAbbonamenti(),
         ]}
       />
 
@@ -186,115 +152,126 @@ export default function AbbonamentoPage() {
           <div className="mt-10 grid items-start gap-12 lg:grid-cols-[1.1fr_1fr] lg:gap-16">
             <div className="min-w-0">
               {/* La parola chiave sta nell'occhiello dentro l'h1, come in home e in
-                  /servizi: "abbonamento" in corpo titolo-xl non entra in mezza pagina. */}
+                  /servizi: "abbonamenti pasti a Pescara" in corpo titolo-xl non entra in mezza pagina. */}
               <h1>
-                <span className="occhiello">Abbonamento pranzi a Pescara</span>
-                <span className="titolo-xl mt-6 block max-w-[12ch]">Un mese di pranzi.</span>
+                <span className="occhiello">Abbonamenti pasti a Pescara</span>
+                {/* Due righe fisse: a corpo titolo-xl il titolo andava su quattro righe e
+                    la virgola di "tagli," toccava l'accento di "è". */}
+                <span className="titolo-xl mt-6 block text-[clamp(34px,5.2vw,80px)] leading-[.98]">
+                  <span className="block">Cinque tagli,</span> <span className="block">uno è il tuo.</span>
+                </span>
               </h1>
-              <p className="titolo-s mt-4 text-muted">Composti sulla tua scheda.</p>
+              <p className="titolo-s mt-4 text-muted">Il piano del tuo nutrizionista, cucinato.</p>
               <p className="lead mt-8">
-                Tutti i tuoi pranzi dal lunedì al venerdì, per un mese intero, composti da Matteo sulla tua scheda:
-                come ti alleni, cosa vuoi ottenere o i numeri del tuo nutrizionista. Un prezzo fisso, niente da
-                comporre ogni settimana.
+                Porti la dieta. Pensiamo noi a tutto il resto. FUEL LAB cucina i pasti della tua dieta e te li porta
+                pronti a casa, ogni {inLettere(CONSEGNA_OGNI_GIORNI)} giorni, a Pescara e nel raggio di venti
+                chilometri. Tu ci consegni il piano scritto dal tuo nutrizionista, noi lo prepariamo ai grammi nel
+                nostro laboratorio. Nessuna dieta da inventare, niente spesa, niente bilancia.
               </p>
               <div className="mt-9 flex flex-wrap items-center gap-x-8 gap-y-4">
+                <a href="#formule" className="btn btn-ink">
+                  Scegli il tuo taglio <span aria-hidden="true" className="freccia">↓</span>
+                </a>
                 <Link href={LINK_SCRIVI_ABBONAMENTO} className="link">
                   Scrivi a Matteo
                 </Link>
-                <a href="#come-funziona" className="link">
-                  Come funziona
-                </a>
               </div>
             </div>
-            <RiquadroAbbonamento delay={80} />
+            <RiquadroDa delay={80} />
           </div>
         </div>
       </section>
 
-      <section className="sezione">
-        <div className="wrap grid gap-12 lg:grid-cols-[1fr_1.2fr]">
+      {/* Le formule e il simulatore condividono la fascia scelta. */}
+      <FasciaProvider>
+      <section id="formule" className="sezione carta-2 scroll-mt-[calc(var(--nav-h)+16px)]">
+        <div className="wrap">
           <Reveal>
-            <p className="occhiello">Che cos&apos;è</p>
-            <h2 className="titolo mt-5 max-w-[12ch]">Il pranzo, deciso una volta.</h2>
+            <p className="occhiello">Le formule</p>
+            <h2 className="titolo mt-5 max-w-[16ch]">Scegli quanti pasti vuoi delegare.</h2>
+            <p className="lead mt-6">Ogni formula esiste in Standard o Plus, e la prima settimana è di prova.</p>
           </Reveal>
-          <Reveal delay={80} className="grid gap-6 text-lg leading-relaxed">
-            <p>
-              L&apos;abbonamento è il modo più semplice di mangiare FUEL LAB tutti i giorni. Invece di comporre la
-              settimana piatto per piatto, dai a Matteo la tua scheda una volta sola: lui compone i pranzi del mese,
-              dal lunedì al venerdì, e li cucina freschi.
-            </p>
-            <p>
-              La scheda è quello che sai di te. Se ti segue un nutrizionista, bastano i suoi quattro numeri: calorie,
-              proteine, carboidrati e grassi, gli stessi che puoi provare nella pagina{" "}
-              <Link href="/scheda" className="link">
-                Dai tuoi macro
-              </Link>
-              . Se non ce l&apos;hai, racconti come ti alleni e cosa vuoi ottenere.
-            </p>
-            <p>
-              Non è una dieta e non è una consulenza: i numeri del tuo fabbisogno li decide il professionista che ti
-              segue. Matteo li cucina, con ingredienti, allergeni e macro scritti su ogni piatto.
-            </p>
-          </Reveal>
+          <div className="mt-12">
+            <Formule />
+          </div>
         </div>
       </section>
 
-      <section id="come-funziona" className="sezione carta-2 scroll-mt-[calc(var(--nav-h)+16px)]">
+      <section id="simulatore" className="notte scroll-mt-[calc(var(--nav-h)+16px)]">
+        <div className="wrap py-[var(--sezione)]">
+          <Reveal>
+            <p className="occhiello">Il simulatore</p>
+            <h2 className="titolo mt-5 max-w-[16ch]">Fai il conto del tuo taglio.</h2>
+            <p className="mt-6 max-w-[52ch] text-lg text-steel">
+              Scegli formula e fascia, poi dicci se ritiri in laboratorio e se ti abboni da solo o in compagnia. È una
+              stima: il prezzo finale lo conferma Matteo.
+            </p>
+          </Reveal>
+          <div className="mt-12">
+            <Simulatore />
+          </div>
+        </div>
+      </section>
+
+      </FasciaProvider>
+
+      <section id="come-funziona" className="sezione scroll-mt-[calc(var(--nav-h)+16px)]">
         <div className="wrap">
           <Reveal>
             <p className="occhiello">Come funziona</p>
-            <h2 className="titolo mt-5 max-w-[15ch]">Dalla scheda al pranzo, in quattro passi.</h2>
+            <h2 className="titolo mt-5 max-w-[16ch]">Porti il piano. Al resto pensiamo noi.</h2>
           </Reveal>
-          <ol className="mt-14 grid gap-10 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
-            {PASSI.map((p, i) => (
-              <Reveal as="li" key={p.n} delay={i * 80} className="border-t-[3px] border-ink pt-6">
-                <span className="num text-sm text-muted">{p.n}</span>
-                <h3 className="titolo-s mt-3">{p.titolo}</h3>
-                <p className="mt-3 max-w-[34ch] text-muted">{p.testo}</p>
-                <Link href={p.link.href} className="link mt-5 inline-block">
-                  {p.link.label}
-                </Link>
-              </Reveal>
-            ))}
-          </ol>
+          <div className="mt-14">
+            <Passi />
+          </div>
+          <Reveal className="mt-20 border-t border-ink/15 pt-14">
+            <PerOgniDieta />
+            <p className="mt-10 max-w-[60ch] text-muted">
+              Non è una dieta e non è una consulenza: i numeri li decide il professionista che ti segue, Matteo li
+              cucina. Se hai un&apos;allergia importante o una condizione medica, parlane con Matteo prima di iniziare
+              e con il tuo medico o nutrizionista.
+            </p>
+          </Reveal>
         </div>
       </section>
+
+      <section className="sezione carta-2">
+        <div className="wrap">
+          <ScontiEProva />
+        </div>
+      </section>
+
+      <BoxDelGiorno />
 
       <section className="sezione">
-        <div className="wrap grid gap-12 lg:grid-cols-[1fr_1.4fr]">
-          <Reveal>
-            <p className="occhiello">Per chi è</p>
-            <h2 className="titolo mt-5 max-w-[12ch]">Per chi il pranzo non lo vuole improvvisare.</h2>
-          </Reveal>
-          <div>
-            <ul className="grid gap-8 sm:grid-cols-2">
-              {PER_CHI.map((c, i) => (
-                <Reveal as="li" key={c.titolo} delay={i * 70} className="border-t border-ink/15 pt-5">
-                  <h3 className="font-disp text-lg font-bold tracking-[.04em] uppercase">{c.titolo}</h3>
-                  <p className="mt-2 text-muted">{c.testo}</p>
-                </Reveal>
-              ))}
-            </ul>
-            <p className="mt-10 max-w-[60ch] text-muted">
-              Se hai un&apos;allergia importante o una condizione medica, parla con Matteo prima di iniziare e segui
-              le indicazioni del tuo medico o nutrizionista.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section className="notte">
-        <div className="wrap py-[var(--sezione)]">
+        <div className="wrap">
           <Reveal>
             <p className="occhiello">A confronto</p>
             <h2 className="titolo mt-5 max-w-[16ch]">Abbonamento o menu della settimana?</h2>
           </Reveal>
-          <div className="mt-12 overflow-x-auto" role="region" tabIndex={0} aria-label="Confronto fra i due servizi">
+          <dl className="mt-10 border-t-[3px] border-ink md:hidden">
+            {CONFRONTO.map((r) => (
+              <div key={r.voce} className="border-b border-ink/15 py-5">
+                <dt className="font-disp text-sm font-semibold tracking-[.08em] uppercase">{r.voce}</dt>
+                <dd className="mt-3 text-muted">
+                  <span className="block font-disp text-[11px] font-semibold tracking-[.16em] uppercase">Menu della settimana</span>
+                  {r.menu}
+                </dd>
+                <dd className="mt-3">
+                  <span className="block font-disp text-[11px] font-semibold tracking-[.16em] text-muted uppercase">Abbonamento</span>
+                  <span className="font-semibold">{r.abbonamento}</span>
+                </dd>
+              </div>
+            ))}
+          </dl>
+          <div className="mt-12 hidden overflow-x-auto md:block" role="region" tabIndex={0} aria-label="Confronto fra i due servizi">
             <table className="w-full min-w-[620px] border-collapse text-left">
-              <caption className="sr-only">Differenze fra il menu della settimana e l&apos;abbonamento mensile</caption>
+              <caption className="sr-only">Differenze fra il menu della settimana e l&apos;abbonamento</caption>
               <thead>
-                <tr className="font-disp text-[11px] font-semibold tracking-[.16em] text-steel uppercase">
-                  <td className="w-[22%] py-4 pr-6" />
+                <tr className="font-disp text-[11px] font-semibold tracking-[.16em] text-muted uppercase">
+                  <th scope="col" className="w-[22%] py-4 pr-6">
+                    <span className="sr-only">Voce</span>
+                  </th>
                   <th scope="col" className="py-4 pr-6">
                     Menu della settimana
                   </th>
@@ -305,20 +282,18 @@ export default function AbbonamentoPage() {
               </thead>
               <tbody>
                 {CONFRONTO.map((r) => (
-                  <tr key={r.voce} className="border-t align-top" style={{ borderColor: "var(--line)" }}>
+                  <tr key={r.voce} className="border-t border-ink/15 align-top">
                     <th scope="row" className="py-4 pr-6 font-disp text-sm font-semibold tracking-[.08em] uppercase">
                       {r.voce}
                     </th>
-                    <td className="py-4 pr-6" style={{ color: "rgb(243 239 230 / .88)" }}>
-                      {r.menu}
-                    </td>
-                    <td className="py-4 text-lime">{r.abbonamento}</td>
+                    <td className="py-4 pr-6 text-muted">{r.menu}</td>
+                    <td className="py-4 font-semibold">{r.abbonamento}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <p className="mt-10 max-w-[60ch] text-steel">
+          <p className="mt-10 max-w-[60ch] text-muted">
             Preferisci scegliere tu, settimana per settimana?{" "}
             <Link href="/settimana" className="link">
               Componi la settimana
@@ -332,7 +307,7 @@ export default function AbbonamentoPage() {
         </div>
       </section>
 
-      <section className="sezione">
+      <section className="sezione border-t border-ink/15">
         <div className="wrap grid gap-12 lg:grid-cols-[1fr_2fr]">
           <div>
             <p className="occhiello">Domande</p>
@@ -343,30 +318,11 @@ export default function AbbonamentoPage() {
       </section>
 
       <LinkBlog
-        slug={["pranzo-lavoro-pescara-organizzarlo", "pranzo-proteico-ufficio", "macro-cosa-sono-come-leggerli"]}
-        titolo="Il pranzo, organizzato."
+        slug={["meal-prep-pescara-cosa-significa", "macro-cosa-sono-come-leggerli", "conservare-pasti-preparati-frigorifero"]}
+        titolo="Mangiare secondo il piano, spiegato."
       />
 
-      <section className="notte relative overflow-hidden">
-        <FotoPiena foto="schiscette" velo="forte" />
-        <div className="wrap relative py-[calc(var(--sezione)*1.2)]">
-          <Reveal>
-            <h2 className="titolo max-w-[15ch]">Il prossimo mese, il pranzo è pronto.</h2>
-            <p className="mt-6 max-w-[48ch]" style={{ color: "rgb(243 239 230 / .88)" }}>
-              Richiedi l&apos;abbonamento dal tuo account, oppure scrivi a Matteo: ti risponde lui, e insieme fissate
-              inizio, consegna o ritiro e pagamento.
-            </p>
-            <div className="mt-10 flex flex-wrap items-center gap-x-8 gap-y-4">
-              <Link href={LINK_RICHIEDI_ABBONAMENTO} className="btn btn-lime min-w-[min(100%,340px)] justify-between">
-                Richiedi l&apos;abbonamento <span aria-hidden="true" className="freccia">→</span>
-              </Link>
-              <Link href={LINK_SCRIVI_ABBONAMENTO} className="link">
-                Scrivi a Matteo
-              </Link>
-            </div>
-          </Reveal>
-        </div>
-      </section>
+      <ChiusuraAbbonamento />
     </>
   );
 }

@@ -1,15 +1,17 @@
 /* "Oggi in cucina": piatti e porzioni della produzione di oggi (ordini
-   confermati o in preparazione con cucina oggi) e i pranzi in abbonamento,
-   con le allergie in rosso prima di tutto. Si cucina ogni giorno: l'unico
-   giorno "senza cucina" e' una chiusura segnata in Impostazioni. Il foglio
-   completo e stampabile e' in /dashboard/produzione. */
+   confermati o in preparazione con cucina oggi) e le consegne in abbonamento
+   del giorno (una ogni 3 giorni per abbonamento, con i pasti dei tre giorni
+   coperti), con le allergie in rosso prima di tutto. Si cucina ogni giorno:
+   l'unico giorno "senza cucina" e' una chiusura segnata in Impostazioni. Il
+   foglio completo e stampabile e' in /dashboard/produzione. */
 
 import Link from "next/link";
 import type { Chiusura } from "@/lib/api";
 import { periodo } from "@/lib/impostazioni";
 import { contaVoci, elencoNomi, plurale, type CodeOperative } from "@/lib/operazioni";
+import { consegnaDelGiorno, frasePasti, nomeAbbonamento, pastiComeOrdini } from "@/lib/produzione";
 import { Icona } from "./PannelloIcone";
-import { Sezione, Vuoto } from "./ui";
+import { Sezione, Vuoto, giorno as giornoCorto } from "./ui";
 
 export default function OggiCucina({
   code,
@@ -23,13 +25,15 @@ export default function OggiCucina({
   apri: (id: string) => void;
   /** La chiusura che comprende oggi, se Matteo e' chiuso. */
   chiusura?: Chiusura | null;
-  /** I pranzi in abbonamento dei prossimi 7 giorni, oggi compreso. */
-  abbonamentiSettimana?: number | null;
+  /** Le consegne in abbonamento dei prossimi 7 giorni, oggi compreso, e i pasti che portano. */
+  abbonamentiSettimana?: { consegne: number; pasti: number } | null;
 }) {
   const ordini = code?.cucinaOggi ?? [];
   const abbonamenti = code?.abbonamentiOggi ?? [];
-  const piatti = contaVoci(ordini, "piatti");
-  const extra = contaVoci(ordini, "extra");
+  // Come nel foglio cucina: i piatti degli ordini piu' quelli che i clienti hanno indicato per i pasti delle consegne.
+  const perContare = [...ordini, ...pastiComeOrdini(abbonamenti, oggi)];
+  const piatti = contaVoci(perContare, "piatti");
+  const extra = contaVoci(perContare, "extra");
   // Allergie di chi mangia oggi: ordini e abbonamenti, un nome una volta sola.
   const conAllergie = [...ordini, ...abbonamenti].filter((o, i, tutti) => o.dietary_preferences?.trim() && tutti.findIndex((x) => x.id === o.id) === i);
 
@@ -39,7 +43,7 @@ export default function OggiCucina({
       ? [
           plurale(code.porzioniOggi, "porzione", "porzioni"),
           ordini.length ? plurale(ordini.length, "ordine", "ordini") : "",
-          abbonamenti.length ? `${abbonamenti.length} in abbonamento` : "",
+          abbonamenti.length ? plurale(abbonamenti.length, "consegna in abbonamento", "consegne in abbonamento") : "",
           piatti.length ? plurale(piatti.length, "piatto diverso", "piatti diversi") : "",
         ]
           .filter(Boolean)
@@ -109,13 +113,46 @@ export default function OggiCucina({
         </div>
       )}
 
+      {abbonamenti.length ? (
+        <div className="mt-4">
+          <h3 className="pn-h3">Consegne in abbonamento oggi</h3>
+          <ul className="pn-righe">
+            {abbonamenti.map((o) => {
+              const c = consegnaDelGiorno(o, oggi);
+              return (
+                <li key={o.id} className="pn-riga-abb">
+                  <span className="min-w-0">
+                    <button type="button" className="pn-nome" onClick={() => apri(o.id)}>
+                      {o.customer_name || "Cliente senza nome"}
+                    </button>
+                    <span className="pn-riga-abb-dettaglio">
+                      {nomeAbbonamento(o)}
+                      {c ? ` · ${frasePasti(c.pasti)} · fino a ${giornoCorto(c.fino)}` : ""}
+                    </span>
+                  </span>
+                  <strong className="num pn-conto" aria-label={c ? plurale(c.pasti.length, "pasto", "pasti") : undefined}>
+                    {c?.pasti.length ?? 0}
+                  </strong>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ) : null}
+
       {code ? (
         <p className="mt-3 text-[15px]">
-          <strong>Pranzi in abbonamento:</strong>{" "}
-          {abbonamenti.length ? `${abbonamenti.length} oggi (${elencoNomi(abbonamenti, 3)})` : "nessuno oggi"}
-          {abbonamentiSettimana !== null ? ` · ${abbonamentiSettimana} nei prossimi 7 giorni` : ""}.{" "}
+          <strong>Abbonamenti in consegna:</strong>{" "}
+          {abbonamentiSettimana
+            ? abbonamentiSettimana.consegne
+              ? `${plurale(abbonamentiSettimana.consegne, "consegna", "consegne")} e ${plurale(abbonamentiSettimana.pasti, "pasto", "pasti")} nei prossimi 7 giorni, oggi compreso`
+              : "nessuna nei prossimi 7 giorni"
+            : abbonamenti.length
+              ? elencoNomi(abbonamenti, 3)
+              : "nessuna oggi"}
+          .{" "}
           <Link href="/dashboard/ordini?solo=abbonamenti" className="link">
-            Abbonamenti
+            Vedi gli abbonamenti
           </Link>
         </p>
       ) : null}

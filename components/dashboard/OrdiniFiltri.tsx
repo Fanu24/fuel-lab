@@ -53,7 +53,7 @@ export default function OrdiniFiltri({
               type="search"
               value={ricerca}
               onChange={(e) => onRicerca(e.target.value)}
-              placeholder="Nome, telefono, email, comune…"
+              placeholder="Nome, telefono, email, comune, formula…"
               autoComplete="off"
               enterKeyHint="search"
             />

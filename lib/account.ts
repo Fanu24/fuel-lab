@@ -10,6 +10,7 @@
 import {
   ApiError,
   daSqlite,
+  ETICHETTE_SERVIZIO,
   etichettaStato,
   type Chiusura,
   type EventoOrdine,
@@ -20,7 +21,28 @@ import {
   type Servizio,
   type StatoOrdine,
 } from "./api";
-import { fineAbbonamento, frasePeriodo, periodoAbbonamento, prossimoPranzo } from "./abbonamento";
+import {
+  CONSEGNA_OGNI_GIORNI,
+  calcolaPrezzo,
+  eFascia,
+  eFormulaId,
+  eNucleo,
+  etichettaFormula,
+  euroInteri,
+  fineAbbonamento,
+  FORMULA_CONSIGLIATA,
+  formulaDi,
+  frasePeriodo,
+  getFormula,
+  NOMI_NUCLEO,
+  periodoAbbonamento,
+  prossimaConsegna as prossimaConsegnaAbbonamento,
+  SCONTI,
+  SCONTO_NUCLEO,
+  type Fascia,
+  type FormulaId,
+  type Nucleo,
+} from "./abbonamento";
 import { getExtra, getPiatto } from "./catalogo";
 import { chiusuraDi, erroreDataChiusa } from "./impostazioni";
 import {
@@ -407,7 +429,7 @@ export function limitiDataRichiesta(adesso: Date): { min: string; max: string } 
 }
 
 export const dataValida = (iso: string) =>
-  /^\d{4}-\d{2}-\d{2}$/.test(iso) && !Number.isNaN(Date.parse(`${iso}T12:00:00Z`)) &&
+  /^\d{4}-\d{2}-\d{2}$/.test(iso) && iso >= "2000-01-01" && iso <= "2100-12-31" && !Number.isNaN(Date.parse(`${iso}T12:00:00Z`)) &&
   new Date(`${iso}T12:00:00Z`).toISOString().slice(0, 10) === iso;
 
 /** "giovedì 2 ottobre" (con l'anno se non e' quello di `riferimento`). */
@@ -457,7 +479,7 @@ export type Passo = { id: StatoOrdine; etichetta: string; stato: StatoPasso };
 /**
  * Le cinque tappe che il cliente vede. Una richiesta annullata non ha tappe:
  * torna null e la pagina lo dice a parole. L'abbonamento ne ha tre: non si
- * prepara un ordine, parte un mese di pranzi (preparazione e pronto contano
+ * prepara un ordine, parte un mese di consegne (preparazione e pronto contano
  * come "in corso").
  */
 export function passiOrdine(stato: StatoOrdine, modalita: Modalita = "delivery", servizio?: Servizio): Passo[] | null {
@@ -490,19 +512,22 @@ export function passiOrdine(stato: StatoOrdine, modalita: Modalita = "delivery",
 
 /**
  * Il giorno in cui il cliente riceve (o ritira) qualcosa da un ordine: la data
- * di uscita; per un abbonamento in corso, il prossimo pranzo dal lunedi' al
- * venerdi' del periodo (null a periodo finito).
+ * di uscita; per un abbonamento in corso, la prossima consegna o ritiro (una
+ * ogni 3 giorni dall'inizio, dentro il periodo di un mese), null a consegne
+ * finite.
  */
-export function prossimaUscitaDi(o: Pick<Ordine, "service" | "fulfillment_date">, oggi: string): string | null {
+export function prossimaUscitaDi(o: Pick<Ordine, "service" | "fulfillment_date" | "subscription">, oggi: string): string | null {
   if (!o.fulfillment_date) return null;
-  if (o.service === "abbonamento") return dataValida(o.fulfillment_date) ? prossimoPranzo(o.fulfillment_date, oggi) : null;
+  if (o.service === "abbonamento") {
+    return dataValida(o.fulfillment_date) ? prossimaConsegnaAbbonamento(formulaDi(o), o.fulfillment_date, oggi) : null;
+  }
   return o.fulfillment_date;
 }
 
 /**
  * La consegna (o il ritiro) che il cliente aspetta: fra gli ordini confermati,
- * quello con la data piu' vicina da oggi in avanti (per un abbonamento, il
- * prossimo pranzo). Senza date future, il confermato aggiornato per ultimo,
+ * quello con la data piu' vicina da oggi in avanti (per un abbonamento, la
+ * prossima consegna). Senza date future, il confermato aggiornato per ultimo,
  * perche' e' quello di cui aspetta notizie.
  */
 export function prossimaConsegna(ordini: Ordine[], oggi: string): Ordine | null {
@@ -524,6 +549,64 @@ export function periodoRichiesta(o: Pick<Ordine, "service" | "fulfillment_date">
 /** L'ultimo giorno di un abbonamento confermato, o null. */
 export const fineRichiesta = (o: Pick<Ordine, "service" | "fulfillment_date">) =>
   o.service === "abbonamento" && o.fulfillment_date && dataValida(o.fulfillment_date) ? fineAbbonamento(o.fulfillment_date) : null;
+
+/* ---------- Come si legge un abbonamento ---------- */
+
+export type SchedaAbbonamento = {
+  /** "Completo · Plus" (senza la fascia se l'ordine non la porta). */
+  etichetta: string;
+  /** "15 pasti a settimana, pranzo e cena". */
+  cosaRicevi: string;
+  /** "Da solo", "In coppia" o "In famiglia". */
+  nucleo: string;
+  /** Parte con la settimana di prova. */
+  prova: boolean;
+};
+
+/**
+ * Formula, fascia, nucleo e prova di un abbonamento, gia' a parole; null per
+ * gli altri servizi. Un abbonamento senza `subscription` (nato prima delle
+ * cinque formule) e' un Pranzo, come lo tratta il server.
+ */
+export function schedaAbbonamento(o: Pick<Ordine, "service" | "subscription">): SchedaAbbonamento | null {
+  if (o.service !== "abbonamento") return null;
+  const formula = formulaDi(o);
+  return {
+    etichetta: etichettaFormula(formula, o.subscription?.tier),
+    cosaRicevi: getFormula(formula).cosaRicevi,
+    nucleo: NOMI_NUCLEO[o.subscription?.household ?? "singolo"],
+    prova: o.subscription?.trial ?? false,
+  };
+}
+
+/** Il servizio di una richiesta a parole: per l'abbonamento "Abbonamento Completo · Plus". */
+export function nomeServizioRichiesta(o: Pick<Ordine, "service" | "subscription">): string {
+  const scheda = schedaAbbonamento(o);
+  return scheda ? `Abbonamento ${scheda.etichetta}` : ETICHETTE_SERVIZIO[o.service];
+}
+
+/** "Consegna o ritiro ogni 3 giorni", detto per la modalita' scelta. */
+export function frequenzaConsegne(modalita: Modalita): string {
+  return `${modalita === "pickup" ? "Ritiro in laboratorio" : "Consegna a casa"} ogni ${CONSEGNA_OGNI_GIORNI} giorni`;
+}
+
+/**
+ * Le righe del promemoria calendario per l'inizio di un abbonamento: formula,
+ * fascia e periodo, poi la cadenza delle consegne. Niente pasti "dal lunedi' al
+ * venerdi'": dipendono dalla formula.
+ */
+export function descrizioneInizioAbbonamento(
+  o: Pick<Ordine, "service" | "subscription" | "fulfillment_date">,
+  riferimento: string,
+): string[] {
+  const scheda = schedaAbbonamento(o);
+  if (!scheda) return [];
+  const periodo = periodoRichiesta(o, riferimento);
+  return [
+    `Abbonamento ${scheda.etichetta}${periodo ? `, ${periodo}` : ""}.`,
+    `Consegna o ritiro ogni ${CONSEGNA_OGNI_GIORNI} giorni.`,
+  ];
+}
 
 /** Una riga leggibile per la cronologia di un ordine. */
 export function descriviEvento(evento: EventoOrdine, modalita?: "pickup" | "delivery"): { titolo: string; dettaglio: string } {
@@ -614,7 +697,8 @@ export function piattiNonPiuDisponibili(piano: unknown): number {
 
 /**
  * I servizi di meal prep hanno bisogno di piatti; l'home cooking no, e
- * nemmeno l'abbonamento: i pranzi li compone Matteo sulla scheda del cliente.
+ * nemmeno l'abbonamento: il cliente porta il piano del suo nutrizionista (le
+ * note della richiesta sono "la scheda") e Matteo lo cucina sulla formula scelta.
  */
 export const SERVIZIO_CON_PIATTI: Record<Servizio, boolean> = {
   "menu-settimana": true,
@@ -628,15 +712,24 @@ export function servizioDa(valore: string | null | undefined): Servizio {
   return valore === "abbonamento" || valore === "sui-tuoi-macro" || valore === "home-cooking" ? valore : "menu-settimana";
 }
 
-/**
- * Quanti pranzi dal lunedi' al venerdi' ha il piano: per l'abbonamento sono le
- * uniche caselle che partono con la richiesta (il server tiene solo quelle).
- */
-export function pranziFeriali(piano: Piano): number {
-  return (["lun", "mar", "mer", "gio", "ven"] as const).filter((g) => {
-    const id = piano[g]?.pranzo?.piatto;
-    return !!id && !!getPiatto(id);
-  }).length;
+/** `?formula=` dell'indirizzo -> la formula preselezionata; un valore che non esiste vale la consigliata. */
+export function formulaDa(valore: string | null | undefined): FormulaId {
+  return eFormulaId(valore) ? valore : FORMULA_CONSIGLIATA;
+}
+
+/** `?fascia=` dell'indirizzo -> la fascia preselezionata; un valore che non esiste vale Standard. */
+export function fasciaDa(valore: string | null | undefined): Fascia {
+  return eFascia(valore) ? valore : "standard";
+}
+
+/** `?modalita=` dell'indirizzo -> come si riceve; qualunque altro valore e' il ritiro, com'e' sempre stato. */
+export function modalitaDa(valore: string | null | undefined): Modalita {
+  return valore === "delivery" ? "delivery" : "pickup";
+}
+
+/** `?nucleo=` dell'indirizzo -> con chi ci si abbona; un valore che non esiste vale "da solo". */
+export function nucleoDa(valore: string | null | undefined): Nucleo {
+  return eNucleo(valore) ? valore : "singolo";
 }
 
 export type DatiRichiesta = {
@@ -648,6 +741,12 @@ export type DatiRichiesta = {
   modalita: Modalita;
   data: string;
   note: string;
+  /* Solo per l'abbonamento: gli altri servizi li ignorano (e il server pure). */
+  formula: FormulaId;
+  fascia: Fascia;
+  nucleo: Nucleo;
+  /** Parte con la settimana di prova: la prima settimana e' di prova, senza impegno. */
+  prova: boolean;
 };
 
 export type CampoRichiesta = keyof DatiRichiesta | "piano";
@@ -655,7 +754,7 @@ export type ErroriRichiesta = Partial<Record<CampoRichiesta, string>>;
 
 /** L'ordine in cui la pagina porta il fuoco sul primo errore. */
 export const ORDINE_CAMPI_RICHIESTA: CampoRichiesta[] = [
-  "piano", "servizio", "nome", "telefono", "comune", "modalita", "indirizzo", "data", "note",
+  "piano", "servizio", "formula", "nome", "telefono", "comune", "modalita", "indirizzo", "data", "note",
 ];
 
 export const NOTE_MAX = 1500;
@@ -667,6 +766,8 @@ export function validaRichiesta(
   contesto: { piatti: number; min: string; max: string; chiusure?: readonly Chiusura[] },
 ): ErroriRichiesta {
   const e: ErroriRichiesta = {};
+  if (d.servizio === "abbonamento" && !eFormulaId(d.formula)) e.formula = "Scegli la formula dell’abbonamento.";
+
   const nome = d.nome.trim();
   if (!nome) e.nome = "Scrivi il nome a cui intestare la richiesta.";
   else if (nome.length > 100) e.nome = "Il nome può avere al massimo 100 caratteri.";
@@ -705,8 +806,14 @@ export function validaRichiesta(
   return e;
 }
 
-/** Il corpo di POST /api/orders, con gli spazi gia' tolti. */
+/**
+ * Il corpo di POST /api/orders, con gli spazi gia' tolti. L'abbonamento porta la
+ * scelta (`subscription`) e non un piano: il compositore non e' il modo di
+ * scegliere i pasti di una formula, e un piano allegato verrebbe potato dal
+ * server lasciando credere che quei piatti vengano cucinati.
+ */
 export function corpoRichiesta(d: DatiRichiesta, piano: Piano, allenamenti: Allenamenti): NuovoOrdine {
+  const abbonamento = d.servizio === "abbonamento";
   return {
     name: d.nome.trim(),
     phone: d.telefono.trim(),
@@ -716,9 +823,54 @@ export function corpoRichiesta(d: DatiRichiesta, piano: Piano, allenamenti: Alle
     fulfillment: d.modalita,
     requestedDate: d.data || null,
     notes: d.note.trim(),
-    plan: piano,
+    plan: abbonamento ? {} : piano,
     training: allenamenti,
+    ...(abbonamento ? { subscription: { plan: d.formula, tier: d.fascia, household: d.nucleo, trial: d.prova } } : {}),
   };
+}
+
+/* ---------- Il prezzo stimato di un abbonamento ---------- */
+
+export type StimaAbbonamento = {
+  /** Il prezzo di listino al mese, com'e' sulle pagine: "676 €". */
+  listino: string;
+  /** Il totale stimato al mese, con lo sconto applicato: "608 €". */
+  totale: string;
+  /** Lo sconto applicato, in percentuale (0 se non ne spetta nessuno). */
+  scontoPercento: number;
+  /** Come si e' arrivati al totale, a parole: da quale sconto, o quali sconti esistono se non ne spetta nessuno. */
+  dettaglio: string;
+};
+
+/** Gli sconti a parole, con l'articolo: "per il ritiro in laboratorio", "ti spettano l'abbonamento in coppia...". */
+const NOMI_SCONTO_NUCLEO: Record<Nucleo, string> = { singolo: "", coppia: "l’abbonamento in coppia", famiglia: "l’abbonamento in famiglia" };
+
+/**
+ * Quanto costa al mese la scelta fatta nel modulo. E' una stima: gli sconti non
+ * si sommano (si applica il piu' alto fra quelli che spettano, vedi
+ * scontoApplicato) e il prezzo finale lo conferma Matteo.
+ */
+export function stimaAbbonamento(d: Pick<DatiRichiesta, "formula" | "fascia" | "nucleo" | "modalita">): StimaAbbonamento {
+  const ritiro = d.modalita === "pickup";
+  const { listinoCentesimi, scontoPercento, totaleCentesimi } = calcolaPrezzo({
+    formula: d.formula,
+    fascia: d.fascia,
+    ritiro,
+    nucleo: d.nucleo,
+  });
+  const listino = euroInteri(listinoCentesimi / 100);
+  const spettano = [
+    ritiro ? { chi: "il ritiro in laboratorio", percento: SCONTI.ritiro } : null,
+    d.nucleo !== "singolo" ? { chi: NOMI_SCONTO_NUCLEO[d.nucleo], percento: SCONTO_NUCLEO[d.nucleo] } : null,
+  ].filter((x): x is { chi: string; percento: number } => x !== null);
+  const voce = (x: { chi: string; percento: number }) => `${x.chi} (−${x.percento}%)`;
+  const dettaglio =
+    spettano.length === 0
+      ? `Prezzo di listino. Sconti: ritiro in laboratorio −${SCONTI.ritiro}%, in coppia −${SCONTI.coppia}%, in famiglia −${SCONTI.famiglia}%.`
+      : spettano.length === 1
+        ? `Listino ${listino}, sconto ${scontoPercento}% per ${spettano[0].chi}.`
+        : `Listino ${listino}, sconto ${scontoPercento}%: ti spettano ${voce(spettano[0])} e ${voce(spettano[1])}, si applica il più alto.`;
+  return { listino, totale: euroInteri(totaleCentesimi / 100), scontoPercento, dettaglio };
 }
 
 /* ---------- Privacy ---------- */

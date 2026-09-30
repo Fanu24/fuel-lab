@@ -8,10 +8,18 @@ const VANTAGGI = [
   { titolo: "Nessun pagamento online", testo: "Prezzo e giorno li concordi con Matteo prima di tutto." },
 ];
 
-export default function Vantaggi({ className = "" }: { className?: string }) {
+/* Chi arriva per un abbonamento non compone niente: gli stessi vantaggi, senza piatti e settimana. */
+const VANTAGGI_ABBONAMENTO = [
+  { titolo: "Chiedi la formula", testo: "Scegli fra i cinque abbonamenti, in Standard o Plus, e chiedi la settimana di prova." },
+  { titolo: "Segui ogni passo", testo: "Confermata, in corso, conclusa: lo vedi qui, coi messaggi di Matteo." },
+  { titolo: "Nessun pagamento online", testo: "Prezzo, inizio e consegna li concordi con Matteo prima di tutto." },
+];
+
+export default function Vantaggi({ className = "", abbonamento = false }: { className?: string; abbonamento?: boolean }) {
+  const vantaggi = abbonamento ? VANTAGGI_ABBONAMENTO : VANTAGGI;
   return (
     <ul className={`acc-vantaggi ${className}`}>
-      {VANTAGGI.map((v, i) => (
+      {vantaggi.map((v, i) => (
         <li key={v.titolo}>
           <span className="num acc-vantaggi-num" aria-hidden="true">
             {String(i + 1).padStart(2, "0")}

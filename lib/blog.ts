@@ -846,6 +846,7 @@ export const ARTICOLI: Articolo[] = [
     parolaChiave: "piatti già composti",
     foto: "cuoco",
     data: DATA_BLOG,
+    aggiornato: "2026-09-30",
     piatti: ["riso-julien-pollo-teriyaki", "gnocchetti-sugo-ricotta", "maiale-senape-spinaci"],
     correlati: ["meal-prep-pescara-cosa-significa", "leggere-etichetta-nutrizionale-piatti-pronti", "abbinare-pasti-tipo-allenamento"],
     introduzione:
@@ -912,7 +913,7 @@ export const ARTICOLI: Articolo[] = [
         titolo: "Come inserirli nella tua settimana",
         paragrafi: [
           "Il menu ruota su pochi piatti, cucinati freschi ogni giorno. Il modo più semplice di iniziare è scegliere i pasti più difficili della settimana, per esempio i pranzi in ufficio o le cene dopo la palestra, e coprire solo quelli.",
-          "Nel [compositore](/settimana) segni gli allenamenti, ottieni una proposta e la ritocchi; poi la invii a Matteo, che conferma disponibilità, ritiro in Via del Santuario 214 o consegna in zona. I modi di lavorare con FUEL LAB sono descritti nella pagina dei [servizi](/servizi): il [meal prep a Pescara](/meal-prep-pescara) con i piatti del menu, l’[abbonamento ai pranzi](/abbonamento) composto sulla tua scheda, oppure il [cuoco a domicilio](/cuoco-a-domicilio-pescara), se preferisci che Matteo cucini nella tua cucina.",
+          "Nel [compositore](/settimana) segni gli allenamenti, ottieni una proposta e la ritocchi; poi la invii a Matteo, che conferma disponibilità, ritiro in Via del Santuario 214 o consegna in zona. I modi di lavorare con FUEL LAB sono descritti nella pagina dei [servizi](/servizi): il [meal prep a Pescara](/meal-prep-pescara) con i piatti del menu, i [cinque abbonamenti mensili](/abbonamento) sul piano scritto dal tuo nutrizionista, oppure il [cuoco a domicilio](/cuoco-a-domicilio-pescara), se preferisci che Matteo cucini nella tua cucina.",
         ],
       },
     ],
@@ -1240,7 +1241,7 @@ export const ARTICOLI: Articolo[] = [
     parolaChiave: "meal prep Pescara",
     foto: "couscous",
     data: DATA_BLOG,
-    aggiornato: "2026-09-27",
+    aggiornato: "2026-09-30",
     piatti: ["riso-julien-pollo-teriyaki", "pallotte-cacio-ovo", "uova-purgatorio-peperoni"],
     correlati: ["piatti-gia-composti-cosa-sono", "menu-settimanale-pescara-come-pianificarlo", "conservare-pasti-preparati-frigorifero"],
     introduzione:
@@ -1304,7 +1305,7 @@ export const ARTICOLI: Articolo[] = [
         titolo: "Il meal prep a Pescara con FUEL LAB",
         paragrafi: [
           "Se cucinare in blocco non fa per te, o non sempre, puoi affidare una parte della settimana a una cucina. Con il [meal prep di FUEL LAB a Pescara](/meal-prep-pescara) Matteo, che è un cuoco, prepara piatti freschi ogni giorno: il [riso con carote, zucchine e pollo teriyaki](/menu/riso-julien-pollo-teriyaki), le [pallotte cacio e ova fit](/menu/pallotte-cacio-ovo), le [uova alla purgatorio](/menu/uova-purgatorio-peperoni) e gli altri piatti del [menu](/menu), ciascuno con ingredienti, allergeni e macro della porzione.",
-          "Scegli i pasti nel [compositore della settimana](/settimana), anche solo due o tre, e manda la richiesta: Matteo conferma disponibilità, ritiro in Via del Santuario 214 o [consegna a Pescara e dintorni](/consegna-pasti-pescara). Se vuoi coprire tutti i pranzi dal lunedì al venerdì senza pensarci, c’è l’[abbonamento mensile](/abbonamento), composto sulla tua scheda; se preferisci che la preparazione avvenga nella tua cucina, c’è il servizio di [cuoco a domicilio](/cuoco-a-domicilio-pescara).",
+          "Scegli i pasti nel [compositore della settimana](/settimana), anche solo due o tre, e manda la richiesta: Matteo conferma disponibilità, ritiro in Via del Santuario 214 o [consegna a Pescara e dintorni](/consegna-pasti-pescara). Se vuoi i pasti di tutta la settimana senza pensarci, ci sono gli [abbonamenti mensili](/abbonamento): Matteo cucina il piano del tuo nutrizionista e lo porta ogni 3 giorni; se preferisci che la preparazione avvenga nella tua cucina, c’è il servizio di [cuoco a domicilio](/cuoco-a-domicilio-pescara).",
         ],
       },
     ],
@@ -1413,7 +1414,7 @@ export const ARTICOLI: Articolo[] = [
     parolaChiave: "pranzo al lavoro Pescara",
     foto: "ciotole",
     data: DATA_BLOG,
-    aggiornato: "2026-09-27",
+    aggiornato: "2026-09-30",
     piatti: ["riso-julien-pollo-teriyaki", "gnocchetti-sugo-ricotta", "uova-purgatorio-peperoni"],
     correlati: ["pranzo-proteico-ufficio", "consegna-pasti-pescara-cosa-chiedere", "meal-prep-pescara-cosa-significa"],
     introduzione:
@@ -1495,7 +1496,7 @@ export const ARTICOLI: Articolo[] = [
       {
         titolo: "Il pranzo al lavoro con FUEL LAB",
         paragrafi: [
-          "Se lavori a Pescara, a Montesilvano, a Spoltore o negli altri comuni della zona, puoi chiedere che i piatti arrivino in ufficio nei giorni che ti servono, oppure ritirarli in Via del Santuario 214. La copertura del singolo indirizzo si conferma prima dell’ordine: i dettagli sono nella pagina sulla [consegna pasti a Pescara](/consegna-pasti-pescara). Se vuoi coprire tutti i pranzi dal lunedì al venerdì, c’è l’[abbonamento mensile](/abbonamento): Matteo li compone sulla tua scheda.",
+          "Se lavori a Pescara, a Montesilvano, a Spoltore o negli altri comuni della zona, puoi chiedere che i piatti arrivino in ufficio nei giorni che ti servono, oppure ritirarli in Via del Santuario 214. La copertura del singolo indirizzo si conferma prima dell’ordine: i dettagli sono nella pagina sulla [consegna pasti a Pescara](/consegna-pasti-pescara). Se vuoi il pranzo pronto dal lunedì al venerdì, ci sono gli [abbonamenti mensili](/abbonamento): Matteo cucina il piano del tuo nutrizionista e lo porta ogni 3 giorni.",
           "Prima di chiedere, verifica in ufficio dove terrai i piatti: sono piatti da frigorifero, da riporre appena arrivano. Per sapere che cosa domandare a qualunque servizio c’è la guida su [cosa chiedere prima di scegliere una consegna pasti](/blog/consegna-pasti-pescara-cosa-chiedere).",
         ],
       },
@@ -2242,7 +2243,7 @@ export const ARTICOLI: Articolo[] = [
     parolaChiave: "consegna pasti Pescara",
     foto: "noodles",
     data: DATA_BLOG,
-    aggiornato: "2026-09-27",
+    aggiornato: "2026-09-30",
     piatti: ["noodles-sesamo-maiale", "maiale-senape-spinaci", "riso-julien-pollo-teriyaki"],
     correlati: ["cucina-salutare-asporto-pescara", "pranzo-lavoro-pescara-organizzarlo", "conservare-pasti-preparati-frigorifero"],
     introduzione:
@@ -2266,7 +2267,7 @@ export const ARTICOLI: Articolo[] = [
           "Posso ordinare solo per qualche giorno, senza impegni fissi?",
         ],
         dopo: [
-          "Per FUEL LAB la consegna è tutti i giorni: Matteo cucina ogni giorno e consegna ogni giorno. Chi vuole coprire tutti i pranzi del mese senza ordinare ogni volta trova anche l’[abbonamento mensile](/abbonamento). La consegna è gratuita dai dieci pasti in su, come indicato nella pagina [Servizi e prezzi](/servizi); sotto quella soglia il costo per il tuo indirizzo te lo conferma Matteo. Non c’è pagamento online: la richiesta diventa un ordine quando Matteo conferma piatti, giorno e modalità.",
+          "Per il menu della settimana la consegna è tutti i giorni: Matteo cucina ogni giorno e consegna ogni giorno, ed è gratuita dai dieci pasti in su, come indicato nella pagina [Servizi e prezzi](/servizi); sotto quella soglia il costo per il tuo indirizzo te lo conferma Matteo. Chi vuole i pasti pronti senza ordinare ogni volta trova anche gli [abbonamenti mensili](/abbonamento), con consegna o ritiro ogni 3 giorni. Non c’è pagamento online: la richiesta diventa un ordine quando Matteo conferma piatti, giorno e modalità.",
         ],
       },
       {

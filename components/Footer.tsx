@@ -24,7 +24,7 @@ const COLONNE = [
     titolo: "Mangia",
     voci: [
       { href: "/menu", label: "Il menu" },
-      { href: PAGINE.abbonamento.percorso, label: "Abbonamento" },
+      { href: PAGINE.abbonamento.percorso, label: "Abbonamenti" },
       { href: "/settimana", label: "Componi la settimana" },
       { href: "/scheda", label: "Dai tuoi macro" },
       { href: "/servizi", label: "Servizi e prezzi" },

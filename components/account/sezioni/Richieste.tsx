@@ -6,18 +6,22 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import {
   contaPiatti,
   descriviEvento,
+  descrizioneInizioAbbonamento,
   formattaGiorno,
   formattaGiornoDa,
   formattaMomento,
   hrefSezione,
   messaggioDa,
+  nomeServizioRichiesta,
   periodoRichiesta,
   piattiNonPiuDisponibili,
+  prossimaUscitaDi,
+  schedaAbbonamento,
   STATI_IN_CORSO,
 } from "@/lib/account";
+import { CONSEGNA_OGNI_GIORNI } from "@/lib/abbonamento";
 import {
   api,
-  ETICHETTE_SERVIZIO,
   etichettaStato,
   euro,
   type DettaglioOrdine,
@@ -289,7 +293,8 @@ function SchedaRichiesta({
     router.push("/settimana");
   }
 
-  const abbonamento = o.service === "abbonamento";
+  const scheda = schedaAbbonamento(o);
+  const abbonamento = !!scheda;
   // L'abbonamento confermato ha un periodo (un mese dalla data d'inizio), non un giorno di ritiro.
   const periodo = periodoRichiesta(o, oggi);
   const quando = periodo
@@ -304,6 +309,8 @@ function SchedaRichiesta({
 
   // Il giorno confermato da Matteo si puo' mettere nel calendario del telefono (per l'abbonamento, l'inizio).
   const inCalendario = !!o.fulfillment_date && ["confirmed", "preparing", "ready"].includes(o.status);
+  // Per un abbonamento in corso, la prossima consegna o ritiro (una ogni 3 giorni dall'inizio).
+  const prossima = abbonamento && inCalendario ? prossimaUscitaDi(o, oggi) : null;
   function scaricaCalendario() {
     if (!o.fulfillment_date) return;
     const ics = fileIcs({
@@ -313,7 +320,7 @@ function SchedaRichiesta({
         ? "Inizio dell’abbonamento FUEL LAB"
         : `${ritiro ? "Ritiro" : "Consegna"} FUEL LAB${o.meals ? `, ${o.meals} pasti` : ""}`,
       descrizione: [
-        abbonamento && periodo ? `Pranzi dal lunedì al venerdì, ${periodo}.` : "",
+        ...(abbonamento ? descrizioneInizioAbbonamento(o, oggi) : []),
         ritiro ? `Ritiro in ${INDIRIZZO_RIGA}.` : `Consegna a ${[o.address, o.comune].filter(Boolean).join(", ")}.`,
         o.customer_message ? `Messaggio di Matteo: ${o.customer_message}` : "",
         "Dettagli: https://fuelchef.it/account?sezione=richieste",
@@ -339,7 +346,7 @@ function SchedaRichiesta({
     >
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="acc-etichetta">{ETICHETTE_SERVIZIO[o.service]}</p>
+          <p className="acc-etichetta">{nomeServizioRichiesta(o)}</p>
           <h4 id={idTitolo} className="acc-richiesta-titolo">Richiesta del {formattaGiornoDa(o.created_at)}</h4>
         </div>
         <span className="acc-stato" data-stato={o.status}>
@@ -358,13 +365,36 @@ function SchedaRichiesta({
         </div>
         <div>
           <dt>Modalità</dt>
-          <dd>{ritiro ? "Ritiro a Pescara" : `Consegna${o.comune ? ` a ${o.comune}` : ""}`}</dd>
+          <dd>
+            {ritiro ? "Ritiro a Pescara" : `Consegna${o.comune ? ` a ${o.comune}` : ""}`}
+            {abbonamento ? `, ogni ${CONSEGNA_OGNI_GIORNI} giorni` : ""}
+          </dd>
         </div>
-        {abbonamento ? (
-          <div>
-            <dt>Pranzi</dt>
-            <dd>Dal lunedì al venerdì</dd>
-          </div>
+        {scheda ? (
+          <>
+            <div>
+              <dt>Formula</dt>
+              <dd>{scheda.etichetta}</dd>
+            </div>
+            <div>
+              <dt>Cosa ricevi</dt>
+              <dd>{scheda.cosaRicevi}</dd>
+            </div>
+            <div>
+              <dt>Chi si abbona</dt>
+              <dd>{scheda.nucleo}</dd>
+            </div>
+            <div>
+              <dt>Settimana di prova</dt>
+              <dd>{scheda.prova ? "Sì" : "No"}</dd>
+            </div>
+            {prossima ? (
+              <div>
+                <dt>{ritiro ? "Prossimo ritiro" : "Prossima consegna"}</dt>
+                <dd>{formattaGiorno(prossima, oggi)}</dd>
+              </div>
+            ) : null}
+          </>
         ) : (
           <div>
             <dt>Pasti</dt>
@@ -376,6 +406,7 @@ function SchedaRichiesta({
             <dt>{o.status === "requested" ? "Prezzo proposto" : "Totale concordato"}</dt>
             <dd>
               <span className="num">{euro(o.price_cents)}</span>
+              {abbonamento && o.status === "requested" ? " al mese" : ""}
               {o.status === "cancelled" || (o.status === "requested" && !o.paid) ? null : (
                 <span className={`acc-pagato ${o.paid ? "acc-pagato-si" : ""}`}>{o.paid ? "Pagato" : "Da pagare"}</span>
               )}
@@ -441,7 +472,7 @@ function Dettagli({
   return (
     <div className="grid gap-6">
       {perGiorno.length ? (
-        <Blocco titolo={abbonamento ? "Pranzi che hai indicato" : "Piatti"}>
+        <Blocco titolo={abbonamento ? "Piatti che hai indicato" : "Piatti"}>
           <ul className="grid gap-3">
             {perGiorno.map(([giorno, voci]) => (
               <li key={giorno}>

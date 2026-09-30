@@ -11,7 +11,7 @@ import LinkBlog from "@/components/seo/LinkBlog";
 import { AGGIORNAMENTO, PAGINE, metadatiPagina } from "@/components/seo/pagine";
 import { nodiPagina, nodoServizio, prezzoIt, type DomandaTesto } from "@/components/seo/schema";
 import { PIATTI, type Allenamento } from "@/lib/catalogo";
-import { PREZZO_ABBONAMENTO_TESTO } from "@/lib/abbonamento";
+import { CONSEGNA_OGNI_GIORNI, PREZZO_DA_TESTO } from "@/lib/abbonamento";
 import { CONSIGLI } from "@/lib/consigli";
 import { SOGLIA_PREZZO } from "@/lib/servizi";
 import { INDIRIZZO_RIGA, LINK_MAPPA, elencoZone } from "@/lib/sito";
@@ -95,7 +95,7 @@ const DOMANDE: DomandaTesto[] = [
   },
   {
     q: "Quanto costa il meal prep a Pescara con FUEL LAB?",
-    a: `Da ${PREZZO} € a pasto. Il prezzo finale dipende dalla richiesta e te lo conferma Matteo: sul sito non c'è pagamento online. Per tutti i pranzi dal lunedì al venerdì c'è anche l'abbonamento, a ${PREZZO_ABBONAMENTO_TESTO} al mese.`,
+    a: `Da ${PREZZO} € a pasto. Il prezzo finale dipende dalla richiesta e te lo conferma Matteo: sul sito non c'è pagamento online. Se vuoi i pasti di tutta la settimana senza ordinare ogni volta, ci sono cinque abbonamenti mensili da ${PREZZO_DA_TESTO} al mese: Matteo cucina il piano del tuo nutrizionista e lo porta ogni ${CONSEGNA_OGNI_GIORNI} giorni.`,
   },
   {
     q: "Va bene anche se non mi alleno?",
@@ -327,15 +327,16 @@ export default function MealPrepPescara() {
               <h3 className="titolo-s">Prezzo</h3>
               <p className="mt-3 text-muted">
                 Da <span className="evidenzia font-semibold text-ink">{PREZZO} € a pasto</span>. Il prezzo finale te lo
-                conferma Matteo con la richiesta: sul sito non si paga niente. Per tutti i pranzi dal lunedì al
-                venerdì c&apos;è l&apos;abbonamento, a {PREZZO_ABBONAMENTO_TESTO} al mese.
+                conferma Matteo con la richiesta: sul sito non si paga niente. Se vuoi i pasti di tutta la
+                settimana senza ordinare ogni volta, ci sono cinque abbonamenti mensili da {PREZZO_DA_TESTO} al mese:
+                Matteo cucina il piano del tuo nutrizionista e lo porta ogni {CONSEGNA_OGNI_GIORNI} giorni.
               </p>
               <div className="mt-5 flex flex-wrap gap-x-8 gap-y-4">
                 <Link href="/servizi" className="link">
                   Servizi e prezzi
                 </Link>
                 <Link href={PAGINE.abbonamento.percorso} className="link">
-                  L&apos;abbonamento
+                  Gli abbonamenti
                 </Link>
               </div>
             </Reveal>
