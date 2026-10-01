@@ -202,6 +202,8 @@ export default function OrdineGestisci({
   const campoProduzione = useRef<HTMLInputElement>(null);
   const campoPrezzo = useRef<HTMLInputElement>(null);
   const areaEsito = useRef<HTMLDivElement>(null);
+  // Due tocchi ravvicinati non devono mandare due salvataggi: lo stato React arriva dopo, questo segnale subito.
+  const inCorso = useRef(false);
 
   /* Il bottone premuto si spegne mentre salva e il fuoco cade sul body: lo si
      porta sull'esito, cosi' tastiera e lettore di schermo sanno com'e' andata.
@@ -255,6 +257,7 @@ export default function OrdineGestisci({
   }
 
   async function salva(statoVoluto?: StatoOrdine, date?: { produzione: string; uscita: string }) {
+    if (inCorso.current) return;
     const c: Campi = { ...campi, ...(statoVoluto ? { stato: statoVoluto } : {}), ...(date ?? {}) };
     setEsito(null);
 
@@ -285,6 +288,7 @@ export default function OrdineGestisci({
       return;
     }
     const email = m.status !== undefined || m.customerMessage !== undefined;
+    inCorso.current = true;
     setSalvo(true);
     try {
       const { order } = await api.modificaOrdine(base.id, { ...m, ...(email ? { notify: avvisaDavvero } : {}), expectedStatus: base.status });
@@ -319,6 +323,7 @@ export default function OrdineGestisci({
         }
       }
     } finally {
+      inCorso.current = false;
       setSalvo(false);
     }
   }
@@ -480,23 +485,28 @@ export default function OrdineGestisci({
             </button>
           </div>
 
-          <div className="campo pn-per-cliente">
-            <label htmlFor="scheda-messaggio" className="pn-campo-etichetta">
-              Messaggio per il cliente
-              <span className="pn-segno pn-segno-neutro normal-case tracking-normal">Lo vede {nome}</span>
-            </label>
-            <textarea
-              id="scheda-messaggio"
-              rows={3}
-              maxLength={1000}
-              value={campi.messaggio}
-              onChange={(e) => cambia("messaggio", e.target.value)}
-              aria-describedby="scheda-aiuto-messaggio"
-            />
-            <p id="scheda-aiuto-messaggio" className="pn-aiuto">
-              Compare nel suo account e nell’email, se lo avvisi. <span className="num">{campi.messaggio.length}/1000</span>
-            </p>
-          </div>
+          {/* Senza account il cliente non ha dove leggerlo: il campo comparirebbe come una promessa che non si mantiene. */}
+          {senzaAccount && !campi.messaggio ? null : (
+            <div className="campo pn-per-cliente">
+              <label htmlFor="scheda-messaggio" className="pn-campo-etichetta">
+                Messaggio per il cliente
+                <span className="pn-segno pn-segno-neutro normal-case tracking-normal">
+                  {senzaAccount ? "Non lo legge: senza account" : `Lo vede ${nome}`}
+                </span>
+              </label>
+              <textarea
+                id="scheda-messaggio"
+                rows={3}
+                maxLength={1000}
+                value={campi.messaggio}
+                onChange={(e) => cambia("messaggio", e.target.value)}
+                aria-describedby="scheda-aiuto-messaggio"
+              />
+              <p id="scheda-aiuto-messaggio" className="pn-aiuto">
+                Compare nel suo account e nell’email, se lo avvisi. <span className="num">{campi.messaggio.length}/1000</span>
+              </p>
+            </div>
+          )}
 
           <div className="campo pn-solo-matteo">
             <label htmlFor="scheda-nota" className="pn-campo-etichetta">
@@ -551,39 +561,75 @@ export default function OrdineGestisci({
       </div>
 
       <div className="pn-scheda-piede">
+        <div ref={areaEsito} tabIndex={-1} className="outline-none">
+          {esito ? <Avviso tipo={esito.tipo}>{esito.testo}</Avviso> : null}
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-x-4">
+          {senzaAccount ? (
+            <p id="scheda-aiuto-avvisa" className="pn-aiuto min-h-11 content-center">
+              Senza account: nessuna email, avvisa il cliente tu.
+            </p>
+          ) : (
+            <label className="pn-casella">
+              <input type="checkbox" checked={avvisa} onChange={(e) => setAvvisa(e.target.checked)} aria-describedby="scheda-aiuto-avvisa" />
+              Avvisa il cliente via email
+            </label>
+          )}
+          {sporco ? (
+            <button type="button" className="pn-tasto pn-tasto-piatto min-h-11 px-1" onClick={annullaModifiche}>
+              Annulla modifiche
+            </button>
+          ) : null}
+          {senzaAccount ? null : (
+            <p id="scheda-aiuto-avvisa" className={emailAttiva === false ? "pn-aiuto w-full" : "sr-only"}>
+              {emailAttiva === false
+                ? "L’email non è attiva su questo sito: avvisa il cliente per telefono o WhatsApp."
+                : "L’email parte solo se cambia lo stato o il messaggio per il cliente."}
+            </p>
+          )}
+        </div>
+
         {proposta ? (
           <div className="pn-proposta" role="alert">
             {abbonamento ? (
-              <>
-                <p className="text-[17px] font-bold">Per confermare l’abbonamento serve l’inizio.</p>
-                <p className="text-[16px]">
-                  Ti propongo: inizio <strong>{giornoLungo(proposta.uscita)}</strong>, fino a{" "}
-                  <strong>{giornoLungo(fineAbbonamento(proposta.uscita))}</strong>.
-                </p>
-              </>
+              <p className="text-[16px]">
+                <strong>Serve l’inizio.</strong> Ti propongo: inizio <strong>{giornoLungo(proposta.uscita)}</strong>, fino a{" "}
+                <strong>{giornoLungo(fineAbbonamento(proposta.uscita))}</strong>.
+              </p>
             ) : (
-              <>
-                <p className="text-[17px] font-bold">
-                  Per “{etichettaStato(proposta.stato)}” servono le date.
-                </p>
-                <p className="text-[16px]">
-                  Ti propongo: cucina <strong>{giornoLungo(proposta.produzione)}</strong>, {base.fulfillment === "pickup" ? "ritiro" : "consegna"}{" "}
-                  <strong>{giornoLungo(proposta.uscita)}</strong>.
-                </p>
-              </>
+              <p className="text-[16px]">
+                <strong>Per “{etichettaStato(proposta.stato)}” servono le date.</strong> Ti propongo{" "}
+                {proposta.produzione === proposta.uscita ? (
+                  <>
+                    cucina e {base.fulfillment === "pickup" ? "ritiro" : "consegna"} <strong>{giornoLungo(proposta.uscita)}</strong>.
+                  </>
+                ) : (
+                  <>
+                    cucina <strong>{giornoLungo(proposta.produzione)}</strong>, {base.fulfillment === "pickup" ? "ritiro" : "consegna"}{" "}
+                    <strong>{giornoLungo(proposta.uscita)}</strong>.
+                  </>
+                )}
+              </p>
             )}
             <div className="pn-bottoni">
               <button
                 type="button"
-                className="pn-tasto pn-tasto-pieno pn-tasto-grande"
+                className="pn-tasto pn-tasto-pieno pn-tasto-grande flex-[2] whitespace-nowrap"
                 disabled={salvo}
                 onClick={() => void salva(proposta.stato, { produzione: proposta.produzione, uscita: proposta.uscita })}
               >
-                {salvo ? "Salvo…" : abbonamento ? "Va bene, inizia quel giorno" : "Va bene, usa queste date"}
+                {salvo ? (
+                  "Salvo…"
+                ) : (
+                  <>
+                    Va bene<span className="sr-only">, {abbonamento ? "inizia quel giorno" : "usa queste date"}</span>
+                  </>
+                )}
               </button>
               <button
                 type="button"
-                className="pn-tasto"
+                className="pn-tasto pn-tasto-grande"
                 onClick={() => {
                   setProposta(null);
                   campoProduzione.current?.focus();
@@ -594,36 +640,7 @@ export default function OrdineGestisci({
               </button>
             </div>
           </div>
-        ) : null}
-
-        <div ref={areaEsito} tabIndex={-1} className="outline-none">
-          {esito ? <Avviso tipo={esito.tipo}>{esito.testo}</Avviso> : null}
-        </div>
-
-        <div className="flex flex-wrap items-center justify-between gap-x-4">
-          <label className={`pn-casella ${senzaAccount ? "cursor-not-allowed opacity-60" : ""}`}>
-            <input
-              type="checkbox"
-              checked={avvisaDavvero}
-              disabled={senzaAccount}
-              onChange={(e) => setAvvisa(e.target.checked)}
-              aria-describedby="scheda-aiuto-avvisa"
-            />
-            Avvisa il cliente via email
-          </label>
-          {sporco ? (
-            <button type="button" className="pn-tasto pn-tasto-piatto min-h-11 px-1" onClick={annullaModifiche}>
-              Annulla modifiche
-            </button>
-          ) : null}
-          <p id="scheda-aiuto-avvisa" className={senzaAccount ? "pn-aiuto w-full" : "sr-only"}>
-            {senzaAccount
-              ? "Il cliente non ha un account: nessuna email. Avvisalo per telefono o WhatsApp."
-              : "L’email parte solo se cambia lo stato o il messaggio per il cliente."}
-          </p>
-        </div>
-
-        {!proposta ? (
+        ) : (
           <div className="pn-bottoni">
             {statoScelto ? (
               <button type="button" className="pn-tasto pn-tasto-pieno pn-tasto-grande flex-1" disabled={salvo} onClick={() => void salva()}>
@@ -652,7 +669,7 @@ export default function OrdineGestisci({
               </button>
             )}
           </div>
-        ) : null}
+        )}
       </div>
     </form>
   );

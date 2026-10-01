@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useSyncExternalStore } from "react";
 import CartaPiatto from "@/components/menu/CartaPiatto";
 import AggiungiAllaSettimana from "@/components/menu/AggiungiAllaSettimana";
 import { PIATTI, type Piatto } from "@/lib/catalogo";
@@ -21,17 +21,33 @@ function passa(p: Piatto, f: Filtro): boolean {
   return p.allenamento === f || p.allenamento === "entrambi";
 }
 
+/* Il filtro si legge dall'indirizzo del browser, non da useSearchParams: quell'hook
+   toglie la pagina dall'HTML statico e lascia un riquadro vuoto fino all'idratazione.
+   Cosi' il server disegna i sei piatti (filtro "tutti") e il browser, se trova
+   ?allenamento=, aggiorna. Il filtro scelto si scrive con replaceState e si avvisa
+   chi ascolta con un evento: i bottoni indietro e avanti arrivano da popstate. */
+const EVENTO = "fuellab:filtro-menu";
+function ascolta(f: () => void) {
+  window.addEventListener("popstate", f);
+  window.addEventListener(EVENTO, f);
+  return () => {
+    window.removeEventListener("popstate", f);
+    window.removeEventListener(EVENTO, f);
+  };
+}
+const leggi = (): Filtro => {
+  const grezzo = new URLSearchParams(window.location.search).get("allenamento");
+  return grezzo === "cardio" || grezzo === "pesi" ? grezzo : "tutti";
+};
+
 export default function MenuClient() {
-  const cerca = useSearchParams();
-  const router = useRouter();
-  const percorso = usePathname();
-  const grezzo = cerca.get("allenamento");
-  const filtro: Filtro = grezzo === "cardio" || grezzo === "pesi" ? grezzo : "tutti";
+  const filtro = useSyncExternalStore(ascolta, leggi, (): Filtro => "tutti");
   const piatti = PIATTI.filter((p) => passa(p, filtro));
 
   function scegli(f: Filtro) {
     const q = f === "tutti" ? "" : `?allenamento=${f}`;
-    router.replace(`${percorso}${q}`, { scroll: false });
+    window.history.replaceState(null, "", `${window.location.pathname}${q}`);
+    window.dispatchEvent(new Event(EVENTO));
   }
 
   return (
@@ -54,6 +70,8 @@ export default function MenuClient() {
           <p className="mt-6 max-w-[64ch] text-muted">{CONSIGLI[filtro].perche}</p>
         ) : null}
 
+        {/* i titoli delle carte sono h3: sotto l'h1 della pagina serve il livello di mezzo */}
+        <h2 className="sr-only">I piatti</h2>
         <ul className="mt-10 grid gap-x-8 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
           {piatti.map((p) => (
             <li key={p.id}>

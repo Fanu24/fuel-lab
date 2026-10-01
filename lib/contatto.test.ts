@@ -4,6 +4,7 @@ import { EXTRA, PIATTI } from "./catalogo";
 import {
   ARGOMENTI,
   EMAIL_CONTATTI,
+  INDIRIZZO,
   INDIRIZZO_COMPLETO,
   LIMITI,
   argomentoDaParam,
@@ -26,6 +27,7 @@ import {
   type DatiModulo,
 } from "./contatto";
 import type { Piano } from "./settimana";
+import { EMAIL, INDIRIZZO as DATI_INDIRIZZO, INDIRIZZO_RIGA, LINK_MAPPA } from "./sito";
 
 const buono: DatiModulo = {
   nome: "Giulia",
@@ -102,6 +104,13 @@ describe("recapiti", () => {
     expect(telefonoValido("12345678")).toBe(false);
     expect(telefonoValido("333 12 34 567")).toBe(true);
   });
+
+  it("il telefono ha un tetto di 15 cifre, come il server: oltre non e' un numero", () => {
+    expect(telefonoValido("+39 333 123 4567")).toBe(true);
+    expect(telefonoValido("0039 333 1234567")).toBe(true);
+    expect(telefonoValido("1".repeat(LIMITI.telefonoCifreMax))).toBe(true);
+    expect(telefonoValido("1".repeat(LIMITI.telefonoCifreMax + 1))).toBe(false);
+  });
 });
 
 describe("validaModulo", () => {
@@ -136,6 +145,16 @@ describe("validaModulo", () => {
 
   it("un telefono con meno di 9 cifre non basta", () => {
     expect(validaModulo({ ...buono, email: "", telefono: "333 12" }).telefono).toMatch(/9 cifre/);
+  });
+
+  it("un telefono con troppe cifre si ferma prima del server, con la sua spiegazione", () => {
+    const e = validaModulo({ ...buono, email: "", telefono: "1234567890123456" });
+    expect(e.telefono).toMatch(/troppe cifre/);
+    expect(e.telefono).toMatch(/15/);
+    // Un numero italiano col prefisso internazionale passa.
+    expect(validaModulo({ ...buono, email: "", telefono: "+39 333 123 4567" })).toEqual({});
+    // Con un'email buona accanto, il telefono sbagliato blocca comunque: meglio dirlo ora che a risposta ricevuta.
+    expect(validaModulo({ ...buono, telefono: "1234567890123456" }).telefono).toBeTruthy();
   });
 
   it("il messaggio va da 10 a 3000 caratteri, spazi esclusi ai bordi", () => {
@@ -239,10 +258,24 @@ describe("invio", () => {
 });
 
 describe("link", () => {
-  it("Google Maps cerca l'indirizzo completo, codificato", () => {
+  it("indirizzo ed email del contatto sono quelli di lib/sito.ts, senza una seconda copia", () => {
     expect(INDIRIZZO_COMPLETO).toBe("Via del Santuario 214, 65124 Pescara (PE)");
-    expect(linkMappa()).toBe(
-      `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent("Via del Santuario 214, 65124 Pescara (PE)")}`,
+    expect(INDIRIZZO_COMPLETO).toBe(INDIRIZZO_RIGA);
+    expect(INDIRIZZO).toEqual({
+      via: DATI_INDIRIZZO.via,
+      cap: DATI_INDIRIZZO.cap,
+      comune: DATI_INDIRIZZO.citta,
+      provincia: DATI_INDIRIZZO.provincia,
+      paese: DATI_INDIRIZZO.nazione,
+    });
+    expect(EMAIL_CONTATTI).toBe(EMAIL);
+  });
+
+  it("Google Maps cerca l'indirizzo, codificato: lo stesso link del resto del sito", () => {
+    expect(linkMappa()).toBe(LINK_MAPPA);
+    expect(decodeURIComponent(LINK_MAPPA.split("query=")[1])).toBe("Via del Santuario 214, 65124 Pescara");
+    expect(linkMappa("Via Roma 1, Pescara")).toBe(
+      `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent("Via Roma 1, Pescara")}`,
     );
   });
 

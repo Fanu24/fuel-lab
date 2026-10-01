@@ -7,9 +7,11 @@
 @import "./styles/base.css";
 @import "./styles/sezioni.css";
 @import "./styles/controlli.css";
+@import "./styles/consenso.css";
 @import "./styles/compositore.css";
 @import "./styles/pannello.css";
 @import "./styles/cucina.css";
 @import "./styles/account.css";
 @import "./styles/impostazioni.css";
 @import "./styles/abbonamento.css";
+@import "./styles/blog.css";

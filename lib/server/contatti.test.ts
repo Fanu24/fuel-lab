@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { impronta, leggiNuovoMessaggio, messaggioDaRiga } from "./contatti";
+import { emailValida, impronta, leggiNuovoMessaggio, messaggioDaRiga, reteDi } from "./contatti";
 
 const corpo = { name: "Luca", email: "luca@example.com", phone: "", comune: "Montesilvano", topic: "consegna", message: "Consegnate anche a Montesilvano?" };
 
@@ -32,6 +32,34 @@ describe("modulo contatti", () => {
   it("tiene gli a capo del messaggio e toglie i caratteri di controllo", () => {
     const esito = leggiNuovoMessaggio({ ...corpo, message: "Riga uno\r\nRiga due\u0007 fine" });
     expect(esito).toMatchObject({ value: { message: "Riga uno\nRiga due fine" } });
+  });
+
+  it("un'email con virgole, apici angolari o punti doppi non passa: finirebbe in un Reply-To", () => {
+    for (const buona of ["luca@example.com", "luca.rossi+meal@example.co.uk", "l_r-1@sub.esempio.it", "andré@example.it", "a@bücher.it"]) {
+      expect(emailValida(buona), buona).toBe(true);
+    }
+    for (const cattiva of [
+      "a@b..it", "a@b.it,c@d.it", "a@b.it;c@d.it", "x<script>@b.it", "Mario <a@b.it>", "a@b.it>", '"a b"@c.it', "a@@b.it", "a@b",
+      ".a@b.it", "a.@b.it", "a..b@c.it", "a@-b.it", "a@b-.it", "a@b.i", "a@b.it.", "@b.it", "a@", "a b@c.it", `${"x".repeat(65)}@b.it`, `a@${"x".repeat(250)}.it`,
+    ]) {
+      expect(emailValida(cattiva), cattiva).toBe(false);
+    }
+    expect(leggiNuovoMessaggio({ ...corpo, email: "a@b.it,c@d.it" }).ok).toBe(false);
+  });
+
+  it("il limite di invii conta la rete: l'IPv4 com'e', l'IPv6 per /64, l'IPv4 dentro un IPv6 come IPv4", () => {
+    expect(reteDi("203.0.113.7")).toBe("203.0.113.7");
+    expect(reteDi("sconosciuto")).toBe("sconosciuto");
+    expect(reteDi("2001:db8:85a3:1:aaaa:bbbb:cccc:dddd")).toBe("2001:db8:85a3:1::/64");
+    expect(reteDi("2001:DB8:85A3:0001:1::1")).toBe(reteDi("2001:db8:85a3:1:ffff:ffff:ffff:ffff"));
+    expect(reteDi("2001:db8::1")).toBe("2001:db8:0:0::/64");
+    expect(reteDi("2001:db8:0:0:0:0:0:2")).toBe("2001:db8:0:0::/64");
+    expect(reteDi("[2001:db8::1]")).toBe("2001:db8:0:0::/64");
+    expect(reteDi("fe80::1%eth0")).toBe("fe80:0:0:0::/64");
+    expect(reteDi("::1")).toBe("0:0:0:0::/64");
+    expect(reteDi("::ffff:203.0.113.7")).toBe("203.0.113.7");
+    // due case diverse nello stesso /64 hanno la stessa rete, due /64 diversi no
+    expect(reteDi("2001:db8:1:1::5")).not.toBe(reteDi("2001:db8:1:2::5"));
   });
 
   it("l'impronta dell'IP e' stabile, dipende dal segreto e non contiene l'IP", async () => {

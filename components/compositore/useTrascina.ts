@@ -36,7 +36,7 @@ export interface Azioni {
   sposta: (da: Slot, a: Slot) => void;
   togli: (s: Slot) => void;
   annuncia: (testo: string) => void;
-  /** testo leggibile per annunci: "Noodles", "lunedì a pranzo" */
+  /** testo leggibile per annunci: "Noodles", "lunedì, pranzo" */
   nomePresa: (p: Presa) => string;
   nomeSlot: (s: Slot) => string;
 }
@@ -86,7 +86,7 @@ export function useTrascina(az: Azioni) {
     if (!slot) return;
     if (presa.tipo === "banco") {
       a.metti(slot, presa.piattoId);
-      a.annuncia(`${a.nomePresa(presa)} messo a ${a.nomeSlot(slot)}.`);
+      a.annuncia(`${a.nomePresa(presa)} aggiunto a ${a.nomeSlot(slot)}.`);
     } else if (chiaveSlot(presa.slot) !== chiaveSlot(slot)) {
       a.sposta(presa.slot, slot);
       a.annuncia(`Spostato a ${a.nomeSlot(slot)}.`);
@@ -138,10 +138,12 @@ export function useTrascina(az: Azioni) {
       posa(av.presa, e.type === "pointercancel" ? null : bersaglioIn(e.clientX, e.clientY));
     }
     function esc(e: KeyboardEvent) {
-      if (e.key === "Escape") {
-        avvio.current = null;
-        setStato({ modo: "fermo" });
-      }
+      if (e.key !== "Escape") return;
+      // l'Esc che chiude un dialogo o non c'entra col compositore non va annunciato
+      const aveva = statoRef.current.modo !== "fermo";
+      avvio.current = null;
+      setStato({ modo: "fermo" });
+      if (aveva) azioni.current.annuncia("Annullato.");
     }
     window.addEventListener("pointermove", muovi);
     window.addEventListener("pointerup", rilascia);
@@ -187,7 +189,7 @@ export function useTrascina(az: Azioni) {
         return;
       }
       setStato({ modo: "presa", presa, trascino: false, sopra: null });
-      a.annuncia(`${a.nomePresa(presa)} preso. Scegli una casella, Esc per annullare.`);
+      a.annuncia(`${a.nomePresa(presa)} preso. Scegli la casella dove metterlo, oppure premi di nuovo il piatto per annullare.`);
     },
     [stato, posa, annulla],
   );
@@ -212,7 +214,7 @@ export function useTrascina(az: Azioni) {
       }
       if (piena) {
         setStato({ modo: "presa", presa: { tipo: "slot", slot }, trascino: false, sopra: null });
-        a.annuncia(`Piatto di ${a.nomeSlot(slot)} preso. Scegli dove spostarlo, oppure tocca il banco per toglierlo.`);
+        a.annuncia(`${a.nomePresa({ tipo: "slot", slot })} preso. Scegli dove spostarlo, oppure tocca il banco per toglierlo.`);
       } else {
         setStato({ modo: "cerca", slot });
         a.annuncia(`Scegli un piatto per ${a.nomeSlot(slot)}.`);

@@ -14,12 +14,19 @@ export default function manifest(): MetadataRoute.Manifest {
     description: DESCRIZIONE_ATTIVITA,
     lang: "it",
     dir: "ltr",
+    id: "/",
     start_url: "/",
     scope: "/",
     display: "standalone",
     background_color: "#f3efe6",
     theme_color: "#0e100f",
     categories: ["food", "health", "lifestyle"],
+    /* Le tre strade piu' battute, con un tocco prolungato sull'icona. */
+    shortcuts: [
+      { name: "Il menu", url: "/menu" },
+      { name: "Componi la settimana", url: "/settimana" },
+      { name: "Scrivi a Matteo", url: "/richiesta" },
+    ],
     icons: [
       { src: "/icon.png", sizes: "512x512", type: "image/png", purpose: "any" },
       { src: "/apple-icon.png", sizes: "180x180", type: "image/png", purpose: "any" },

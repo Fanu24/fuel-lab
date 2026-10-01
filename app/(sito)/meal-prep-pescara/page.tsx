@@ -5,16 +5,17 @@ import CartaPiatto from "@/components/menu/CartaPiatto";
 import Faq from "@/components/come-funziona/Faq";
 import FotoPiena from "@/components/ui/FotoPiena";
 import Briciole from "@/components/seo/Briciole";
+import Aggiornato from "@/components/seo/Aggiornato";
 import InBreve from "@/components/seo/InBreve";
 import JsonLd from "@/components/seo/JsonLd";
 import LinkBlog from "@/components/seo/LinkBlog";
 import { AGGIORNAMENTO, PAGINE, metadatiPagina } from "@/components/seo/pagine";
-import { nodiPagina, nodoServizio, prezzoIt, type DomandaTesto } from "@/components/seo/schema";
+import { idServizio, nodiPagina, nodoServizio, prezzoIt, type DomandaTesto } from "@/components/seo/schema";
 import { PIATTI, type Allenamento } from "@/lib/catalogo";
-import { CONSEGNA_OGNI_GIORNI, PREZZO_DA_TESTO } from "@/lib/abbonamento";
+import { CONSEGNA_OGNI_GIORNI, PREZZO_DA_TESTO, RAGGIO_CONSEGNA_KM } from "@/lib/abbonamento";
 import { CONSIGLI } from "@/lib/consigli";
 import { SOGLIA_PREZZO } from "@/lib/servizi";
-import { INDIRIZZO_RIGA, LINK_MAPPA, elencoZone } from "@/lib/sito";
+import { INDIRIZZO_RIGA, LINK_MAPPA } from "@/lib/sito";
 
 /* La pagina pilastro del servizio: che cos'e' il meal prep di FUEL LAB, come
    funziona, per chi, per quale allenamento, come arriva e quanto costa. Le altre
@@ -45,7 +46,7 @@ const PASSI = [
     titolo: "Scrivi a Matteo",
     testo:
       "Mandi la settimana con la richiesta: Matteo conferma piatti, quantità, giorno e modalità. Niente pagamento online, l'ordine vale quando lo conferma lui.",
-    link: { href: "/richiesta?servizio=menu-settimana", label: "Scrivi a Matteo" },
+    link: { href: "/richiesta?servizio=menu-settimana#scrivi", label: "Scrivi a Matteo" },
   },
   {
     n: "04",
@@ -131,6 +132,8 @@ export default function MealPrepPescara() {
             descrizione: PAGINA.descrizione,
             briciole,
             faq: DOMANDE,
+            // La pagina parla del servizio descritto qui sotto, non della cucina in generale.
+            about: { "@id": idServizio(PAGINA.percorso, "servizio") },
             dataModifica: AGGIORNAMENTO,
           }),
           nodoServizio({
@@ -281,7 +284,7 @@ export default function MealPrepPescara() {
           <Reveal className="flex flex-wrap items-end justify-between gap-6">
             <div>
               <p className="occhiello">Il menu</p>
-              <h2 className="titolo mt-5 max-w-[14ch]">I piatti di questa settimana.</h2>
+              <h2 className="titolo mt-5 max-w-[14ch]">Tre piatti, per cominciare.</h2>
             </div>
             <Link href="/menu" className="link">
               Tutti i piatti, con ingredienti e macro
@@ -316,11 +319,11 @@ export default function MealPrepPescara() {
             <Reveal delay={80} className="border-t-[3px] border-ink pt-6">
               <h3 className="titolo-s">Consegna</h3>
               <p className="mt-3 text-muted">
-                Ogni giorno a {elencoZone()}. La copertura del tuo indirizzo si conferma prima
-                dell&apos;ordine.
+                Ogni giorno, a Pescara e dintorni, fino a {RAGGIO_CONSEGNA_KM} km. La copertura del tuo indirizzo si
+                conferma prima dell&apos;ordine.
               </p>
               <Link href={PAGINE.consegna.percorso} className="link mt-5 inline-block">
-                Zone di consegna
+                Comuni e zone di consegna
               </Link>
             </Reveal>
             <Reveal delay={160} className="border-t-[3px] border-ink pt-6">
@@ -357,6 +360,9 @@ export default function MealPrepPescara() {
             <h2 className="titolo mt-5">Meal prep a Pescara: le risposte.</h2>
           </div>
           <Faq domande={DOMANDE} />
+        </div>
+        <div className="wrap mt-10">
+          <Aggiornato />
         </div>
       </section>
 

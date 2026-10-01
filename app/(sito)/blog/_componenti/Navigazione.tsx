@@ -12,8 +12,9 @@ export function Briciole({ voci }: { voci: VoceBriciole[] }) {
           const ultima = indice === voci.length - 1;
           return (
             <li key={`${voce.nome}-${indice}`} className="flex min-w-0 items-center gap-3">
+              {/* py-3: l’area da toccare arriva a 44px senza spostare le righe (su un inline il padding non le muove) */}
               {voce.href && !ultima ? (
-                <Link href={voce.href} className="font-semibold text-ink underline decoration-2 underline-offset-4 hover:decoration-lime">
+                <Link href={voce.href} className="py-3 font-semibold text-ink underline decoration-2 underline-offset-4 hover:decoration-lime">
                   {voce.nome}
                 </Link>
               ) : (
@@ -36,7 +37,7 @@ export function Briciole({ voci }: { voci: VoceBriciole[] }) {
  */
 export function FiltriCategorie({ attiva }: { attiva?: CategoriaId }) {
   const base =
-    "inline-flex min-h-11 items-center gap-2 border-2 px-4 font-disp text-xs font-bold tracking-[.14em] uppercase transition-colors";
+    "inline-flex min-h-11 items-center gap-2 border-2 px-2.5 font-disp text-xs font-bold tracking-[.1em] uppercase transition-colors sm:px-4 sm:tracking-[.14em]";
   const spenta = "border-ink/25 hover:border-ink";
   const accesa = "border-ink bg-ink text-paper";
   return (

@@ -37,8 +37,14 @@ export async function inviaEmail(env: Env, email: Email): Promise<boolean> {
       html: email.html,
       ...(email.replyTo ? { reply_to: email.replyTo } : {}),
     }),
+    // Resend che non risponde non deve tenere appesa la registrazione o la notifica per sempre.
+    signal: AbortSignal.timeout(10_000),
   });
-  if (!response.ok) throw new Error(`EMAIL_SEND_FAILED_${response.status}`);
+  if (!response.ok) {
+    // Il motivo detto da Resend (dominio non verificato, chiave scaduta, quota finita) finisce nei log: senza, sembra sempre "fallita".
+    const motivo = (await response.text().catch(() => "")).replace(/\s+/g, " ").slice(0, 200);
+    throw new Error(`EMAIL_SEND_FAILED_${response.status}${motivo ? `: ${motivo}` : ""}`);
+  }
   return true;
 }
 

@@ -9,9 +9,8 @@ import { useEffect, useState } from "react";
 import { adminApi, api, type ClienteAdmin, type Ordine } from "@/lib/api";
 import type { FiltroClienti, OrdineClienti } from "@/lib/produzione";
 import ClientiElenco from "./ClientiElenco";
+import { eSessioneScaduta, testoErrore } from "./ClientiErrore";
 import ClientiScheda from "./ClientiScheda";
-
-const messaggio = (e: unknown, ripiego: string) => (e instanceof Error ? e.message : ripiego);
 
 export default function Clienti() {
   const parametri = useSearchParams();
@@ -19,6 +18,7 @@ export default function Clienti() {
 
   const [clienti, setClienti] = useState<ClienteAdmin[] | null>(null);
   const [errore, setErrore] = useState("");
+  const [sessione, setSessione] = useState(false);
   const [ordini, setOrdini] = useState<Ordine[] | null>(null);
   const [erroreOrdini, setErroreOrdini] = useState("");
   const [caricando, setCaricando] = useState(false);
@@ -35,11 +35,15 @@ export default function Clienti() {
     let vivo = true;
     adminApi.clienti().then(
       (r) => vivo && setClienti(r.customers),
-      (e: unknown) => vivo && setErrore(messaggio(e, "Non riesco a caricare i clienti.")),
+      (e: unknown) => {
+        if (!vivo) return;
+        setErrore(testoErrore(e, "Non riesco a caricare i clienti."));
+        setSessione(eSessioneScaduta(e));
+      },
     );
     api.ordini().then(
       (r) => vivo && setOrdini(r.orders),
-      (e: unknown) => vivo && setErroreOrdini(messaggio(e, "Non riesco a caricare gli ordini.")),
+      (e: unknown) => vivo && setErroreOrdini(testoErrore(e, "Non riesco a caricare gli ordini.")),
     );
     return () => {
       vivo = false;
@@ -67,15 +71,19 @@ export default function Clienti() {
         (r) => {
           setClienti(r.customers);
           setErrore("");
+          setSessione(false);
         },
-        (e: unknown) => setErrore(messaggio(e, "Non riesco a caricare i clienti.")),
+        (e: unknown) => {
+          setErrore(testoErrore(e, "Non riesco a caricare i clienti."));
+          setSessione(eSessioneScaduta(e));
+        },
       ),
       api.ordini().then(
         (r) => {
           setOrdini(r.orders);
           setErroreOrdini("");
         },
-        (e: unknown) => setErroreOrdini(messaggio(e, "Non riesco a caricare gli ordini.")),
+        (e: unknown) => setErroreOrdini(testoErrore(e, "Non riesco a caricare gli ordini.")),
       ),
     ]).finally(() => setCaricando(false));
   }
@@ -87,6 +95,7 @@ export default function Clienti() {
         cliente={clienti?.find((c) => c.id === id) ?? null}
         clientiCaricati={clienti !== null}
         errore={errore}
+        sessioneScaduta={sessione}
         ordini={storico?.id === id ? storico.ordini : ordini ? ordini.filter((o) => o.user_id === id) : null}
         erroreOrdini={erroreOrdini}
         caricando={caricando}
@@ -99,6 +108,7 @@ export default function Clienti() {
     <ClientiElenco
       clienti={clienti}
       errore={errore}
+      sessioneScaduta={sessione}
       caricando={caricando}
       onRicarica={ricarica}
       cerca={cerca}

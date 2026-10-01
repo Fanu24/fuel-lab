@@ -14,11 +14,14 @@ export const metadata: Metadata = {
 };
 
 /* viewport-fit=cover: sul telefono la barra in basso scende fino al bordo e
-   si tiene sopra la barra di sistema con env(safe-area-inset-bottom). */
+   si tiene sopra la barra di sistema con env(safe-area-inset-bottom).
+   resizes-content: con la tastiera aperta (messaggio al cliente, prezzo) la scheda si
+   restringe invece di finirci sotto, e il bottone di salvataggio resta raggiungibile. */
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  interactiveWidget: "resizes-content",
   themeColor: "#0e100f",
 };
 

@@ -34,6 +34,7 @@ import {
   AGGIORNAMENTO,
   PAGINE,
   PAGINE_FORMULE,
+  dataLeggibile,
   descrizionePiatto,
   paginaFormula,
   paginaPiatto,
@@ -200,6 +201,28 @@ describe("dati strutturati", () => {
     for (const r of riferiti) expect(definiti.has(r), r).toBe(true);
   });
 
+  it("l'attivita' e la sua cucina sono un nodo solo: un indirizzo, un @id, nessun priceRange", () => {
+    const grafo = grafoSito();
+    expect(ID.cucina).toBe(ID.organizzazione);
+    const id = grafo.map((n) => n["@id"]);
+    expect(new Set(id).size).toBe(id.length);
+    const conIndirizzo = grafo.filter((n) => n.address);
+    expect(conIndirizzo).toHaveLength(1);
+    expect(conIndirizzo[0]["@type"]).toEqual(["Organization", "FoodEstablishment"]);
+    expect(conIndirizzo[0]["@id"]).toBe(ID.organizzazione);
+    expect(conIndirizzo[0].address).toMatchObject({ streetAddress: "Via del Santuario 214", postalCode: "65124", addressLocality: "Pescara" });
+    expect(JSON.stringify(grafo)).not.toContain("priceRange");
+    expect(JSON.stringify(grafo)).not.toContain("parentOrganization");
+  });
+
+  it("la pagina della home ha l'@id con la barra, come gli altri nodi del sito", () => {
+    const [home] = nodiPagina({ percorso: "/", nome: "Home", descrizione: "x" });
+    expect(home["@id"]).toBe(`${URL_SITO}/#webpage`);
+    expect(home.url).toBe(URL_SITO);
+    const [menu] = nodiPagina({ percorso: "/menu", nome: "Menu", descrizione: "x" });
+    expect(menu["@id"]).toBe(`${URL_SITO}/menu#webpage`);
+  });
+
   it("il menu contiene ogni piatto con i suoi valori per porzione", () => {
     const menu = JSON.stringify(nodoMenu(PIATTI, "x"));
     for (const p of PIATTI) {
@@ -320,7 +343,9 @@ describe("sitemap, robots e manifest", () => {
   });
 
   it("la sitemap ha le cinque schede degli abbonamenti, con la data dell'ultima revisione", () => {
-    expect(AGGIORNAMENTO).toBe("2026-09-30");
+    expect(AGGIORNAMENTO).toBe("2026-10-01");
+    expect(dataLeggibile(AGGIORNAMENTO)).toBe("1 ottobre 2026");
+    expect(dataLeggibile("2026-09-30")).toBe("30 settembre 2026");
     for (const f of FORMULE) {
       const voce = voci.find((v) => v.url === `${URL_SITO}/abbonamento/${f.id}`);
       expect(voce, f.id).toBeDefined();
@@ -345,6 +370,85 @@ describe("sitemap, robots e manifest", () => {
     for (const i of m.icons ?? []) {
       expect(existsSync(path.join(RADICE, "app", i.src.replace(/^\//, ""))), i.src).toBe(true);
     }
+  });
+});
+
+describe("pagine locali e contatti", () => {
+  const LOCALI = [PAGINE.mealPrep, PAGINE.consegna, PAGINE.proteici, PAGINE.domicilio];
+  const sorgente = (p: { percorso: string }) => readFileSync(path.join(RADICE, `app/(sito)${p.percorso}/page.tsx`), "utf8");
+
+  it("ogni pagina locale ha un H1 solo, la sua scheda, le briciole, le domande e le guide del blog", () => {
+    for (const p of LOCALI) {
+      const src = sorgente(p);
+      expect(src.match(/<h1[\s>]/g), p.percorso).toHaveLength(1);
+      expect(src, p.percorso).toContain("metadatiPagina(PAGINA)");
+      expect(src, p.percorso).toContain("<Briciole");
+      expect(src, p.percorso).toContain("faq: DOMANDE");
+      expect(src, p.percorso).toContain("<LinkBlog");
+    }
+  });
+
+  it("ogni pagina locale porta ad /abbonamento, al menu o al compositore e al modulo, e non lascia il modulo in cima alla pagina", () => {
+    for (const p of LOCALI) {
+      const src = sorgente(p);
+      expect(src, p.percorso).toContain("PAGINE.abbonamento.percorso");
+      expect(src, p.percorso).toMatch(/href="\/(menu|settimana)"/);
+      // Il bottone principale porta al modulo, non in cima a /richiesta: la query preseleziona l'argomento, #scrivi scorre fino al modulo.
+      const verso = [...src.matchAll(/href="(\/richiesta[^"]*)"/g)].map((m) => m[1]);
+      for (const href of verso) expect(href, p.percorso).toMatch(/#scrivi$/);
+    }
+    // Le pagine locali che invitano a scrivere (tutte meno i pasti proteici, che chiude sulla CTA comune) lo fanno con l'argomento giusto.
+    expect(sorgente(PAGINE.consegna)).toContain("/richiesta?argomento=consegna#scrivi");
+    expect(sorgente(PAGINE.domicilio)).toContain("/richiesta?servizio=home-cooking#scrivi");
+    expect(sorgente(PAGINE.mealPrep)).toContain("/richiesta?servizio=menu-settimana#scrivi");
+  });
+
+  it("gli indirizzi provati a mano (/contatti, /abbonamenti) reindirizzano in modo permanente a pagine che esistono e sono in mappa", () => {
+    const regole = readFileSync(path.join(RADICE, "public/_redirects"), "utf8")
+      .split(/\r?\n/)
+      .map((r) => r.trim().split(/\s+/))
+      .filter((r) => r.length === 3 && !r[0].startsWith("#"));
+    const url = sitemap().map((v) => v.url);
+    for (const [da, a, codice] of regole) {
+      expect(codice, da).toBe("301");
+      expect(url, `${da} -> ${a}`).toContain(assoluto(a));
+      // L'origine non e' una pagina viva: un redirect su una pagina esistente la renderebbe irraggiungibile.
+      expect(existsSync(path.join(RADICE, `app/(sito)${da.replace(/\/$/, "")}/page.tsx`)), da).toBe(false);
+    }
+    const mappa = Object.fromEntries(regole.map(([da, a]) => [da, a]));
+    expect(mappa["/contatti"]).toBe("/richiesta");
+    expect(mappa["/contatto"]).toBe("/richiesta");
+    expect(mappa["/abbonamenti"]).toBe("/abbonamento");
+  });
+
+  it("la consegna dice il raggio e le consegne in abbonamento, come il volantino", () => {
+    const src = sorgente(PAGINE.consegna);
+    expect(src).toContain("RAGGIO_CONSEGNA_KM");
+    expect(src).toContain("CONSEGNA_OGNI_GIORNI");
+    expect(RAGGIO_CONSEGNA_KM).toBe(20);
+  });
+
+  it("/richiesta e' una pagina della mappa, con titolo e descrizione nei limiti, e dice chi siamo e dove senza una seconda copia dei dati", () => {
+    expect(PAGINE.richiesta.percorso).toBe("/richiesta");
+    expect(sitemap().filter((v) => v.url === assoluto("/richiesta"))).toHaveLength(1);
+    const src = sorgente(PAGINE.richiesta);
+    expect(src.match(/<h1[\s>]/g)).toHaveLength(1);
+    expect(src).toContain("metadatiPagina(PAGINA)");
+    expect(src).toContain('tipo: "ContactPage"');
+    // L'attivita' sta nel grafo del layout: la pagina la richiama per @id e non la ridichiara.
+    expect(src).toContain("ID.organizzazione");
+    expect(src).not.toContain('"@type": "Organization"');
+    expect(src).not.toContain("streetAddress");
+  });
+
+  it("i contatti dicono dove siamo con i dati veri: indirizzo, email, raggio e zone da lib/sito.ts e lib/abbonamento.ts", () => {
+    const src = readFileSync(path.join(RADICE, "components/contatto/DoveSiamo.tsx"), "utf8");
+    expect(src).toContain("RAGGIO_CONSEGNA_KM");
+    expect(src).toContain("elencoZone()");
+    expect(src).toContain("linkMappa()");
+    // Niente numero o orari scritti a mano nel componente.
+    expect(src).not.toMatch(/\d{3}[ .]?\d{3}[ .]?\d{4}/);
+    expect(src).not.toMatch(/\b\d{1,2}[:.]\d{2}\b/);
   });
 });
 
@@ -484,9 +588,13 @@ describe("decisioni del committente", () => {
       tipoServizio: "x",
       prezzoDa: 8.9,
     });
-    const specifica = (servizio.offers as Nodo).priceSpecification as Nodo;
-    expect(specifica.minPrice).toBe(8.9);
-    expect(specifica.unitText).toBe("pasto");
+    // Una soglia "da X a pasto" e' un AggregateOffer con lowPrice: un Offer senza price non passa i validatori.
+    const offerta = servizio.offers as Nodo;
+    expect(offerta["@type"]).toBe("AggregateOffer");
+    expect(offerta.lowPrice).toBe(8.9);
+    expect(offerta.priceCurrency).toBe("EUR");
+    expect(offerta.description).toBe("Da 8,90 € a pasto");
+    expect(offerta.price).toBeUndefined();
   });
 
   it("nessun sorgente, nemmeno README e llms.txt, presenta ancora 239 euro come prezzo dell'abbonamento", () => {

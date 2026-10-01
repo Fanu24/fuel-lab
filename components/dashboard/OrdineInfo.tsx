@@ -50,7 +50,7 @@ export function OrdineContatti({ ordine, senzaAccount = false }: { ordine: Ordin
       <dl className="mt-4 grid gap-2 text-base">
         <div className="flex flex-wrap gap-x-3">
           <dt className="w-24 shrink-0 text-muted">Telefono</dt>
-          <dd className="num">{ordine.phone || "—"}</dd>
+          <dd className="num min-w-0 [overflow-wrap:anywhere]">{ordine.phone || "—"}</dd>
         </div>
         <div className="flex flex-wrap gap-x-3">
           <dt className="w-24 shrink-0 text-muted">Email</dt>
@@ -58,7 +58,7 @@ export function OrdineContatti({ ordine, senzaAccount = false }: { ordine: Ordin
         </div>
         <div className="flex flex-wrap gap-x-3">
           <dt className="w-24 shrink-0 text-muted">{ritiro ? "Ritiro" : "Consegna"}</dt>
-          <dd className="min-w-0">
+          <dd className="min-w-0 [overflow-wrap:anywhere]">
             {ritiro ? (
               <>In {INDIRIZZO.via} · cliente di {ordine.comune || "—"}</>
             ) : (

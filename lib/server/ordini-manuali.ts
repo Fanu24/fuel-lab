@@ -15,9 +15,9 @@
  */
 
 import type { Modalita, SceltaAbbonamento, Servizio, VoceOrdine } from "../api";
-import { potaPiano, type Piano } from "../settimana";
+import type { Piano } from "../settimana";
 import { dataValida, spostaGiorno } from "./date";
-import { MAX_NOTA_INTERNA, MAX_PREZZO_CENTESIMI, SERVIZI, leggiSceltaAbbonamento, prezzoProposto, vociDalPiano, type Esito } from "./ordini";
+import { MAX_NOTA_INTERNA, MAX_PREZZO_CENTESIMI, SERVIZI, leggiSceltaAbbonamento, pianoDaCorpo, prezzoProposto, vociDalPiano, type Esito } from "./ordini";
 
 /** Gli stati da cui puo' partire un ordine a mano. */
 export const STATI_INIZIALI = ["requested", "confirmed"] as const;
@@ -158,7 +158,7 @@ export function leggiOrdineManuale(
   if (notes.length > MAX_NOTE_CLIENTE) return errore(400, `Le note possono avere al massimo ${MAX_NOTE_CLIENTE} caratteri`);
 
   // Abbonamento: niente piatti e niente porzioni, i pasti del mese li conta il pannello dalla formula e dal periodo.
-  const plan = abbonamento ? {} : potaPiano(body.plan);
+  const plan = abbonamento ? {} : pianoDaCorpo(body.plan);
   const items = vociDalPiano(plan);
   let meals = items.length;
   if (service === "home-cooking") {

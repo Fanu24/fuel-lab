@@ -1,11 +1,13 @@
-import type { Metadata } from "next";
 import { Suspense } from "react";
 import ComposerWhatsApp, { ComposerWhatsAppDaQuery } from "@/components/contatto/ComposerWhatsApp";
 import DoveSiamo from "@/components/contatto/DoveSiamo";
 import ModuloContatto, { ModuloContattoDaQuery } from "@/components/contatto/ModuloContatto";
 import StradeContatto from "@/components/contatto/StradeContatto";
-import { EMAIL_CONTATTI, INDIRIZZO } from "@/lib/contatto";
-import { URL_SITO } from "@/lib/sito";
+import Briciole from "@/components/seo/Briciole";
+import JsonLd from "@/components/seo/JsonLd";
+import { AGGIORNAMENTO, PAGINE, metadatiPagina } from "@/components/seo/pagine";
+import { ID, nodiPagina } from "@/components/seo/schema";
+import { EMAIL_CONTATTI } from "@/lib/contatto";
 import { numeroConfigurato } from "@/lib/whatsapp";
 
 /* L'hub dei contatti. Tre strade (account, modulo, email), poi il modulo, poi
@@ -17,21 +19,9 @@ import { numeroConfigurato } from "@/lib/whatsapp";
    stesso modulo con l'argomento di partenza: nell'HTML statico c'e' gia' il
    form vero, e quando arriva quello con la query string non si sposta nulla. */
 
-const DESCRIZIONE =
-  "Scrivi a Matteo di FUEL LAB, meal prep fresco a Pescara: invia la settimana dal tuo account, usa il modulo senza registrarti o l’email. Ritiro in sede.";
+const PAGINA = PAGINE.richiesta;
 
-export const metadata: Metadata = {
-  title: "Contatti e richieste · Meal prep a Pescara",
-  description: DESCRIZIONE,
-  alternates: { canonical: "/richiesta" },
-  openGraph: {
-    type: "website",
-    url: "/richiesta",
-    title: "Contatti e richieste · FUEL LAB",
-    description: DESCRIZIONE,
-    images: [{ url: "/opengraph-image.jpg", width: 1200, height: 630, alt: "FUEL LAB · Meal prep a Pescara" }],
-  },
-};
+export const metadata = metadatiPagina(PAGINA);
 
 const PASSI = [
   { titolo: "Matteo legge", testo: "Ogni messaggio arriva a lui, non a un centralino." },
@@ -41,51 +31,27 @@ const PASSI = [
 
 export default function RichiestaPage() {
   const whatsappAttivo = numeroConfigurato();
-
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "ContactPage",
-    "@id": `${URL_SITO}/richiesta#pagina`,
-    url: `${URL_SITO}/richiesta`,
-    name: "Contatti e richieste · FUEL LAB",
-    description: DESCRIZIONE,
-    inLanguage: "it-IT",
-    isPartOf: { "@type": "WebSite", name: "FUEL LAB", url: URL_SITO },
-    mainEntity: {
-      "@type": "Organization",
-      "@id": `${URL_SITO}/#organization`,
-      name: "FUEL LAB",
-      url: URL_SITO,
-      email: EMAIL_CONTATTI,
-      address: {
-        "@type": "PostalAddress",
-        streetAddress: INDIRIZZO.via,
-        postalCode: INDIRIZZO.cap,
-        addressLocality: INDIRIZZO.comune,
-        addressRegion: INDIRIZZO.provincia,
-        addressCountry: INDIRIZZO.paese,
-      },
-      contactPoint: {
-        "@type": "ContactPoint",
-        contactType: "customer service",
-        email: EMAIL_CONTATTI,
-        url: `${URL_SITO}/richiesta`,
-        areaServed: "IT",
-        availableLanguage: ["Italian"],
-      },
-    },
-  };
+  const briciole = [{ nome: PAGINA.breve, href: PAGINA.percorso }];
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
+      {/* ContactPage che parla dell'attivita' del grafo: indirizzo ed email stanno li', una volta sola. */}
+      <JsonLd
+        dati={nodiPagina({
+          percorso: PAGINA.percorso,
+          nome: PAGINA.titolo,
+          descrizione: PAGINA.descrizione,
+          tipo: "ContactPage",
+          briciole,
+          mainEntity: { "@id": ID.organizzazione },
+          dataModifica: AGGIORNAMENTO,
+        })}
       />
 
       <section className="testata">
         <div className="wrap">
-          <p className="occhiello">Contatti</p>
+          <Briciole voci={briciole} />
+          <p className="occhiello mt-10">Contatti</p>
           <h1 className="titolo-xl mt-6 max-w-[12ch]">Scrivi a Matteo.</h1>
           <p className="lead mt-6">
             Tre strade, una persona che risponde: scegli la più comoda. Nessun pagamento online, prezzo e giorni si

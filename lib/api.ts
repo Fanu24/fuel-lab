@@ -11,7 +11,14 @@
  *   corpo JSON;
  * - le date di calendario sono "YYYY-MM-DD" (fuso Europe/Rome), i timestamp
  *   sono "YYYY-MM-DD HH:MM:SS" in UTC come li scrive SQLite (CURRENT_TIMESTAMP);
- * - gli importi sono in centesimi di euro, interi.
+ * - gli importi sono in centesimi di euro, interi;
+ * - ogni errore delle API e' un JSON `{ error }` in italiano (anche 404, 405 e
+ *   413: un percorso o un metodo che non esistono non rispondono con una pagina
+ *   HTML); fa eccezione /api/auth, che risponde `{ message, code }` di better-auth
+ *   (il testo e' inglese: le pagine lo traducono dal `code`, vedi lib/account.ts);
+ * - `POST /api/orders` e' idempotente sui doppioni: se la stessa richiesta dello
+ *   stesso cliente e' partita negli ultimi 10 minuti (e non e' annullata) il
+ *   server risponde 200 con l'id di quella, invece di crearne un'altra.
  */
 
 import type { Fascia, FormulaId, Nucleo } from "@/lib/abbonamento";

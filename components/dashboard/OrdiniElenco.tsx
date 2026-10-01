@@ -2,7 +2,7 @@
    e prezzo in alto, date sotto; sul computer tre colonne. */
 
 import { NOMI_NUCLEO, formulaDi, prossimaConsegna } from "@/lib/abbonamento";
-import { euro, type Ordine } from "@/lib/api";
+import { ETICHETTE_SERVIZIO, euro, type Ordine } from "@/lib/api";
 import { aperto, fineDi, inRitardo } from "@/lib/operazioni";
 import { eAbbonamento, inizioAbbonamento, pastiDelPeriodo } from "@/lib/produzione";
 import { SegnoAbbonamento, Stato, giorno } from "./ui";
@@ -25,7 +25,15 @@ export default function OrdiniElenco({ ordini, oggi, apri }: { ordini: Ordine[];
  */
 export function RiepilogoOrdine({ ordine: o }: { ordine: Ordine }) {
   const uscita = o.fulfillment === "pickup" ? "Ritiro" : "Consegna";
-  if (!eAbbonamento(o)) return <>{o.meals} {o.meals === 1 ? "pasto" : "pasti"} · {uscita}{o.comune ? ` · ${o.comune}` : ""}</>;
+  if (!eAbbonamento(o)) {
+    // Gli altri servizi si riconoscono dal nome; i pasti si dicono solo se ci sono (un home cooking puo' non averne).
+    const servizio = o.service === "menu-settimana" ? "" : ETICHETTE_SERVIZIO[o.service];
+    return (
+      <>
+        {[servizio, o.meals ? `${o.meals} ${o.meals === 1 ? "pasto" : "pasti"}` : "", uscita, o.comune].filter(Boolean).join(" · ")}
+      </>
+    );
+  }
   const pasti = pastiDelPeriodo(o);
   const s = o.subscription;
   return (
@@ -60,7 +68,7 @@ export function DateOrdine({ ordine: o, oggi }: { ordine: Ordine; oggi?: string 
     const prossima = oggi && inizio ? prossimaConsegna(formulaDi(o), inizio, oggi) : null;
     return (
       <>
-        Dal <strong>{giorno(o.fulfillment_date)}</strong> al <strong>{giorno(fine)}</strong>
+        Da <strong>{giorno(o.fulfillment_date)}</strong> a <strong>{giorno(fine)}</strong>
         {prossima ? (
           <>
             {" "}

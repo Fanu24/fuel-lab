@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { REPARTI, etichettaPrezzo, extraPerReparto, getPiatto } from "@/lib/catalogo";
 import { NOMI_GIORNO, usePiano } from "@/lib/piano";
-import type { Slot } from "@/lib/settimana";
+import { macroCasella, type Slot } from "@/lib/settimana";
 
 /**
  * Le aggiunte di una casella, in un <dialog> nativo: showModal() porta con se'
@@ -17,12 +17,20 @@ export default function FoglioExtra({ slot, chiudi }: { slot: Slot | null; chiud
   useEffect(() => {
     const d = ref.current;
     if (!d) return;
-    if (slot && !d.open) d.showModal();
+    if (slot && !d.open) {
+      d.showModal();
+      // Il secondo tocco di un doppio tocco su "+" cadrebbe sul foglio appena aperto (e spunterebbe
+      // una voce, o chiuderebbe lo sfondo): per un attimo il foglio non riceve tocchi.
+      d.style.pointerEvents = "none";
+      const t = window.setTimeout(() => (d.style.pointerEvents = ""), 350);
+      return () => window.clearTimeout(t);
+    }
     if (!slot && d.open) d.close();
   }, [slot]);
 
   const c = slot ? casella(slot.g, slot.m) : undefined;
   const piatto = c?.piatto ? getPiatto(c.piatto) : undefined;
+  const tot = macroCasella(c);
 
   return (
     <dialog
@@ -44,6 +52,14 @@ export default function FoglioExtra({ slot, chiudi }: { slot: Slot | null; chiud
               <h2 id="foglio-titolo" className="titolo-s mt-3">
                 {piatto ? `Aggiunte a ${piatto.nome}` : "Aggiunte"}
               </h2>
+              {/* il totale della casella si aggiorna a ogni spunta: chi conta i macro vede subito cosa cambia */}
+              <p className="num mt-3 text-xs text-muted" aria-live="polite" aria-atomic="true">
+                <span className="font-sans">Questo pasto: </span>
+                <span className="whitespace-nowrap">{tot.kcal} kcal</span> ·{" "}
+                <span className="whitespace-nowrap">P {tot.proteine} g</span> ·{" "}
+                <span className="whitespace-nowrap">C {tot.carboidrati} g</span> ·{" "}
+                <span className="whitespace-nowrap">G {tot.grassi} g</span>
+              </p>
             </div>
             <button type="button" onClick={chiudi} className="grid h-11 w-11 shrink-0 place-items-center bg-ink text-xl text-paper" aria-label="Chiudi">
               ×
@@ -65,7 +81,12 @@ export default function FoglioExtra({ slot, chiudi }: { slot: Slot | null; chiud
                             onChange={() => alternaExtra(slot.g, slot.m, e.id)}
                             className="h-5 w-5 accent-[#121412]"
                           />
-                          <span className="flex-1">{e.nome}</span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block">{e.nome}</span>
+                            <span className="num block text-xs text-muted">
+                              {e.grammi} g · {e.kcal} kcal
+                            </span>
+                          </span>
                           <span className="num text-xs text-muted">{etichettaPrezzo(e, true)}</span>
                         </label>
                       </li>

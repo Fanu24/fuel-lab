@@ -2,20 +2,24 @@
 
 /* La pagina "Ordini" (/dashboard/ordini): tutti gli ordini, filtrati per
    stato, cercabili, in elenco o a colonne. Un tocco apre la scheda
-   (?id=...). I filtri partono dall'indirizzo, cosi' i link di "Oggi"
-   ("Conferma 2 richieste", "Incassa...") arrivano gia' filtrati. */
+   (?id=...). I filtri vivono nell'indirizzo (?stato=, ?solo=, ?q=): i link di
+   "Oggi" ("Conferma 2 richieste", "Incassa...") arrivano gia' filtrati e
+   l'indirizzo che si vede si puo' copiare e mandare. */
 
 import { useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { STATI_ORDINE, type StatoOrdine } from "@/lib/api";
 import {
+  FILTRI_SPECIALI,
   STATI_APERTI,
+  aperto,
   contaPerStato,
   filtraOrdini,
+  filtriNelIndirizzo,
   leggiFiltroSpeciale,
-  leggiFiltroStato,
   ordiniCsv,
   plurale,
+  statoDaIndirizzo,
   type FiltroSpeciale,
   type FiltroStato,
 } from "@/lib/operazioni";
@@ -23,7 +27,7 @@ import OrdineNuovo, { BottoneNuovoOrdine, useNuovoOrdineUrl } from "./OrdineNuov
 import OrdineScheda, { useSchedaUrl } from "./OrdineScheda";
 import OrdiniColonne from "./OrdiniColonne";
 import OrdiniElenco from "./OrdiniElenco";
-import OrdiniFiltri, { type Vista } from "./OrdiniFiltri";
+import OrdiniFiltri, { OrdiniVista, type Vista } from "./OrdiniFiltri";
 import { usePannello } from "./PannelloDati";
 import { Aggiornamento, ErroreDati, useAzioniVeloci } from "./PannelloStato";
 import { Caricamento, TestaPagina, Vuoto } from "./ui";
@@ -36,12 +40,6 @@ function leggiVista(): Vista {
   } catch {
     return "elenco";
   }
-}
-
-/** "Da incassare" comprende i consegnati: senza uno stato esplicito si guarda tutto. */
-function statoIniziale(stato: string | null, solo: string | null): FiltroStato {
-  if (!stato && leggiFiltroSpeciale(solo) === "incassare") return "tutti";
-  return leggiFiltroStato(stato);
 }
 
 const FRASE_VUOTA: Partial<Record<FiltroStato, string>> = {
@@ -65,16 +63,30 @@ export default function Ordini() {
   const statoUrl = parametri.get("stato");
   const soloUrl = parametri.get("solo");
   const [letti, setLetti] = useState({ stato: statoUrl, solo: soloUrl });
-  const [stato, setStato] = useState<FiltroStato>(() => statoIniziale(statoUrl, soloUrl));
+  const [stato, setStato] = useState<FiltroStato>(() => statoDaIndirizzo(statoUrl, soloUrl));
   const [speciale, setSpeciale] = useState<FiltroSpeciale | null>(() => leggiFiltroSpeciale(soloUrl));
   if (letti.stato !== statoUrl || letti.solo !== soloUrl) {
     setLetti({ stato: statoUrl, solo: soloUrl });
-    setStato(statoIniziale(statoUrl, soloUrl));
+    setStato(statoDaIndirizzo(statoUrl, soloUrl));
     setSpeciale(leggiFiltroSpeciale(soloUrl));
   }
 
-  const [ricerca, setRicerca] = useState("");
+  // La ricerca si legge dall'indirizzo solo all'apertura: dopo, comanda chi scrive.
+  const [ricerca, setRicerca] = useState(() => parametri.get("q") ?? "");
   const [vista, setVista] = useState<Vista>(() => (typeof window === "undefined" ? "elenco" : leggiVista()));
+
+  // L'indirizzo segue i filtri (senza aggiungere voci alla cronologia). La ricerca aspetta che si smetta di scrivere.
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      const prima = window.location.search;
+      const p = filtriNelIndirizzo(new URLSearchParams(prima), { stato, speciale, ricerca });
+      const resto = p.toString();
+      if (`?${resto}` !== prima && !(resto === "" && prima === "")) {
+        window.history.replaceState(null, "", resto ? `?${resto}` : window.location.pathname);
+      }
+    }, ricerca ? 300 : 0);
+    return () => window.clearTimeout(t);
+  }, [stato, speciale, ricerca]);
 
   const visibili = useMemo(
     () => (ordini ? filtraOrdini(ordini, { stato, speciale, ricerca }, oggi) : null),
@@ -84,6 +96,14 @@ export default function Ordini() {
 
   const statiColonne: readonly StatoOrdine[] =
     stato === "aperti" ? STATI_APERTI : stato === "tutti" ? STATI_ORDINE.map((s) => s.id) : [stato];
+
+  const cerca = ricerca.trim();
+  const filtriAttivi = stato !== "aperti" || !!speciale || !!cerca;
+  const azzera = () => {
+    setRicerca("");
+    setSpeciale(null);
+    setStato("aperti");
+  };
 
   function scegliVista(v: Vista) {
     setVista(v);
@@ -106,12 +126,13 @@ export default function Ordini() {
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
-  const aperti = conti?.aperti ?? 0;
-  const daConfermare = conti?.requested ?? 0;
+  // I numeri sotto il titolo sono quelli di tutti gli ordini, non di quelli che la ricerca lascia visibili.
+  const aperti = ordini?.filter(aperto).length ?? 0;
+  const daConfermare = ordini?.filter((o) => o.status === "requested").length ?? 0;
 
   return (
     <>
-      <div className="pn-pagina gap-8">
+      <div className="pn-pagina gap-6 md:gap-8">
         <TestaPagina
           occhiello="Pannello di Matteo"
           titolo="Ordini"
@@ -133,34 +154,36 @@ export default function Ordini() {
           onRicerca={setRicerca}
           speciale={speciale}
           onSpeciale={setSpeciale}
-          vista={vista}
-          onVista={scegliVista}
-          onEsporta={esporta}
-          esportabili={visibili?.length ?? 0}
         />
 
         <section aria-labelledby="ordini-risultati" className="grid gap-3">
-          <h2 id="ordini-risultati" className="font-ui text-[16px] font-bold normal-case tracking-normal" aria-live="polite">
-            {visibili ? `${plurale(visibili.length, "ordine", "ordini")}${ricerca.trim() ? ` per “${ricerca.trim()}”` : ""}` : "Carico…"}
-          </h2>
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+            <div className="flex flex-wrap items-center gap-x-3">
+              <h2 id="ordini-risultati" className="font-ui text-[16px] font-bold normal-case tracking-normal" aria-live="polite">
+                {visibili ? `${plurale(visibili.length, "ordine", "ordini")}${cerca ? ` per “${cerca}”` : ""}` : "Carico…"}
+              </h2>
+              {filtriAttivi ? (
+                <button type="button" className="pn-tasto pn-tasto-piatto min-h-11 px-1 text-[15px]" onClick={azzera}>
+                  Azzera i filtri
+                </button>
+              ) : null}
+            </div>
+            <OrdiniVista vista={vista} onVista={scegliVista} onEsporta={esporta} esportabili={visibili?.length ?? 0} />
+          </div>
 
           {!visibili ? (
             <Caricamento testo="Carico gli ordini…" />
           ) : visibili.length === 0 && vista === "elenco" ? (
             <div className="border-t-[3px] border-ink">
               <Vuoto>
-                {ricerca.trim() ? `Nessun ordine trovato per “${ricerca.trim()}”.` : speciale ? "Nessun ordine con questo filtro." : FRASE_VUOTA[stato] ?? "Nessun ordine."}
+                {cerca
+                  ? `Nessun ordine trovato per “${cerca}”${stato !== "aperti" || speciale ? " con questi filtri" : ""}.`
+                  : speciale
+                    ? `Nessun ordine “${FILTRI_SPECIALI[speciale].toLowerCase()}” in questa vista.`
+                    : FRASE_VUOTA[stato] ?? "Nessun ordine."}
               </Vuoto>
-              {ricerca.trim() || speciale || stato !== "aperti" ? (
-                <button
-                  type="button"
-                  className="pn-tasto"
-                  onClick={() => {
-                    setRicerca("");
-                    setSpeciale(null);
-                    setStato("aperti");
-                  }}
-                >
+              {filtriAttivi ? (
+                <button type="button" className="pn-tasto" onClick={azzera}>
                   Mostra tutti gli aperti
                 </button>
               ) : null}

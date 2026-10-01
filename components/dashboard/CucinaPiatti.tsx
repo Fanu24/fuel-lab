@@ -3,13 +3,14 @@
 /* Scheda Piatti: la lavagna della cucina. Numeri grandi, da leggere a un metro
    dal telefono appoggiato sul piano: quante porzioni di ogni piatto, quanti
    extra, quali allergeni girano oggi e chi ha allergie da non dimenticare.
-   Le consegne in abbonamento hanno la loro sezione (per chi, con i pasti dei
-   tre giorni coperti e la scheda); se il cliente ha indicato il piatto di un
-   pasto, conta anche nelle porzioni. */
+   Le consegne in abbonamento hanno la loro sezione, dopo i conti (per chi, con
+   i pasti dei tre giorni coperti e la scheda); se il cliente ha indicato il
+   piatto di un pasto, conta anche nelle porzioni. */
 
 import { useMemo } from "react";
 import type { Ordine } from "@/lib/api";
-import { allergeniDelGiorno, contaExtra, contaPiatti } from "@/lib/produzione";
+import { allergeniDelGiorno, clientiConPreferenze, contaExtra, contaPiatti } from "@/lib/produzione";
+import { useImpostazioni } from "@/components/impostazioni/useImpostazioni";
 import CucinaAbbonamenti from "./CucinaAbbonamenti";
 import { Vuoto } from "./ui";
 
@@ -24,7 +25,8 @@ export default function CucinaPiatti({ ordini, abbonamenti = [], giorno }: { ord
   const piatti = useMemo(() => contaPiatti(ordini), [ordini]);
   const extra = useMemo(() => contaExtra(ordini), [ordini]);
   const allergeni = useMemo(() => allergeniDelGiorno(ordini), [ordini]);
-  const conPreferenze = ordini.filter((o, i) => o.dietary_preferences?.trim() && ordini.findIndex((x) => x.id === o.id) === i);
+  const conPreferenze = useMemo(() => clientiConPreferenze(ordini), [ordini]);
+  const nonDisponibili = useImpostazioni().impostazioni.piattiNonDisponibili;
   const totaleExtra = extra.reduce((n, e) => n + e.quanti, 0);
 
   return (
@@ -33,20 +35,18 @@ export default function CucinaPiatti({ ordini, abbonamenti = [], giorno }: { ord
         <section aria-labelledby="cu-pref" className="cu-attenzione">
           <h3 id="cu-pref" className="cu-h3">Attenzione: preferenze e allergie dei clienti</h3>
           <ul className="grid gap-2">
-            {conPreferenze.map((o) => (
-              <li key={o.id} className="cu-attenzione-riga">
-                <strong>{o.customer_name}</strong>
-                <span>{o.dietary_preferences}</span>
+            {conPreferenze.map((c) => (
+              <li key={c.chiave} className="cu-attenzione-riga">
+                <strong>{c.cliente}</strong>
+                <span>{c.preferenze}</span>
               </li>
             ))}
           </ul>
         </section>
       ) : null}
 
-      <CucinaAbbonamenti abbonamenti={abbonamenti} giorno={giorno} />
-
       <div className="grid gap-10 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
-        <section aria-labelledby="cu-piatti" className="grid content-start gap-2">
+        <section aria-labelledby="cu-piatti" className="cu-blocco grid content-start gap-2">
           <h3 id="cu-piatti" className="cu-h3">Porzioni per piatto</h3>
           {piatti.length ? (
             <ul className="cu-piatti">
@@ -64,6 +64,9 @@ export default function CucinaPiatti({ ordini, abbonamenti = [], giorno }: { ord
                           ? `Allergeni: ${p.allergeni.join(", ")}`
                           : "Nessun allergene principale"}
                     </p>
+                    {nonDisponibili.includes(p.id) ? (
+                      <p className="cu-piatto-nd">Segnato «non disponibile» in Impostazioni: avvisa chi l’ha ordinato.</p>
+                    ) : null}
                   </div>
                 </li>
               ))}
@@ -76,7 +79,7 @@ export default function CucinaPiatti({ ordini, abbonamenti = [], giorno }: { ord
         </section>
 
         <div className="grid content-start gap-10">
-          <section aria-labelledby="cu-extra" className="grid gap-2">
+          <section aria-labelledby="cu-extra" className="cu-blocco grid gap-2">
             <h3 id="cu-extra" className="cu-h3">
               Extra {totaleExtra ? <span className="cu-h3-nota">· {totaleExtra} in tutto</span> : null}
             </h3>
@@ -97,7 +100,7 @@ export default function CucinaPiatti({ ordini, abbonamenti = [], giorno }: { ord
             )}
           </section>
 
-          <section aria-labelledby="cu-allergeni" className="grid gap-2">
+          <section aria-labelledby="cu-allergeni" className="cu-blocco grid gap-2">
             <h3 id="cu-allergeni" className="cu-h3">Allergeni presenti</h3>
             {allergeni.length ? (
               <ul className="cu-righe">
@@ -120,6 +123,8 @@ export default function CucinaPiatti({ ordini, abbonamenti = [], giorno }: { ord
           </section>
         </div>
       </div>
+
+      <CucinaAbbonamenti abbonamenti={abbonamenti} giorno={giorno} />
     </div>
   );
 }

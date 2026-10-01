@@ -3,11 +3,13 @@ import Reveal from "@/components/Reveal";
 import ChiusuraCta from "@/components/home/ChiusuraCta";
 import Faq from "@/components/come-funziona/Faq";
 import FotoPiena from "@/components/ui/FotoPiena";
+import Aggiornato from "@/components/seo/Aggiornato";
 import Briciole from "@/components/seo/Briciole";
 import JsonLd from "@/components/seo/JsonLd";
 import LinkBlog from "@/components/seo/LinkBlog";
 import { AGGIORNAMENTO, PAGINE, metadatiPagina } from "@/components/seo/pagine";
-import { nodiPagina, nodoServizio, type DomandaTesto } from "@/components/seo/schema";
+import { idServizio, nodiPagina, nodoServizio, type DomandaTesto } from "@/components/seo/schema";
+import { CONSEGNA_OGNI_GIORNI, PREZZO_DA_TESTO, RAGGIO_CONSEGNA_KM, SCONTI } from "@/lib/abbonamento";
 import { EMAIL, INDIRIZZO_RIGA, LINK_MAPPA, ZONE_SERVITE, elencoZone, type Zona } from "@/lib/sito";
 
 /* Ritiro e consegna: dove arrivano i piatti, come si ritirano, cosa sapere e
@@ -85,6 +87,10 @@ const DOMANDE: DomandaTesto[] = [
     a: "La consegna è gratis dai dieci pasti in su, come indicato in Servizi e prezzi. Sotto quella soglia, il costo per il tuo indirizzo te lo conferma Matteo insieme alla copertura.",
   },
   {
+    q: "E se mi abbono, come arrivano i pasti?",
+    a: `Con un abbonamento mensile (da ${PREZZO_DA_TESTO} al mese) Matteo consegna a casa, o prepara per il ritiro in laboratorio, ogni ${CONSEGNA_OGNI_GIORNI} giorni: i pasti dei tre giorni successivi, a Pescara e dintorni, fino a ${RAGGIO_CONSEGNA_KM} km. Con il ritiro in laboratorio c'è lo sconto del ${SCONTI.ritiro}%. Formule e prezzi sono nella pagina Abbonamenti.`,
+  },
+  {
     q: "I piatti arrivano caldi?",
     a: "No, sono piatti da frigorifero: appena arrivano vanno in frigo e si scaldano quando li mangi, seguendo le istruzioni del piatto e del contenitore.",
   },
@@ -103,13 +109,14 @@ export default function ConsegnaPastiPescara() {
             descrizione: PAGINA.descrizione,
             briciole,
             faq: DOMANDE,
+            about: { "@id": idServizio(PAGINA.percorso, "consegna") },
             dataModifica: AGGIORNAMENTO,
           }),
           nodoServizio({
             id: "consegna",
             percorso: PAGINA.percorso,
             nome: "Ritiro e consegna dei pasti a Pescara e dintorni",
-            descrizione: `Ritiro in ${INDIRIZZO_RIGA} o consegna ogni giorno a ${elencoZone()}, con copertura dell'indirizzo confermata prima dell'ordine.`,
+            descrizione: `Ritiro in ${INDIRIZZO_RIGA} o consegna ogni giorno a ${elencoZone()} (Pescara e dintorni, fino a ${RAGGIO_CONSEGNA_KM} km), con copertura dell'indirizzo confermata prima dell'ordine.`,
             tipoServizio: "Consegna pasti",
           }),
         ]}
@@ -126,7 +133,7 @@ export default function ConsegnaPastiPescara() {
             dell&apos;ordine, non dopo.
           </p>
           <div className="mt-9 flex flex-wrap items-center gap-x-8 gap-y-4">
-            <Link href="/richiesta?argomento=consegna" className="btn btn-ink">
+            <Link href="/richiesta?argomento=consegna#scrivi" className="btn btn-ink">
               Chiedi se arriviamo da te <span className="freccia">→</span>
             </Link>
             <Link href="/menu" className="link">
@@ -162,6 +169,14 @@ export default function ConsegnaPastiPescara() {
                 </Link>
                 .
               </p>
+              <p className="mt-4 max-w-[46ch] text-lg text-muted">
+                Con un abbonamento mensile la consegna (o il ritiro) è ogni {CONSEGNA_OGNI_GIORNI} giorni, sempre entro{" "}
+                {RAGGIO_CONSEGNA_KM} km da Pescara:{" "}
+                <Link href={PAGINE.abbonamento.percorso} className="link">
+                  guarda gli abbonamenti
+                </Link>
+                .
+              </p>
             </Reveal>
           </div>
         </div>
@@ -173,8 +188,8 @@ export default function ConsegnaPastiPescara() {
             <p className="occhiello">Le zone</p>
             <h2 className="titolo mt-5 max-w-[14ch]">Dove arrivano i piatti.</h2>
             <p className="lead mt-6">
-              La zona di consegna è Pescara con i comuni vicini. Qui sotto trovi dove puoi chiederla; la conferma
-              riguarda sempre il singolo indirizzo, perché dipende dal giorno e dal percorso.
+              La zona di consegna è Pescara e dintorni, fino a {RAGGIO_CONSEGNA_KM} km. Qui sotto trovi i comuni dove puoi
+              chiederla; la conferma riguarda sempre il singolo indirizzo, perché dipende dal giorno e dal percorso.
             </p>
           </Reveal>
           <ul className="mt-12 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
@@ -245,7 +260,7 @@ export default function ConsegnaPastiPescara() {
               <span className="num text-sm text-muted">02</span>
               <h3 className="titolo-s mt-3">Mandi la richiesta</h3>
               <p className="mt-3 max-w-[34ch] text-muted">
-                Dalla pagina <Link href="/richiesta?argomento=consegna" className="link">Scrivi a Matteo</Link> o a{" "}
+                Dalla pagina <Link href="/richiesta?argomento=consegna#scrivi" className="link">Scrivi a Matteo</Link> o a{" "}
                 {EMAIL}, con indirizzo e giorno preferito.
               </p>
             </Reveal>
@@ -273,6 +288,9 @@ export default function ConsegnaPastiPescara() {
             <h2 className="titolo mt-5">Consegna e ritiro: le risposte.</h2>
           </div>
           <Faq domande={DOMANDE} />
+        </div>
+        <div className="wrap mt-10">
+          <Aggiornato />
         </div>
       </section>
 

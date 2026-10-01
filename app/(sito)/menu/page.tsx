@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { Suspense } from "react";
 import { PIATTI } from "@/lib/catalogo";
+import { INDIRIZZO_RIGA } from "@/lib/sito";
 import MenuClient from "./MenuClient";
 import PerLaTuaBox from "@/components/menu/PerLaTuaBox";
 import ChiusuraCta from "@/components/home/ChiusuraCta";
@@ -34,7 +34,7 @@ export default function PaginaMenu() {
       <section className="testata">
         <div className="wrap">
           <h1>
-            <span className="occhiello">Meal prep a Pescara · il menu</span>
+            <span className="occhiello">Meal prep a Pescara · il menu</span>{" "}
             <span className="titolo-xl mt-6 block max-w-[10ch]">Il menu.</span>
           </h1>
           <p className="lead mt-6">
@@ -42,18 +42,15 @@ export default function PaginaMenu() {
             altri ingredienti.
           </p>
           <p className="mt-4 max-w-[56ch] text-muted">
-            Matteo li cucina ogni giorno a Pescara, e ogni giorno si ritirano in Via del Santuario o arrivano in zona.{" "}
+            Matteo li cucina ogni giorno, e ogni giorno si ritirano in {INDIRIZZO_RIGA} o arrivano in zona.{" "}
             <Link href="/consegna-pasti-pescara" className="link">
               Ritiro e consegna
             </Link>
           </p>
         </div>
       </section>
-      {/* useSearchParams vuole un confine di Suspense: senza, la pagina smette di
-          essere statica e diventa dinamica per intero. */}
-      <Suspense fallback={<div className="wrap min-h-[60vh]" />}>
-        <MenuClient />
-      </Suspense>
+      {/* I sei piatti stanno gia' nell'HTML: il filtro dell'indirizzo lo legge il browser (vedi MenuClient). */}
+      <MenuClient />
       <PerLaTuaBox />
       <ChiusuraCta
         titolo="Sai già cosa ti piace?"

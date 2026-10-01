@@ -5,9 +5,12 @@
    (una lista per giorno), cosi' al supermercato si spunta e a casa si
    ritrova il segno. I pasti delle consegne in abbonamento entrano con il
    piatto indicato dal cliente per quel giorno e quel pasto; quelli ancora da
-   comporre (le colazioni sempre) restano fuori, e la scheda lo dice. */
+   comporre (le colazioni sempre) restano fuori, e la scheda lo dice.
+   La spunta di una voce vale per quella quantita': se arriva un ordine e la
+   quantita' cambia, la voce torna da prendere. "Togli tutte le spunte" si
+   puo' annullare: un tocco sbagliato non cancella la spesa a meta'. */
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Ordine } from "@/lib/api";
 import { formattaPeso, formattaPezzi, listaSpesa, pastiDaComporre } from "@/lib/produzione";
 import { useSpunte } from "./CucinaMemoria";
@@ -29,19 +32,26 @@ export default function CucinaSpesa({
   const lista = useMemo(() => listaSpesa(ordini), [ordini]);
   const daComporre = pastiDaComporre(abbonamenti, giorno);
   const contate = porzioni - daComporre;
-  const { spunte, cambia, azzera } = useSpunte(`fuellab:cucina:spesa:${giorno}`);
+  const { spunte, cambia, azzera, ripristina } = useSpunte(`fuellab:cucina:spesa:${giorno}`);
+  // Le spunte appena tolte, per l'"Annulla" (8 secondi, o finche' non ne tocchi un'altra).
+  const [tolte, setTolte] = useState<ReadonlySet<string> | null>(null);
+  useEffect(() => {
+    if (!tolte) return;
+    const t = window.setTimeout(() => setTolte(null), 8000);
+    return () => window.clearTimeout(t);
+  }, [tolte]);
 
   const gruppi: { id: string; titolo: string; nota?: string; voci: Voce[] }[] = [
     ...lista.reparti.map((r) => ({
       id: r.reparto,
       titolo: r.reparto,
-      voci: r.voci.map((v) => ({ id: `g:${v.chiave}`, nome: v.nome, quantita: formattaPeso(v.grammi), dettaglio: v.piatti.join(" · ") })),
+      voci: r.voci.map((v) => ({ id: `g:${v.chiave}:${v.grammi}`, nome: v.nome, quantita: formattaPeso(v.grammi), dettaglio: v.piatti.join(" · ") })),
     })),
     ...(lista.pezzi.length
       ? [{
           id: "pezzi",
           titolo: "A pezzi",
-          voci: lista.pezzi.map((v) => ({ id: `p:${v.chiave}`, nome: v.nome, quantita: formattaPezzi(v.quantita, v.unita), dettaglio: v.piatti.join(" · ") })),
+          voci: lista.pezzi.map((v) => ({ id: `p:${v.chiave}:${v.quantita}`, nome: v.nome, quantita: formattaPezzi(v.quantita, v.unita), dettaglio: v.piatti.join(" · ") })),
         }]
       : []),
     ...(lista.qb.length
@@ -78,14 +88,38 @@ export default function CucinaSpesa({
         <p className="cu-conto" aria-live="polite">
           <strong className="num">{prese}</strong> di {tutte.length} voci già prese
         </p>
-        <button type="button" className="btn btn-linea btn-sm" onClick={azzera} disabled={!prese}>
-          Togli tutte le spunte
-        </button>
+        {tolte ? (
+          <p className="cu-conto" role="status">
+            Spunte tolte.{" "}
+            <button
+              type="button"
+              className="link inline-flex min-h-11 items-center align-middle"
+              onClick={() => {
+                ripristina(tolte);
+                setTolte(null);
+              }}
+            >
+              Annulla
+            </button>
+          </p>
+        ) : (
+          <button
+            type="button"
+            className="btn btn-linea btn-sm"
+            onClick={() => {
+              setTolte(new Set(spunte));
+              azzera();
+            }}
+            disabled={!prese}
+          >
+            Togli tutte le spunte
+          </button>
+        )}
       </div>
 
       <div className="cu-spesa-colonne">
         {gruppi.map((g) => (
-          <section key={g.id} aria-labelledby={`cu-rep-${g.id.replace(/\W+/g, "-")}`} className="cu-reparto">
+          <section key={g.id} aria-labelledby={`cu-rep-${g.id.replace(/\W+/g, "-")}`} className={`cu-reparto ${g.id === "qb" ? "cu-reparto-lungo" : ""}`}>
             <h3 id={`cu-rep-${g.id.replace(/\W+/g, "-")}`} className="cu-h3">
               {g.titolo}
             </h3>
@@ -100,7 +134,10 @@ export default function CucinaSpesa({
                         type="checkbox"
                         className="cu-casella"
                         checked={preso}
-                        onChange={(e) => cambia(v.id, e.target.checked)}
+                        onChange={(e) => {
+                          setTolte(null);
+                          cambia(v.id, e.target.checked);
+                        }}
                       />
                       <span className="cu-spesa-testo">
                         <span className="cu-spesa-nome">{v.nome}</span>

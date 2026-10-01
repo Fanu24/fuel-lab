@@ -6,6 +6,7 @@ import {
   allergeniDelGiorno,
   calendarioAbbonamento,
   cellaCsv,
+  clientiConPreferenze,
   clientiCsv,
   confermatiSenzaGiorno,
   consegnaDelGiorno,
@@ -134,7 +135,7 @@ describe("foglio di produzione", () => {
     const sesamo = righe.find((r) => r.allergene === "sesamo");
     // Due porzioni di riso (sesamo nel piatto), una delle due con tahina: sempre due porzioni.
     expect(sesamo?.porzioni).toBe(2);
-    expect(sesamo?.fonti).toEqual(["Riso carote e zucchine julien, pollo teriyaki", "Tahina"]);
+    expect(sesamo?.fonti).toEqual(["Riso carote e zucchine julien, pollo teriyaki", "Tahina (extra)"]);
     expect(righe.find((r) => r.allergene === "glutine")?.porzioni).toBe(2);
     expect(righe.find((r) => r.allergene === "uova")?.porzioni).toBe(1);
   });
@@ -479,6 +480,25 @@ describe("lista della spesa", () => {
     expect(lista.qb.map((v) => v.nome)).toContain("Paprika");
   });
 
+  it("un ingrediente comprato a peso o a pezzi non compare anche come q.b.", () => {
+    // Noodles: aglio "1 spicchio", prezzemolo q.b.; Maiale: aglio q.b.; Gnocchetti: parmigiano 50 g; Pallotte: parmigiano q.b.
+    const lista = listaSpesa([
+      ordine("a", { items: [
+        { id: "noodles-sesamo-maiale", name: "Noodles", day: "lun", meal: "pranzo", extras: [] },
+        { id: "maiale-senape-spinaci", name: "Maiale", day: "lun", meal: "cena", extras: [] },
+        { id: "gnocchetti-sugo-ricotta", name: "Gnocchetti", day: "mar", meal: "pranzo", extras: [] },
+        { id: "pallotte-cacio-ovo", name: "Pallotte", day: "mar", meal: "cena", extras: [] },
+      ] }),
+    ]);
+    const nomi = (voci: { nome: string }[]) => voci.map((v) => v.nome);
+    expect(lista.pezzi.find((v) => v.nome === "Aglio")).toMatchObject({ quantita: 2, unita: "spicchio" });
+    expect(nomi(lista.qb)).not.toContain("Aglio");
+    expect(lista.reparti.flatMap((r) => r.voci).find((v) => v.nome === "Parmigiano")?.grammi).toBe(50);
+    expect(nomi(lista.qb)).not.toContain("Parmigiano");
+    // Quello che si compra solo q.b. resta nella sua lista.
+    expect(nomi(lista.qb)).toEqual(expect.arrayContaining(["Prezzemolo", "Rosmarino"]));
+  });
+
   it("segnala i piatti che non sono nel catalogo", () => {
     const lista = listaSpesa([ordine("a", { items: [{ id: "piatto-sparito", name: "Piatto vecchio", day: "lun", meal: "pranzo", extras: [] }] })]);
     expect(lista.sconosciuti).toEqual([{ nome: "Piatto vecchio", porzioni: 1 }]);
@@ -493,6 +513,28 @@ describe("lista della spesa", () => {
     expect(repartoDi("Zucchero di cocco")).toBe("Dispensa e condimenti");
     expect(repartoDi("Formaggio tipo quark")).toBe("Latticini e uova");
     expect(repartoDi("Qualcosa di strano")).toBe("Altro");
+  });
+});
+
+describe("clienti con allergie nel foglio", () => {
+  const conPref = (id: string, modifiche: Partial<Ordine> = {}) =>
+    ordine(id, { user_id: "marco", customer_name: "Marco", dietary_preferences: "allergia alle arachidi", ...modifiche });
+
+  it("unisce lo stesso cliente che ha un ordine e un abbonamento nello stesso giorno", () => {
+    const righe = clientiConPreferenze([conPref("o1"), conPref("o2"), ordine("senza"), conPref("o3", { user_id: "giulia", customer_name: "Giulia", dietary_preferences: "  niente lattosio " })]);
+    expect(righe.map((r) => [r.cliente, r.preferenze, r.ordini])).toEqual([
+      ["Marco", "allergia alle arachidi", 2],
+      ["Giulia", "niente lattosio", 1],
+    ]);
+  });
+
+  it("non fonde persone diverse intestate allo stesso account (ordini a mano di Matteo) e conta una volta lo stesso ordine", () => {
+    const righe = clientiConPreferenze([
+      conPref("a", { user_id: "matteo", customer_name: "Anna" }),
+      conPref("b", { user_id: "matteo", customer_name: "Bruno" }),
+      conPref("a", { user_id: "matteo", customer_name: "Anna" }),
+    ]);
+    expect(righe.map((r) => [r.cliente, r.ordini])).toEqual([["Anna", 1], ["Bruno", 1]]);
   });
 });
 

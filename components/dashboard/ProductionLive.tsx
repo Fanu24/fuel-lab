@@ -8,12 +8,13 @@
    scheda stanno nell'indirizzo (?giorno=2026-09-28&scheda=spesa), cosi' un
    link o un ricarica riaprono lo stesso foglio. Stampa solo la scheda aperta.
    Si cucina ogni giorno: le scorciatoie sono Oggi, Domani e Dopodomani, e un
-   giorno di chiusura segnato in Impostazioni si vede in cima al foglio. */
+   giorno di chiusura segnato in Impostazioni si vede in cima al foglio.
+   Gli ordini sono quelli condivisi del pannello (PannelloDati): si aggiornano
+   da soli ogni minuto, anche col telefono appoggiato in cucina tutto il giorno. */
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState, type KeyboardEvent } from "react";
-import { api, type Ordine } from "@/lib/api";
+import { Fragment, useMemo, useState, type KeyboardEvent } from "react";
 import { chiusuraDi, periodo } from "@/lib/impostazioni";
 import { scorciatoieDate } from "@/lib/operazioni";
 import {
@@ -25,7 +26,6 @@ import {
   giornoPredefinito,
   giorniDaPreparare,
   isData,
-  oggiRoma,
   ordiniDelGiorno,
   pastiComeOrdini,
   spostaGiorni,
@@ -35,6 +35,8 @@ import CucinaEtichette from "./CucinaEtichette";
 import CucinaOrdini from "./CucinaOrdini";
 import CucinaPiatti from "./CucinaPiatti";
 import CucinaSpesa from "./CucinaSpesa";
+import { usePannello } from "./PannelloDati";
+import { ErroreDati } from "./PannelloStato";
 import { Avviso, Caricamento, Kpi, TestaPagina, Vuoto, giorno as giornoCorto, giornoLungo } from "./ui";
 
 type Scheda = "piatti" | "spesa" | "etichette" | "ordini";
@@ -48,16 +50,11 @@ const SCHEDE: { id: Scheda; label: string; stampa: string }[] = [
 
 const eScheda = (s: string | null): s is Scheda => SCHEDE.some((x) => x.id === s);
 
-const messaggio = (e: unknown) => (e instanceof Error ? e.message : "Non riesco a caricare gli ordini. Riprova tra poco.");
-
 const ora = (d: Date) => new Intl.DateTimeFormat("it-IT", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Rome" }).format(d);
 
 export default function ProductionLive() {
   const parametri = useSearchParams();
-  const [ordini, setOrdini] = useState<Ordine[] | null>(null);
-  const [errore, setErrore] = useState("");
-  const [aggiornando, setAggiornando] = useState(false);
-  const [aggiornatoAlle, setAggiornatoAlle] = useState<string>("");
+  const { ordini, errore, aggiornando, aggiornatoAlle, oggi, aggiorna } = usePannello();
   const [giornoScelto, setGiornoScelto] = useState<string | null>(() => {
     const g = parametri.get("giorno");
     return isData(g) ? g : null;
@@ -67,42 +64,17 @@ export default function ProductionLive() {
     return eScheda(s) ? s : "piatti";
   });
   const [anchePronti, setAnchePronti] = useState(false);
-  const { chiusure } = useImpostazioni({ fresche: true }).impostazioni;
+  const [bozzaData, setBozzaData] = useState<string | null>(null);
+  const { stato: statoImpostazioni, impostazioni } = useImpostazioni({ fresche: true });
+  const { chiusure } = impostazioni;
 
-  useEffect(() => {
-    let vivo = true;
-    api.ordini().then(
-      (r) => {
-        if (!vivo) return;
-        setOrdini(r.orders);
-        setAggiornatoAlle(ora(new Date()));
-      },
-      (e: unknown) => {
-        if (vivo) setErrore(messaggio(e));
-      },
-    );
-    return () => {
-      vivo = false;
-    };
-  }, []);
-
-  function aggiorna() {
-    setAggiornando(true);
-    api
-      .ordini()
-      .then(
-        (r) => {
-          setOrdini(r.orders);
-          setErrore("");
-          setAggiornatoAlle(ora(new Date()));
-        },
-        (e: unknown) => setErrore(messaggio(e)),
-      )
-      .finally(() => setAggiornando(false));
+  /* Il giorno che si apre da solo si decide una volta (e di nuovo a mezzanotte): se un ordine di oggi
+     arriva mentre guardi domani, la pagina non ti cambia giorno sotto le dita. */
+  const [automatico, setAutomatico] = useState<{ oggi: string; giorno: string } | null>(null);
+  if (ordini && statoImpostazioni !== "attesa" && !giornoScelto && automatico?.oggi !== oggi) {
+    setAutomatico({ oggi, giorno: giornoPredefinito(ordini, oggi, chiusure) });
   }
-
-  const oggi = oggiRoma();
-  const giorno = giornoScelto ?? giornoPredefinito(ordini ?? [], oggi, chiusure);
+  const giorno = giornoScelto ?? automatico?.giorno ?? giornoPredefinito(ordini ?? [], oggi, chiusure);
 
   function scriviIndirizzo(g: string | null, s: Scheda) {
     const p = new URLSearchParams();
@@ -168,15 +140,15 @@ export default function ProductionLive() {
           sotto={
             <>
               Cosa preparare, cosa comprare, cosa etichettare.
-              {aggiornatoAlle ? <> Dati delle {aggiornatoAlle}.</> : null}
+              {aggiornatoAlle ? <> Dati delle {ora(aggiornatoAlle)}.</> : null}
             </>
           }
           azioni={
             <>
-              <button type="button" className="btn btn-linea btn-sm" onClick={aggiorna} disabled={aggiornando || ordini === null}>
+              <button type="button" className="btn btn-linea btn-sm" onClick={() => void aggiorna()} disabled={aggiornando || ordini === null}>
                 {aggiornando ? "Aggiorno…" : "Aggiorna"}
               </button>
-              <button type="button" className="btn btn-ink btn-sm" onClick={() => window.print()} disabled={!qualcosa}>
+              <button type="button" className="btn btn-ink btn-sm" onClick={() => window.print()} disabled={!qualcosa || (scheda === "etichette" && porzioni === 0)}>
                 {schedaAttiva.stampa}
               </button>
             </>
@@ -186,9 +158,9 @@ export default function ProductionLive() {
 
       {errore ? (
         <div className="grid gap-3 print:hidden">
-          <Avviso>{errore}</Avviso>
+          <ErroreDati />
           {ordini === null ? (
-            <button type="button" className="btn btn-ink btn-sm justify-self-start" onClick={aggiorna} disabled={aggiornando}>
+            <button type="button" className="btn btn-ink btn-sm justify-self-start" onClick={() => void aggiorna()} disabled={aggiornando}>
               Riprova
             </button>
           ) : null}
@@ -219,13 +191,19 @@ export default function ProductionLive() {
               ))}
               <div className="campo cu-altra-data">
                 <label htmlFor="cu-data">Altra data</label>
+                {/* Scrivendo l'anno cifra per cifra il campo passa da date non valide ("0002-10-02"): finche' non c'e'
+                    una data vera resta quello che hai scritto, invece di tornare di scatto al giorno scelto. */}
                 <input
                   id="cu-data"
                   type="date"
-                  value={giorno}
+                  value={bozzaData ?? giorno}
                   onChange={(e) => {
-                    if (isData(e.target.value)) scegliGiorno(e.target.value);
+                    if (isData(e.target.value)) {
+                      setBozzaData(null);
+                      scegliGiorno(e.target.value);
+                    } else setBozzaData(e.target.value);
                   }}
+                  onBlur={() => setBozzaData(null)}
                 />
               </div>
             </div>
@@ -241,7 +219,7 @@ export default function ProductionLive() {
                     <li key={p.giorno}>
                       <button
                         type="button"
-                        className="cu-prossimo"
+                        className="cu-prossimo cu-prossimo-giorno"
                         aria-pressed={giorno === p.giorno}
                         onClick={() => scegliGiorno(p.giorno)}
                       >
@@ -253,7 +231,12 @@ export default function ProductionLive() {
                             `${p.porzioni} porz.`,
                           ]
                             .filter(Boolean)
-                            .join(" · ")}
+                            .map((parte, i) => (
+                              <Fragment key={parte}>
+                                {i ? " · " : ""}
+                                <span className="whitespace-nowrap">{parte}</span>
+                              </Fragment>
+                            ))}
                         </span>
                       </button>
                     </li>
@@ -297,9 +280,8 @@ export default function ProductionLive() {
             {!qualcosa ? (
               <div className="cu-vuoto print:hidden">
                 <Vuoto>
-                  Niente da preparare per {giornoLungo(giorno)}. Qui arrivano gli ordini confermati o in preparazione
-                  a cui hai assegnato questo giorno di cucina, e i giorni di consegna degli abbonamenti in corso: una
-                  consegna ogni 3 giorni, con i pasti dei tre giorni che copre.
+                  Niente da preparare per {giornoLungo(giorno)}. Qui arrivano gli ordini confermati con questo giorno di
+                  cucina e le consegne degli abbonamenti in corso (una ogni 3 giorni).
                 </Vuoto>
                 <Link href="/dashboard/ordini" className="btn btn-linea btn-sm">
                   Vai agli ordini

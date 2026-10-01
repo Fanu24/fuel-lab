@@ -35,9 +35,11 @@ export default function OggiSettimana({ giorni }: { giorni: GiornoCalendario[] |
                 <p className="pn-giorno-nome">{iniziale(giorno(g.data))}</p>
                 {g.oggi ? <span className="pn-giorno-etichetta pn-giorno-etichetta-oggi">Oggi</span> : null}
                 {g.chiusura ? (
-                  <span className="pn-giorno-etichetta pn-giorno-etichetta-chiuso">
-                    Chiuso<span className="sr-only">{g.chiusura.motivo ? `: ${g.chiusura.motivo}` : ""}</span>
-                  </span>
+                  <>
+                    <span className="pn-giorno-etichetta pn-giorno-etichetta-chiuso">Chiuso</span>
+                    {/* Sul telefono non c'e' il passaggio del mouse: il motivo si scrive. */}
+                    {g.chiusura.motivo ? <span className="block w-full text-[13px] font-semibold text-[#8f1b12]">{g.chiusura.motivo}</span> : null}
+                  </>
                 ) : null}
               </div>
               <p className="pn-giorno-dato">
@@ -60,8 +62,13 @@ export default function OggiSettimana({ giorni }: { giorni: GiornoCalendario[] |
                       .join(" · ")}`
                   : ""}
               </p>
+              {g.chiusura && (g.porzioni + g.pastiAbbonamenti > 0 || g.uscite > 0) ? (
+                <p className="col-span-full text-[14px] font-bold text-[#8f1b12]" role="note">
+                  Attenzione: sei chiuso, ma ci sono ordini in questo giorno.
+                </p>
+              ) : null}
               {g.richieste ? (
-                <p className="col-span-3 text-[14px] font-semibold text-[#6b3200]">
+                <p className="col-span-full text-[14px] font-semibold text-[#6b3200]">
                   + {g.richieste} {g.richieste === 1 ? "richiesta chiede" : "richieste chiedono"} questo giorno
                 </p>
               ) : null}

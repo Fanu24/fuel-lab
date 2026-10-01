@@ -3,12 +3,18 @@
 /* La posta del modulo contatti. Tre cassetti (Nuovi, Gestiti, Archiviati):
    un tocco sposta il messaggio subito, senza aspettare il server; se il server
    dice di no il messaggio torna dov'era e compare l'errore. Dopo ogni
-   spostamento c'e' "Annulla", per i tocchi sbagliati dal telefono. */
+   spostamento c'e' "Annulla", per i tocchi sbagliati dal telefono: l'avviso sta
+   in basso, fisso (come nelle azioni veloci degli ordini), perche' il messaggio
+   toccato sparisce dall'elenco e l'avviso in cima alla lista resterebbe fuori
+   dallo schermo. La lista si aggiorna da sola ogni minuto, come il numerino
+   rosso nella barra: senza, il numerino direbbe 21 e l'elenco ne mostrerebbe 20. */
 
-import { useEffect, useMemo, useState, type KeyboardEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { adminApi, type MessaggioContatto, type StatoMessaggio } from "@/lib/api";
+import { ErroreCaricamento, eSessioneScaduta } from "./ClientiErrore";
 import MessaggiScheda from "./MessaggiScheda";
-import { Avviso, Caricamento, TestaPagina, Vuoto } from "./ui";
+import { Icona } from "./PannelloIcone";
+import { Caricamento, TestaPagina, Vuoto } from "./ui";
 
 const CASSETTI: { id: StatoMessaggio; label: string; vuoto: string }[] = [
   { id: "new", label: "Nuovi", vuoto: "Nessun messaggio nuovo. Quando qualcuno scrive dal modulo contatti lo trovi qui." },
@@ -22,36 +28,94 @@ const messaggio = (e: unknown, ripiego: string) => (e instanceof Error ? e.messa
 
 type Spostamento = { id: string; nome: string; da: StatoMessaggio; a: StatoMessaggio };
 
+const OGNI = 60_000;
+const ora = (d: Date) => new Intl.DateTimeFormat("it-IT", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Rome" }).format(d);
+
 export default function Messaggi() {
   const [messaggi, setMessaggi] = useState<MessaggioContatto[] | null>(null);
   const [errore, setErrore] = useState("");
+  const [sessione, setSessione] = useState(false);
   const [caricando, setCaricando] = useState(false);
   const [cassetto, setCassetto] = useState<StatoMessaggio>("new");
   const [inCorso, setInCorso] = useState<ReadonlySet<string>>(new Set());
   const [erroreAzione, setErroreAzione] = useState("");
   const [ultimo, setUltimo] = useState<Spostamento | null>(null);
+  const [aggiornatoAlle, setAggiornatoAlle] = useState<Date | null>(null);
+  const occupati = useRef(0);
+  // Quanti spostamenti sono partiti finora: un elenco chiesto prima di uno spostamento e arrivato dopo e' vecchio.
+  const mosse = useRef(0);
 
   useEffect(() => {
     let vivo = true;
     adminApi.messaggi().then(
-      (r) => vivo && setMessaggi(r.messages),
-      (e: unknown) => vivo && setErrore(messaggio(e, "Non riesco a caricare i messaggi.")),
+      (r) => {
+        if (!vivo) return;
+        setMessaggi(r.messages);
+        setAggiornatoAlle(new Date());
+      },
+      (e: unknown) => {
+        if (!vivo) return;
+        setErrore(messaggio(e, "Non riesco a caricare i messaggi."));
+        setSessione(eSessioneScaduta(e));
+      },
     );
     return () => {
       vivo = false;
     };
   }, []);
 
+  // Un giro silenzioso ogni minuto (solo a pagina visibile, e mai nel mezzo di uno spostamento: la risposta
+  // vecchia rimetterebbe il messaggio dov'era).
+  useEffect(() => {
+    const giro = window.setInterval(() => {
+      if (document.hidden || occupati.current > 0) return;
+      const mosseAllaPartenza = mosse.current;
+      adminApi.messaggi().then(
+        (r) => {
+          if (occupati.current > 0 || mosse.current !== mosseAllaPartenza) return;
+          setMessaggi(r.messages);
+          setAggiornatoAlle(new Date());
+          setErrore("");
+        },
+        () => {
+          // Un giro andato male non disturba: resta l'ultimo elenco, e "Aggiorna" mostra l'errore.
+        },
+      );
+    }, OGNI);
+    return () => window.clearInterval(giro);
+  }, []);
+
+  // L'avviso "spostato in..." sparisce da solo dopo 8 secondi.
+  useEffect(() => {
+    if (!ultimo) return;
+    const t = window.setTimeout(() => setUltimo(null), 8000);
+    return () => window.clearTimeout(t);
+  }, [ultimo]);
+
+  // L'errore di uno spostamento resta qualche secondo di piu': va letto con calma.
+  useEffect(() => {
+    if (!erroreAzione) return;
+    const t = window.setTimeout(() => setErroreAzione(""), 12_000);
+    return () => window.clearTimeout(t);
+  }, [erroreAzione]);
+
   function ricarica() {
     setCaricando(true);
+    const mosseAllaPartenza = mosse.current;
     adminApi
       .messaggi()
       .then(
         (r) => {
+          if (mosse.current !== mosseAllaPartenza) return;
           setMessaggi(r.messages);
+          setAggiornatoAlle(new Date());
           setErrore("");
+          setSessione(false);
         },
-        (e: unknown) => setErrore(messaggio(e, "Non riesco a caricare i messaggi.")),
+        (e: unknown) => {
+          setErrore(messaggio(e, "Non riesco a caricare i messaggi."));
+          setSessione(eSessioneScaduta(e));
+        },
       )
       .finally(() => setCaricando(false));
   }
@@ -63,6 +127,8 @@ export default function Messaggi() {
     const da = m.status;
     if (da === a || inCorso.has(m.id)) return;
     conStato(m.id, a); // subito, prima del server
+    occupati.current += 1;
+    mosse.current += 1;
     setInCorso((s) => new Set(s).add(m.id));
     setErroreAzione("");
     setUltimo(annullabile ? { id: m.id, nome: m.name || m.email, da, a } : null);
@@ -77,6 +143,7 @@ export default function Messaggi() {
         `Non ho spostato il messaggio di ${m.name || m.email}: ${motivo}${/[.!?]$/.test(motivo) ? "" : "."} È rimasto in ${nomeCassetto(da)}.`,
       );
     } finally {
+      occupati.current -= 1;
       setInCorso((s) => {
         const nuovo = new Set(s);
         nuovo.delete(m.id);
@@ -123,7 +190,12 @@ export default function Messaggi() {
       <TestaPagina
         occhiello="Pannello · Messaggi"
         titolo="Messaggi"
-        sotto="Quello che scrivono dal modulo contatti del sito."
+        sotto={
+          <>
+            Quello che scrivono dal modulo contatti del sito.
+            {aggiornatoAlle ? <> Aggiornato alle {ora(aggiornatoAlle)}.</> : null}
+          </>
+        }
         azioni={
           <button type="button" className="btn btn-linea btn-sm" onClick={ricarica} disabled={caricando}>
             {caricando ? "Aggiorno…" : "Aggiorna"}
@@ -133,8 +205,8 @@ export default function Messaggi() {
 
       {errore ? (
         <div className="grid gap-3">
-          <Avviso>{errore}</Avviso>
-          {messaggi === null ? (
+          <ErroreCaricamento testo={errore} sessioneScaduta={sessione} />
+          {messaggi === null && !sessione ? (
             <button type="button" className="btn btn-ink btn-sm justify-self-start" onClick={ricarica} disabled={caricando}>
               Riprova
             </button>
@@ -172,20 +244,6 @@ export default function Messaggi() {
           </div>
 
           <div id="ms-pannello" role="tabpanel" aria-labelledby={`ms-tab-${cassetto}`}>
-            {/* Sempre presente, anche vuota: una regione live nata insieme alla pagina viene letta davvero. */}
-            <div aria-live="polite" className="ms-avvisi">
-              {erroreAzione ? <Avviso>{erroreAzione}</Avviso> : null}
-              {ultimo ? (
-                <div className="ms-esito">
-                  <span>
-                    Messaggio di {ultimo.nome} spostato in <strong>{nomeCassetto(ultimo.a)}</strong>.
-                  </span>
-                  <button type="button" className="btn btn-linea btn-sm" onClick={annulla} disabled={inCorso.has(ultimo.id)}>
-                    Annulla
-                  </button>
-                </div>
-              ) : null}
-            </div>
             {visibili.length ? (
               <ul className="grid gap-4">
                 {visibili.map((m) => (
@@ -200,6 +258,30 @@ export default function Messaggi() {
           </div>
         </>
       )}
+
+      {/* Sempre presente, anche vuota: una regione live nata insieme alla pagina viene letta davvero. */}
+      <div role="status" aria-live="polite">
+        {erroreAzione ? (
+          <div className="pn-toast pn-toast-errore">
+            <span>{erroreAzione}</span>
+            <button type="button" aria-label="Chiudi l’avviso" onClick={() => setErroreAzione("")}>
+              <Icona nome="chiudi" className="size-5" />
+            </button>
+          </div>
+        ) : ultimo ? (
+          <div className="pn-toast">
+            <span>
+              Messaggio di {ultimo.nome} spostato in <strong>{nomeCassetto(ultimo.a)}</strong>.
+            </span>
+            <button type="button" onClick={annulla} disabled={inCorso.has(ultimo.id)}>
+              Annulla
+            </button>
+            <button type="button" aria-label="Chiudi l’avviso" onClick={() => setUltimo(null)}>
+              <Icona nome="chiudi" className="size-5" />
+            </button>
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }

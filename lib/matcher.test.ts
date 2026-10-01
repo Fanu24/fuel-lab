@@ -96,6 +96,17 @@ describe("matcher", () => {
     expect(r.aCentro).toBe(false);
   });
 
+  it("con un pasto al giorno mette i pranzi di giorni consecutivi, non pranzo e cena dei primi giorni", () => {
+    const r = componiPiano({ ...TARGET_DEFAULT, pastiAlGiorno: 1, giorni: 5 }, VINCOLI_DEFAULT);
+    expect(GIORNI.filter((g) => r.piano[g]?.pranzo)).toEqual(["lun", "mar", "mer", "gio", "ven"]);
+    expect(GIORNI.some((g) => r.piano[g]?.cena)).toBe(false);
+    expect(caselle(r.piano).length).toBe(5);
+
+    // con due pasti al giorno resta com'era: pranzo e cena, giorno dopo giorno
+    const due = componiPiano({ ...TARGET_DEFAULT, pastiAlGiorno: 2, giorni: 3 }, VINCOLI_DEFAULT);
+    expect(GIORNI.filter((g) => due.piano[g]?.pranzo && due.piano[g]?.cena)).toEqual(["lun", "mar", "mer"]);
+  });
+
   it("non esplode se i vincoli svuotano il catalogo", () => {
     const r = componiPiano(TARGET_DEFAULT, { ...VINCOLI_DEFAULT, escludi: ["carne", "pesce", "veg"] });
     expect(r.piano).toBeDefined();

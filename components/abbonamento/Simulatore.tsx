@@ -23,7 +23,7 @@ import {
   type Nucleo,
 } from "@/lib/abbonamento";
 import { useFascia } from "./FasciaScelta";
-import { CIRCA_A_PASTO, MENO, motivoSconto, percentuale } from "./righe";
+import { CIRCA_A_PASTO, MENO, giorniCopertiAParole, motivoSconto, percentuale } from "./righe";
 
 /* Il simulatore di prezzo: formula, fascia, ritiro o consegna, da solo o in
    compagnia. Tutto il conto lo fa calcolaPrezzo (lib/abbonamento.ts): qui si
@@ -65,7 +65,7 @@ function GruppoScelte<T extends string>({
   );
 }
 
-const OPZIONI_FORMULA: Opzione<FormulaId>[] = FORMULE.map((f) => ({ valore: f.id, etichetta: f.nome }));
+const OPZIONI_FORMULA: Opzione<FormulaId>[] = FORMULE.map((f) => ({ valore: f.id, etichetta: f.nome, nota: f.consigliato ? "Consigliato" : undefined }));
 const OPZIONI_FASCIA: Opzione<Fascia>[] = FASCE.map((f) => ({ valore: f, etichetta: NOMI_FASCIA[f] }));
 const OPZIONI_NUCLEO: Opzione<Nucleo>[] = NUCLEI.map((n) => ({
   valore: n,
@@ -101,10 +101,16 @@ export default function Simulatore() {
           <GruppoScelte legenda="Per chi" nome={`${id}-nucleo`} opzioni={OPZIONI_NUCLEO} valore={nucleo} onCambia={setNucleo} />
         </div>
 
-        <div className="abb-esito smusso" role="status" aria-live="polite" aria-atomic="true">
+        <div className="abb-esito smusso">
+          {/* A ogni scelta lo screen reader sente solo il risultato: se la regione viva fosse l'intero riquadro
+              leggerebbe anche i bottoni e i link. */}
+          <p className="sr-only" role="status">
+            {f.nome}, fascia {NOMI_FASCIA[fascia]}: {totale} € al mese. {motivoSconto(prezzo.scontoPercento, ritiro, nucleo)}.
+          </p>
           <p className="occhiello">La tua stima</p>
           <p className="mt-5 font-disp text-xl font-semibold tracking-[.06em] uppercase">{etichettaFormula(formula, fascia)}</p>
           <p className="mt-1 text-steel">{f.cosaRicevi}</p>
+          <p className="text-steel">{giorniCopertiAParole(f)}.</p>
 
           <p className="mt-6 flex flex-wrap items-end gap-x-4 gap-y-2">
             <span className="abb-cifra text-[clamp(56px,10vw,96px)] text-lime">
@@ -152,9 +158,9 @@ export default function Simulatore() {
           E' solo un ripetitore (aria-hidden): a leggerlo con lo screen reader ci pensa il riquadro sopra. */}
       <p
         aria-hidden="true"
-        className="sticky bottom-3 mt-6 flex items-baseline justify-between gap-4 bg-lime px-4 py-3 text-ink shadow-[0_8px_24px_rgb(0_0_0/0.5)] lg:hidden"
+        className="sticky bottom-3 mt-6 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 bg-lime px-4 py-3 text-ink shadow-[0_8px_24px_rgb(0_0_0/0.5)] lg:hidden"
       >
-        <span className="min-w-0 font-disp text-sm font-bold tracking-[.06em] uppercase">{etichettaFormula(formula, fascia)}</span>
+        <span className="font-disp text-sm font-bold tracking-[.06em] uppercase">{etichettaFormula(formula, fascia)}</span>
         <span className="abb-cifra shrink-0 whitespace-nowrap text-2xl">
           {totale}
           <span className="ml-[.08em]">€</span>

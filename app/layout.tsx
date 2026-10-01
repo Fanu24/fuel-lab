@@ -11,7 +11,8 @@ import "./globals.css";
    45 gradi, la stessa geometria del logo FUEL LAB. E' variabile (200-800) e ha
    latin-ext, quindi gli accenti italiani non cadono su un font di ripiego.
    Archivo resta per il testo corrente, Martian Mono solo per i numeri: macro,
-   grammi, conteggi. */
+   grammi, conteggi (e' l'unico dei tre che usa l'asse di larghezza, vedi .num).
+   Archivo senza asse wdth: nessuno lo usa, e il file pesa meno della meta'. */
 const oxanium = Oxanium({
   subsets: ["latin", "latin-ext"],
   variable: "--f-disp",
@@ -19,7 +20,6 @@ const oxanium = Oxanium({
 });
 const archivo = Archivo({
   subsets: ["latin", "latin-ext"],
-  axes: ["wdth"],
   variable: "--f-ui",
   display: "swap",
 });
@@ -66,25 +66,39 @@ export const metadata: Metadata = {
   },
 };
 
+/* colorScheme: il sito ha un solo tema (carta e notte sono scelte di design, non
+   preferenze dell'utente): senza questo, il "scuro forzato" di alcuni browser
+   del telefono ricolora la carta e il lime. */
 export const viewport: Viewport = {
   themeColor: "#0e100f",
+  colorScheme: "light",
 };
 
+/* Marca la pagina come "JS vivo" prima del primo paint: le rivelazioni in
+   scroll partono da opacity:0 solo sotto .js, cosi' senza JavaScript il sito
+   resta statico invece che bianco. Se dopo 8 secondi l'hydration non e' partita
+   (PrivacyConsent mette data-vivo appena gira), per esempio perche' un file di
+   script e' sparito dopo una pubblicazione e la pagina in cache lo cerca ancora,
+   la classe si toglie e il contenuto compare invece di restare invisibile. */
+const SEGNA_JS = `(function(){var d=document.documentElement;d.classList.add('js');setTimeout(function(){if(!d.hasAttribute('data-vivo'))d.classList.remove('js')},8000)})()`;
+
+/* data-scroll-behavior: con `scroll-behavior: smooth` su <html> (base.css) Next 16
+   non lo sospende piu' ai cambi pagina, e da un link del footer la pagina nuova
+   scivolava dal fondo verso l'alto. Con l'attributo torna istantaneo, e lo scorrimento
+   morbido resta per le ancore dentro la stessa pagina. */
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="it"
       className={`${oxanium.variable} ${archivo.variable} ${martian.variable}`}
+      data-scroll-behavior="smooth"
       suppressHydrationWarning
     >
       <head>
         {/* L'attivita', la cucina, il sito e Matteo: il grafo che ogni pagina
             richiama per @id (components/seo/schema.ts). */}
         <JsonLd dati={grafoSito()} />
-        {/* Marca la pagina come "JS vivo" prima del primo paint: le rivelazioni in
-            scroll partono da opacity:0 solo sotto .js, cosi' senza JavaScript il
-            sito resta statico invece che bianco. */}
-        <script dangerouslySetInnerHTML={{ __html: `document.documentElement.classList.add('js')` }} />
+        <script dangerouslySetInnerHTML={{ __html: SEGNA_JS }} />
       </head>
       <body>{children}<PrivacyConsent /></body>
     </html>

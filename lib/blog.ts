@@ -1,4 +1,5 @@
 import { APPROFONDIMENTI } from "./blog-approfondimenti";
+import { INDIRIZZO, elencoZone } from "./sito";
 
 /* =========================================================================
    Il blog di FUEL LAB: dati degli articoli, categorie e piccoli calcoli.
@@ -256,7 +257,7 @@ export const ARTICOLI: Articolo[] = [
       {
         titolo: "La regola in tre righe",
         paragrafi: [
-          "Matteo ha chiesto che il sito parlasse di allenamento in modo concreto, perché è la prima domanda che gli fanno: che cosa mangio nei giorni di corsa e che cosa nei giorni di palestra? La risposta di cucina è questa tabella.",
+          "È la domanda che torna più spesso a chi si allena: che cosa mangio nei giorni di corsa e che cosa nei giorni di palestra? La risposta di cucina è questa tabella.",
         ],
         tabella: {
           intestazioni: ["Giornata", "Cosa privilegiare", "Perché"],
@@ -325,7 +326,7 @@ export const ARTICOLI: Articolo[] = [
       },
     ],
     faq: [
-      { domanda: "Se faccio cardio e pesi nella stessa seduta, quale piatto scelgo?", risposta: "Guarda che cosa pesa di più nella seduta. Per gli allenamenti misti il menu segnala i piatti ‘cardio e pesi’, come il riso con carote, zucchine e pollo teriyaki, che uniscono una buona quota di carboidrati e una fonte proteica." },
+      { domanda: "Se faccio cardio e pesi nella stessa seduta, quale piatto scelgo?", risposta: "Guarda che cosa pesa di più nella seduta. Per gli allenamenti misti il menu segnala i piatti ‘cardio e pesi’, oggi il riso con carote, zucchine e pollo teriyaki, che unisce una buona quota di carboidrati e una fonte proteica." },
       { domanda: "Nei giorni di riposo devo mangiare meno?", risposta: "Non necessariamente. Il riposo non impone porzioni ridotte: il compositore propone il piatto meno denso del menu come punto di partenza, ma appetito, abitudini e indicazioni personali vengono prima." },
       { domanda: "Questa regola serve a dimagrire?", risposta: "No. Serve a scegliere il piatto in base all’allenamento del giorno, non a perdere peso. Per obiettivi di composizione corporea serve un percorso con un professionista abilitato." },
       { domanda: "Posso cambiare i piatti proposti dal compositore?", risposta: "Sì. La proposta è modificabile: puoi trascinare i piatti, sostituirli o lasciare caselle vuote nei giorni in cui mangi fuori." },
@@ -382,7 +383,7 @@ export const ARTICOLI: Articolo[] = [
         ],
       },
       {
-        titolo: "Tre esempi di pasto dopo i pesi",
+        titolo: "Quattro esempi di pasto dopo i pesi",
         paragrafi: ["Qualche combinazione concreta, tra piatti del menu FUEL LAB e idee da cucinare a casa:"],
         punti: [
           "Carne magra, patate e verdure cotte: è la struttura del [maiale alla senape con spinaci e patate novelle](/menu/maiale-senape-spinaci), il piatto del menu con il rapporto più alto tra proteine e carboidrati.",
@@ -564,7 +565,7 @@ export const ARTICOLI: Articolo[] = [
       },
     ],
     faq: [
-      { domanda: "Pallotte cacio e ova o cace e ove: qual è il nome giusto?", risposta: "Sono lo stesso piatto: cace e ove, o cac’e ove, è la forma dialettale di cacio e uova. Le trovi scritte in più modi, anche sui menu dei ristoranti." },
+      { domanda: "Pallotte cacio e ova o cace e ove: qual è il nome giusto?", risposta: "Sono lo stesso piatto: cace e ove, o cac’e ove, è la forma dialettale di cacio e uova. Le trovi scritte in più modi, anche sui menu dei ristoranti; nel menu FUEL LAB si chiamano ‘pallotte cacio e ovo fit proteiche’." },
       { domanda: "Le pallotte fit vanno bene se ho un’allergia o un’intolleranza?", risposta: "Contengono glutine, uova e latte. Se hai allergie o intolleranze, leggi la scheda del piatto e chiedi conferma a Matteo prima di ordinarle." },
       { domanda: "Sono un piatto da giorno di pesi o di cardio?", risposta: "Nel menu sono indicate per i giorni di pesi, e il compositore le propone in quelle giornate. Puoi comunque spostarle dove preferisci." },
       { domanda: "Quando si possono avere le pallotte di FUEL LAB?", risposta: "Matteo cucina ogni giorno e consegna ogni giorno: chiedi a lui la disponibilità nel giorno che ti serve. Ritiro in Via del Santuario 214 o consegna in zona vanno confermati con Matteo." },
@@ -589,7 +590,7 @@ export const ARTICOLI: Articolo[] = [
         titolo: "Sport misti: servono carboidrati e proteine",
         paragrafi: [
           "Calcetto e CrossFit sono attività intermittenti: tratti molto intensi, cambi di direzione, sollevamenti, pause brevi. Gli sforzi intensi attingono soprattutto ai carboidrati, mentre il lavoro muscolare chiede proteine nel recupero. Il risultato è un allenamento che sta a metà tra cardio e pesi.",
-          "Nel menu FUEL LAB esiste proprio questa categoria: i piatti ‘cardio e pesi’, come il [riso con carote, zucchine e pollo teriyaki](/menu/riso-julien-pollo-teriyaki), uniscono una buona quota di carboidrati e una fonte proteica. Sono la scelta più semplice per i giorni di partita o di WOD.",
+          "Nel menu FUEL LAB esiste proprio questa categoria, ‘cardio e pesi’: ci sta il [riso con carote, zucchine e pollo teriyaki](/menu/riso-julien-pollo-teriyaki), che unisce una buona quota di carboidrati e una fonte proteica. È la scelta più semplice per i giorni di partita o di WOD.",
         ],
       },
       {
@@ -614,7 +615,7 @@ export const ARTICOLI: Articolo[] = [
         titolo: "Dopo: recupero senza abbuffate a mezzanotte",
         paragrafi: [
           "Chi gioca alle 21 torna a casa verso le 22:30. È il momento in cui si decide se cenare bene o ripiegare su quello che capita. Le posizioni ISSN indicano che le proteine assunte entro circa due ore dall’esercizio stimolano la sintesi proteica, e il CREA raccomanda di reintegrare presto liquidi e carboidrati: una cena completa ma digeribile fa entrambe le cose.",
-          "Il classico terzo tempo in pizzeria ogni tanto ci sta. Ricorda però che il CREA stima per una pizza margherita di tipo napoletano fino a oltre 1000 kcal e più di 7 grammi di sale, e che le bevande alcoliche non dissetano ma disidratano. Se diventa l’abitudine di ogni settimana, conviene avere un’alternativa pronta in frigorifero.",
+          "Il classico terzo tempo in pizzeria ogni tanto ci sta. Ricorda però che, secondo il CREA, una pizza margherita napoletana può pesare anche 450 grammi e arrivare a più di 1000 kcal e a oltre 7 grammi di sale, e che le bevande alcoliche non dissetano ma disidratano. Se diventa l’abitudine di ogni settimana, conviene avere un’alternativa pronta in frigorifero.",
         ],
       },
       {
@@ -647,7 +648,7 @@ export const ARTICOLI: Articolo[] = [
       { domanda: "Cosa mangiare prima del calcetto la sera?", risposta: "Un pranzo completo con carboidrati e, 1–2 ore prima della partita, una merenda digeribile a base di carboidrati: pane con marmellata o miele, fette biscottate, frutta. Evita fritti e pasti abbondanti a ridosso del campo." },
       { domanda: "Dopo il calcetto delle 22 posso mangiare?", risposta: "Sì: un pasto completo ma digeribile, con una porzione di carboidrati, una fonte proteica e verdure, aiuta a recuperare senza appesantire la notte. Meglio evitare fritture e piatti molto grassi." },
       { domanda: "Nel CrossFit servono integratori?", risposta: "Per un’attività amatoriale le linee guida CREA considerano in genere sufficiente un’alimentazione adeguata e varia. Un integratore va valutato con un professionista, non scelto per abitudine." },
-      { domanda: "Quale piatto FUEL LAB scegliere per il CrossFit?", risposta: "Per le sedute miste il menu indica i piatti ‘cardio e pesi’, come il riso con carote, zucchine e pollo teriyaki. Nel compositore puoi segnare il giorno come cardio o pesi in base a che cosa prevale." },
+      { domanda: "Quale piatto FUEL LAB scegliere per il CrossFit?", risposta: "Per le sedute miste il menu indica i piatti ‘cardio e pesi’, oggi il riso con carote, zucchine e pollo teriyaki. Nel compositore puoi segnare il giorno come cardio o pesi in base a che cosa prevale." },
     ],
     fonti: [FONTI.creaLineeGuida, FONTI.issnTiming],
   },
@@ -668,7 +669,7 @@ export const ARTICOLI: Articolo[] = [
       {
         titolo: "Quanta acqua: il riferimento di base",
         paragrafi: [
-          "L’EFSA considera adeguata un’assunzione giornaliera di acqua di 2,0 litri per le donne e 2,5 litri per gli uomini. Le linee guida CREA traducono il concetto in pratica: asseconda sempre la sete e anzi prova ad anticiparla, bevendo in media 1,5–2 litri di acqua al giorno, spesso e in piccole quantità, anche tra i pasti.",
+          "L’EFSA considera adeguata un’assunzione giornaliera totale di acqua di 2,0 litri per le donne e 2,5 litri per gli uomini: è l’acqua di tutte le fonti, bevande e cibi compresi, non solo quella del bicchiere. Le linee guida CREA traducono il concetto in pratica: asseconda sempre la sete e anzi prova ad anticiparla, bevendo in media 1,5–2 litri di acqua al giorno, spesso e in piccole quantità, anche tra i pasti.",
           "Chi si allena ha bisogno di più liquidi: il CREA ricorda che il fabbisogno idrico degli sportivi è aumentato e che con la sudorazione si perdono acqua ed elettroliti, soprattutto sodio. Con il caldo il Ministero della Salute raccomanda di bere molti liquidi, almeno un litro e mezzo di acqua al giorno, e di mangiare frutta fresca.",
         ],
       },
@@ -723,7 +724,7 @@ export const ARTICOLI: Articolo[] = [
       },
     ],
     faq: [
-      { domanda: "Quanta acqua devo bere se mi alleno d’estate?", risposta: "Non esiste un numero unico: l’EFSA considera adeguati 2,0 litri al giorno per le donne e 2,5 per gli uomini, e chi suda molto ne ha bisogno di più. Un metodo pratico, indicato anche dall’ACSM, è pesarsi prima e dopo l’allenamento per stimare quanto liquido si perde." },
+      { domanda: "Quanta acqua devo bere se mi alleno d’estate?", risposta: "Non esiste un numero unico: l’EFSA considera adeguati 2,0 litri al giorno di acqua totale (bevande e cibi) per le donne e 2,5 per gli uomini, e chi suda molto ne ha bisogno di più. Un metodo pratico, indicato anche dall’ACSM, è pesarsi prima e dopo l’allenamento per stimare quanto liquido si perde." },
       { domanda: "Servono gli integratori di sali minerali?", risposta: "Per attività moderate o sotto i 45–60 minuti, secondo il CREA, bastano l’acqua e un’alimentazione ricca di frutta e verdura. Bevande con sali e zuccheri hanno senso negli sforzi intensi e prolungati, con molta sudorazione." },
       { domanda: "È meglio allenarsi la mattina o la sera d’estate?", risposta: "Nelle ore più fresche. Il Ministero della Salute raccomanda di evitare l’esercizio fisico nelle ore più calde e, durante le ondate di calore, l’esposizione diretta al sole tra le 11 e le 18." },
       { domanda: "Posso lasciare il pranzo in macchina o in spiaggia?", risposta: "No, se si tratta di un alimento deperibile. Usa una borsa termica con siberini e riponilo in frigorifero appena possibile." },
@@ -881,7 +882,7 @@ export const ARTICOLI: Articolo[] = [
             ["Decisioni", "Poche: il piatto è completo", "Molte: scegli ogni componente"],
             ["Valori", "Dichiarati per porzione", "Da sommare componente per componente"],
             ["Sapore", "Pensato come un’unica ricetta", "Dipende dagli abbinamenti"],
-            ["Personalizzazione", "Aggiunte sulla box", "Totale"],
+            ["Personalizzazione", "Aggiunte sulla box", "Libera: scegli ogni elemento"],
           ],
         },
         dopo: [
@@ -921,7 +922,7 @@ export const ARTICOLI: Articolo[] = [
       { domanda: "Un piatto già composto è un piatto pronto industriale?", risposta: "No. Nel caso di FUEL LAB sono piatti cucinati freschi da Matteo ogni giorno, con ingredienti e grammature dichiarati nella scheda." },
       { domanda: "Posso modificare un piatto?", risposta: "Puoi aggiungere alla box carboidrati, proteine, condimenti, verdure o snack. Per modifiche agli ingredienti, soprattutto in caso di allergie, chiedi prima a Matteo." },
       { domanda: "I macro sono per porzione o per 100 grammi?", risposta: "Nel menu FUEL LAB i valori si riferiscono alla porzione indicata in scheda. Per confrontarli con un’etichetta per 100 grammi, dividi per il peso della porzione e moltiplica per 100." },
-      { domanda: "Quanti piatti ci sono nel menu?", risposta: "Il menu ruota su un numero contenuto di piatti, così ogni ricetta resta curata. Trovi quelli disponibili, con i valori aggiornati, nella pagina del menu." },
+      { domanda: "Quanti piatti ci sono nel menu?", risposta: "Oggi sono sei, un numero contenuto perché ogni ricetta resti curata, e il menu può cambiare nel tempo. Trovi quelli in carta, con i valori aggiornati, nella pagina del menu; quali Matteo cucina nei giorni che ti servono te lo conferma lui." },
     ],
     fonti: [FONTI.creaEtichette],
   },
@@ -1078,7 +1079,7 @@ export const ARTICOLI: Articolo[] = [
     ],
     faq: [
       { domanda: "Quanto dura il meal prep in un frigorifero condiviso?", risposta: "Dipende da alimento, preparazione e temperatura del frigorifero. Le linee guida CREA parlano in genere di due o tre giorni per i cibi cotti: per questo conviene cucinare due volte a settimana, con contenitori chiusi ed etichettati." },
-      { domanda: "Studio a Chieti: posso avere i piatti FUEL LAB?", risposta: "Il ritiro è in Via del Santuario 214 a Pescara; la consegna in zona va verificata caso per caso. Scrivi a Matteo indicando indirizzo e giorni che ti interessano." },
+      { domanda: "Studio a Chieti: posso avere i piatti FUEL LAB?", risposta: "Il ritiro è in Via del Santuario 214 a Pescara. La consegna copre anche Chieti Scalo, ma la copertura del tuo indirizzo va confermata caso per caso: scrivi a Matteo indicando indirizzo e giorni che ti interessano." },
       { domanda: "Come faccio senza microonde in università?", risposta: "Scegli piatti pensati per essere mangiati freddi e tienili al fresco fino al pranzo, con borsa termica e siberini. I cibi deperibili non vanno lasciati a temperatura ambiente." },
       { domanda: "È meglio cucinare tutto la domenica?", risposta: "Non per forza. Due sessioni brevi, per esempio domenica e mercoledì, riducono i giorni di conservazione e la monotonia dei pasti." },
     ],
@@ -1206,12 +1207,12 @@ export const ARTICOLI: Articolo[] = [
       {
         titolo: "Proteine prima di dormire",
         paragrafi: [
-          "La posizione ISSN sulle proteine riporta che 30–40 grammi di caseine prima di dormire aumentano la sintesi proteica notturna. Le caseine sono le proteine principali del latte: le trovi nel latte, nello yogurt e in formaggi freschi come il quark.",
-          "Non è un obbligo né un trucco: è un’opzione per chi ha una cena presto e va a letto tardi, o per chi fatica ad arrivare alla propria quota di proteine. Uno yogurt prima di dormire, se ti va, fa questo lavoro senza bisogno di prodotti speciali.",
+          "La posizione ISSN sulle proteine riporta che 30–40 grammi di caseine prima di dormire aumentano la sintesi proteica notturna. Le caseine sono le proteine principali del latte: le trovi nel latte, nello yogurt e in formaggi freschi come il quark e la ricotta.",
+          "Non è un obbligo né un trucco: è un’opzione per chi ha una cena presto e va a letto tardi, o per chi fatica ad arrivare alla propria quota di proteine. Un vasetto di yogurt da solo è lontano da quelle quantità, e non serve rincorrere il numero: se vuoi provare, scegli un alimento semplice e non un prodotto speciale. Con disturbi digestivi o del sonno, chiedi prima al tuo medico.",
         ],
       },
       {
-        titolo: "Tre cene pronte in dieci minuti",
+        titolo: "Quattro cene pronte in dieci minuti",
         paragrafi: ["Idee per le sere in cui hai poco tempo e poca voglia di cucinare:"],
         punti: [
           "Uova, sugo di verdure e pane: sono le [uova alla purgatorio con sugo di peperoni](/menu/uova-purgatorio-peperoni), il piatto del menu con i valori energetici più contenuti.",
@@ -1540,7 +1541,8 @@ export const ARTICOLI: Articolo[] = [
             ["Pasta, riso, farro, orzo", "80 g", "Un piatto di pasta o di riso"],
             ["Pane", "50 g", "Una fetta media di pagnotta"],
             ["Patate", "200 g", "Due patate piccole"],
-            ["Verdure", "200 g", "Due o tre zucchine, un peperone, mezzo piatto di spinaci"],
+            ["Verdure (ortaggi)", "200 g", "Un contorno abbondante, per esempio zucchine o peperoni"],
+            ["Insalata a foglia", "80 g", "Una ciotola di insalata"],
             ["Carne", "100 g", "Una fettina, una fetta di petto di pollo"],
             ["Pesce", "150 g", "Un filetto medio"],
             ["Uova", "50 g", "Un uovo medio"],
@@ -2102,9 +2104,9 @@ export const ARTICOLI: Articolo[] = [
             ["Martedì", "Insalata di farro, ceci e pomodorini", "Filetto di merluzzo, patate, zucchine"],
             ["Mercoledì", "Uova in sugo di peperoni, pane", "Fesa di maiale, spinaci, patate"],
             ["Giovedì", "Pasta al pomodoro con ricotta, verdure", "Salmone al forno, riso, verdure"],
-            ["Venerdì", "Zuppa di fagioli e orzo, pane", "Pollo alla piastra, patate al forno, insalata"],
+            ["Venerdì", "Zuppa di fagioli e orzo, pane", "Frittata al forno con verdure, patate, insalata"],
           ],
-          nota: "Pesce 2 volte, legumi 3, uova 1, carne 3, latticini 1: un esempio da adattare a gusti e disponibilità.",
+          nota: "Pesce 2 volte, legumi 3, uova 2, carne 2, latticini 1: un esempio da adattare a gusti e disponibilità.",
         },
         dopo: ["Non serve seguirlo alla lettera: conta che nell’arco della settimana compaiano fonti diverse e che nessuna occupi da sola metà dei pasti."],
       },
@@ -2253,7 +2255,7 @@ export const ARTICOLI: Articolo[] = [
         titolo: "Zona e indirizzo",
         paragrafi: [
           "La prima domanda è la più banale e la più importante: il servizio arriva al tuo indirizzo? Un servizio locale ha spesso una zona precisa e percorsi legati ai giorni di consegna. Scrivere solo ‘consegnate a Pescara?’ produce una risposta generica; meglio indicare comune, via e numero civico, e se l’indirizzo è di casa o del lavoro.",
-          "FUEL LAB consegna a Pescara, Montesilvano, Spoltore, Francavilla al Mare, San Giovanni Teatino e Chieti Scalo, con la copertura del singolo indirizzo confermata prima dell’ordine. Se il tuo comune non c’è, resta il ritiro in Via del Santuario 214. I dettagli sono nella pagina sulla [consegna pasti a Pescara](/consegna-pasti-pescara).",
+          `FUEL LAB consegna a ${elencoZone()}, con la copertura del singolo indirizzo confermata prima dell’ordine. Se il tuo comune non c’è, resta il ritiro in ${INDIRIZZO.via}. I dettagli sono nella pagina sulla [consegna pasti a Pescara](/consegna-pasti-pescara).`,
         ],
       },
       {
@@ -2559,6 +2561,29 @@ export const LINK_TESTO = /\[([^\]]+)\]\(([^)\s]+)\)/g;
 export function testoSemplice(testo: string): string {
   return testo.replace(LINK_TESTO, "$1");
 }
+
+/**
+ * Spazi che non devono andare a capo: "4 °C", "20 g", "7 min". Il numero e la
+ * sua unità restano sulla stessa riga; gli intervalli ("20–40") li protegge
+ * Testo con uno span, perché un trattino lungo permette l’a capo.
+ */
+export function unisciUnita(testo: string): string {
+  return testo.replace(
+    /(\d) (°C|%|kcal|kg|g|ml|min|minuti|ore|ora|giorni|giorno|litri|litro|grammi|chili)(?![\p{L}\p{N}])/gu,
+    "$1 $2",
+  );
+}
+
+/**
+ * Una tabella "breve" ha celle di poche parole: sta in colonne anche a 390px.
+ * Le altre, a quella larghezza, si leggono meglio come una scheda per riga.
+ */
+export function tabellaBreve(tabella: TabellaArticolo): boolean {
+  return tabella.intestazioni.length <= 4 && tabella.righe.every((riga) => riga.every((cella) => cella.length <= 30));
+}
+
+/** Un intervallo di numeri, con l’eventuale unità già unita da unisciUnita. */
+export const INTERVALLO_NUMERICO = /(\d+(?:,\d+)?–\d+(?:,\d+)?(?: [^\s,.;:)]+)?)/g;
 
 /** Tutti i testi di un articolo, approfondimento compreso, nell’ordine di lettura. */
 export function testiArticolo(articolo: Articolo): string[] {

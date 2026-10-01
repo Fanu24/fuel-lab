@@ -94,7 +94,7 @@ function Esito({
   return (
     <div className="notte p-6 md:p-12">
       <p className="occhiello">Messaggio inviato</p>
-      <h3 ref={titolo} tabIndex={-1} className="titolo-s mt-5 max-w-[20ch] outline-none">
+      <h3 ref={titolo} tabIndex={-1} className="titolo-s mt-5 max-w-[20ch] [overflow-wrap:anywhere] outline-none focus-visible:shadow-none">
         Grazie{inviato.nome ? `, ${inviato.nome.split(" ")[0]}` : ""}. Matteo ha il tuo messaggio.
       </h3>
       <p className="mt-5 max-w-[52ch] break-words text-steel">
@@ -304,6 +304,7 @@ export default function ModuloContatto({
                   type="tel"
                   inputMode="tel"
                   autoComplete="tel"
+                  placeholder="es. 333 123 4567"
                   value={dati.telefono}
                   onChange={(e) => aggiorna("telefono", e.target.value)}
                   maxLength={LIMITI.telefono}

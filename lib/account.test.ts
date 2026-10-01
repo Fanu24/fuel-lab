@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   campiMancanti,
+  CHIAVE_BOZZA_RICHIESTA,
   confermaEliminazione,
   contaPiatti,
   corpoRichiesta,
@@ -8,8 +9,10 @@ import {
   descriviEvento,
   descrizioneInizioAbbonamento,
   destinazioneSicura,
+  eSessioneScaduta,
   emailValida,
   erroreDiRitorno,
+  erroreTelefono,
   fasciaDa,
   formattaGiorno,
   formulaDa,
@@ -17,6 +20,7 @@ import {
   hrefAccedi,
   hrefSezione,
   iniziale,
+  leggiBozza,
   limitiDataRichiesta,
   messaggioDa,
   modoDa,
@@ -24,6 +28,7 @@ import {
   nomeFileDati,
   nomeServizioRichiesta,
   ORDINE_CAMPI_RICHIESTA,
+  passiDiAvvio,
   passiOrdine,
   passwordAccettabile,
   periodoRichiesta,
@@ -31,14 +36,17 @@ import {
   primoNome,
   prossimaConsegna,
   prossimaUscitaDi,
+  quandoRichiesta,
   SERVIZIO_CON_PIATTI,
   requisitiPassword,
   righePiano,
   schedaAbbonamento,
+  serializzaBozza,
   servizioDa,
   sezioneDa,
   spostaGiorni,
   stimaAbbonamento,
+  TELEFONO_MAX,
   traduciErroreAuth,
   validaRichiesta,
   type DatiRichiesta,
@@ -175,9 +183,19 @@ describe("traduciErroreAuth", () => {
     expect(traduciErroreAuth({ status: 429, message: "Too many requests" }, "accesso").tipo).toBe("troppi");
     expect(traduciErroreAuth({ status: 0 }, "accesso").tipo).toBe("rete");
     expect(traduciErroreAuth({ status: 503 }, "accesso").messaggio).toMatch(/non disponibile/);
+    expect(traduciErroreAuth({ status: 413 }, "registrazione").messaggio).toMatch(/troppo lunghi/);
     expect(traduciErroreAuth({ status: 404 }, "elimina").tipo).toBe("non-attivo");
     expect(traduciErroreAuth({ status: 403 }, "elimina").tipo).toBe("vietato");
     expect(traduciErroreAuth({ code: "ADMIN_ACCOUNT_PROTECTED", status: 403 }, "elimina").messaggio).toMatch(/protetto/);
+  });
+
+  it("un 401 senza codice dentro l'area cliente e' la sessione finita", () => {
+    for (const contesto of ["cambio-password", "elimina", "nome", "esci"] as const) {
+      expect(traduciErroreAuth({ status: 401 }, contesto)).toEqual({ tipo: "sessione", messaggio: "La sessione è scaduta. Accedi di nuovo e riprova." });
+    }
+    // All'accesso un 401 e' una password sbagliata, ha il suo codice e il suo messaggio.
+    expect(traduciErroreAuth({ code: "INVALID_EMAIL_OR_PASSWORD", status: 401 }, "accesso").tipo).toBe("credenziali");
+    expect(traduciErroreAuth({ status: 401 }, "accesso").tipo).toBe("altro");
   });
 
   it("non mostra mai il testo inglese del server", () => {
@@ -197,6 +215,14 @@ describe("traduciErroreAuth", () => {
     expect(messaggioDa(new ApiError("Richiesta non trovata", 404))).toBe("Richiesta non trovata");
     expect(messaggioDa(new Error("boom"), "Ripiego")).toBe("Ripiego");
   });
+
+  it("un 401 vale sempre la stessa frase, qualunque cosa dica la rotta", () => {
+    expect(eSessioneScaduta(new ApiError("Accedi prima di inviare una richiesta", 401))).toBe(true);
+    expect(eSessioneScaduta(new ApiError("Richiesta non trovata", 404))).toBe(false);
+    expect(eSessioneScaduta(new Error("boom"))).toBe(false);
+    expect(messaggioDa(new ApiError("Accedi per salvare il piano", 401))).toBe("La sessione è scaduta. Accedi di nuovo e riprova.");
+    expect(messaggioDa(new ApiError("Accedi per continuare", 401), "Ripiego")).toMatch(/Accedi di nuovo/);
+  });
 });
 
 describe("nomi", () => {
@@ -212,6 +238,23 @@ describe("nomi", () => {
 });
 
 describe("profilo", () => {
+  it("controlla com'e' scritto un telefono: caratteri, lunghezza, cifre", () => {
+    for (const buono of ["333 1234567", "+39 333 123 4567", "(+39) 333-123-4567", "085/1234567", "0039.333.1234567", " 3331234567 "]) {
+      expect(erroreTelefono(buono)).toBeNull();
+    }
+    expect(erroreTelefono("")).toBeNull();
+    expect(erroreTelefono("   ")).toBeNull();
+    expect(erroreTelefono("333 123")).toMatch(/troppo corto/);
+    expect(erroreTelefono("333 1234567 Marco")).toMatch(/solo cifre/);
+    expect(erroreTelefono("chiamami")).toMatch(/solo cifre/);
+    expect(erroreTelefono("333 1234567\n3331234567")).toMatch(/solo cifre|lungo/);
+    // Troppo lungo come scrittura (20 caratteri al massimo) e troppe cifre (15 al massimo).
+    expect(erroreTelefono("+39 333 123 45 67 89 01")).toMatch(/troppo lungo/);
+    expect(erroreTelefono("3331234567890123")).toMatch(/troppe cifre/);
+    expect(erroreTelefono("333123456789012")).toBeNull();
+    expect(TELEFONO_MAX).toBe(20);
+  });
+
   it("dice cosa manca per inviare una richiesta", () => {
     expect(campiMancanti(null)).toEqual(["telefono", "comune"]);
     expect(campiMancanti({ phone: "333 123", comune: "Pescara", address: "", preferences: "" })).toEqual(["telefono"]);
@@ -356,6 +399,25 @@ describe("stato degli ordini", () => {
     expect(prossimaConsegna([ordini[0]], "2026-09-27")).toBeNull();
   });
 
+  it("dice quando, e per una richiesta annullata non dice niente", () => {
+    const oggi = "2026-09-30";
+    expect(quandoRichiesta(ordine({ status: "confirmed", fulfillment_date: "2026-10-03", fulfillment: "pickup" }), oggi))
+      .toEqual({ etichetta: "Ritiro", valore: "sabato 3 ottobre" });
+    expect(quandoRichiesta(ordine({ status: "confirmed", fulfillment_date: "2026-10-03", fulfillment: "delivery" }), oggi)?.etichetta).toBe("Consegna");
+    expect(quandoRichiesta(ordine({ status: "requested", requested_date: "2026-10-05" }), oggi))
+      .toEqual({ etichetta: "Giorno preferito", valore: "lunedì 5 ottobre, da confermare" });
+    expect(quandoRichiesta(ordine({ status: "requested" }), oggi)).toEqual({ etichetta: "Ritiro", valore: "Da concordare" });
+    expect(quandoRichiesta(ordine({ status: "requested", fulfillment: "delivery" }), oggi)?.etichetta).toBe("Consegna");
+    const abb = ordine({ service: "abbonamento", status: "requested", requested_date: "2026-10-05" });
+    expect(quandoRichiesta(abb, oggi)?.etichetta).toBe("Inizio desiderato");
+    expect(quandoRichiesta({ ...abb, requested_date: null }, oggi)).toEqual({ etichetta: "Inizio", valore: "Da concordare" });
+    expect(quandoRichiesta({ ...abb, status: "confirmed", fulfillment_date: "2026-10-05" }, oggi))
+      .toEqual({ etichetta: "Periodo", valore: "dal 5 ottobre al 4 novembre" });
+    // Matteo aveva scritto il giorno, poi ha annullato: quel giorno non e' piu' fissato.
+    expect(quandoRichiesta(ordine({ status: "cancelled", fulfillment_date: "2026-10-03", requested_date: "2026-10-03" }), oggi)).toBeNull();
+    expect(quandoRichiesta({ ...abb, status: "cancelled", fulfillment_date: "2026-10-05" }, oggi)).toBeNull();
+  });
+
   it("racconta la cronologia", () => {
     const base: EventoOrdine = { id: 1, actor: "admin", type: "created", from_status: null, to_status: null, detail: "", created_at: "" };
     expect(descriviEvento(base).titolo).toBe("Richiesta inviata");
@@ -407,6 +469,14 @@ describe("nuova richiesta", () => {
     expect(Object.keys(e).sort()).toEqual(["comune", "data", "indirizzo", "nome", "telefono"]);
     expect(validaRichiesta({ ...buona, data: "2027-01-10" }, limiti).data).toMatch(/90/);
     expect(validaRichiesta({ ...buona, note: "x".repeat(1501) }, limiti).note).toBeTruthy();
+  });
+
+  it("il telefono della richiesta: obbligatorio e scritto come un numero", () => {
+    expect(validaRichiesta({ ...buona, telefono: "" }, limiti).telefono).toMatch(/Serve un numero/);
+    expect(validaRichiesta({ ...buona, telefono: "  " }, limiti).telefono).toMatch(/Serve un numero/);
+    expect(validaRichiesta({ ...buona, telefono: "chiamami" }, limiti).telefono).toMatch(/solo cifre/);
+    expect(validaRichiesta({ ...buona, telefono: "+39 333 1234567 890 1234" }, limiti).telefono).toMatch(/troppo lungo/);
+    expect(validaRichiesta({ ...buona, telefono: "+39 333 123 4567" }, limiti)).toEqual({});
   });
 
   it("rifiuta un giorno in cui Matteo e' chiuso, e dice fino a quando", () => {
@@ -512,6 +582,70 @@ describe("nuova richiesta", () => {
     const corpo = corpoRichiesta({ ...buona, nome: " Maria ", data: "2026-10-01" }, {}, { lun: "pesi" });
     expect(corpo).toMatchObject({ name: "Maria", requestedDate: "2026-10-01", fulfillment: "pickup", training: { lun: "pesi" } });
     expect(corpoRichiesta(buona, {}, {}).requestedDate).toBeNull();
+  });
+
+  describe("la bozza", () => {
+    const min = "2026-09-28";
+    const ricerca = "?sezione=richiesta&servizio=abbonamento";
+    const lunga: DatiRichiesta = { ...buona, servizio: "abbonamento", formula: "full6", fascia: "plus", nucleo: "coppia", prova: false, data: "2026-10-05", note: "Piano: 2200 kcal." };
+
+    it("si salva e si ritrova uguale, per lo stesso utente e lo stesso indirizzo", () => {
+      const raw = serializzaBozza("u1", ricerca, lunga);
+      expect(leggiBozza(raw, "u1", ricerca, min)).toEqual(lunga);
+      expect(CHIAVE_BOZZA_RICHIESTA).toMatch(/bozza-richiesta/);
+    });
+
+    it("non passa a un altro utente ne' a un altro link del sito", () => {
+      const raw = serializzaBozza("u1", ricerca, lunga);
+      expect(leggiBozza(raw, "u2", ricerca, min)).toBeNull();
+      expect(leggiBozza(raw, "u1", "?sezione=richiesta&servizio=abbonamento&formula=completo", min)).toBeNull();
+      expect(leggiBozza(raw, "u1", "", min)).not.toBeNull();
+    });
+
+    it("chi torna dal menu dell'area cliente (nessuna scelta nell'indirizzo) ritrova quello che scriveva", () => {
+      const raw = serializzaBozza("u1", ricerca, lunga);
+      expect(leggiBozza(raw, "u1", "sezione=richiesta", min)).toEqual(lunga);
+      expect(leggiBozza(raw, "u1", "?sezione=richiesta", min)).toEqual(lunga);
+      // ...ma non se arriva con una scelta sua: quella vale piu' della bozza.
+      expect(leggiBozza(raw, "u1", "sezione=richiesta&servizio=home-cooking", min)).toBeNull();
+    });
+
+    it("scarta un giorno gia' passato e tiene il resto", () => {
+      const raw = serializzaBozza("u1", ricerca, { ...lunga, data: "2026-09-27" });
+      expect(leggiBozza(raw, "u1", ricerca, min)).toEqual({ ...lunga, data: "" });
+    });
+
+    it("rifiuta tutto cio' che non e' una bozza intera: e' sessionStorage, si puo' riscrivere a mano", () => {
+      for (const raw of [null, undefined, "", "non json", "null", "[]", '{"v":2}', JSON.stringify({ v: 1, utente: "u1", ricerca })]) {
+        expect(leggiBozza(raw, "u1", ricerca, min)).toBeNull();
+      }
+      const rotta = (campo: Partial<Record<keyof DatiRichiesta, unknown>>) =>
+        leggiBozza(JSON.stringify({ v: 1, utente: "u1", ricerca, dati: { ...lunga, ...campo } }), "u1", ricerca, min);
+      expect(rotta({ servizio: "constructor" })).toBeNull();
+      expect(rotta({ servizio: "pizza" })).toBeNull();
+      expect(rotta({ modalita: "drone" })).toBeNull();
+      expect(rotta({ formula: "full8" })).toBeNull();
+      expect(rotta({ fascia: "oro" })).toBeNull();
+      expect(rotta({ nucleo: "branco" })).toBeNull();
+      expect(rotta({ prova: "si" })).toBeNull();
+      // I testi si tengono ma dentro i limiti che il server accetta.
+      expect(rotta({ note: "x".repeat(2000) })?.note).toHaveLength(1500);
+      expect(rotta({ nome: 42 })?.nome).toBe("");
+      expect(rotta({ data: "domani" })?.data).toBe("");
+    });
+  });
+});
+
+describe("da dove cominciare", () => {
+  it("dice a che punto e' un cliente nuovo", () => {
+    expect(passiDiAvvio({ profiloCompleto: false, piatti: 0 })).toEqual([
+      { id: "scelta", fatto: false }, { id: "profilo", fatto: false }, { id: "invio", fatto: false },
+    ]);
+    expect(passiDiAvvio({ profiloCompleto: true, piatti: 4 }).map((p) => p.fatto)).toEqual([true, true, false]);
+    expect(passiDiAvvio({ profiloCompleto: true, piatti: 0 }).map((p) => p.fatto)).toEqual([false, true, false]);
+    // Profilo non ancora letto: non e' ne' fatto ne' sbagliato, e non si dichiara fatto a caso.
+    expect(passiDiAvvio({ profiloCompleto: null, piatti: 0 })[1].fatto).toBe(false);
+    expect(passiDiAvvio({ profiloCompleto: true, piatti: 0 }).map((p) => p.id)).toEqual(["scelta", "profilo", "invio"]);
   });
 });
 

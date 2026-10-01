@@ -2,6 +2,7 @@ import { eFascia, eFormulaId } from "./abbonamento";
 import { ApiError, ETICHETTE_ARGOMENTO, type ArgomentoMessaggio, type NuovoMessaggio } from "./api";
 import { getExtra, getPiatto } from "./catalogo";
 import { GIORNI, NOMI_GIORNO, PASTI, type Pasto, type Piano } from "./settimana";
+import { EMAIL, INDIRIZZO as DATI_INDIRIZZO, INDIRIZZO_RIGA, LINK_MAPPA } from "./sito";
 import { messaggioAbbonamento, senzaSaluto, type SceltaMessaggio } from "./whatsapp";
 
 /* =========================================================================
@@ -19,22 +20,26 @@ import { messaggioAbbonamento, senzaSaluto, type SceltaMessaggio } from "./whats
    un secondo.
    ========================================================================= */
 
-/** Recapiti pubblici di FUEL LAB: un posto solo per pagina, JSON-LD e link. */
-export const EMAIL_CONTATTI = "info@fuelchef.it";
+/*
+ * Recapiti pubblici di FUEL LAB: li legge da lib/sito.ts, l'unico posto dove
+ * stanno il nome, l'indirizzo e l'email (il "NAP" deve essere identico ovunque).
+ * Qui cambiano solo i nomi dei campi, che i componenti del contatto usano cosi'.
+ */
+export const EMAIL_CONTATTI = EMAIL;
 
 export const INDIRIZZO = {
-  via: "Via del Santuario 214",
-  cap: "65124",
-  comune: "Pescara",
-  provincia: "PE",
-  paese: "IT",
+  via: DATI_INDIRIZZO.via,
+  cap: DATI_INDIRIZZO.cap,
+  comune: DATI_INDIRIZZO.citta,
+  provincia: DATI_INDIRIZZO.provincia,
+  paese: DATI_INDIRIZZO.nazione,
 } as const;
 
-export const INDIRIZZO_COMPLETO = `${INDIRIZZO.via}, ${INDIRIZZO.cap} ${INDIRIZZO.comune} (${INDIRIZZO.provincia})`;
+export const INDIRIZZO_COMPLETO = INDIRIZZO_RIGA;
 
 /** Google Maps per indirizzo: nessuna chiave, nessuna mappa incorporata, nessun cookie di terzi sulla pagina. */
-export function linkMappa(indirizzo: string = INDIRIZZO_COMPLETO): string {
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(indirizzo)}`;
+export function linkMappa(indirizzo?: string): string {
+  return indirizzo ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(indirizzo)}` : LINK_MAPPA;
 }
 
 /**
@@ -48,6 +53,8 @@ export const LIMITI = {
   telefono: 40,
   comune: 100,
   telefonoCifre: 9,
+  /** Come il server (lib/server/contatti.ts): oltre le 15 cifre non e' un numero, nemmeno col prefisso internazionale. */
+  telefonoCifreMax: 15,
   messaggioMin: 10,
   messaggioMax: 3000,
 } as const;
@@ -115,7 +122,8 @@ export function cifreTelefono(telefono: string): number {
 
 export function telefonoValido(telefono: string): boolean {
   const t = telefono.trim();
-  return t.length <= LIMITI.telefono && cifreTelefono(t) >= LIMITI.telefonoCifre;
+  const cifre = cifreTelefono(t);
+  return t.length <= LIMITI.telefono && cifre >= LIMITI.telefonoCifre && cifre <= LIMITI.telefonoCifreMax;
 }
 
 /** Quello che l'utente ha scritto, cosi' come sta nei campi. */
@@ -172,6 +180,7 @@ export function validaModulo(d: DatiModulo, allegato = ""): ErroriModulo {
   } else {
     if (email && !emailValida(email)) e.email = "Questa email non sembra completa: controlla la @ e la parte dopo il punto (es. nome@gmail.com).";
     if (telefono && telefono.length > LIMITI.telefono) e.telefono = "Il numero è troppo lungo: scrivi solo le cifre, con il prefisso se serve.";
+    else if (telefono && cifreTelefono(telefono) > LIMITI.telefonoCifreMax) e.telefono = `Il numero ha troppe cifre: al massimo ${LIMITI.telefonoCifreMax}, prefisso compreso (es. +39 333 123 4567).`;
     else if (telefono && !telefonoValido(telefono)) e.telefono = `Il numero sembra troppo corto: servono almeno ${LIMITI.telefonoCifre} cifre.`;
   }
 

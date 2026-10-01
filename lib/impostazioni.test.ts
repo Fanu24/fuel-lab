@@ -7,12 +7,15 @@ import {
   durata,
   erroreDataChiusa,
   fraseChiusura,
+  GIORNI_CHIUSURA_LUNGA,
   linkInterno,
+  ordiniApertiConPiatto,
   periodo,
   potaImpostazioni,
   settimanaProssima,
+  sovrapposizioni,
 } from "./impostazioni";
-import { impostazioniVuote, type Chiusura } from "./api";
+import { impostazioniVuote, type Chiusura, type Ordine } from "./api";
 
 const OGGI = "2026-09-27"; // domenica
 
@@ -134,5 +137,52 @@ describe("caselleEscluse", () => {
       { g: "gio", m: "cena", piattoId: "noodles-sesamo-maiale" },
     ]);
     expect(caselleEscluse(piano, [])).toEqual([]);
+  });
+});
+
+describe("sovrapposizioni", () => {
+  it("dice con quale chiusura (numero da 1) ogni riga si sovrappone, 0 se con nessuna", () => {
+    const righe = [
+      { dal: "2026-12-01", al: "2026-12-06" },
+      { dal: "2026-12-06", al: "2026-12-10" }, // tocca la prima nell'ultimo giorno
+      { dal: "2026-12-20", al: "2026-12-21" },
+      { dal: "2026-12-11", al: "2026-12-12" }, // il giorno dopo la seconda: nessuna sovrapposizione
+    ];
+    expect(sovrapposizioni(righe)).toEqual([2, 1, 0, 0]);
+  });
+
+  it("le righe a meta' (date vuote o al contrario) non contano e non segnano le altre", () => {
+    const righe = [
+      { dal: "2026-12-01", al: "2026-12-10" },
+      { dal: "", al: "" },
+      { dal: "2026-12-09", al: "2026-12-02" },
+      { dal: "2026-12-05", al: "" },
+    ];
+    expect(sovrapposizioni(righe)).toEqual([0, 0, 0, 0]);
+    expect(sovrapposizioni([])).toEqual([]);
+  });
+
+  it("un anno sbagliato fa una chiusura lunghissima: sopra la soglia si segnala", () => {
+    expect(durata({ dal: "2026-12-01", al: "2027-11-30" })).toBeGreaterThan(GIORNI_CHIUSURA_LUNGA);
+    expect(durata({ dal: "2026-12-01", al: "2026-12-14" })).toBeLessThanOrEqual(GIORNI_CHIUSURA_LUNGA);
+  });
+});
+
+describe("ordiniApertiConPiatto", () => {
+  const ordine = (status: Ordine["status"], piatti: string[]) =>
+    ({ status, items: piatti.map((id) => ({ id, name: id, day: "lun", meal: "pranzo", extras: [] })) }) as unknown as Ordine;
+
+  it("conta gli ordini ancora aperti con il piatto e le sue porzioni, non quelli chiusi", () => {
+    const ordini = [
+      ordine("requested", ["noodles-sesamo-maiale", "noodles-sesamo-maiale", "pallotte-cacio-ovo"]),
+      ordine("confirmed", ["noodles-sesamo-maiale"]),
+      ordine("preparing", ["pallotte-cacio-ovo"]),
+      ordine("ready", ["noodles-sesamo-maiale"]),
+      ordine("completed", ["noodles-sesamo-maiale"]),
+      ordine("cancelled", ["noodles-sesamo-maiale"]),
+    ];
+    expect(ordiniApertiConPiatto(ordini, "noodles-sesamo-maiale")).toEqual({ ordini: 2, porzioni: 3 });
+    expect(ordiniApertiConPiatto(ordini, "uova-purgatorio-peperoni")).toEqual({ ordini: 0, porzioni: 0 });
+    expect(ordiniApertiConPiatto([], "noodles-sesamo-maiale")).toEqual({ ordini: 0, porzioni: 0 });
   });
 });

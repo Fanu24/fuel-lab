@@ -1,9 +1,14 @@
 "use client";
 
-/* Su "Oggi", sotto il saluto: le impostazioni che toccano questi giorni.
+/* Su "Oggi": le impostazioni che toccano questi giorni.
    Una chiusura oggi o nei prossimi sette giorni, e i piatti segnati come non
    disponibili, perche' Matteo non se ne dimentichi quando la settimana cambia.
-   Niente da dire, niente riquadro. */
+   Niente da dire, niente riquadro.
+
+   Si mette in due punti: "adesso" (sopra "Da fare adesso") solo se oggi Matteo e'
+   chiuso, perche' cambia il senso di tutto il resto; "dopo" (sotto) le chiusure
+   in arrivo e i piatti spenti, che sul telefono non devono spingere in basso
+   la cosa piu' urgente. */
 
 import Link from "next/link";
 import { getPiatto } from "@/lib/catalogo";
@@ -18,16 +23,20 @@ function quanto(dal: string, oggi: string): string {
   return giorni <= 0 ? "oggi" : giorni === 1 ? "domani" : `tra ${giorni} giorni`;
 }
 
-export default function OggiImpostazioni({ oggi }: { oggi: string }) {
-  const { stato, impostazioni } = useImpostazioni({ fresche: true });
+export default function OggiImpostazioni({ oggi, parte = "dopo" }: { oggi: string; parte?: "adesso" | "dopo" }) {
+  // Una sola richiesta fresca: la prima istanza ricarica, l'altra legge quello che arriva.
+  const { stato, impostazioni } = useImpostazioni({ fresche: parte === "adesso" });
   if (stato === "attesa") return null;
-  const chiusure = chiusureVicine(impostazioni.chiusure, oggi, 7);
-  const esclusi = impostazioni.piattiNonDisponibili;
+  const vicine = chiusureVicine(impostazioni.chiusure, oggi, 7);
+  const chiusure = vicine.filter((c) => (c.dal <= oggi) === (parte === "adesso"));
+  const esclusi = parte === "dopo" ? impostazioni.piattiNonDisponibili : [];
   if (!chiusure.length && !esclusi.length) return null;
 
   return (
-    <section aria-labelledby="oggi-impostazioni" className="pn-imp-promemoria">
-      <h2 id="oggi-impostazioni" className="sr-only">Chiusure e piatti non disponibili</h2>
+    <section aria-labelledby={`oggi-impostazioni-${parte}`} className="pn-imp-promemoria">
+      <h2 id={`oggi-impostazioni-${parte}`} className="sr-only">
+        {parte === "adesso" ? "Oggi sei chiuso" : "Chiusure in arrivo e piatti non disponibili"}
+      </h2>
       <ul className="grid gap-2">
         {chiusure.map((c) => {
           const inCorso = c.dal <= oggi;

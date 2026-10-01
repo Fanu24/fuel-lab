@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useState, useSyncExternalStore } from "react";
+import { righePiano } from "@/lib/account";
 import { api } from "@/lib/api";
 import { ascoltaSettimana, leggiSettimana, scriviSettimana, usePiano } from "@/lib/piano";
 import {
@@ -284,8 +285,28 @@ export function SceltaVersione({
       </p>
       <p className="text-sm">
         Nell’account: {nAccount} {nAccount === 1 ? "pasto" : "pasti"}. Qui: {nQui} {nQui === 1 ? "pasto" : "pasti"}.
+        «Usa quella dell’account» sostituisce questa; «Tieni questa» sostituisce quella nell’account.
         Finché non scegli, questa non viene salvata.
       </p>
+      {nAccount > 0 ? (
+        <details className="acc-dettagli-piatti text-sm">
+          <summary>Vedi cosa c’è nell’account</summary>
+          <ul className="mt-2 grid gap-2">
+            {righePiano(account.piano).map((r) => (
+              <li key={r.giorno}>
+                <span className="font-semibold">{r.nome}</span>
+                {r.pasti.map((p) =>
+                  p.piatto || p.extra.length ? (
+                    <span key={p.pasto} className="block">
+                      <span className="capitalize">{p.pasto}</span> · {p.piatto ?? `solo aggiunte: ${p.extra.join(", ")}`}
+                    </span>
+                  ) : null,
+                )}
+              </li>
+            ))}
+          </ul>
+        </details>
+      ) : null}
       <div className="flex flex-wrap gap-3">
         <button type="button" className="btn btn-ink btn-sm" onClick={() => scegli(usaAccount)}>
           Usa quella dell’account

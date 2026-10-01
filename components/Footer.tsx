@@ -10,11 +10,15 @@ import {
   LINK_MAPPA,
   NOME_ATTIVITA,
   PARTITA_IVA,
+  QUANDO_CUCINA,
   RAGIONE_SOCIALE,
   TELEFONO,
   TITOLARE,
   elencoZone,
 } from "@/lib/sito";
+
+/* I link di servizio del footer: sottolineati, alti 44 px (l'area da toccare), lime al passaggio. */
+const LINK_FOOTER = "inline-flex min-h-11 items-center underline underline-offset-4 hover:text-lime";
 
 /* Il footer porta il NAP (nome, indirizzo, contatti) scritto sempre uguale,
    letto da lib/sito.ts come i dati strutturati: Google confronta le due
@@ -66,26 +70,25 @@ export default function Footer() {
               />
             </Link>
             <p className="mt-8 max-w-[36ch] text-steel">
-              Meal prep fresco a Pescara per chi si allena. Matteo cucina ogni giorno: ritiro in sede o consegna in
-              zona, tutti i giorni.
+              Meal prep fresco a Pescara per chi si allena. {QUANDO_CUCINA}. Ritiro in sede o consegna in zona: giorno
+              e orario li concordi con lui.
             </p>
-            <address className="mt-6 not-italic text-steel">
-              <strong className="font-semibold text-paper">{NOME_ATTIVITA}</strong> · {TITOLARE.nome}
-              <br />
-              <a href={LINK_MAPPA} target="_blank" rel="noopener noreferrer" className="underline underline-offset-4 hover:text-lime">
+            {/* Una riga per contatto, alta quanto un dito: l'indirizzo e l'email sono i link piu' toccati. */}
+            <address className="mt-4 grid not-italic text-steel">
+              <p className="py-1">
+                <strong className="font-semibold text-paper">{NOME_ATTIVITA}</strong> · {TITOLARE.nome}
+              </p>
+              <a href={LINK_MAPPA} target="_blank" rel="noopener noreferrer" className={LINK_FOOTER}>
                 {INDIRIZZO_RIGA}
+                <span className="sr-only"> (apre la mappa in una nuova scheda)</span>
               </a>
-              <br />
-              <a href={`mailto:${EMAIL}`} className="underline underline-offset-4 hover:text-lime">
+              <a href={`mailto:${EMAIL}`} className={LINK_FOOTER}>
                 {EMAIL}
               </a>
               {TELEFONO ? (
-                <>
-                  <br />
-                  <a href={`tel:${TELEFONO.replace(/\s/g, "")}`} className="underline underline-offset-4 hover:text-lime">
-                    {TELEFONO}
-                  </a>
-                </>
+                <a href={`tel:${TELEFONO.replace(/\s/g, "")}`} className={LINK_FOOTER}>
+                  {TELEFONO}
+                </a>
               ) : null}
             </address>
             <WhatsAppCta className="mt-8" buttonClassName="justify-between" />
@@ -99,7 +102,7 @@ export default function Footer() {
                   <li key={v.href}>
                     <Link
                       href={v.href}
-                      className="inline-flex min-h-11 items-center font-disp text-lg font-semibold uppercase tracking-[.06em] hover:text-lime"
+                      className="inline-flex min-h-11 items-center font-disp text-lg font-semibold uppercase tracking-[.06em] hover:text-lime md:text-sm lg:text-lg"
                     >
                       {v.label}
                     </Link>
@@ -119,21 +122,25 @@ export default function Footer() {
           .
         </p>
 
-        <div
-          className="mt-10 flex flex-wrap justify-between gap-4 border-t pt-6 text-sm text-steel"
-          style={{ borderColor: "var(--line)" }}
-        >
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-            <p>© {NOME_ATTIVITA} · {TITOLARE.nome} · {INDIRIZZO.citta}</p>
-            <p>
-              {RAGIONE_SOCIALE && PARTITA_IVA
-                ? `${RAGIONE_SOCIALE} · P. IVA ${PARTITA_IVA}`
-                : "Ragione sociale e P. IVA: in aggiornamento"}
-            </p>
-            <Link href="/privacy" className="underline underline-offset-4 hover:text-lime">Privacy e cookie</Link>
-            <PrivacySettingsButton />
-          </div>
-          <p><Link href="/account" className="underline underline-offset-4">Area cliente</Link> · Nessun pagamento online: ordine e disponibilità si confermano con Matteo.</p>
+        <div className="mt-10 border-t pt-4 text-sm text-steel" style={{ borderColor: "var(--line)" }}>
+          <ul className="flex flex-wrap gap-x-6">
+            <li>
+              <Link href="/privacy" className={LINK_FOOTER}>Privacy e cookie</Link>
+            </li>
+            <li>
+              <PrivacySettingsButton className={LINK_FOOTER} />
+            </li>
+            <li>
+              <Link href="/account" className={LINK_FOOTER}>Area cliente</Link>
+            </li>
+          </ul>
+          <p className="mt-4">
+            © {NOME_ATTIVITA} · {TITOLARE.nome} · {INDIRIZZO.citta} ·{" "}
+            {RAGIONE_SOCIALE && PARTITA_IVA
+              ? `${RAGIONE_SOCIALE} · P. IVA ${PARTITA_IVA}`
+              : "Ragione sociale e P. IVA: in aggiornamento"}
+          </p>
+          <p className="mt-1">Nessun pagamento online: ordine e disponibilità si confermano con Matteo.</p>
         </div>
       </div>
     </footer>

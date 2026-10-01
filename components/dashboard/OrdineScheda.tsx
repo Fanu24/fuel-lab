@@ -11,7 +11,7 @@
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type MouseEvent, type SyntheticEvent } from "react";
 import { api, ApiError, ETICHETTE_SERVIZIO, type DettaglioOrdine, type Ordine } from "@/lib/api";
-import { periodoDi } from "@/lib/operazioni";
+import { inRitardo, periodoDi } from "@/lib/operazioni";
 import { dettaglioAbbonamento, eAbbonamento, pastiDelPeriodo } from "@/lib/produzione";
 import { Icona } from "./PannelloIcone";
 import { usePannello } from "./PannelloDati";
@@ -141,13 +141,18 @@ export default function OrdineScheda({ id, onChiudi }: { id: string; onChiudi: (
     dallaLista && (!dettaglio || dallaLista.updated_at > dettaglio.updated_at) ? dallaLista : (dettaglio ?? dallaLista ?? null);
   const nonTrovato = !ordine && erroreDettaglio && (erroreDettaglio.status === 404 || ordini !== null);
 
-  // Le righe secondarie di un abbonamento (formula, pasti del periodo, quando e' arrivato) sono lunghe: nella
-  // testata fissa mangiano meta' dello schermo di un telefono con la tastiera aperta. Sul telefono stanno in cima
-  // all'area che scorre, dal tablet in su restano nella testata.
+  // Le righe secondarie (periodo e formula di un abbonamento, pasti del periodo, quando e' arrivato) sono lunghe:
+  // nella testata fissa mangiano meta' dello schermo di un telefono con la tastiera aperta. Sul telefono stanno in
+  // cima all'area che scorre, dal tablet in su restano nella testata.
   const dettaglioAbb =
     ordine && eAbbonamento(ordine)
       ? `${dettaglioAbbonamento(ordine)}${pastiDelPeriodo(ordine) !== null ? ` · ${pastiDelPeriodo(ordine)} pasti nel periodo` : ""}`
       : null;
+  const rigaOrdine = ordine
+    ? eAbbonamento(ordine)
+      ? `${periodoDi(ordine, oggi) ?? "Inizio da fissare"} · ${ordine.fulfillment === "pickup" ? "Ritiro" : "Consegna"} ogni 3 giorni`
+      : `${ordine.meals} ${ordine.meals === 1 ? "pasto" : "pasti"} · ${ordine.fulfillment === "pickup" ? "Ritiro" : "Consegna"}`
+    : "";
   const ricevuto = ordine ? (
     <>
       {ETICHETTE_SERVIZIO[ordine.service] ?? ordine.service} · ricevuto {faTempo(ordine.created_at)} ({quando(ordine.created_at)})
@@ -174,14 +179,19 @@ export default function OrdineScheda({ id, onChiudi }: { id: string; onChiudi: (
                 <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[16px]">
                   <Stato stato={ordine.status} grande ritiro={ordine.fulfillment === "pickup"} abbonamento={eAbbonamento(ordine)} />
                   {eAbbonamento(ordine) ? <SegnoAbbonamento ordine={ordine} /> : null}
-                  <span className="font-semibold">
-                    {eAbbonamento(ordine)
-                      ? `${periodoDi(ordine, oggi) ?? "Inizio da fissare"} · ${ordine.fulfillment === "pickup" ? "Ritiro" : "Consegna"} ogni 3 giorni`
-                      : `${ordine.meals} ${ordine.meals === 1 ? "pasto" : "pasti"} · ${ordine.fulfillment === "pickup" ? "Ritiro" : "Consegna"}`}
-                  </span>
+                  {/* Come nell'elenco: la data e' passata e lo stato non si e' mosso (per un abbonamento, il mese e' finito). */}
+                  {inRitardo(ordine, oggi) ? (
+                    <span className="pn-segno pn-segno-allarme">{eAbbonamento(ordine) && ordine.status !== "requested" ? "Mese finito" : "In ritardo"}</span>
+                  ) : null}
+                  {/* Un ordine senza piatti (home cooking) non ha un numero di pasti da dire. */}
+                  {!eAbbonamento(ordine) && !ordine.meals ? (
+                    <span className="font-semibold">{ordine.fulfillment === "pickup" ? "Ritiro" : "Consegna"}</span>
+                  ) : (
+                    <span className={`font-semibold${eAbbonamento(ordine) ? " hidden sm:inline" : ""}`}>{rigaOrdine}</span>
+                  )}
                 </div>
                 {dettaglioAbb ? <p className="mt-1 hidden text-[15px] sm:block">{dettaglioAbb}</p> : null}
-                <p className={`mt-1 text-[14px] text-muted${dettaglioAbb ? " hidden sm:block" : ""}`}>{ricevuto}</p>
+                <p className="mt-1 hidden text-[14px] text-muted sm:block">{ricevuto}</p>
               </>
             ) : null}
           </div>
@@ -200,12 +210,11 @@ export default function OrdineScheda({ id, onChiudi }: { id: string; onChiudi: (
             senzaAccount={!!dettaglio?.no_account}
             prima={
               <>
-                {dettaglioAbb ? (
-                  <div className="grid gap-1 sm:hidden">
-                    <p className="text-[15px]">{dettaglioAbb}</p>
-                    <p className="text-[14px] text-muted">{ricevuto}</p>
-                  </div>
-                ) : null}
+                <div className="grid gap-1 sm:hidden">
+                  {eAbbonamento(ordine) ? <p className="text-[16px] font-semibold">{rigaOrdine}</p> : null}
+                  {dettaglioAbb ? <p className="text-[15px]">{dettaglioAbb}</p> : null}
+                  <p className="text-[14px] text-muted">{ricevuto}</p>
+                </div>
                 {erroreDettaglio && erroreDettaglio.status !== 404 ? (
                   <Avviso tipo="info">Allenamenti e cronologia non si caricano ({erroreDettaglio.message}). Il resto è aggiornato.</Avviso>
                 ) : null}

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type KeyboardEvent } from "react";
 
 const GA_ID = "G-DNVWYB7R0C";
 const CHIAVE = "fuellab.analytics-consent.v1";
@@ -23,8 +23,12 @@ function avviaAnalytics() {
   }
 
   window.dataLayer = window.dataLayer ?? [];
-  window.gtag = function gtag(...args: unknown[]) {
-    window.dataLayer?.push(args);
+  /* Il tag di Google legge dal dataLayer l'oggetto `arguments`, non un array:
+     con gli argomenti "rest" i comandi arrivano ma non vengono eseguiti. E' la
+     forma dello snippet ufficiale. */
+  window.gtag = function gtag() {
+    // eslint-disable-next-line prefer-rest-params
+    window.dataLayer?.push(arguments);
   };
   window.gtag("consent", "default", {
     analytics_storage: "denied",
@@ -74,6 +78,10 @@ function ascoltaScelta(aggiorna: () => void) {
 
 function nonAscolta() { return () => {}; }
 
+/* Il pannello di Matteo non e' il sito pubblico: niente banner sopra i suoi dati
+   e niente visualizzazioni (il server, del resto, non le conta). */
+const suPannello = (percorso: string) => percorso === "/dashboard" || percorso.startsWith("/dashboard/");
+
 export default function PrivacyConsent() {
   const pathname = usePathname();
   const sceltaSalvata = useSyncExternalStore(ascoltaScelta, leggiScelta, () => null);
@@ -81,12 +89,22 @@ export default function PrivacyConsent() {
   const [sceltaMemoria, setSceltaMemoria] = useState<Scelta>(null);
   const scelta = sceltaMemoria ?? sceltaSalvata;
   const [aperto, setAperto] = useState(false);
+  const pannello = useRef<HTMLElement>(null);
+  /* Chi riapre le preferenze dal footer ritrova il fuoco dove l'aveva lasciato. */
+  const chiamante = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
+    /* Segnale per lo script in <head> (app/layout.tsx): se questo non parte mai,
+       il JavaScript della pagina non e' arrivato e le rivelazioni vanno spente. */
+    document.documentElement.setAttribute("data-vivo", "");
+
     const salvata = leggiScelta();
     if (salvata === "granted") avviaAnalytics();
 
-    const apri = () => setAperto(true);
+    const apri = () => {
+      chiamante.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      setAperto(true);
+    };
     window.addEventListener("fuellab:open-privacy-settings", apri);
     return () => window.removeEventListener("fuellab:open-privacy-settings", apri);
   }, []);
@@ -94,6 +112,7 @@ export default function PrivacyConsent() {
   useEffect(() => {
     if (scelta !== "granted") return;
     avviaAnalytics();
+    if (suPannello(pathname)) return;
     window.gtag?.("event", "page_view", {
       page_path: pathname,
       page_location: window.location.href,
@@ -102,10 +121,24 @@ export default function PrivacyConsent() {
     void fetch("/api/analytics/visit", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ path: pathname }),
+      // Minuscolo come lo conta il server (lib/server/analytics.ts), e mai il pannello: vedi suPannello.
+      body: JSON.stringify({ path: pathname.toLowerCase() }),
       keepalive: true,
     }).catch(() => {});
   }, [pathname, scelta]);
+
+  /* Aperto di proposito (dal footer): il fuoco passa al riquadro, cosi' una
+     persona da tastiera o con lo screen reader lo trova subito. La prima volta
+     non si ruba il fuoco: il banner aspetta, la pagina resta usabile. */
+  useEffect(() => {
+    if (aperto) pannello.current?.focus();
+  }, [aperto]);
+
+  function chiudi() {
+    setAperto(false);
+    chiamante.current?.focus();
+    chiamante.current = null;
+  }
 
   function scegli(valore: Exclude<Scelta, null>) {
     try {
@@ -115,34 +148,57 @@ export default function PrivacyConsent() {
     }
     setSceltaMemoria(valore);
     window.dispatchEvent(new Event("fuellab:privacy-choice"));
-    setAperto(false);
+    chiudi();
     if (valore === "granted") avviaAnalytics();
     else revocaAnalytics();
   }
 
+  function suTasto(e: KeyboardEvent<HTMLElement>) {
+    if (e.key === "Escape" && scelta !== null) chiudi();
+  }
+
   if (!pronto || (scelta !== null && !aperto)) return null;
+  if (suPannello(pathname) && !aperto) return null;
 
   return (
     <aside
+      ref={pannello}
+      tabIndex={-1}
       aria-label="Preferenze privacy"
-      className="fixed inset-x-3 bottom-3 z-[100] mx-auto max-w-3xl border-2 border-ink bg-paper p-5 shadow-2xl md:inset-x-6 md:bottom-6 md:p-6"
+      className="consenso"
       role="dialog"
       aria-modal="false"
       aria-describedby="privacy-consent-description"
+      onKeyDown={suTasto}
     >
-      <p className="occhiello">Privacy · FUEL LAB</p>
-      <p id="privacy-consent-description" className="mt-3 text-sm leading-relaxed text-muted">
-        Usiamo Google Analytics solo se scegli “Accetta Analytics”, per misurare le visite. Se rifiuti, nessun tag
-        Analytics viene caricato. Puoi cambiare scelta in qualsiasi momento dal footer.{" "}
-        <Link href="/privacy" className="link font-semibold">Informativa completa</Link>.
-      </p>
-      <div className="mt-5 flex flex-wrap gap-3">
+      <div className="consenso-testo">
+        <p className="occhiello consenso-occhiello">Privacy · FUEL LAB</p>
+        <p id="privacy-consent-description">
+          Usiamo Google Analytics solo se scegli “Accetta Analytics”, per misurare le visite. Se rifiuti, nessun tag
+          Analytics viene caricato. Puoi cambiare scelta in qualsiasi momento dal footer.{" "}
+          <Link href="/privacy" className="link font-semibold">Informativa completa</Link>.
+          {scelta !== null ? (
+            <>
+              {" "}
+              <strong className="consenso-stato">
+                Scelta attuale: {scelta === "granted" ? "Analytics accettato" : "Analytics rifiutato"}.
+              </strong>
+            </>
+          ) : null}
+        </p>
+      </div>
+      <div className="consenso-azioni">
         <button type="button" className="btn btn-ink" onClick={() => scegli("denied")}>
           Rifiuta Analytics
         </button>
         <button type="button" className="btn btn-lime" onClick={() => scegli("granted")}>
           Accetta Analytics
         </button>
+        {scelta !== null ? (
+          <button type="button" className="btn btn-linea consenso-chiudi" onClick={chiudi}>
+            Chiudi senza cambiare
+          </button>
+        ) : null}
       </div>
     </aside>
   );

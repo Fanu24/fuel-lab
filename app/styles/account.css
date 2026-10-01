@@ -10,6 +10,13 @@
     .acc-testata { padding-top: calc(var(--nav-h) + 64px); padding-bottom: 40px; }
     .acc-corpo { padding-top: 56px; }
   }
+  /* Mentre i dati arrivano la pagina e' piu' bassa di quando sono arrivati: senza un'altezza minima il piede del
+     sito, gia' in vista, scenderebbe di colpo. Cosi' resta sotto la prima schermata finche' non serve. */
+  .acc-schermata { min-height: 100svh; }
+  /* Testo scritto da qualcuno (messaggio di Matteo, note, nome, indirizzo): un link o una parola lunghissima va a
+     capo invece di allargare la pagina. "anywhere" e non "break-word", perche' conta anche per la larghezza minima delle colonne. */
+  .acc-card, .acc-richiesta, .acc-riga, .acc-messaggio, .acc-avviso { overflow-wrap: anywhere; }
+  .acc-corpo { min-height: 75svh; }
   .acc-titolo { scroll-margin-top: calc(var(--nav-h) + 80px); }
   .acc-etichetta {
     font-family: var(--font-disp); font-weight: 600; font-size: 12px; line-height: 1.2;
@@ -50,10 +57,21 @@
   }
   .acc-sottonav a[aria-current="page"] .acc-conta { background: var(--color-lime); color: var(--color-ink); }
   .acc-sottonav-finta { height: 62px; border-block: 1px solid var(--line); }
+  /* Sul telefono le sei voci non entrano: il bordo destro che sfuma dice che la barra scorre.
+     Largo quanto il margine della pagina, cosi' a fine corsa copre solo spazio vuoto. */
+  @media (max-width: 1023px) {
+    .acc-sottonav::after {
+      content: ""; position: absolute; top: 0; right: 0; bottom: 0; width: var(--gut); pointer-events: none;
+      background: linear-gradient(90deg, transparent, var(--color-paper));
+      transition: opacity 0.3s var(--e-out);
+    }
+    .acc-sottonav[data-fine="true"]::after { opacity: 0; }
+  }
 
   /* ---- riquadri ---- */
   .acc-card { background: var(--color-paper-2); padding: 20px; }
   .acc-card.notte { background: var(--color-night); }
+  .acc-card-attesa { min-height: 26rem; }
   .acc-card-pericolo { box-shadow: inset 4px 0 0 #a3261b; }
   @media (min-width: 640px) { .acc-card { padding: 28px; } }
   @media (min-width: 1024px) { .acc-card { padding: 32px; } }
@@ -161,6 +179,16 @@
     .acc-accesso-vantaggi { padding: 24px 48px 48px; }
     .acc-accesso-form { padding: 48px; }
   }
+  .acc-accesso-titolo { max-width: 13ch; margin-top: 20px; }
+  .acc-accesso-lead { max-width: 45ch; margin-top: 20px; }
+  /* Sul telefono il modulo e' il motivo per cui si e' qui: l'introduzione fa solo da testata, cosi' email,
+     password e bottone stanno gia' nella prima schermata (prima il titolo da solo ne mangiava la meta'). */
+  @media (max-width: 767px) {
+    .acc-accesso-intro { padding: 22px 20px 24px; }
+    .acc-accesso-titolo { max-width: none; margin-top: 14px; font-size: clamp(26px, 8.4vw, 34px); line-height: 1; }
+    .acc-accesso-lead { margin-top: 12px; font-size: 15px; line-height: 1.45; }
+    .acc-accesso-form { padding-top: 20px; }
+  }
   .acc-schede-accesso {
     display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 4px;
     background: var(--color-paper);
@@ -237,6 +265,18 @@
 
   /* ---- panoramica ---- */
   .acc-data-grande { font-size: clamp(28px, 4vw, 44px); line-height: 1; }
+  /* I tre passi per la prima richiesta (cliente nuovo), sulla notte: il segno e' un quadrato col numero, lime quando e' fatto. */
+  .acc-avvio { display: grid; gap: 22px; margin: 0; padding: 0; list-style: none; }
+  .acc-avvio > li { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 14px; align-items: start; }
+  .acc-avvio-segno {
+    display: grid; place-items: center; width: 28px; height: 28px; font-size: 13px;
+    color: var(--color-steel); box-shadow: inset 0 0 0 2px var(--color-steel);
+  }
+  .acc-avvio > li[data-fatto="true"] .acc-avvio-segno { background: var(--color-lime); color: var(--color-ink); box-shadow: none; }
+  .acc-avvio-titolo {
+    font-family: var(--font-disp); font-weight: 700; font-size: 15px; line-height: 1.25;
+    letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-paper);
+  }
   .acc-messaggio { padding: 14px 16px; background: var(--color-lime); color: var(--color-ink); border-left: 4px solid var(--color-ink); }
   .notte .acc-messaggio { border-left: 0; }
   .acc-messaggio-chi {

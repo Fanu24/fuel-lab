@@ -9,7 +9,7 @@ import {
   URL_SITO,
   ZONE_SERVITE,
 } from "@/lib/sito";
-import { SOGLIA_PREZZO, getServizio } from "@/lib/servizi";
+import { getServizio } from "@/lib/servizi";
 import {
   FASCE,
   FORMULE,
@@ -28,11 +28,12 @@ import type { Allenamento, Piatto } from "@/lib/catalogo";
 /* =========================================================================
    I dati strutturati schema.org del sito, costruiti da una parte sola.
 
-   Un grafo con @id stabili: l'attivita' (#organization), la cucina di Via del
-   Santuario (#cucina, un FoodEstablishment), il sito (#website) e Matteo
-   (#matteo) stanno nel layout, su ogni pagina; le pagine aggiungono il proprio
-   nodo WebPage, le briciole e quello che mostrano davvero (menu, piatto,
-   servizi, domande frequenti) e si agganciano al grafo per @id.
+   Un grafo con @id stabili: l'attivita' (#organization, un FoodEstablishment:
+   l'azienda e la sua cucina di Via del Santuario sono lo stesso soggetto, un
+   nodo solo), il sito (#website) e Matteo (#matteo) stanno nel layout, su ogni
+   pagina; le pagine aggiungono il proprio nodo WebPage, le briciole e quello
+   che mostrano davvero (menu, piatto, servizi, domande frequenti) e si
+   agganciano al grafo per @id.
 
    Regola: solo dati che la pagina mostra o che stanno in lib/sito.ts. Niente
    coordinate, orari, telefono, recensioni o valutazioni finche' il
@@ -61,7 +62,8 @@ export function assoluto(percorso: string): string {
 
 export const ID = {
   organizzazione: `${URL_SITO}/#organization`,
-  cucina: `${URL_SITO}/#cucina`,
+  /** Lo stesso nodo di "organizzazione": un soggetto solo con due nomi, cosi' i riferimenti alla cucina restano validi. */
+  cucina: `${URL_SITO}/#organization`,
   sito: `${URL_SITO}/#website`,
   logo: `${URL_SITO}/#logo`,
   matteo: `${URL_SITO}/chi-siamo#matteo`,
@@ -70,6 +72,8 @@ export const ID = {
 } as const;
 
 export const idPiatto = (id: string) => `${URL_SITO}/menu/${id}#piatto`;
+/** L'@id del servizio che una pagina descrive (nodoServizio): le pagine lo richiamano come "about". */
+export const idServizio = (percorso: string, id: string) => `${assoluto(percorso)}#${id}`;
 export const idFormula = (id: FormulaId) => `${assoluto(percorsoFormula(id))}#abbonamento`;
 
 const rif = (id: string) => ({ "@id": id });
@@ -131,16 +135,26 @@ export function grafoSito(): Nodo[] {
     caption: NOME_ATTIVITA,
   };
 
+  /* Un nodo solo per l'azienda e la sua cucina: Organization e FoodEstablishment
+     con lo stesso nome e lo stesso indirizzo sarebbero due soggetti per Google.
+     Niente priceRange: non e' un intervallo (c'e' una soglia a pasto e ci sono
+     prezzi mensili) e i prezzi veri stanno nelle offerte dei servizi. */
   const organizzazione: Nodo = {
-    "@type": "Organization",
+    // Organization resta nell'elenco dei tipi: le pagine del blog richiamano questo @id come Organization e il nodo resta uno.
+    "@type": ["Organization", "FoodEstablishment"],
     "@id": ID.organizzazione,
     name: NOME_ATTIVITA,
     url: URL_SITO,
-    logo,
     description: DESCRIZIONE_ATTIVITA,
+    logo,
+    image: assoluto("/opengraph-image.jpg"),
     address: indirizzoPostale(),
     areaServed: areaServita(),
+    hasMenu: assoluto("/menu"),
+    servesCuisine: ["Meal prep", "Cucina italiana"],
+    currenciesAccepted: "EUR",
     founder: rif(ID.matteo),
+    knowsLanguage: "it",
     contactPoint: {
       "@type": "ContactPoint",
       contactType: "customer service",
@@ -149,26 +163,6 @@ export function grafoSito(): Nodo[] {
       availableLanguage: "it",
       areaServed: "IT",
     },
-    ...contatti(),
-  };
-
-  const cucina: Nodo = {
-    "@type": "FoodEstablishment",
-    "@id": ID.cucina,
-    name: NOME_ATTIVITA,
-    url: URL_SITO,
-    description: DESCRIZIONE_ATTIVITA,
-    image: assoluto("/opengraph-image.jpg"),
-    logo: rif(ID.logo),
-    address: indirizzoPostale(),
-    areaServed: areaServita(),
-    hasMenu: assoluto("/menu"),
-    servesCuisine: ["Meal prep", "Cucina italiana"],
-    priceRange: `Da ${prezzoIt(SOGLIA_PREZZO)} € a pasto`,
-    currenciesAccepted: "EUR",
-    founder: rif(ID.matteo),
-    parentOrganization: rif(ID.organizzazione),
-    knowsLanguage: "it",
     ...contatti(),
   };
 
@@ -191,10 +185,9 @@ export function grafoSito(): Nodo[] {
     jobTitle: TITOLARE.ruolo,
     url: assoluto("/chi-siamo"),
     worksFor: rif(ID.organizzazione),
-    workLocation: rif(ID.cucina),
   };
 
-  return [organizzazione, cucina, sito, matteo];
+  return [organizzazione, sito, matteo];
 }
 
 export function nodoBriciole(percorso: string, voci: Briciola[]): Nodo {
@@ -245,7 +238,8 @@ export function nodiPagina(o: OpzioniPagina): Nodo[] {
   const tipi = [o.tipo ?? "WebPage", ...(o.faq?.length ? ["FAQPage"] : [])];
   const pagina: Nodo = {
     "@type": tipi.length === 1 ? tipi[0] : tipi,
-    "@id": `${url}#webpage`,
+    // La home e' l'URL nudo, ma il suo @id porta la barra come quelli degli altri nodi del sito (#organization, #website).
+    "@id": `${o.percorso === "/" ? `${URL_SITO}/` : url}#webpage`,
     url,
     name: o.nome,
     description: o.descrizione,
@@ -392,9 +386,10 @@ function offertaMensile(url: string, prezzo: number): Nodo {
 }
 
 /**
- * Un servizio con la sua offerta. Il prezzo del meal prep e' una soglia
- * (minPrice), mai un listino: e' l'unico numero a pasto che il committente
- * vuole in chiaro. Senza soglia (l'home cooking, su preventivo) l'offerta non
+ * Un servizio con la sua offerta. Il prezzo del meal prep e' una soglia ("da X
+ * a pasto"), mai un listino: e' l'unico numero a pasto che il committente
+ * vuole in chiaro. Una soglia si scrive come AggregateOffer con lowPrice (un
+ * Offer senza price non passa i validatori) e l'unita' sta nella descrizione. Senza soglia (l'home cooking, su preventivo) l'offerta non
  * c'e'. Gli abbonamenti, che hanno prezzi fissi al mese, hanno i loro nodi:
  * nodoAbbonamenti e nodoFormula, piu' sotto.
  */
@@ -403,20 +398,16 @@ export function nodoServizio(o: OpzioniServizio): Nodo {
   const offerta: Nodo | null =
     o.prezzoDa != null
       ? {
-          "@type": "Offer",
+          "@type": "AggregateOffer",
           url,
           priceCurrency: "EUR",
-          priceSpecification: {
-            "@type": "UnitPriceSpecification",
-            minPrice: o.prezzoDa,
-            priceCurrency: "EUR",
-            unitText: "pasto",
-          },
+          lowPrice: o.prezzoDa,
+          description: `Da ${prezzoIt(o.prezzoDa)} € a pasto`,
         }
       : null;
   return {
     "@type": "Service",
-    "@id": `${assoluto(o.percorso)}#${o.id}`,
+    "@id": idServizio(o.percorso, o.id),
     name: o.nome,
     description: o.descrizione,
     serviceType: o.tipoServizio,

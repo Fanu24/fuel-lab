@@ -161,6 +161,12 @@ describe("forma del link", () => {
 });
 
 describe("maschera degli extra", () => {
+  it("sta in un numero esatto: oltre 52 extra i bit non si distinguerebbero piu' e i link sbaglierebbero in silenzio", () => {
+    expect(EXTRA.length).toBeLessThanOrEqual(52);
+    const tutti: Piano = { dom: { cena: { piatto: PIATTI[0].id, extra: EXTRA.map((e) => e.id) } } };
+    expect(decodificaPiano(codificaPiano(tutti))).toEqual(tutti);
+  });
+
   it("ignora i bit oltre l'ultimo extra invece di inventare un id", () => {
     const spento = corpoDi(codificaPiano({ lun: { pranzo: { piatto: PIATTI[0].id, extra: [] } } }));
     const acceso = corpoDi(

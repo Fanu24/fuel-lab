@@ -6,7 +6,7 @@ import { contaPiatti, righePiano } from "@/lib/account";
 import { NOMI_GIORNATA, usePiano } from "@/lib/piano";
 import { descrizioneSincronia } from "@/lib/sincronizzaPiano";
 import { SceltaVersione, Segno, useSceltaInPagina, useSincronia } from "../SincronizzaPiano";
-import { Caricamento, TitoloSezione } from "../ui";
+import { Caricamento, LinkAccediDiNuovo, TitoloSezione } from "../ui";
 
 /* La settimana che il cliente sta componendo: vive nel browser e, con
    l'accesso fatto, si salva da sola nell'account (components/account/
@@ -127,11 +127,7 @@ export default function Settimana() {
                   Riprova ora
                 </button>
               ) : null}
-              {stato.fase === "errore" && stato.motivo === "accesso" ? (
-                <Link href="/accedi" className="btn btn-linea btn-sm">
-                  Accedi di nuovo
-                </Link>
-              ) : null}
+              {stato.fase === "errore" && stato.motivo === "accesso" ? <LinkAccediDiNuovo className="btn btn-linea btn-sm" /> : null}
             </div>
           </div>
         </>

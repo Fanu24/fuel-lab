@@ -20,15 +20,14 @@ export default function StradaAccount() {
   const entrato = !!utente;
 
   return (
-    <article className="notte smusso flex flex-col p-6 md:p-8" aria-labelledby="strada-account">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="occhiello">
-          <span className="num">01</span> · Account
-        </p>
-        <span className="bg-lime px-2.5 py-1 font-disp text-[11px] font-bold tracking-[.16em] text-ink uppercase">
-          La strada migliore
-        </span>
-      </div>
+    <article className="notte smusso relative flex flex-col p-6 md:p-8" aria-labelledby="strada-account">
+      {/* Il cartellino sta sull'angolo e non nella riga del titolino: cosi' le tre schede hanno il titolo alla stessa altezza a ogni larghezza. */}
+      <span className="absolute top-0 right-0 bg-lime px-2.5 py-1.5 font-disp text-[11px] font-bold tracking-[.16em] text-ink uppercase">
+        La strada migliore
+      </span>
+      <p className="occhiello">
+        <span className="num">01</span> · Account
+      </p>
       <h3 id="strada-account" className="titolo-s mt-6">
         Invia la tua settimana.
       </h3>

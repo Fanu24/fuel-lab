@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { conCasella, potaAllenamenti, spostaCasella, type Piano } from "./settimana";
+import { conCasella, leggiCasella, macroCasella, potaAllenamenti, potaPiano, spostaCasella, type Piano } from "./settimana";
 import { PIATTI, EXTRA } from "./catalogo";
 
 const A = PIATTI[0].id;
@@ -15,6 +15,22 @@ describe("potaAllenamenti", () => {
 
   it("torna vuoto su cio che non e un oggetto", () => {
     for (const v of [undefined, null, "cardio", 7, []]) expect(potaAllenamenti(v)).toEqual({});
+  });
+});
+
+describe("leggiCasella e potaPiano", () => {
+  it("un'aggiunta ripetuta vale una volta sola, nell'ordine in cui compare", () => {
+    const Y = EXTRA[1].id;
+    const c = leggiCasella({ piatto: A, extra: [X, Y, X, X, Y] });
+    expect(c?.extra).toEqual([X, Y]);
+    // i macro non si sommano due volte
+    expect(macroCasella(c).kcal).toBe(macroCasella({ piatto: A, extra: [X, Y] }).kcal);
+    expect(potaPiano({ lun: { pranzo: { piatto: A, extra: [X, X] } } }).lun?.pranzo?.extra).toEqual([X]);
+  });
+
+  it("scarta gli id che il catalogo non conosce e le voci che non sono testo", () => {
+    expect(leggiCasella({ piatto: A, extra: [X, "id-che-non-esiste", 7, null] })?.extra).toEqual([X]);
+    expect(leggiCasella({ extra: ["id-che-non-esiste"] })).toBeUndefined();
   });
 });
 

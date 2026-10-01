@@ -41,6 +41,9 @@ export default function CustomerDashboard() {
   const sessione = useSessione();
   const parametri = useSearchParams();
   const [addio, setAddio] = useState(false);
+  // Chi era dentro e non lo e' piu' (senza averlo scelto) ha la sessione scaduta: l'invito lo dice.
+  const [eraDentro, setEraDentro] = useState(false);
+  if (sessione.utente && !eraDentro) setEraDentro(true);
 
   const onEliminato = useCallback(() => {
     setAddio(true);
@@ -60,6 +63,7 @@ export default function CustomerDashboard() {
         sezione={sezioneDa(parametri.get("sezione"))}
         servizio={servizioDa(parametri.get("servizio"))}
         errore={erroreDiRitorno(parametri.get("error"))}
+        scaduta={eraDentro}
       />
     );
   }
@@ -69,7 +73,7 @@ export default function CustomerDashboard() {
 function ErroreSessione() {
   const [riprovo, setRiprovo] = useState(false);
   return (
-    <section className="acc-testata wrap pb-[var(--sezione)]">
+    <section className="acc-testata acc-schermata wrap pb-[var(--sezione)]">
       <p className="occhiello">Il tuo spazio</p>
       <h1 className="titolo mt-4">Area cliente.</h1>
       <Avviso
@@ -79,8 +83,9 @@ function ErroreSessione() {
           <button
             type="button"
             className="btn btn-ink btn-sm"
-            disabled={riprovo}
+            aria-disabled={riprovo ? true : undefined}
             onClick={() => {
+              if (riprovo) return;
               setRiprovo(true);
               void caricaUtente(true).then(() => setRiprovo(false));
             }}
@@ -117,6 +122,13 @@ function AreaCliente({ utente, onEliminato }: { utente: Utente; onEliminato: () 
   const ordini = useDati(caricaOrdini, erroreOrdini);
   const profilo = useDati<Profilo>(caricaProfilo, erroreProfilo);
 
+  /* Un 401 mentre si caricano i dati: la sessione e' finita ma la pagina non lo sa. Si rilegge chi e' collegato:
+     senza utente l'area cliente passa all'invito ad accedere, che riporta qui dopo l'accesso. */
+  const sessioneFinita = (ordini.stato === "errore" && !!ordini.sessione) || (profilo.stato === "errore" && !!profilo.sessione);
+  useEffect(() => {
+    if (sessioneFinita) void caricaUtente(true);
+  }, [sessioneFinita]);
+
   useEffect(() => {
     let vivo = true;
     api.providers().then(
@@ -136,11 +148,18 @@ function AreaCliente({ utente, onEliminato }: { utente: Utente; onEliminato: () 
   const ancora = useRef<HTMLDivElement>(null);
   const lista = useRef<HTMLUListElement>(null);
   const primoGiro = useRef(true);
+  // Sul telefono la barra delle sezioni scorre: finche' c'e' altro a destra il bordo sfuma (account.css), a fine corsa no.
+  const [fineBarra, setFineBarra] = useState(false);
+  const misuraBarra = useCallback(() => {
+    const l = lista.current;
+    if (l) setFineBarra(l.scrollLeft + l.clientWidth >= l.scrollWidth - 2);
+  }, []);
   useLayoutEffect(() => {
     const attiva = lista.current?.querySelector<HTMLElement>('[aria-current="page"]');
     if (attiva && lista.current) {
       lista.current.scrollLeft = Math.max(0, attiva.offsetLeft - 16);
     }
+    misuraBarra();
     if (primoGiro.current) {
       primoGiro.current = false;
       return;
@@ -152,7 +171,7 @@ function AreaCliente({ utente, onEliminato }: { utente: Utente; onEliminato: () 
       if (window.scrollY > y) window.scrollTo({ top: y });
     }
     document.querySelector<HTMLElement>("[data-titolo-sezione]")?.focus({ preventScroll: true });
-  }, [sezione]);
+  }, [sezione, misuraBarra]);
 
   const ricaricaOrdini = ordini.ricarica;
   const inviata = useCallback(
@@ -175,7 +194,7 @@ function AreaCliente({ utente, onEliminato }: { utente: Utente; onEliminato: () 
           <div className="min-w-0">
             <p className="occhiello">Il tuo spazio</p>
             <h1 className="titolo mt-4 [overflow-wrap:anywhere]">Ciao, {primoNome(utente.name, utente.email)}.</h1>
-            <p className="mt-3 break-all text-muted">{utente.email}</p>
+            <p className="mt-3 text-muted [overflow-wrap:anywhere]">{utente.email}</p>
           </div>
           {admin ? (
             <Link href="/dashboard" className="btn btn-ink btn-sm">
@@ -186,9 +205,9 @@ function AreaCliente({ utente, onEliminato }: { utente: Utente; onEliminato: () 
       </header>
 
       <div ref={ancora} />
-      <nav className="acc-sottonav" aria-label="Sezioni dell’account">
+      <nav className="acc-sottonav" aria-label="Sezioni dell’account" data-fine={fineBarra}>
         <div className="wrap">
-          <ul ref={lista} className="acc-sottonav-lista">
+          <ul ref={lista} className="acc-sottonav-lista" onScroll={misuraBarra}>
             {SEZIONI.map((s) => (
               <li key={s.id}>
                 <Link href={hrefSezione(s.id)} scroll={false} aria-current={sezione === s.id ? "page" : undefined}>
@@ -222,11 +241,12 @@ function AreaCliente({ utente, onEliminato }: { utente: Utente; onEliminato: () 
             fasciaIniziale={fasciaDa(parametri.get("fascia"))}
             modalitaIniziale={modalitaDa(parametri.get("modalita"))}
             nucleoIniziale={nucleoDa(parametri.get("nucleo"))}
+            ricerca={parametri.toString()}
             onInviata={inviata}
           />
         ) : null}
         {sezione === "profilo" ? <ProfiloSezione utente={utente} profilo={profilo} /> : null}
-        {sezione === "sicurezza" ? <Sicurezza utente={utente} providers={providers} onEliminato={onEliminato} /> : null}
+        {sezione === "sicurezza" ? <Sicurezza utente={utente} providers={providers} ordini={ordini} onEliminato={onEliminato} /> : null}
       </div>
     </div>
   );

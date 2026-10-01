@@ -1,6 +1,7 @@
 import { currentUser, type Context } from "../_lib/auth";
 import { bodyJson, json, sameOrigin } from "../_lib/http";
-import { potaAllenamenti, potaPiano } from "../../lib/settimana";
+import { pianoDaCorpo } from "../../lib/server/ordini";
+import { potaAllenamenti } from "../../lib/settimana";
 
 /* La settimana salvata nell'account.
 
@@ -23,7 +24,15 @@ export const onRequestGet = async ({ env, request }: Context) => {
   if (!user) return json({ error: "Accedi per leggere il piano" }, 401);
   const row = await env.DB.prepare("SELECT plan_json, training_json, updated_at FROM saved_plans WHERE user_id = ?")
     .bind(user.id).first<{ plan_json: string; training_json: string; updated_at: string }>();
-  return json({ plan: row ? JSON.parse(row.plan_json) : null, training: row ? JSON.parse(row.training_json) : null, updatedAt: row?.updated_at ?? null });
+  // Un JSON rovinato (non dovrebbe succedere: si scrive solo dopo potaPiano) non deve rompere la lettura: si riparte da vuoto.
+  const leggi = (testo: string) => {
+    try {
+      return JSON.parse(testo) as unknown;
+    } catch {
+      return {};
+    }
+  };
+  return json({ plan: row ? leggi(row.plan_json) : null, training: row ? leggi(row.training_json) : null, updatedAt: row?.updated_at ?? null });
 };
 
 export const onRequestPut = async ({ env, request }: Context) => {
@@ -34,7 +43,7 @@ export const onRequestPut = async ({ env, request }: Context) => {
   if (!body) return json({ error: "Dati non validi" }, 400);
   const se = body.ifUpdatedAt;
   if (se !== undefined && se !== null && typeof se !== "string") return json({ error: "Dati non validi" }, 400);
-  const plan = potaPiano(body.plan);
+  const plan = pianoDaCorpo(body.plan);
   const training = potaAllenamenti(body.training);
   const piano = JSON.stringify(plan);
   const allenamenti = JSON.stringify(training);

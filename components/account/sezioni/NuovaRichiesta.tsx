@@ -6,6 +6,7 @@ import {
   campiMancanti,
   contaPiatti,
   corpoRichiesta,
+  eSessioneScaduta,
   formattaGiorno,
   frequenzaConsegne,
   limitiDataRichiesta,
@@ -43,7 +44,8 @@ import { caselleEscluse, chiusuraDi, chiusureVicine, fraseChiusura } from "@/lib
 import { useImpostazioni } from "@/components/impostazioni/useImpostazioni";
 import { GIORNI, usePiano } from "@/lib/piano";
 import { SERVIZI } from "@/lib/servizi";
-import { Avviso, Caricamento, Stato, TitoloSezione } from "../ui";
+import { cancellaBozzaRichiesta, leggiBozzaSalvata, salvaBozzaRichiesta } from "../bozza";
+import { Avviso, Caricamento, LinkAccediDiNuovo, Stato, TitoloSezione } from "../ui";
 import type { Dati } from "./tipi";
 
 /* Il modulo che manda la settimana a Matteo. I recapiti partono dal profilo e,
@@ -77,6 +79,8 @@ type Props = {
   modalitaIniziale?: Modalita;
   /** Da ?nucleo=: e con chi ci si abbona. */
   nucleoIniziale?: Nucleo;
+  /** La query con cui si e' aperto il modulo: la bozza e' di questo indirizzo (lib/account.ts: leggiBozza). */
+  ricerca: string;
   onInviata: (id: string) => void;
 };
 
@@ -88,26 +92,24 @@ export default function NuovaRichiesta({
   fasciaIniziale,
   modalitaIniziale = "pickup",
   nucleoIniziale = "singolo",
+  ricerca,
   onInviata,
 }: Props) {
   // Il modulo aspetta anche le impostazioni: l'avviso delle chiusure non deve spingere giu' i campi dopo.
   const impostazioni = useImpostazioni();
+  // Il titolo segue il servizio scelto nel modulo, non quello con cui si e' aperta la pagina.
+  const [servizio, setServizio] = useState<Servizio>(servizioIniziale);
   return (
     <section aria-labelledby="t-nuova" className="grid gap-8">
       <div>
-        <TitoloSezione id="t-nuova">
-          {servizioIniziale === "abbonamento" ? "Chiedi l’abbonamento a Matteo." : "Invia la settimana a Matteo."}
-        </TitoloSezione>
-        <p className="lead mt-4">
-          {servizioIniziale === "abbonamento"
-            ? "Nessun pagamento online: inizio, consegna o ritiro e pagamento si concordano con Matteo."
-            : "Nessun pagamento online: Matteo ti conferma disponibilità, giorno e totale prima di cucinare."}
-        </p>
+        <TitoloSezione id="t-nuova">{TITOLO_SERVIZIO[servizio]}</TitoloSezione>
+        <p className="lead mt-4">{LEAD_SERVIZIO[servizio]}</p>
       </div>
       {profilo.stato === "attesa" || impostazioni.stato === "attesa" ? (
         <Caricamento testo="Preparo il modulo…" righe={5} />
       ) : (
         <Modulo
+          onServizio={setServizio}
           chiusure={impostazioni.impostazioni.chiusure}
           esclusi={impostazioni.impostazioni.piattiNonDisponibili}
           utente={utente}
@@ -119,12 +121,27 @@ export default function NuovaRichiesta({
           fasciaIniziale={fasciaIniziale}
           modalitaIniziale={modalitaIniziale}
           nucleoIniziale={nucleoIniziale}
+          ricerca={ricerca}
           onInviata={onInviata}
         />
       )}
     </section>
   );
 }
+
+const TITOLO_SERVIZIO: Record<Servizio, string> = {
+  "menu-settimana": "Invia la settimana a Matteo.",
+  abbonamento: "Chiedi l’abbonamento a Matteo.",
+  "sui-tuoi-macro": "Invia la settimana a Matteo.",
+  "home-cooking": "Chiedi l’home cooking a Matteo.",
+};
+
+const LEAD_SERVIZIO: Record<Servizio, string> = {
+  "menu-settimana": "Nessun pagamento online: Matteo ti conferma disponibilità, giorno e totale prima di cucinare.",
+  abbonamento: "Nessun pagamento online: inizio, consegna o ritiro e pagamento si concordano con Matteo.",
+  "sui-tuoi-macro": "Nessun pagamento online: Matteo ti conferma disponibilità, giorno e totale prima di cucinare.",
+  "home-cooking": "Nessun pagamento online: Matteo ti ricontatta per concordare menu, spesa, giorno e preventivo.",
+};
 
 const MODALITA: { id: Modalita; titolo: string; nota: string }[] = [
   { id: "pickup", titolo: "Ritiro", nota: "In Via del Santuario 214, Pescara" },
@@ -156,6 +173,7 @@ const NOTE_NUCLEO: Record<Nucleo, string> = {
 };
 
 function Modulo({
+  onServizio,
   chiusure,
   esclusi,
   utente,
@@ -167,8 +185,11 @@ function Modulo({
   fasciaIniziale,
   modalitaIniziale,
   nucleoIniziale,
+  ricerca,
   onInviata,
 }: {
+  /** Il servizio scelto, per il titolo della pagina. */
+  onServizio: (s: Servizio) => void;
   chiusure: readonly Chiusura[];
   esclusi: readonly string[];
   utente: Utente;
@@ -180,10 +201,12 @@ function Modulo({
   fasciaIniziale: Fascia;
   modalitaIniziale: Modalita;
   nucleoIniziale: Nucleo;
+  ricerca: string;
   onInviata: (id: string) => void;
 }) {
   const { piano, allenamenti, pronto, macroSettimana } = usePiano();
-  const [dati, setDati] = useState<DatiRichiesta>(() => ({
+  const [limiti] = useState(() => limitiDataRichiesta(new Date()));
+  const daCapo = (): DatiRichiesta => ({
     servizio: servizioIniziale,
     nome: utente.name ?? "",
     telefono: profilo?.phone ?? "",
@@ -197,17 +220,31 @@ function Modulo({
     nucleo: nucleoIniziale,
     // La prima settimana e' di prova per tutti, "senza impegno": si parte da li' salvo che il cliente lo tolga.
     prova: true,
-  }));
-  const [limiti] = useState(() => limitiDataRichiesta(new Date()));
+  });
+  /* Una richiesta lasciata a meta' (scheda ricaricata dal telefono, sessione scaduta e rientro) si ritrova com'era:
+     la scheda dell'abbonamento e' mezza pagina da riscrivere. E' legata a questo utente e a questo indirizzo. */
+  const [bozza] = useState(() => leggiBozzaSalvata(utente.id, ricerca, limiti.min));
+  const [dati, setDati] = useState<DatiRichiesta>(() => bozza ?? daCapo());
+  const [ritrovata, setRitrovata] = useState(!!bozza);
+  const modificata = useRef(!!bozza);
   const [provato, setProvato] = useState(false);
   const [salvaNelProfilo, setSalvaNelProfilo] = useState(true);
   const [invio, setInvio] = useState(false);
-  const [errore, setErrore] = useState("");
+  const inVolo = useRef(false);
+  const [errore, setErrore] = useState<{ testo: string; sessione: boolean } | null>(null);
   const refErrore = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (errore) refErrore.current?.focus();
   }, [errore]);
+
+  useEffect(() => {
+    onServizio(dati.servizio);
+  }, [dati.servizio, onServizio]);
+
+  useEffect(() => {
+    if (modificata.current) salvaBozzaRichiesta(utente.id, ricerca, dati);
+  }, [dati, utente.id, ricerca]);
 
   const piatti = contaPiatti(piano);
   const errori = validaRichiesta(dati, { piatti, ...limiti, chiusure });
@@ -225,6 +262,28 @@ function Modulo({
   const stima = abbonamento ? stimaAbbonamento(dati) : null;
   const ritiro = dati.modalita === "pickup";
 
+  /* Le allergie sono l'unica riga del riepilogo che riguarda la sicurezza di chi mangia: si vede cosa leggera' Matteo
+     (quelle del profilo arrivano con ogni richiesta) o che non c'e' niente, e dove scriverle. */
+  const preferenze = profilo?.preferences.trim() ?? "";
+  const voceAllergie = profilo ? (
+    <div>
+      <dt>Allergie e preferenze</dt>
+      <dd>
+        {preferenze ? (
+          <>
+            <span className="line-clamp-3 block font-normal whitespace-pre-line [overflow-wrap:anywhere]">{preferenze}</span>
+            <span className="block text-sm font-normal text-muted">Dal tuo profilo: Matteo le legge con la richiesta.</span>
+          </>
+        ) : (
+          <>
+            Non indicate
+            <span className="block text-sm font-normal text-muted">Hai un’allergia o un’intolleranza? Scrivila nelle note.</span>
+          </>
+        )}
+      </dd>
+    </div>
+  ) : null;
+
   // Recapiti diversi da quelli del profilo: si propone di aggiornarlo. Solo se il
   // profilo e' stato letto, altrimenti si rischierebbe di cancellarne le preferenze.
   const diverso = !!profilo && (
@@ -234,20 +293,32 @@ function Modulo({
   );
 
   function aggiorna<K extends keyof DatiRichiesta>(campo: K, valore: DatiRichiesta[K]) {
+    modificata.current = true;
     setDati((d) => ({ ...d, [campo]: valore }));
+  }
+
+  function ricomincia() {
+    cancellaBozzaRichiesta();
+    modificata.current = false;
+    setDati(daCapo());
+    setRitrovata(false);
+    setProvato(false);
+    window.requestAnimationFrame(() => document.getElementById("nr-servizio")?.focus());
   }
 
   async function invia(e: FormEvent) {
     e.preventDefault();
-    if (invio) return;
+    // Il ref e non solo lo stato: due invii nello stesso istante (doppio tocco, Invio tenuto premuto) vedrebbero entrambi invio=false.
+    if (invio || inVolo.current) return;
     setProvato(true);
     const primo = ORDINE_CAMPI_RICHIESTA.find((k) => errori[k]);
     if (primo) {
       document.getElementById(`nr-${primo}`)?.focus();
       return;
     }
+    inVolo.current = true;
     setInvio(true);
-    setErrore("");
+    setErrore(null);
     try {
       const r = await api.inviaOrdine(corpoRichiesta(dati, piano, allenamenti));
       if (salvaNelProfilo && diverso && profilo) {
@@ -263,9 +334,13 @@ function Modulo({
           // La richiesta e' partita: il profilo si aggiorna la prossima volta, non e' un errore da mostrare adesso.
         }
       }
+      // Partita: la bozza non serve piu' (e i recapiti non devono restare nel browser).
+      modificata.current = false;
+      cancellaBozzaRichiesta();
       onInviata(r.id);
     } catch (err) {
-      setErrore(messaggioDa(err, "Non riesco a inviare la richiesta. Riprova tra poco."));
+      setErrore({ testo: messaggioDa(err, "Non riesco a inviare la richiesta. Riprova tra poco."), sessione: eSessioneScaduta(err) });
+      inVolo.current = false;
       setInvio(false);
     }
   }
@@ -310,6 +385,37 @@ function Modulo({
         ) : null}
         {erroreProfilo ? (
           <Avviso tipo="info">Non riesco a leggere il profilo: scrivi i recapiti qui sotto. {erroreProfilo}</Avviso>
+        ) : null}
+        {ritrovata ? (
+          <Avviso
+            tipo="info"
+            titolo="Ho ritrovato la tua richiesta"
+            azioni={<button type="button" className="link text-sm" onClick={ricomincia}>Ricomincia da capo</button>}
+          >
+            Era rimasta a metà: puoi continuare da dove eri.
+          </Avviso>
+        ) : null}
+        {/* I servizi con i piatti partono dalla settimana composta: chi arriva qui per la prima volta lo deve sapere prima
+            di compilare il resto, non scoprirlo all'invio. Prende il fuoco se si prova a inviare lo stesso. */}
+        {conPiatti && pronto && piatti === 0 ? (
+          <div id="nr-piano" tabIndex={-1} className={`acc-avviso ${provato ? "acc-avviso-errore" : "acc-avviso-info"}`}>
+            <p className="acc-avviso-titolo">Prima i piatti</p>
+            <p>
+              {dati.servizio === "sui-tuoi-macro"
+                ? "Per questo servizio serve almeno un piatto nella settimana: scrivi i numeri del tuo nutrizionista e la settimana si compone da sola coi piatti più vicini. Poi torni qui a inviarla."
+                : "Per questo servizio serve almeno un piatto nella settimana: componila, poi torni qui a inviarla. Se non vuoi scegliere i piatti, c’è l’abbonamento."}
+            </p>
+            <div className="acc-avviso-azioni">
+              <Link href={dati.servizio === "sui-tuoi-macro" ? "/scheda" : "/settimana"} className="btn btn-ink btn-sm">
+                {dati.servizio === "sui-tuoi-macro" ? "Vai alla scheda" : "Componi la settimana"}
+              </Link>
+              {dati.servizio === "sui-tuoi-macro" ? null : (
+                <button type="button" className="link text-sm" onClick={() => aggiorna("servizio", "abbonamento")}>
+                  Preferisco un abbonamento
+                </button>
+              )}
+            </div>
+          </div>
         ) : null}
 
         <Gruppo legenda="Servizio" errore={visibili.servizio} idErrore="nr-servizio-errore">
@@ -572,7 +678,9 @@ function Modulo({
                   <dd>{dati.data ? formattaGiorno(dati.data, limiti.min) : "Da concordare"}</dd>
                 </div>
                 <div><dt>La tua scheda</dt><dd>{dati.note.trim() ? "Scritta nelle note" : "Da scrivere nelle note"}</dd></div>
-                <div><dt>Allenamenti</dt><dd>{giorniAllenamento ? `${giorniAllenamento} giorni indicati` : "Non indicati"}</dd></div>
+                {/* Gli allenamenti del compositore contano solo se ci sono: nell'abbonamento si scrivono nella scheda. */}
+                {giorniAllenamento ? <div><dt>Allenamenti</dt><dd>{`${giorniAllenamento} giorni indicati`}</dd></div> : null}
+                {voceAllergie}
               </>
             ) : (
               <>
@@ -598,27 +706,24 @@ function Modulo({
                   <dt>Giorno preferito</dt>
                   <dd>{dati.data ? formattaGiorno(dati.data, limiti.min) : "Da concordare"}</dd>
                 </div>
+                {voceAllergie}
               </>
             )}
           </dl>
 
           {nonDisponibili && conPiatti ? (
-            <p className="acc-avviso acc-avviso-info text-sm">
-              {nonDisponibili === 1
-                ? "Un piatto della tua settimana non è disponibile questa settimana."
-                : `${nonDisponibili} piatti della tua settimana non sono disponibili questa settimana.`}{" "}
-              <Link href="/settimana" className="link">{nonDisponibili === 1 ? "Sostituiscilo" : "Sostituiscili"} nel compositore</Link>, oppure invia lo stesso: Matteo ti propone un’alternativa.
-            </p>
+            <div className="acc-avviso acc-avviso-info text-sm">
+              <p>
+                {nonDisponibili === 1
+                  ? "Un piatto della tua settimana non è disponibile questa settimana."
+                  : `${nonDisponibili} piatti della tua settimana non sono disponibili questa settimana.`}{" "}
+                Se la invii così, Matteo ti propone un’alternativa.
+              </p>
+              <Link href="/settimana" className="link self-start">{nonDisponibili === 1 ? "Sostituiscilo" : "Sostituiscili"} nel compositore</Link>
+            </div>
           ) : null}
 
-          {conPiatti && pronto && piatti === 0 ? (
-            <div id="nr-piano" tabIndex={-1} className={`acc-avviso ${provato ? "acc-avviso-errore" : "acc-avviso-info"}`}>
-              La settimana è vuota: per {servizio.nome.toLowerCase()} serve almeno un piatto.{" "}
-              <Link href={dati.servizio === "sui-tuoi-macro" ? "/scheda" : "/settimana"} className="link">
-                Componila adesso
-              </Link>
-            </div>
-          ) : abbonamento ? (
+          {abbonamento ? (
             <p className="text-sm text-muted">
               Matteo ti ricontatta per concordare inizio, consegna o ritiro e pagamento.
             </p>
@@ -658,13 +763,18 @@ function Modulo({
       </aside>
 
       <div className="acc-modulo-invio grid gap-4">
-        {errore ? <Avviso ref={refErrore} tipo="errore">{errore}</Avviso> : null}
+        {errore ? (
+          <Avviso ref={refErrore} tipo="errore" azioni={errore.sessione ? <LinkAccediDiNuovo /> : undefined}>
+            {errore.testo}
+            {errore.sessione ? " Quello che hai scritto qui lo ritrovi dopo l’accesso." : ""}
+          </Avviso>
+        ) : null}
         {provato && Object.keys(errori).length ? (
           <p className="text-sm font-semibold text-[#a3261b]" role="status">
             Controlla i campi segnati: {Object.keys(errori).length === 1 ? "ne manca uno" : `ne mancano ${Object.keys(errori).length}`}.
           </p>
         ) : null}
-        <button type="submit" className="btn btn-lime w-full sm:w-auto sm:justify-self-start" disabled={invio}>
+        <button type="submit" className="btn btn-lime w-full sm:w-auto sm:justify-self-start" aria-disabled={invio ? true : undefined}>
           {invio ? "Invio a Matteo…" : abbonamento ? "Chiedi l’abbonamento" : "Invia la richiesta"} <span className="freccia" aria-hidden="true">→</span>
         </button>
         <p className="text-xs text-muted">

@@ -6,7 +6,18 @@ import { ORDER_SELECT } from "../_lib/ordini";
 import { oggiRoma } from "../../lib/server/date";
 import { emailNuovaRichiesta } from "../../lib/server/email";
 import { controllaDataPreferita } from "../../lib/server/impostazioni";
-import { leggiNuovoOrdine, ordineDaRiga, type RigaOrdine } from "../../lib/server/ordini";
+import { leggiNuovoOrdine, ordineDaRiga, type NuovoOrdineValido, type RigaOrdine } from "../../lib/server/ordini";
+
+/** La stessa richiesta, dello stesso cliente, partita negli ultimi 10 minuti e non annullata. */
+const GIA_INVIATA = `SELECT id,status FROM orders WHERE user_id=? AND source='web' AND status <> 'cancelled' AND created_at > datetime('now','-10 minutes')
+  AND service=? AND fulfillment=? AND COALESCE(requested_date,'')=? AND customer_name=? AND phone=? AND comune=? AND address=? AND notes=? AND plan_json=?
+  AND COALESCE(sub_plan,'')=? AND COALESCE(sub_tier,'')=? AND COALESCE(sub_household,'')=? AND sub_trial=?`;
+
+/** I valori di GIA_INVIATA, nello stesso ordine dei segnaposto. */
+const legaUguale = (userId: string, o: NuovoOrdineValido) => [
+  userId, o.service, o.fulfillment, o.requestedDate ?? "", o.name, o.phone, o.comune, o.address, o.notes, JSON.stringify(o.plan),
+  o.subscription?.plan ?? "", o.subscription?.tier ?? "", o.subscription?.household ?? "", o.subscription?.trial ? 1 : 0,
+];
 
 export const onRequestGet = async ({ env, request }: Context) => {
   const user = await currentUser(env, request);
@@ -48,25 +59,30 @@ export const onRequestPost = async ({ env, request, waitUntil }: Context) => {
     if (!data.ok) return json({ error: data.error }, data.status);
   }
 
-  const recent = await env.DB.prepare("SELECT COUNT(*) AS n FROM orders WHERE user_id=? AND created_at > datetime('now','-1 day')")
-    .bind(user.id).first<{ n: number }>();
-  if ((recent?.n ?? 0) >= 5) return json({ error: "Hai già inviato diverse richieste oggi. Scrivici a info@fuelchef.it." }, 429);
+  // Un doppio tocco su "Invia" (o un nuovo tentativo dopo una rete che cade) non deve fare due richieste:
+  // se la stessa richiesta e' partita da poco, si risponde con quella.
+  const uguale = legaUguale(user.id, o);
+  const gia = await env.DB.prepare(`${GIA_INVIATA} ORDER BY created_at DESC LIMIT 1`).bind(...uguale).first<{ id: string; status: string }>();
+  if (gia) return json({ id: gia.id, status: gia.status });
 
   const id = crypto.randomUUID();
-  /* Il limite giornaliero e' ricontrollato dentro l'INSERT: il conteggio sopra
-     da' un errore gentile, ma due invii in parallelo lo passerebbero entrambi.
+  /* Il limite giornaliero e il controllo dei doppioni stanno dentro l'INSERT: ricontrollarli prima darebbe un
+     errore gentile, ma due invii in parallelo lo passerebbero entrambi. Il limite conta solo le richieste
+     arrivate dal sito: gli ordini che Matteo inserisce a mano per un cliente non lo consumano.
      L'evento si scrive solo se l'ordine e' entrato davvero. */
   const [inserito] = await env.DB.batch([
     // price_cents: solo l'abbonamento parte con un prezzo, ed e' una proposta finche' Matteo non conferma.
     // sub_*: la formula scelta, solo per l'abbonamento (NULL per gli altri servizi).
     env.DB.prepare(`INSERT INTO orders (id,user_id,service,fulfillment,requested_date,customer_name,phone,comune,address,notes,plan_json,training_json,items_json,meals,price_cents,sub_plan,sub_tier,sub_household,sub_trial)
       SELECT ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
-      WHERE (SELECT COUNT(*) FROM orders WHERE user_id=? AND created_at > datetime('now','-1 day')) < 5`)
+      WHERE (SELECT COUNT(*) FROM orders WHERE user_id=? AND source='web' AND created_at > datetime('now','-1 day')) < 5
+        AND NOT EXISTS (${GIA_INVIATA})`)
       .bind(
         id, user.id, o.service, o.fulfillment, o.requestedDate, o.name, o.phone, o.comune, o.address, o.notes,
         JSON.stringify(o.plan), JSON.stringify(o.training), JSON.stringify(o.items), o.items.length, o.priceCents,
         o.subscription?.plan ?? null, o.subscription?.tier ?? null, o.subscription?.household ?? null, o.subscription?.trial ? 1 : 0,
         user.id,
+        ...uguale,
       ),
     env.DB.prepare(`INSERT INTO order_events (order_id,actor,type,from_status,to_status,detail)
       SELECT ?, 'customer', 'created', NULL, 'requested', 'Richiesta inviata dal sito' WHERE EXISTS (SELECT 1 FROM orders WHERE id = ?)`)
@@ -83,7 +99,12 @@ export const onRequestPost = async ({ env, request, waitUntil }: Context) => {
          OR (customer_profiles.address = '' AND excluded.address <> '')`)
       .bind(user.id, o.phone, o.comune, o.address),
   ]);
-  if (!inserito.meta.changes) return json({ error: "Hai già inviato diverse richieste oggi. Scrivici a info@fuelchef.it." }, 429);
+  if (!inserito.meta.changes) {
+    // Non e' entrata: o e' un doppione partito nello stesso istante (si risponde con l'altra), o e' il limite del giorno.
+    const altra = await env.DB.prepare(`${GIA_INVIATA} ORDER BY created_at DESC LIMIT 1`).bind(...uguale).first<{ id: string; status: string }>();
+    if (altra) return json({ id: altra.id, status: altra.status });
+    return json({ error: "Hai già inviato diverse richieste oggi. Scrivici a info@fuelchef.it." }, 429);
+  }
 
   await accodaEmail({ env, waitUntil }, {
     to: [emailMatteo(env)],

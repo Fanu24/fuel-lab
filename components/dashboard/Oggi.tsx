@@ -1,8 +1,8 @@
 "use client";
 
 /* La pagina "Oggi" (/dashboard): in tre secondi cosa c'e' da fare.
-   Dall'alto: saluto e data, chiusure vicine e piatti spenti (se ci sono),
-   "Da fare adesso", i quattro numeri del giorno,
+   Dall'alto: saluto e data, l'avviso di oggi chiuso (se c'e'), "Da fare adesso",
+   chiusure in arrivo e piatti spenti (se ci sono), i quattro numeri del giorno,
    cucina e uscite di oggi, i prossimi sette giorni. Un ordine si apre sopra
    la pagina (?id=...) senza perdere il punto.
 
@@ -84,8 +84,9 @@ export default function Oggi() {
           }
         />
         <ErroreDati />
-        <OggiImpostazioni oggi={oggi} />
+        <OggiImpostazioni oggi={oggi} parte="adesso" />
         <OggiDaFare azioni={azioni} />
+        <OggiImpostazioni oggi={oggi} parte="dopo" />
         <OggiNumeri code={code} />
         <div className="pn-due-colonne">
           <OggiCucina
@@ -165,7 +166,7 @@ export function OggiNumeri({ code }: { code: CodeOperative | null }) {
         href="/dashboard/produzione"
       />
       <Numero
-        label="Ritiri e consegne"
+        label="Uscite oggi"
         valore={code ? code.usciteOggi.length : attesa}
         nota={code ? (code.usciteOggi.length ? `${code.usciteDaFare.length} da fare · ${fatti} ${fatti === 1 ? "fatto" : "fatti"}` : "nessuno oggi") : "…"}
         tono={code?.usciteDaFare.length ? "attenzione" : "neutro"}

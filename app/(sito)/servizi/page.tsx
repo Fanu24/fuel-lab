@@ -6,7 +6,7 @@ import JsonLd from "@/components/seo/JsonLd";
 import { AGGIORNAMENTO, PAGINE, metadatiPagina } from "@/components/seo/pagine";
 import { nodiPagina, nodoAbbonamenti, nodoServizio } from "@/components/seo/schema";
 import { CONSEGNA_OGNI_GIORNI, LINK_RICHIEDI_ABBONAMENTO } from "@/lib/abbonamento";
-import { SERVIZI, type Prezzo, type Servizio, type ServizioId } from "@/lib/servizi";
+import { SERVIZI, type Prezzo, type ServizioId } from "@/lib/servizi";
 
 const PAGINA = PAGINE.servizi;
 
@@ -30,13 +30,6 @@ const SCHEMA_SERVIZIO: Record<Exclude<ServizioId, "abbonamento">, { tipo: string
   "sui-tuoi-macro": { tipo: "Meal prep sui macro del nutrizionista", url: "/scheda" },
   "home-cooking": { tipo: "Cuoco a domicilio", url: PAGINE.domicilio.percorso },
 };
-
-/* Dove porta il bottone di ogni servizio. lib/servizi.ts manda ancora l'home
-   cooking al vecchio indirizzo di "Chi è Matteo" (redirect 301 a /chi-siamo): finche' quel
-   file non si aggiorna, qui si punta direttamente alla pagina nuova. */
-function hrefServizio(s: Servizio): string {
-  return s.id === "home-cooking" ? PAGINE.chiSiamo.percorso : s.href;
-}
 
 /* Il titolo conta i servizi dell'elenco qui sotto: se ne arriva uno, cambia da solo. */
 const QUANTI: Record<number, string> = { 2: "Due", 3: "Tre", 4: "Quattro", 5: "Cinque", 6: "Sei" };
@@ -113,8 +106,8 @@ export default function Servizi() {
                   <span className="evidenzia">{testoPrezzo(s.prezzo)}</span>
                 </p>
                 <div className="mt-8 flex flex-wrap items-center gap-x-8 gap-y-4">
-                  <Link href={hrefServizio(s)} className="btn btn-ink">
-                    {BOTTONE[s.id]} <span className="freccia">→</span>
+                  <Link href={s.href} className="btn btn-ink">
+                    {BOTTONE[s.id]} <span aria-hidden="true" className="freccia">→</span>
                   </Link>
                   {s.id === "home-cooking" ? (
                     <Link href={PAGINE.domicilio.percorso} className="link">

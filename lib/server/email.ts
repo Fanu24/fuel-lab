@@ -105,7 +105,8 @@ export function emailAccesso(subject: string, url: string): ContenutoEmail {
     { tipo: "paragrafo", testo: "Apri questo link per continuare:" },
     { tipo: "link", url, etichetta: "Continua" },
     { tipo: "paragrafo", testo: "Se il pulsante non funziona, copia questo indirizzo nel browser:\n" + url },
-    { tipo: "paragrafo", testo: "Se non hai richiesto questa operazione, ignora questa email." },
+    // better-auth fa durare questi link un'ora (verifica dell'email e nuova password).
+    { tipo: "paragrafo", testo: "Il link vale un'ora. Se non hai richiesto questa operazione, ignora questa email." },
   ]);
 }
 

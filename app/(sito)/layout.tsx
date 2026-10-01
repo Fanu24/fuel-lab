@@ -16,7 +16,8 @@ export default function LayoutSito({ children }: { children: React.ReactNode }) 
         <Nav />
         {/* L'avviso di Matteo (pannello > Impostazioni): fisso sotto la nav, non sposta la pagina. */}
         <AvvisoSito />
-        <main id="contenuto">
+        {/* tabIndex -1: il link "Vai al contenuto" sposta il fuoco qui anche in Safari, dove un'ancora da sola non lo fa. */}
+        <main id="contenuto" tabIndex={-1} className="outline-none focus:shadow-none">
           {/* Per chi ha fatto l'accesso la settimana si salva da sola nell'account. */}
           <SincronizzaPiano />
           {children}

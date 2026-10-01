@@ -7,15 +7,16 @@ import {
   contaPiatti,
   descriviEvento,
   descrizioneInizioAbbonamento,
+  eSessioneScaduta,
   formattaGiorno,
   formattaGiornoDa,
   formattaMomento,
   hrefSezione,
   messaggioDa,
   nomeServizioRichiesta,
-  periodoRichiesta,
   piattiNonPiuDisponibili,
   prossimaUscitaDi,
+  quandoRichiesta,
   schedaAbbonamento,
   STATI_IN_CORSO,
 } from "@/lib/account";
@@ -58,12 +59,31 @@ type Props = {
   oggi: string;
 };
 
+/** Nell'archivio si mostrano le piu' recenti: una lista di cinquanta schede da 800 px non la scorre nessuno. */
+const ARCHIVIO_VISIBILE = 5;
+
 export default function Richieste({ ordini, apri, appenaInviata, oggi }: Props) {
   const [chiedi, dialogo] = useConferma();
   const [aperte, setAperte] = useState<string[]>(() => (apri ? [apri] : []));
   const [dettagli, setDettagli] = useState<Record<string, Caricabile<DettaglioOrdine>>>({});
   const [esiti, setEsiti] = useState<Record<string, Esito | null>>({});
   const [inCorso, setInCorso] = useState<Record<string, "ripeti" | "annulla" | undefined>>({});
+  const [tuttoArchivio, setTuttoArchivio] = useState(false);
+  /* La scheda che deve prendere il fuoco: dopo un annullamento la scheda cambia posto (da "In corso" all'archivio)
+     e si rimonta, e il fuoco cadrebbe sul body; lo stesso per la prima delle schede appena mostrate. */
+  const [fuocoSu, setFuocoSu] = useState<string | null>(null);
+  const refSuccesso = useRef<HTMLDivElement>(null);
+  const inviataVista = useRef<string | null>(null);
+
+  /* La conferma di una richiesta appena inviata si porta in vista e prende il fuoco: dopo l'invio la pagina e'
+     scorsa fin qui da sola e il titolo dell'avviso non deve restare fuori dallo schermo. */
+  const pronte = ordini.stato === "pronto";
+  useEffect(() => {
+    if (!appenaInviata || !pronte || inviataVista.current === appenaInviata) return;
+    inviataVista.current = appenaInviata;
+    refSuccesso.current?.scrollIntoView({ block: "start" });
+    refSuccesso.current?.focus({ preventScroll: true });
+  }, [appenaInviata, pronte]);
 
   // Lo stato vive qui e non nelle schede: una richiesta annullata passa da
   // "In corso" all'archivio, e la scheda rimontata non deve perdere l'esito.
@@ -92,9 +112,10 @@ export default function Richieste({ ordini, apri, appenaInviata, oggi }: Props) 
   const segna = (id: string, azione: "ripeti" | "annulla" | undefined) => setInCorso((a) => ({ ...a, [id]: azione }));
 
   async function annulla(o: Ordine) {
+    if (inCorso[o.id]) return;
     const ok = await chiedi({
       titolo: "Annullare la richiesta?",
-      testo: <p>Matteo non la preparerà. Se cambi idea puoi sempre inviarne una nuova.</p>,
+      testo: <p>Matteo non la prenderà in carico. Se cambi idea puoi sempre inviarne una nuova.</p>,
       conferma: "Annulla la richiesta",
       annulla: "Tienila",
       pericolosa: true,
@@ -106,10 +127,11 @@ export default function Richieste({ ordini, apri, appenaInviata, oggi }: Props) 
       await api.modificaOrdine(o.id, { status: "cancelled" });
       imposta(o.id, { ok: true, testo: "Richiesta annullata. Matteo ne riceve l’avviso." });
     } catch (e) {
-      imposta(o.id, { ok: false, testo: messaggioDa(e, "Non riesco ad annullare la richiesta. Riprova tra poco.") });
+      imposta(o.id, { ok: false, testo: messaggioDa(e, "Non riesco ad annullare la richiesta. Riprova tra poco."), sessione: eSessioneScaduta(e) });
     }
     await ordini.ricarica();
     segna(o.id, undefined);
+    setFuocoSu(o.id);
   }
 
   if (ordini.stato === "attesa") {
@@ -137,6 +159,12 @@ export default function Richieste({ ordini, apri, appenaInviata, oggi }: Props) 
 
   const attive = ordini.dati.filter((o) => STATI_IN_CORSO.includes(o.status));
   const concluse = ordini.dati.filter((o) => !STATI_IN_CORSO.includes(o.status));
+  // Una richiesta da aprire (?apri=) o appena annullata, che sta oltre le prime dell'archivio, non deve restare nascosta.
+  const daMostrare = concluse.some((o, i) => i >= ARCHIVIO_VISIBILE && (o.id === apri || o.id === fuocoSu || aperte.includes(o.id)));
+  const archivioPieno = tuttoArchivio || daMostrare;
+  const archivio = archivioPieno ? concluse : concluse.slice(0, ARCHIVIO_VISIBILE);
+  const nascoste = concluse.length - archivio.length;
+  const nuova = appenaInviata ? ordini.dati.find((o) => o.id === appenaInviata) : undefined;
 
   const scheda = (o: Ordine) => (
     <SchedaRichiesta
@@ -145,9 +173,12 @@ export default function Richieste({ ordini, apri, appenaInviata, oggi }: Props) 
       oggi={oggi}
       aperta={aperte.includes(o.id)}
       evidenzia={o.id === apri}
+      appenaInviata={o.id === appenaInviata}
       dettaglio={dettagli[o.id]}
       esito={esiti[o.id] ?? null}
       azione={inCorso[o.id]}
+      fuoco={o.id === fuocoSu}
+      onFuocoFatto={() => setFuocoSu(null)}
       onAlterna={() => alterna(o.id)}
       onAnnulla={() => void annulla(o)}
       caricaDettaglio={caricaDettaglio}
@@ -167,18 +198,21 @@ export default function Richieste({ ordini, apri, appenaInviata, oggi }: Props) 
       </div>
 
       {appenaInviata ? (
-        <Avviso tipo="successo" titolo="Richiesta inviata a Matteo.">
-          La guarda e ti conferma giorno, dettagli e totale: quando lo fa, lo vedi qui sotto. Finché non la conferma puoi ancora annullarla.
+        <Avviso ref={refSuccesso} tipo="successo" titolo="Richiesta inviata a Matteo.">
+          {nuova?.phone
+            ? `Matteo la guarda e ti ricontatta al ${nuova.phone} per confermare ${nuova.service === "abbonamento" ? "inizio, consegna o ritiro e prezzo" : "giorno, dettagli e totale"}.`
+            : `Matteo la guarda e ti conferma ${nuova?.service === "abbonamento" ? "inizio, consegna o ritiro e prezzo" : "giorno, dettagli e totale"}.`}{" "}
+          Quando lo fa, lo vedi anche qui sotto. Finché non la conferma puoi ancora annullarla.
         </Avviso>
       ) : null}
 
       {ordini.dati.length === 0 ? (
         <div className="acc-card grid gap-4">
           <h3 className="acc-card-titolo">Nessuna richiesta, per ora</h3>
-          <p className="text-muted">Componi la settimana e inviala a Matteo: qui segui ogni passo, dalla conferma alla consegna.</p>
+          <p className="text-muted">Componi la settimana, o scegli un abbonamento mensile, e invialo a Matteo: qui segui ogni passo, dalla conferma alla consegna.</p>
           <div className="flex flex-wrap gap-3">
             <Link href="/settimana" className="btn btn-ink btn-sm">Componi la settimana</Link>
-            <Link href={hrefSezione("richiesta")} scroll={false} className="btn btn-linea btn-sm">Nuova richiesta</Link>
+            <Link href={hrefSezione("richiesta", { servizio: "abbonamento" })} scroll={false} className="btn btn-linea btn-sm">Chiedi un abbonamento</Link>
           </div>
         </div>
       ) : (
@@ -192,7 +226,19 @@ export default function Richieste({ ordini, apri, appenaInviata, oggi }: Props) 
           {concluse.length ? (
             <div className="grid gap-4">
               <h3 className="acc-gruppo">Archivio <span className="num text-muted">{concluse.length}</span></h3>
-              <ul className="grid gap-4">{concluse.map((o) => <li key={o.id}>{scheda(o)}</li>)}</ul>
+              <ul className="grid gap-4">{archivio.map((o) => <li key={o.id}>{scheda(o)}</li>)}</ul>
+              {nascoste > 0 ? (
+                <button
+                  type="button"
+                  className="btn btn-linea btn-sm justify-self-start"
+                  onClick={() => {
+                    setTuttoArchivio(true);
+                    setFuocoSu(concluse[ARCHIVIO_VISIBILE].id);
+                  }}
+                >
+                  Mostra le altre {nascoste} {nascoste === 1 ? "richiesta" : "richieste"}
+                </button>
+              ) : null}
             </div>
           ) : null}
         </>
@@ -207,9 +253,12 @@ function SchedaRichiesta({
   oggi,
   aperta,
   evidenzia,
+  appenaInviata,
   dettaglio,
   esito,
   azione,
+  fuoco,
+  onFuocoFatto,
   onAlterna,
   onAnnulla,
   caricaDettaglio,
@@ -221,9 +270,14 @@ function SchedaRichiesta({
   oggi: string;
   aperta: boolean;
   evidenzia: boolean;
+  /** E' la richiesta appena inviata: la conferma sopra l'elenco ha gia' preso il fuoco, la scheda resta solo evidenziata. */
+  appenaInviata: boolean;
   dettaglio: Caricabile<DettaglioOrdine> | undefined;
   esito: Esito | null;
   azione: "ripeti" | "annulla" | undefined;
+  /** La scheda deve prendere il fuoco (e portarsi in vista): dopo un annullamento, o come prima delle schede appena mostrate. */
+  fuoco: boolean;
+  onFuocoFatto: () => void;
   onAlterna: () => void;
   onAnnulla: () => void;
   caricaDettaglio: (id: string) => Promise<DettaglioOrdine | null>;
@@ -235,18 +289,29 @@ function SchedaRichiesta({
   const { piano } = usePiano();
   const sostituisci = useSostituisciSettimana();
   const ref = useRef<HTMLElement>(null);
+  const refEsito = useRef<HTMLDivElement>(null);
   const ritiro = o.fulfillment === "pickup";
   const idDettagli = `dettagli-${o.id}`;
   const idTitolo = `richiesta-${o.id}`;
 
-  // Arrivati con ?apri=: la scheda si porta in vista e prende il fuoco.
+  // Arrivati con ?apri=: la scheda si porta in vista e prende il fuoco (se e' appena stata inviata, il fuoco e' sulla conferma).
   useEffect(() => {
-    if (!evidenzia || !ref.current) return;
+    if (!evidenzia || appenaInviata || !ref.current) return;
     ref.current.scrollIntoView({ block: "start" });
     ref.current.focus({ preventScroll: true });
-  }, [evidenzia]);
+  }, [evidenzia, appenaInviata]);
+
+  useEffect(() => {
+    if (!fuoco || !ref.current) return;
+    ref.current.focus({ preventScroll: true });
+    // Con un esito da leggere (annullamento) si porta in vista quello: la scheda e' alta e l'esito sta in fondo.
+    if (esito && refEsito.current) refEsito.current.scrollIntoView({ block: "center" });
+    else ref.current.scrollIntoView({ block: "start" });
+    onFuocoFatto();
+  }, [fuoco, esito, onFuocoFatto]);
 
   async function ripeti() {
+    if (azione) return;
     segna("ripeti");
     impostaEsito(null);
     const d = dettaglio?.stato === "pronto" ? dettaglio.dati : await caricaDettaglio(o.id);
@@ -295,15 +360,8 @@ function SchedaRichiesta({
 
   const scheda = schedaAbbonamento(o);
   const abbonamento = !!scheda;
-  // L'abbonamento confermato ha un periodo (un mese dalla data d'inizio), non un giorno di ritiro.
-  const periodo = periodoRichiesta(o, oggi);
-  const quando = periodo
-    ? { etichetta: "Periodo", valore: periodo }
-    : o.fulfillment_date
-      ? { etichetta: ritiro ? "Ritiro" : "Consegna", valore: formattaGiorno(o.fulfillment_date, oggi) }
-      : o.requested_date
-        ? { etichetta: abbonamento ? "Inizio desiderato" : "Giorno preferito", valore: `${formattaGiorno(o.requested_date, oggi)}, da confermare` }
-        : { etichetta: abbonamento ? "Inizio" : ritiro ? "Ritiro" : "Consegna", valore: "Da concordare" };
+  // L'abbonamento confermato ha un periodo (un mese dalla data d'inizio), non un giorno di ritiro; una richiesta annullata non ha un quando.
+  const quando = quandoRichiesta(o, oggi);
 
   const anteprima = o.items.slice(0, 3).map((v) => v.name);
 
@@ -340,7 +398,7 @@ function SchedaRichiesta({
   return (
     <article
       ref={ref}
-      tabIndex={evidenzia ? -1 : undefined}
+      tabIndex={-1}
       aria-labelledby={idTitolo}
       className={`acc-richiesta ${evidenzia ? "acc-richiesta-evidenza" : ""}`}
     >
@@ -359,10 +417,12 @@ function SchedaRichiesta({
       </div>
 
       <dl className="acc-fatti mt-5">
-        <div>
-          <dt>{quando.etichetta}</dt>
-          <dd>{quando.valore}</dd>
-        </div>
+        {quando ? (
+          <div>
+            <dt>{quando.etichetta}</dt>
+            <dd>{quando.valore}</dd>
+          </div>
+        ) : null}
         <div>
           <dt>Modalità</dt>
           <dd>
@@ -395,12 +455,13 @@ function SchedaRichiesta({
               </div>
             ) : null}
           </>
-        ) : (
+        ) : o.meals > 0 ? (
+          // L'home cooking si concorda a parole e non ha piatti del menu: un "Pasti: —" non dice niente.
           <div>
             <dt>Pasti</dt>
-            <dd>{o.meals || "—"}</dd>
+            <dd>{o.meals}</dd>
           </div>
-        )}
+        ) : null}
         {o.price_cents !== null && o.price_cents !== undefined ? (
           <div>
             <dt>{o.status === "requested" ? "Prezzo proposto" : "Totale concordato"}</dt>
@@ -434,7 +495,7 @@ function SchedaRichiesta({
           {aperta ? "Chiudi i dettagli" : "Dettagli e cronologia"}
         </button>
         {o.items.length && !abbonamento ? (
-          <button type="button" className="btn btn-ink btn-sm" disabled={!!azione} onClick={() => void ripeti()}>
+          <button type="button" className="btn btn-ink btn-sm" aria-disabled={azione ? true : undefined} onClick={() => void ripeti()}>
             {azione === "ripeti" ? "Carico…" : "Ripeti questa settimana"}
           </button>
         ) : null}
@@ -444,12 +505,14 @@ function SchedaRichiesta({
           </button>
         ) : null}
         {o.status === "requested" ? (
-          <button type="button" className="btn btn-sm acc-btn-pericolo-linea" disabled={!!azione} onClick={onAnnulla}>
+          <button type="button" className="btn btn-sm acc-btn-pericolo-linea" aria-disabled={azione ? true : undefined} onClick={onAnnulla}>
             {azione === "annulla" ? "Annullo…" : "Annulla richiesta"}
           </button>
         ) : null}
       </div>
-      <EsitoAzione esito={esito} className="mt-4" />
+      <div ref={refEsito}>
+        <EsitoAzione esito={esito} className="mt-4 empty:mt-0" />
+      </div>
 
       <div id={idDettagli} hidden={!aperta} className="acc-dettagli">
         {aperta ? <Dettagli ordine={o} dettaglio={dettaglio} onRiprova={() => void caricaDettaglio(o.id)} /> : null}

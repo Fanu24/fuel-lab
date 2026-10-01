@@ -142,6 +142,8 @@ export default function OrdineNuovo({ onChiudi, onSalvato }: { onChiudi: () => v
   const [tentato, setTentato] = useState(false);
   const [erroreServer, setErroreServer] = useState("");
   const [salvo, setSalvo] = useState(false);
+  // Due invii ravvicinati non devono creare due ordini: lo stato React arriva dopo, questo segnale subito.
+  const inCorso = useRef(false);
 
   // Dopo il primo "Salva" gli errori seguono il modulo: spariscono man mano che si correggono.
   const errori = tentato ? erroriNuovoOrdine(campi) : {};
@@ -218,7 +220,7 @@ export default function OrdineNuovo({ onChiudi, onSalvato }: { onChiudi: () => v
 
   async function salva(e: FormEvent) {
     e.preventDefault();
-    if (salvo) return;
+    if (salvo || inCorso.current) return;
     setTentato(true);
     setErroreServer("");
     const trovati = erroriNuovoOrdine(campi);
@@ -227,6 +229,7 @@ export default function OrdineNuovo({ onChiudi, onSalvato }: { onChiudi: () => v
       vaiAlCampo(primo);
       return;
     }
+    inCorso.current = true;
     setSalvo(true);
     try {
       const { order } = await adminApi.nuovoOrdine(corpoNuovoOrdine(campi));
@@ -235,6 +238,7 @@ export default function OrdineNuovo({ onChiudi, onSalvato }: { onChiudi: () => v
       onSalvato(order.id);
     } catch (err) {
       setErroreServer(err instanceof ApiError ? err.message : "Ordine non salvato. Controlla la rete e riprova.");
+      inCorso.current = false;
       setSalvo(false);
     }
   }
@@ -553,7 +557,7 @@ export default function OrdineNuovo({ onChiudi, onSalvato }: { onChiudi: () => v
                   <Riga etichetta="Periodo">
                     {calendario ? (
                       <>
-                        {`Dal ${giornoLungo(calendario.dal)} al ${giornoLungo(calendario.al)}`}
+                        {`Da ${giornoLungo(calendario.dal)} a ${giornoLungo(calendario.al)}`}
                         <span className="block text-[14px] text-muted">
                           {calendario.pasti} pasti in {calendario.consegne.length} consegne, una ogni 3 giorni
                         </span>
@@ -610,7 +614,7 @@ export default function OrdineNuovo({ onChiudi, onSalvato }: { onChiudi: () => v
               </span>
             </p>
             <div className="pn-bottoni">
-              <button type="submit" className="pn-tasto pn-tasto-pieno pn-tasto-grande flex-1" disabled={salvo} aria-busy={salvo}>
+              <button type="submit" className="pn-tasto pn-tasto-pieno pn-tasto-grande flex-1 whitespace-nowrap" disabled={salvo} aria-busy={salvo}>
                 {salvo ? "Salvo…" : abbonamento ? "Salva abbonamento" : "Salva ordine"}
               </button>
               <button type="button" className="pn-tasto pn-tasto-grande" onClick={chiudi} disabled={salvo}>

@@ -15,5 +15,8 @@ export type PropsArea = {
   oggi: string;
 };
 
-/** L'esito di un'azione, mostrato accanto al bottone che l'ha avviata. */
-export type Esito = { ok: boolean; testo: string };
+/**
+ * L'esito di un'azione, mostrato accanto al bottone che l'ha avviata.
+ * `sessione`: il server ha risposto 401, serve un link per rientrare.
+ */
+export type Esito = { ok: boolean; testo: string; sessione?: boolean };

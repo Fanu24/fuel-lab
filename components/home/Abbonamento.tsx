@@ -25,8 +25,8 @@ export default function Abbonamento() {
             Cinque abbonamenti, <span className="evidenzia">uno è il tuo.</span>
           </h2>
           <p className="lead mt-6">
-            Il piano del tuo nutrizionista, cucinato. Ci lasci la dieta, noi la prepariamo ai grammi nel nostro
-            laboratorio e te la portiamo pronta ogni {CONSEGNA_OGNI_GIORNI} giorni. {ZONA_A_PAROLE}.
+            Il piano del tuo nutrizionista, cucinato. Lasci la dieta a Matteo: la prepara ai grammi nel suo
+            laboratorio e te la porta pronta, o la ritiri tu, ogni {CONSEGNA_OGNI_GIORNI} giorni. {ZONA_A_PAROLE}.
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-x-8 gap-y-4">
             <Link href={PAGINE.abbonamento.percorso} className="btn btn-ink">

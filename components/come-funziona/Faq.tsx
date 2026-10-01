@@ -13,11 +13,11 @@ export interface Domanda {
  */
 export default function Faq({ domande }: { domande: Domanda[] }) {
   return (
-    <div className="border-t-[3px] border-ink">
+    <div className="min-w-0 border-t-[3px] border-ink">
       {domande.map((d) => (
         <details key={d.q} className="group border-b border-ink/15">
           <summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-6 py-5 [&::-webkit-details-marker]:hidden">
-            <span className="font-disp text-lg font-semibold tracking-[.02em] uppercase md:text-xl">{d.q}</span>
+            <span className="min-w-0 font-disp text-lg font-semibold tracking-[.02em] [overflow-wrap:anywhere] uppercase md:text-xl">{d.q}</span>
             <span
               aria-hidden="true"
               className="grid h-9 w-9 shrink-0 place-items-center bg-ink text-xl text-paper transition-transform duration-500 group-open:rotate-45 group-open:bg-lime group-open:text-ink"

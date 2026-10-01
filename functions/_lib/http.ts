@@ -11,15 +11,20 @@ export function sameOrigin(request: Request) {
   return !!origin && origin === new URL(request.url).origin;
 }
 
+/** Il tetto di ogni corpo di richiesta delle API: sopra questo il middleware risponde 413 senza leggerlo. */
+export const MAX_CORPO_API = 64_000;
+/** Accesso, registrazione e profilo di better-auth: corpi di poche righe. */
+export const MAX_CORPO_AUTH = 16_000;
+
 /**
- * Il corpo JSON della richiesta, se e' un oggetto e non supera `max` byte.
- * Il tetto vale anche durante la lettura: un corpo enorme (magari senza
- * Content-Length) non viene mai caricato tutto in memoria.
+ * I byte del corpo, se non superano `max`; altrimenti null. Il tetto vale anche
+ * durante la lettura: un corpo enorme (magari senza Content-Length) non viene
+ * mai caricato tutto in memoria.
  */
-export async function bodyJson(request: Request, max = 30000): Promise<Record<string, unknown> | null> {
+export async function leggiCorpo(request: Request, max: number): Promise<Uint8Array<ArrayBuffer> | null> {
   const dichiarata = Number(request.headers.get("Content-Length"));
   if (Number.isFinite(dichiarata) && dichiarata > max) return null;
-  if (!request.body) return null;
+  if (!request.body) return new Uint8Array(0);
   const lettore = request.body.getReader();
   const pezzi: Uint8Array[] = [];
   let letti = 0;
@@ -39,15 +44,33 @@ export async function bodyJson(request: Request, max = 30000): Promise<Record<st
     tutto.set(pezzo, posizione);
     posizione += pezzo.byteLength;
   }
-  const raw = new TextDecoder().decode(tutto);
+  return tutto;
+}
+
+/** Il corpo JSON della richiesta, se e' un oggetto e non supera `max` byte. */
+export async function bodyJson(request: Request, max = 30000): Promise<Record<string, unknown> | null> {
+  if (!request.body) return null;
+  const byte = await leggiCorpo(request, max);
+  if (!byte) return null;
   try {
-    const parsed: unknown = JSON.parse(raw);
+    const parsed: unknown = JSON.parse(new TextDecoder().decode(byte));
     return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as Record<string, unknown> : null;
   } catch {
     return null;
   }
 }
 
-export function str(value: unknown, max: number) {
-  return typeof value === "string" ? value.trim().slice(0, max) : "";
+/**
+ * La stessa richiesta con il corpo gia' letto (e limitato a `max` byte), per
+ * passarla a codice che il corpo se lo legge da solo, come better-auth. null se
+ * il corpo e' piu' grande.
+ */
+export async function conCorpoLimitato(request: Request, max: number): Promise<Request | null> {
+  if (request.method === "GET" || request.method === "HEAD" || !request.body) return request;
+  const byte = await leggiCorpo(request, max);
+  if (!byte) return null;
+  const headers = new Headers(request.headers);
+  headers.delete("Content-Length");
+  headers.delete("Transfer-Encoding");
+  return new Request(request.url, { method: request.method, headers, body: byte });
 }

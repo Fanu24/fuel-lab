@@ -7,6 +7,8 @@ type Props = {
   buttonClassName?: string;
   label?: string;
   onClick?: () => void;
+  /** L'id del servizio (lib/servizi.ts) di cui parla la pagina: senza WhatsApp il bottone porta al modulo contatti con quell'argomento gia' scelto. */
+  servizio?: string;
   /** Non piu' usato: senza numero il bottone porta ai contatti, non serve spiegare. */
   mostraAvviso?: boolean;
 };
@@ -36,8 +38,10 @@ export default function WhatsAppCta({
   buttonClassName = "",
   label = "Contatta su WhatsApp",
   onClick,
+  servizio,
 }: Props) {
   const href = linkWhatsApp(testo);
+  const modulo = `/richiesta${servizio ? `?servizio=${encodeURIComponent(servizio)}` : ""}#scrivi`;
 
   return (
     <div className={className}>
@@ -51,12 +55,14 @@ export default function WhatsAppCta({
         >
           <MarchioWhatsApp />
           <span>{label}</span>
+          <span className="sr-only"> (si apre in una nuova scheda)</span>
           <span aria-hidden="true" className="freccia">→</span>
         </a>
       ) : (
         /* Senza numero WhatsApp il bottone non resta spento: porta al modulo
-           contatti, che arriva a Matteo nel pannello e per email. */
-        <Link href="/richiesta#scrivi" onClick={onClick} className={`btn btn-lime ${buttonClassName}`}>
+           contatti, che arriva a Matteo nel pannello e per email, tenendo
+           l'argomento che la pagina conosce. */
+        <Link href={modulo} onClick={onClick} className={`btn btn-lime ${buttonClassName}`}>
           <MarchioMessaggio />
           <span>{/whatsapp/i.test(label) ? "Scrivi a Matteo" : label}</span>
           <span aria-hidden="true" className="freccia">→</span>

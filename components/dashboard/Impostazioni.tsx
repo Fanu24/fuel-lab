@@ -10,17 +10,19 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { adminApi, api, type Impostazioni as TImpostazioni } from "@/lib/api";
 import { impostaImpostazioni } from "@/components/impostazioni/useImpostazioni";
+import { ErroreCaricamento, eSessioneScaduta } from "./ClientiErrore";
 import ImpostazioniAvviso from "./ImpostazioniAvviso";
 import ImpostazioniChiusure from "./ImpostazioniChiusure";
 import ImpostazioniPiatti from "./ImpostazioniPiatti";
 import { messaggio } from "./ImpostazioniParti";
 import { usePannello } from "./PannelloDati";
-import { Avviso, Caricamento, TestaPagina } from "./ui";
+import { Caricamento, TestaPagina } from "./ui";
 
 export default function Impostazioni() {
   const { oggi } = usePannello();
   const [dati, setDati] = useState<TImpostazioni | null>(null);
   const [errore, setErrore] = useState("");
+  const [sessione, setSessione] = useState(false);
   const [giro, setGiro] = useState(0);
 
   useEffect(() => {
@@ -30,9 +32,14 @@ export default function Impostazioni() {
         if (!vivo) return;
         setDati(r.settings);
         setErrore("");
+        setSessione(false);
         impostaImpostazioni(r.settings);
       },
-      (e: unknown) => vivo && setErrore(messaggio(e, "Non riesco a leggere le impostazioni.")),
+      (e: unknown) => {
+        if (!vivo) return;
+        setErrore(messaggio(e, "Non riesco a leggere le impostazioni."));
+        setSessione(eSessioneScaduta(e));
+      },
     );
     return () => {
       vivo = false;
@@ -62,10 +69,12 @@ export default function Impostazioni() {
 
       {errore ? (
         <div className="grid gap-3">
-          <Avviso>{errore}</Avviso>
-          <button type="button" className="pn-tasto justify-self-start" onClick={() => setGiro((g) => g + 1)}>
-            Riprova
-          </button>
+          <ErroreCaricamento testo={errore} sessioneScaduta={sessione} />
+          {sessione ? null : (
+            <button type="button" className="pn-tasto justify-self-start" onClick={() => setGiro((g) => g + 1)}>
+              Riprova
+            </button>
+          )}
         </div>
       ) : null}
 

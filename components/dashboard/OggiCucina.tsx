@@ -64,6 +64,12 @@ export default function OggiCucina({
         </Link>
       }
     >
+      {chiusura && (ordini.length || abbonamenti.length) ? (
+        <p className="pn-avviso pn-avviso-errore mt-4" role="note">
+          Oggi risulti chiuso {periodo(chiusura.dal, chiusura.al, oggi)}, ma hai ordini da cucinare: controlla o sposta le date.
+        </p>
+      ) : null}
+
       {conAllergie.length ? (
         <div className="pn-allergie mt-4" role="note" aria-label="Allergie negli ordini di oggi">
           <p className="pn-allergie-titolo">

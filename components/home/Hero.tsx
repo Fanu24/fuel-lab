@@ -22,9 +22,10 @@ export default function Hero() {
         <div className="relative aspect-[4/3]">
           <Image src={FOTO.ciotola.src} alt={FOTO.ciotola.alt} fill sizes="260px" className="object-cover" />
         </div>
-        <figcaption className="flex items-center justify-between gap-3 px-4 py-3 font-disp text-[11px] font-semibold tracking-[.16em] uppercase">
-          <span>Cucinato stamattina</span>
-          <span className="whitespace-nowrap text-lime">Ogni giorno</span>
+        {/* La foto e' di repertorio, come quelle dei piatti: lo dice, invece di far credere che sia il piatto di stamattina. */}
+        <figcaption className="grid gap-0.5 px-4 py-3 font-disp text-[11px] font-semibold tracking-[.16em] uppercase">
+          <span>Cucinato in giornata</span>
+          <span className="font-medium text-steel normal-case tracking-normal">Foto illustrativa</span>
         </figcaption>
       </figure>
       <div className="wrap relative pt-32 pb-10 md:pb-14">
@@ -65,8 +66,9 @@ export default function Hero() {
           </Link>
         </div>
 
+        {/* flex e non griglia: a 768 px la terza voce andava a capo da sola in due righe. */}
         <ul
-          className="mt-14 grid gap-3 border-t pt-6 font-disp text-[12px] font-semibold tracking-[.2em] uppercase sm:grid-cols-3"
+          className="mt-14 flex flex-wrap gap-x-10 gap-y-3 border-t pt-6 font-disp text-[12px] font-semibold tracking-[.2em] uppercase"
           style={{ borderColor: "var(--line)" }}
         >
           {FATTI.map((f) => (

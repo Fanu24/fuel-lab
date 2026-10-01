@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PIATTI } from "../catalogo";
+import { EXTRA, PIATTI } from "../catalogo";
 import {
   dettaglioDaRiga,
   euroTesto,
@@ -9,8 +9,10 @@ import {
   leggiNuovoOrdine,
   leggiSceltaAbbonamento,
   ordineDaRiga,
+  pianoDaCorpo,
   sceltaDaRiga,
   soloPastiDellaFormula,
+  vociDalPiano,
   type StatoModificabile,
 } from "./ordini";
 import type { EventoOrdine } from "../api";
@@ -195,6 +197,43 @@ describe("nuova richiesta", () => {
   it("un abbonamento letto dal database resta un abbonamento", () => {
     expect(ordineDaRiga({ ...riga, service: "abbonamento" }, true).service).toBe("abbonamento");
     expect(leggiNuovoOrdine({ ...corpo, plan: {}, service: "home-cooking" }, "", "2026-09-27").ok).toBe(true);
+  });
+
+  it("una data scritta male e' un errore, non una richiesta senza data", () => {
+    for (const requestedDate of ["05/10/2026", "2026-02-30", "2026-10-01T10:00:00Z", 20261001, "domani", {}]) {
+      expect(leggiNuovoOrdine({ ...corpo, requestedDate }, "", "2026-09-27"), String(requestedDate)).toMatchObject({ ok: false, status: 400, error: "La data scelta non è valida" });
+    }
+    // nessuna data, e' una scelta valida
+    for (const requestedDate of [undefined, null, "", "  "]) {
+      expect(leggiNuovoOrdine({ ...corpo, requestedDate }, "", "2026-09-27")).toMatchObject({ ok: true, value: { requestedDate: null } });
+    }
+    expect(leggiNuovoOrdine({ ...corpo, requestedDate: " 2026-10-01 " }, "", "2026-09-27")).toMatchObject({ ok: true, value: { requestedDate: "2026-10-01" } });
+    // gli altri errori restano com'erano: prima i dati mancanti
+    expect(leggiNuovoOrdine({ ...corpo, requestedDate: "boh", phone: "1" }, "", "2026-09-27")).toMatchObject({ ok: false, error: "Completa nome, telefono e dati di ritiro o consegna" });
+  });
+
+  it("nome, telefono, comune e indirizzo stanno su una riga; le note tengono gli a capo ma non i caratteri di controllo", () => {
+    const esito = leggiNuovoOrdine({
+      ...corpo, name: " Mario\r\nBcc: spia@x.it ", phone: "333\n123 4567", comune: "Pe\tscara\u0000", address: "Via Roma\r\n1",
+      fulfillment: "delivery", notes: " senza cipolla\r\nporzioni grandi\u0007 ",
+    }, "", "2026-09-27");
+    expect(esito).toMatchObject({ ok: true, value: { name: "Mario Bcc: spia@x.it", phone: "333 123 4567", comune: "Pe scara", address: "Via Roma 1", notes: "senza cipolla\nporzioni grandi" } });
+    // il nome dell'account, se serve, e' ripulito allo stesso modo
+    const dallAccount = leggiNuovoOrdine({ ...corpo, name: "" }, "Anna\r\nBianchi", "2026-09-27");
+    expect(dallAccount.ok && dallAccount.value.name).toBe("Anna Bianchi");
+  });
+
+  it("le aggiunte ripetute dello stesso piatto contano una volta, nel piano salvato e nelle righe", () => {
+    const extra = EXTRA[0].id;
+    const piano = pianoDaCorpo({ lun: { pranzo: { piatto: piatto.id, extra: Array(500).fill(extra) } } });
+    expect(piano.lun?.pranzo?.extra).toEqual([extra]);
+    expect(pianoDaCorpo({ lun: { pranzo: { piatto: piatto.id, extra: [EXTRA[1].id, EXTRA[0].id, EXTRA[1].id] } } }).lun?.pranzo?.extra).toEqual([EXTRA[1].id, EXTRA[0].id]);
+    expect(pianoDaCorpo("boh")).toEqual({});
+    const esito = leggiNuovoOrdine({ ...corpo, plan: { lun: { pranzo: { piatto: piatto.id, extra: Array(500).fill(extra) } } } }, "", "2026-09-27");
+    expect(esito.ok && esito.value.items[0].extras).toEqual([EXTRA[0].nome]);
+    expect(esito.ok && esito.value.plan.lun?.pranzo?.extra).toEqual([extra]);
+    // anche un piano arrivato da altrove (che puo' avere doppioni) non li riporta nelle righe
+    expect(vociDalPiano({ lun: { pranzo: { piatto: piatto.id, extra: [extra, extra, extra] } } })[0].extras).toEqual([EXTRA[0].nome]);
   });
 
   it("usa il nome dell'account se il modulo lo lascia vuoto", () => {

@@ -9,12 +9,12 @@ const PASSI = [
   {
     n: "02",
     titolo: "La settimana si riempie",
-    testo: "Ogni giorno riceve i piatti giusti per quell'allenamento. Se non ti convincono, li sposti trascinandoli.",
+    testo: "Ogni giorno riceve i piatti giusti per quell'allenamento. Se uno non ti convince, lo cambi tu.",
   },
   {
     n: "03",
     titolo: "Matteo cucina e consegna",
-    testo: "Scrivi a Matteo con le tue scelte: conferma piatti, ritiro o consegna prima dell'ordine.",
+    testo: "Mandi la settimana a Matteo: lui conferma piatti, giorno e ritiro o consegna, poi si mette ai fornelli.",
   },
 ];
 

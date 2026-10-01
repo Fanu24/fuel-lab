@@ -14,7 +14,7 @@
 import { NOMI_FASCIA, fineAbbonamento, formulaDi, frasePeriodo, getFormula, periodoAbbonamento } from "@/lib/abbonamento";
 import { etichettaStato, ETICHETTE_SERVIZIO, type Chiusura, type Ordine, type Servizio, type StatoOrdine, type VoceOrdine } from "@/lib/api";
 import { chiusuraDi } from "@/lib/impostazioni";
-import { abbonamentiDelGiorno, contaPastiAbbonamenti, dettaglioAbbonamento, eAbbonamento, isData, nomeAbbonamento } from "@/lib/produzione";
+import { abbonamentiDelGiorno, contaPastiAbbonamenti, dettaglioAbbonamento, eAbbonamento, isData, nomeAbbonamento, pastiDelPeriodo } from "@/lib/produzione";
 import { GIORNI, NOMI_GIORNATA, NOMI_GIORNO, type Allenamenti, type GiornoSettimana, type TipoGiornata } from "@/lib/settimana";
 
 /* ---------- Stati ---------- */
@@ -249,7 +249,7 @@ export type CodeOperative = ReturnType<typeof codeOperative>;
 export type Tono = "allarme" | "attenzione" | "info";
 
 export type AzioneDaFare = {
-  id: "ritardo" | "conferma" | "date" | "cucina" | "uscite" | "messaggi" | "incassa";
+  id: "ritardo" | "mese-finito" | "conferma" | "date" | "cucina" | "uscite" | "messaggi" | "incassa";
   testo: string;
   dettaglio: string;
   href: string;
@@ -288,7 +288,9 @@ export function azioniDaFare(
   const c = codeOperative(ordini, oggi, abbonamentiConsegnati);
   const azioni: AzioneDaFare[] = [];
 
-  const ritardo = c.inRitardo.filter((o) => o.status !== "requested");
+  // Un abbonamento a mese finito non e' un ordine in ritardo: non c'e' una data da spostare, si chiude o si rinnova.
+  const ritardo = c.inRitardo.filter((o) => o.status !== "requested" && !eAbbonamento(o));
+  const meseFinito = c.inRitardo.filter((o) => o.status !== "requested" && eAbbonamento(o));
   if (ritardo.length) {
     azioni.push({
       id: "ritardo",
@@ -297,6 +299,16 @@ export function azioniDaFare(
       href: verso(ritardo, "solo=ritardo"),
       tono: "allarme",
       quanti: ritardo.length,
+    });
+  }
+  if (meseFinito.length) {
+    azioni.push({
+      id: "mese-finito",
+      testo: `${plurale(meseFinito.length, "abbonamento", "abbonamenti")} a mese finito`,
+      dettaglio: `${elencoNomi(meseFinito)}: il periodo è scaduto, segna concluso o concorda il rinnovo.`,
+      href: verso(meseFinito, "solo=mese-finito"),
+      tono: "allarme",
+      quanti: meseFinito.length,
     });
   }
   if (c.daConfermare.length) {
@@ -333,7 +345,8 @@ export function azioniDaFare(
       dettaglio: `${parti.join(" e ")} · apri il foglio cucina con piatti ed extra.`,
       href: "/dashboard/produzione",
       tono: "info",
-      quanti: c.cucinaOggi.length + c.abbonamentiOggi.length,
+      // Il numero grande dice le porzioni, come il titolo ("Cucina 12 porzioni oggi").
+      quanti: c.porzioniOggi,
     });
   }
   if (c.usciteDaFare.length) {
@@ -469,7 +482,7 @@ export const nomeAllenamento = (t: TipoGiornata) => NOMI_GIORNATA[t];
 /* ---------- Filtri e ricerca ---------- */
 
 export type FiltroStato = "aperti" | StatoOrdine | "tutti";
-export type FiltroSpeciale = "ritardo" | "senza-date" | "incassare" | "abbonamenti";
+export type FiltroSpeciale = "ritardo" | "mese-finito" | "senza-date" | "incassare" | "abbonamenti";
 
 export const FILTRI_STATO: { id: FiltroStato; label: string }[] = [
   { id: "aperti", label: "Aperti" },
@@ -484,6 +497,7 @@ export const FILTRI_STATO: { id: FiltroStato; label: string }[] = [
 
 export const FILTRI_SPECIALI: Record<FiltroSpeciale, string> = {
   ritardo: "In ritardo",
+  "mese-finito": "Mese finito",
   "senza-date": "Senza date",
   incassare: "Da incassare",
   abbonamenti: "Abbonamenti",
@@ -495,6 +509,34 @@ export const leggiFiltroStato = (v: string | null): FiltroStato =>
 export const leggiFiltroSpeciale = (v: string | null): FiltroSpeciale | null =>
   v && Object.prototype.hasOwnProperty.call(FILTRI_SPECIALI, v) ? (v as FiltroSpeciale) : null;
 
+/**
+ * Lo stato che vale quando l'indirizzo non lo dice: "Da incassare" comprende i
+ * consegnati, quindi senza uno stato esplicito si guarda tutto; negli altri casi
+ * si parte dagli aperti.
+ */
+export function statoDaIndirizzo(stato: string | null, solo: string | null): FiltroStato {
+  if (!stato && leggiFiltroSpeciale(solo) === "incassare") return "tutti";
+  return leggiFiltroStato(stato);
+}
+
+/**
+ * Scrive i filtri in `?stato=&solo=&q=`, cosi' l'indirizzo si puo' copiare e
+ * mandare. Entra solo cio' che differisce dal predefinito; gli altri parametri
+ * (?id=, ?nuovo=) restano come sono.
+ */
+export function filtriNelIndirizzo(params: URLSearchParams, filtri: Filtri): URLSearchParams {
+  const p = new URLSearchParams(params);
+  const solo = filtri.speciale;
+  if (filtri.stato === statoDaIndirizzo(null, solo)) p.delete("stato");
+  else p.set("stato", filtri.stato);
+  if (solo) p.set("solo", solo);
+  else p.delete("solo");
+  const q = filtri.ricerca.trim();
+  if (q) p.set("q", q);
+  else p.delete("q");
+  return p;
+}
+
 export function passaStato(o: Ordine, filtro: FiltroStato) {
   if (filtro === "tutti") return true;
   if (filtro === "aperti") return aperto(o);
@@ -502,7 +544,9 @@ export function passaStato(o: Ordine, filtro: FiltroStato) {
 }
 
 export function passaSpeciale(o: Ordine, filtro: FiltroSpeciale | null, oggi: string) {
-  if (filtro === "ritardo") return inRitardo(o, oggi);
+  // Come "Da fare adesso": le richieste con la data preferita passata stanno in "Da confermare", un abbonamento a mese finito ha il suo filtro.
+  if (filtro === "ritardo") return o.status !== "requested" && !eAbbonamento(o) && inRitardo(o, oggi);
+  if (filtro === "mese-finito") return o.status !== "requested" && eAbbonamento(o) && inRitardo(o, oggi);
   if (filtro === "senza-date") return senzaDate(o);
   if (filtro === "incassare") return daIncassare(o);
   if (filtro === "abbonamenti") return eAbbonamento(o);
@@ -591,9 +635,19 @@ export const linkMappa = (indirizzo: string, comune: string) =>
 
 /* ---------- CSV ---------- */
 
-/** Una cella CSV: virgolette quando serve e niente formule (un "=" iniziale diventa testo). */
-function cella(valore: string | number | null | undefined) {
+/**
+ * Una cella CSV: virgolette quando serve e niente formule (un "=" iniziale diventa testo).
+ * Il telefono e' un caso a parte: "+39 333 123 4567" non e' una formula e non deve
+ * ricevere l'apostrofo, che Excel mostrerebbe com'e'. Senza spazi ("+393331234567",
+ * "0854212345") Excel lo leggerebbe come numero e perderebbe il + o lo zero iniziale:
+ * si scrive come testo con ="...", sicuro perche' dentro ci sono solo cifre.
+ */
+function cella(valore: string | number | null | undefined, telefono = false) {
   let s = valore === null || valore === undefined ? "" : String(valore);
+  if (telefono && /^\+?[\d\s().-]+$/.test(s) && /\d/.test(s)) {
+    if (!/\s/.test(s) && s.replace(/\D/g, "").length >= 6 && /^[+0]/.test(s)) return `"=""${s}"""`;
+    return s;
+  }
   if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
   return /[;"\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
@@ -625,8 +679,9 @@ export function ordiniCsv(ordini: Ordine[]) {
     ETICHETTE_SERVIZIO[o.service] ?? o.service,
     eAbbonamento(o) ? dettaglioAbbonamento(o) : "",
     o.fulfillment === "pickup" ? "Ritiro" : "Consegna",
-    o.status === "completed" && o.fulfillment === "pickup" ? "Ritirato" : etichettaStato(o.status),
-    o.meals,
+    etichettaStatoOrdine(o),
+    // Un abbonamento non ha piatti: i pasti sono quelli del periodo (vuoto finche' non ha un inizio).
+    eAbbonamento(o) ? (pastiDelPeriodo(o) ?? "") : o.meals,
     o.requested_date,
     o.production_date,
     o.fulfillment_date,
@@ -636,5 +691,7 @@ export function ordiniCsv(ordini: Ordine[]) {
     o.internal_note,
     o.items.map((v) => `${NOMI_GIORNO[v.day as GiornoSettimana] ?? v.day} ${v.meal}: ${v.name}${v.extras.length ? ` + ${v.extras.join(", ")}` : ""}`).join(" | "),
   ]);
-  return `${BOM}${[intestazione, ...righe].map((r) => r.map(cella).join(";")).join("\r\n")}\r\n`;
+  const colonnaTelefono = intestazione.indexOf("Telefono");
+  const scrivi = (r: (string | number | null | undefined)[], dati: boolean) => r.map((v, i) => cella(v, dati && i === colonnaTelefono)).join(";");
+  return `${BOM}${[scrivi(intestazione, false), ...righe.map((r) => scrivi(r, true))].join("\r\n")}\r\n`;
 }

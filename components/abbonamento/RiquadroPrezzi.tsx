@@ -8,6 +8,7 @@ import {
   PREZZO_DA,
   getFormula,
   linkRichiediAbbonamento,
+  linkScriviAbbonamento,
   type FormulaId,
 } from "@/lib/abbonamento";
 import { CIRCA_A_PASTO, CIRCA_A_PASTO_FRASE, PASTI_SETTIMANA_MAX, PASTI_SETTIMANA_MIN, ZONA_A_PAROLE } from "./righe";
@@ -46,15 +47,19 @@ export function RiquadroPrezzi({ formula, delay = 0 }: { formula: FormulaId; del
         <strong className="font-semibold text-lime">{f.prezzo.plus} € al mese</strong>, con porzioni e proteine
         maggiorate per chi si allena.
       </p>
+      {/* Il prezzo qui sopra e' il listino: il modulo si apre sulla consegna a casa, che e' il listino senza sconti. */}
       <Link
-        href={linkRichiediAbbonamento({ formula })}
+        href={linkRichiediAbbonamento({ formula, ritiro: false })}
         className="btn btn-lime mt-8 w-full justify-between whitespace-normal py-3 text-left"
       >
         <span>Prenota la tua settimana di prova</span>
         <span aria-hidden="true" className="freccia">→</span>
       </Link>
       <p className="mt-5 text-sm text-steel">
-        Nessun pagamento online: inizio, consegna o ritiro e pagamento si concordano con Matteo.
+        Nessun pagamento online: inizio, consegna o ritiro e pagamento si concordano con Matteo.{" "}
+        <Link href={linkScriviAbbonamento({ formula })} className="link text-paper">
+          Oppure scrivi a Matteo, senza account.
+        </Link>
       </p>
     </Reveal>
   );
@@ -96,7 +101,10 @@ export function RiquadroDa({ delay = 0 }: { delay?: number }) {
         <span aria-hidden="true" className="freccia">→</span>
       </Link>
       <p className="mt-5 text-sm text-steel">
-        Nessun pagamento online: inizio, consegna o ritiro e pagamento si concordano con Matteo.
+        Nessun pagamento online: inizio, consegna o ritiro e pagamento si concordano con Matteo.{" "}
+        <Link href={linkScriviAbbonamento()} className="link text-paper">
+          Oppure scrivi a Matteo, senza account.
+        </Link>
       </p>
     </Reveal>
   );

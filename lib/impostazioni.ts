@@ -8,7 +8,7 @@
    nel browser e nel Worker: niente Intl, i nomi dei mesi sono scritti a mano.
    ========================================================================= */
 
-import { impostazioniVuote, type AvvisoSito, type Chiusura, type Impostazioni } from "./api";
+import { impostazioniVuote, type AvvisoSito, type Chiusura, type Impostazioni, type Ordine } from "./api";
 import { getPiatto } from "./catalogo";
 import { GIORNI, PASTI, type Piano, type Slot } from "./settimana";
 import { dataValida, spostaGiorno } from "./server/date";
@@ -87,6 +87,24 @@ export function durata(c: Pick<Chiusura, "dal" | "al">): number {
   return Math.round((Date.parse(`${c.al}T12:00:00Z`) - Date.parse(`${c.dal}T12:00:00Z`)) / 86_400_000) + 1;
 }
 
+/**
+ * Per ogni chiusura dell'elenco, il numero (da 1) della prima altra chiusura
+ * con cui ha giorni in comune; 0 se nessuna. Il server le accetta tutte: serve
+ * solo a dire a Matteo che due righe si pestano i piedi. Le righe con date
+ * mancanti o al contrario non contano.
+ */
+export function sovrapposizioni(righe: readonly Pick<Chiusura, "dal" | "al">[]): number[] {
+  const intera = (c: Pick<Chiusura, "dal" | "al">) => dataValida(c.dal) && dataValida(c.al) && c.dal <= c.al;
+  return righe.map((r, i) => {
+    if (!intera(r)) return 0;
+    const j = righe.findIndex((x, k) => k !== i && intera(x) && x.dal <= r.al && r.dal <= x.al);
+    return j + 1;
+  });
+}
+
+/** Oltre questi giorni una chiusura si segnala ("controlla l'anno"): un refuso nell'anno ne fa una da 365. */
+export const GIORNI_CHIUSURA_LUNGA = 45;
+
 /* ---------- Avviso ---------- */
 
 /**
@@ -121,6 +139,27 @@ export function caselleEscluse(piano: Piano, esclusi: readonly string[]): (Slot 
     if (id && fuori.has(id)) trovate.push({ g, m, piattoId: id });
   }
   return trovate;
+}
+
+/** Gli stati di un ordine che Matteo non ha ancora consegnato ne' chiuso: un piatto spento li tocca. */
+const STATI_APERTI: readonly Ordine["status"][] = ["requested", "confirmed", "preparing"];
+
+/**
+ * Quanti ordini aperti hanno ancora in lista il piatto (e quante porzioni):
+ * quando Matteo lo spegne, sono i clienti da avvisare.
+ */
+export function ordiniApertiConPiatto(ordini: readonly Ordine[], piattoId: string): { ordini: number; porzioni: number } {
+  let quanti = 0;
+  let porzioni = 0;
+  for (const o of ordini) {
+    if (!STATI_APERTI.includes(o.status)) continue;
+    const n = o.items.filter((v) => v.id === piattoId).length;
+    if (n) {
+      quanti += 1;
+      porzioni += n;
+    }
+  }
+  return { ordini: quanti, porzioni };
 }
 
 /* ---------- Lettura tollerante ---------- */

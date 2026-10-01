@@ -8,6 +8,7 @@ import {
   FOTO_BLOG,
   SLUG_IN_EVIDENZA,
   articoliPerCategoria,
+  INTERVALLO_NUMERICO,
   articoloPerSlug,
   categoriaPerId,
   correlatiDi,
@@ -16,13 +17,16 @@ import {
   linkInterni,
   minutiLettura,
   paroleArticolo,
+  tabellaBreve,
   testiArticolo,
   testoSemplice,
   titoloPagina,
   titoloPaginaCategoria,
+  unisciUnita,
 } from "./blog";
 import { APPROFONDIMENTI } from "./blog-approfondimenti";
-import { getPiatto } from "./catalogo";
+import { PIATTI, getPiatto } from "./catalogo";
+import { INDIRIZZO, elencoZone } from "./sito";
 
 /* Il blog è fatto di dati scritti a mano: questi test sono la rete sotto i
    refusi che un occhio non vede (uno slug doppio, un link a una pagina che
@@ -197,6 +201,118 @@ describe("articoli del blog", () => {
     for (const foto of Object.values(FOTO_BLOG)) {
       expect(fs.existsSync(path.join(RADICE, "public", foto.src)), foto.src).toBe(true);
     }
+  });
+});
+
+/** Titolo, descrizione e ogni testo dell’articolo, senza la sintassi dei link. */
+const testiDi = (a: (typeof ARTICOLI)[number]) => [a.titolo, a.descrizione, ...testiArticolo(a)].map(testoSemplice);
+
+describe("qualità dei testi", () => {
+  it("niente doppi spazi, spazi prima della punteggiatura o punteggiatura attaccata alla parola dopo", () => {
+    for (const a of ARTICOLI) {
+      for (const testo of testiDi(a)) {
+        expect(testo, `${a.slug}: doppio spazio`).not.toMatch(/ {2,}/);
+        expect(testo, `${a.slug}: spazio prima della punteggiatura`).not.toMatch(/ [,.;:!?]/);
+        expect(testo, `${a.slug}: manca lo spazio dopo la punteggiatura`).not.toMatch(/[\p{L}][,;:!?][\p{L}]/u);
+        expect(testo, `${a.slug}: manca lo spazio dopo il punto`).not.toMatch(/[a-zà-ù]\.[A-ZÀ-Ù]/);
+        expect(testo, `${a.slug}: virgolette dritte`).not.toMatch(/"/);
+        expect(testo, `${a.slug}: testo con spazi ai bordi`).toBe(testo.trim());
+      }
+    }
+  });
+
+  it("niente parole ripetute di fila né accenti mancanti sulle parole più frequenti", () => {
+    const ripetuta = /(?<![\p{L}\p{N}])(\p{L}{2,}) \1(?![\p{L}\p{N}])/iu;
+    const senzaAccento = /(?<![\p{L}\p{N}’])(perche|piu|gia|cosi|puo|cioe|citta|poiche|benche|affinche|pero|verra|sara|qualita|attivita|eta|velocita|societa|facilita|possibilita|varieta|difficolta)(?![\p{L}\p{N}])/iu;
+    for (const a of ARTICOLI) {
+      for (const testo of testiDi(a)) {
+        expect(testo, `${a.slug}: parola ripetuta`).not.toMatch(ripetuta);
+        expect(testo, `${a.slug}: accento mancante`).not.toMatch(senzaAccento);
+      }
+    }
+  });
+
+  it("ogni paragrafo, punto e risposta comincia con una maiuscola e finisce con la punteggiatura", () => {
+    for (const a of ARTICOLI) {
+      const blocchi = [
+        a.introduzione,
+        ...a.sezioni.flatMap((s) => [...s.paragrafi, ...(s.punti ?? []), ...(s.dopo ?? [])]),
+        ...a.faq.map((f) => f.risposta),
+        ...(APPROFONDIMENTI[a.slug] ? [APPROFONDIMENTI[a.slug].risposta, APPROFONDIMENTI[a.slug].scenario, ...APPROFONDIMENTI[a.slug].passi, APPROFONDIMENTI[a.slug].daSapere] : []),
+      ];
+      for (const blocco of blocchi) {
+        const testo = testoSemplice(blocco);
+        expect(testo, `${a.slug}: ${testo.slice(0, 40)}`).toMatch(/^[A-ZÀ-Ù0-9‘“«]/);
+        expect(testo, `${a.slug}: …${testo.slice(-30)}`).toMatch(/[.?!:;’”»]$/);
+      }
+    }
+  });
+
+  it("titoli, titoli per i motori di ricerca e descrizioni sono tutti diversi", () => {
+    const uniche = (valori: string[], cosa: string) => expect(new Set(valori.map((v) => v.toLowerCase())).size, cosa).toBe(valori.length);
+    uniche(ARTICOLI.map((a) => a.titolo), "H1 degli articoli");
+    uniche([...ARTICOLI.map(titoloPagina), ...CATEGORIE.map(titoloPaginaCategoria)], "title delle pagine del blog");
+    uniche([...ARTICOLI.map((a) => a.descrizione), ...CATEGORIE.map((c) => c.descrizione)], "description delle pagine del blog");
+    uniche(CATEGORIE.map((c) => c.titolo), "H1 delle categorie");
+    // l’anteprima social mette il titolo su due righe: oltre gli 80 caratteri scenderebbe a tre
+    for (const a of ARTICOLI) expect(a.titolo.length, a.slug).toBeLessThanOrEqual(80);
+  });
+
+  it("ogni guida è raggiunta da almeno un’altra guida, oltre che dall’elenco", () => {
+    const raggiunte = new Set<string>();
+    for (const a of ARTICOLI) {
+      for (const altra of correlatiDi(a)) raggiunte.add(altra.slug);
+      for (const href of linkInterni(a)) {
+        const slug = href.match(/^\/blog\/([a-z0-9-]+)$/)?.[1];
+        if (slug && slug !== a.slug) raggiunte.add(slug);
+      }
+    }
+    for (const a of ARTICOLI) expect(raggiunte.has(a.slug), `${a.slug} è orfana`).toBe(true);
+  });
+
+  it("indirizzo e zone di consegna sono quelli del sito, non una copia che invecchia", () => {
+    for (const a of ARTICOLI) {
+      for (const testo of testiDi(a)) {
+        for (const via of testo.match(/Via del Santuario \d+/g) ?? []) {
+          expect(via.trim(), a.slug).toBe(INDIRIZZO.via);
+        }
+        if (testo.includes("Francavilla")) expect(testo, a.slug).toContain(elencoZone());
+      }
+    }
+  });
+
+  it("quello che i testi dicono dei piatti del menu è ancora vero", () => {
+    // Se il menu cambia, questi controlli dicono quali frasi riscrivere (cercale per nome del piatto).
+    const piu = (misura: (p: (typeof PIATTI)[number]) => number) => PIATTI.reduce((a, b) => (misura(b) > misura(a) ? b : a)).id;
+    const meno = (misura: (p: (typeof PIATTI)[number]) => number) => PIATTI.reduce((a, b) => (misura(b) < misura(a) ? b : a)).id;
+    expect(PIATTI.length, "le FAQ dicono ‘oggi sono sei’").toBe(6);
+    expect(piu((p) => p.carboidrati), "il piatto con più carboidrati").toBe("riso-julien-pollo-teriyaki");
+    expect(piu((p) => p.proteine / p.carboidrati), "il rapporto più alto tra proteine e carboidrati").toBe("maiale-senape-spinaci");
+    expect(meno((p) => p.kcal), "il piatto con i valori energetici più contenuti").toBe("uova-purgatorio-peperoni");
+    expect(PIATTI.filter((p) => p.proteine > 40).length, "diversi piatti superano i 40 g di proteine").toBeGreaterThanOrEqual(2);
+    expect(PIATTI.filter((p) => p.allenamento === "entrambi").map((p) => p.id), "l’unico piatto ‘cardio e pesi’").toEqual(["riso-julien-pollo-teriyaki"]);
+    for (const p of PIATTI) expect(Math.abs(p.kcal - (p.proteine * 4 + p.carboidrati * 4 + p.grassi * 9)), p.id).toBeLessThanOrEqual(1);
+  });
+});
+
+describe("tipografia dei testi", () => {
+  it("unità e numero restano sulla stessa riga", () => {
+    expect(unisciUnita("a +4 °C, 20 g, 3 giorni e 10 minuti")).toBe("a +4 °C, 20 g, 3 giorni e 10 minuti");
+    // una parola che comincia come un’unità non si tocca
+    expect(unisciUnita("2 gnocchi, 3 mini porzioni, 4 oraziani")).toBe("2 gnocchi, 3 mini porzioni, 4 oraziani");
+    expect(unisciUnita("4 kcal per grammo")).toBe("4 kcal per grammo");
+  });
+
+  it("gli intervalli di numeri si riconoscono, con l’unità se c’è", () => {
+    const pezzi = unisciUnita("tra 20–40 g e 1,5–2 litri al giorno").split(INTERVALLO_NUMERICO);
+    expect(pezzi).toEqual(["tra ", "20–40 g", " e ", "1,5–2 litri", " al giorno"]);
+    expect("nessun intervallo qui".split(INTERVALLO_NUMERICO)).toEqual(["nessun intervallo qui"]);
+  });
+
+  it("le tabelle con celle brevi restano in colonne, le altre diventano schede", () => {
+    expect(tabellaBreve({ intestazioni: ["Peso", "Minimo", "Massimo"], righe: [["55 kg", "circa 14 g", "circa 22 g"]] })).toBe(true);
+    expect(tabellaBreve({ intestazioni: ["Giorno", "Cosa fare"], righe: [["Lunedì", "Una frase decisamente più lunga di trenta caratteri"]] })).toBe(false);
+    expect(tabellaBreve({ intestazioni: ["A", "B", "C", "D", "E"], righe: [["1", "2", "3", "4", "5"]] })).toBe(false);
   });
 });
 

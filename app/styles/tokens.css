@@ -19,6 +19,9 @@
      lime  su night                 = 16.83 : 1
      ink   su lime                  = 16.32 : 1
      lime  su paper                 =  1.01 : 1   -> mai testo
+     errore #a3261b su paper        =  6.6  : 1
+     bordo dei campi (ink 55%) su paper = 3.9 : 1  (WCAG 1.4.11: i controlli
+                                                    si riconoscono a 3:1)
    ========================================================================= */
 
 @theme {
@@ -30,6 +33,7 @@
   --color-night-2: #1a1d1b;
   --color-steel: #a3aba5;
   --color-lime: #dfff3e;
+  --color-errore: #a3261b;
 
   --font-disp: var(--f-disp), "Arial Narrow", sans-serif;
   --font-ui: var(--f-ui), ui-sans-serif, system-ui, sans-serif;
@@ -39,6 +43,9 @@
 :root {
   --line: rgba(18, 20, 18, 0.12);
   --line-night: rgba(243, 239, 230, 0.14);
+  /* Il contorno di un campo da compilare: --line (12%) e' una filettatura, qui
+     serve un bordo che si veda. */
+  --line-campo: rgba(18, 20, 18, 0.55);
 
   /* Il taglio d'angolo del logo: la F e la U di FUEL hanno gli spigoli smussati
      a 45 gradi. Lo stesso taglio chiude foto e bottoni principali. */

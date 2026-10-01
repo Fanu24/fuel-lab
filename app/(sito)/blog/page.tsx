@@ -9,6 +9,7 @@ import {
   articoloPerSlug,
   fotoArticolo,
 } from "@/lib/blog";
+import { ID } from "@/components/seo/schema";
 import { URL_SITO } from "@/lib/sito";
 import ChiusuraBlog from "./_componenti/ChiusuraBlog";
 import JsonLd from "./_componenti/JsonLd";
@@ -48,11 +49,12 @@ export default function BlogPage() {
         name: "Blog FUEL LAB",
         description: DESCRIZIONE,
         inLanguage: "it-IT",
-        publisher: { "@type": "Organization", "@id": `${URL_SITO}/#organization`, name: "FUEL LAB", url: URL_SITO },
+        publisher: { "@id": ID.organizzazione },
         blogPost: ARTICOLI.map((articolo) => ({
           "@type": "BlogPosting",
           "@id": `${URL_SITO}/blog/${articolo.slug}#articolo`,
           headline: articolo.titolo,
+          author: { "@id": ID.matteo },
           url: `${URL_SITO}/blog/${articolo.slug}`,
           datePublished: articolo.data,
           dateModified: articolo.aggiornato ?? articolo.data,
@@ -108,7 +110,7 @@ export default function BlogPage() {
             </Link>
             <div>
               <RigaMeta articolo={inEvidenza} />
-              <h2 id="titolo-evidenza" className="titolo mt-5">
+              <h2 id="titolo-evidenza" className="blog-titolo-evidenza mt-5">
                 <Link href={`/blog/${inEvidenza.slug}`} className="hover:underline hover:decoration-4 hover:underline-offset-8">
                   {inEvidenza.titolo}
                 </Link>
@@ -147,7 +149,7 @@ export default function BlogPage() {
               <ul className="mt-10 grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
                 {articoli.map((articolo) => (
                   <li key={articolo.slug}>
-                    <SchedaArticolo articolo={articolo} />
+                    <SchedaArticolo articolo={articolo} conCategoria={false} />
                   </li>
                 ))}
               </ul>

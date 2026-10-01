@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ID } from "@/components/seo/schema";
 import WhatsAppCta from "@/components/ui/WhatsAppCta";
 import {
   ARTICOLI,
@@ -17,7 +18,7 @@ import {
   titoloPagina,
 } from "@/lib/blog";
 import { APPROFONDIMENTI } from "@/lib/blog-approfondimenti";
-import { URL_SITO } from "@/lib/sito";
+import { TITOLARE, URL_SITO } from "@/lib/sito";
 import ChiusuraBlog from "../_componenti/ChiusuraBlog";
 import Condividi from "../_componenti/Condividi";
 import JsonLd from "../_componenti/JsonLd";
@@ -59,7 +60,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       publishedTime: articolo.data,
       modifiedTime: articolo.aggiornato ?? articolo.data,
       section: categoria?.nome,
-      authors: ["FUEL LAB"],
+      authors: [TITOLARE.nome],
       images: [{ url: immagineOg(articolo.slug), width: 1200, height: 630, alt: articolo.titolo }],
     },
     twitter: {
@@ -83,7 +84,8 @@ export default async function ArticoloPage({ params }: Props) {
   const minuti = minutiLettura(articolo);
   const correlati = correlatiDi(articolo);
   const modificato = articolo.aggiornato ?? articolo.data;
-  const organizzazione = { "@type": "Organization", "@id": `${URL_SITO}/#organization`, name: "FUEL LAB", url: URL_SITO };
+  // "aggiornato il" solo se è davvero un altro giorno: lo stesso giorno sarebbe ripetere la data
+  const aggiornata = modificato > articolo.data;
 
   const indice = [
     ...(approfondimento ? [{ id: "in-breve", titolo: "In breve" }] : []),
@@ -117,11 +119,9 @@ export default async function ArticoloPage({ params }: Props) {
         keywords: articolo.parolaChiave,
         wordCount: paroleArticolo(articolo),
         timeRequired: `PT${minuti}M`,
-        author: organizzazione,
-        publisher: {
-          ...organizzazione,
-          logo: { "@type": "ImageObject", url: `${URL_SITO}/logo-fuellab.png`, width: 1095, height: 360 },
-        },
+        // Matteo e l’attività sono nodi del grafo del sito (components/seo/schema.ts): qui solo il riferimento.
+        author: { "@id": ID.matteo },
+        publisher: { "@id": ID.organizzazione },
         mainEntityOfPage: { "@type": "WebPage", "@id": url },
         isPartOf: { "@type": "Blog", "@id": `${URL_SITO}/blog#blog`, name: "Blog FUEL LAB" },
       },
@@ -159,7 +159,7 @@ export default async function ArticoloPage({ params }: Props) {
             <Briciole voci={briciole} />
             {categoria ? (
               <p className="mt-8">
-                <Link href={`/blog/categoria/${categoria.id}`} className="occhiello hover:underline">
+                <Link href={`/blog/categoria/${categoria.id}`} className="occhiello -my-3 py-3 hover:underline">
                   {categoria.nome}
                 </Link>
               </p>
@@ -168,16 +168,20 @@ export default async function ArticoloPage({ params }: Props) {
             <h1 className={articolo.titolo.length > 48 ? "titolo mt-5 max-w-[22ch]" : "titolo-xl mt-5 max-w-[17ch]"}>
               {articolo.titolo}
             </h1>
-            <p className="num mt-6 text-sm text-muted">
-              Pubblicato il <time dateTime={articolo.data}>{dataLeggibile(articolo.data)}</time>
-              {articolo.aggiornato ? (
+            <p className="num mt-6 flex flex-wrap gap-x-2 gap-y-1 text-sm text-muted">
+              <span className="whitespace-nowrap">
+                Pubblicato il <time dateTime={articolo.data}>{dataLeggibile(articolo.data)}</time>
+              </span>
+              {aggiornata ? (
                 <>
-                  {" "}
-                  · aggiornato il <time dateTime={articolo.aggiornato}>{dataLeggibile(articolo.aggiornato)}</time>
+                  <span aria-hidden="true">·</span>
+                  <span className="whitespace-nowrap">
+                    aggiornato il <time dateTime={modificato}>{dataLeggibile(modificato)}</time>
+                  </span>
                 </>
               ) : null}
-              <span aria-hidden="true"> · </span>
-              {minuti} min di lettura
+              <span aria-hidden="true">·</span>
+              <span className="whitespace-nowrap">{minuti} min di lettura</span>
             </p>
             <p className="mt-2 text-sm text-muted">
               A cura di FUEL LAB, la cucina di{" "}
@@ -187,14 +191,6 @@ export default async function ArticoloPage({ params }: Props) {
               , cuoco a Pescara.
             </p>
             <p className="lead mt-6 max-w-[62ch]">{articolo.introduzione}</p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/settimana" className="btn btn-ink">
-                Componi la settimana <span className="freccia">→</span>
-              </Link>
-              <Link href="/menu" className="btn btn-linea">
-                Guarda il menu
-              </Link>
-            </div>
           </div>
         </header>
 
@@ -213,7 +209,7 @@ export default async function ArticoloPage({ params }: Props) {
           </figure>
         </div>
 
-        <div className="wrap grid gap-12 py-[var(--sezione)] lg:grid-cols-[minmax(0,1fr)_280px] lg:gap-20">
+        <div className="wrap grid gap-12 py-[var(--sezione)] lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-20">
           <div className="min-w-0 max-w-[72ch]">
             {approfondimento ? (
               <section id="in-breve" className="border-l-[5px] border-ink bg-paper-2 p-6 md:p-8" aria-labelledby="titolo-in-breve">
@@ -230,12 +226,14 @@ export default async function ArticoloPage({ params }: Props) {
               <h2 id="titolo-indice" className="occhiello">
                 In questa guida
               </h2>
-              <ol className="mt-4 grid gap-2 sm:grid-cols-2 sm:gap-x-8">
+              <ol className="mt-2 grid sm:grid-cols-2 sm:gap-x-8">
                 {indice.map((voce, posizione) => (
-                  <li key={voce.id} className="flex gap-3">
-                    <span className="num w-6 shrink-0 text-sm text-muted">{String(posizione + 1).padStart(2, "0")}</span>
-                    <a href={`#${voce.id}`} className="underline decoration-ink/30 underline-offset-4 hover:decoration-lime">
-                      {voce.titolo}
+                  <li key={voce.id}>
+                    <a href={`#${voce.id}`} className="group/voce flex min-h-11 items-center gap-3">
+                      <span aria-hidden="true" className="num w-6 shrink-0 text-sm text-muted">
+                        {String(posizione + 1).padStart(2, "0")}
+                      </span>
+                      <span className="underline decoration-ink/30 underline-offset-4 group-hover/voce:decoration-lime">{voce.titolo}</span>
                     </a>
                   </li>
                 ))}
@@ -244,7 +242,9 @@ export default async function ArticoloPage({ params }: Props) {
 
             {articolo.sezioni.map((sezione) => (
               <section key={sezione.titolo} id={idSezione(sezione.titolo)} className="mt-14">
-                <h2 className="font-disp text-3xl leading-tight font-bold">{sezione.titolo}</h2>
+                <h2 className="font-disp text-3xl leading-tight font-bold">
+                  <Testo>{sezione.titolo}</Testo>
+                </h2>
                 {sezione.paragrafi.map((paragrafo, indiceParagrafo) => (
                   <p key={indiceParagrafo} className="mt-5 text-lg leading-relaxed text-muted">
                     <Testo>{paragrafo}</Testo>
@@ -259,7 +259,7 @@ export default async function ArticoloPage({ params }: Props) {
                     ))}
                   </ul>
                 ) : null}
-                {sezione.tabella ? <Tabella tabella={sezione.tabella} /> : null}
+                {sezione.tabella ? <Tabella tabella={sezione.tabella} titolo={sezione.titolo} /> : null}
                 {sezione.piatti ? <TabellaPiatti id={sezione.piatti} /> : null}
                 {sezione.dopo?.map((paragrafo, indiceParagrafo) => (
                   <p key={indiceParagrafo} className="mt-5 text-lg leading-relaxed text-muted">
@@ -295,7 +295,9 @@ export default async function ArticoloPage({ params }: Props) {
                 <dl className="mt-6 space-y-7">
                   {articolo.faq.map((faq) => (
                     <div key={faq.domanda}>
-                      <dt className="text-lg font-semibold">{faq.domanda}</dt>
+                      <dt className="text-lg font-semibold">
+                        <Testo>{faq.domanda}</Testo>
+                      </dt>
                       <dd className="mt-2 leading-relaxed text-muted">
                         <Testo>{faq.risposta}</Testo>
                       </dd>
@@ -313,8 +315,9 @@ export default async function ArticoloPage({ params }: Props) {
                 <ul className="mt-4 space-y-3 text-sm">
                   {articolo.fonti.map((fonte) => (
                     <li key={fonte.url}>
-                      <a className="link" href={fonte.url} target="_blank" rel="noopener noreferrer">
+                      <a className="link -my-[13px] py-[13px]" href={fonte.url} target="_blank" rel="noopener noreferrer">
                         {fonte.titolo} <span aria-hidden="true">↗</span>
+                        <span className="sr-only"> (si apre in una nuova scheda)</span>
                       </a>
                     </li>
                   ))}
@@ -339,15 +342,21 @@ export default async function ArticoloPage({ params }: Props) {
             </section>
           </div>
 
-          <aside className="self-start border-t-[3px] border-ink pt-6 lg:sticky lg:top-[calc(var(--nav-h)+24px)]">
+          {/* Solo sul computer, accanto alla lettura: sul telefono l’invito è uno solo, in fondo (ChiusuraBlog). */}
+          <aside
+            aria-labelledby="titolo-invito"
+            className="hidden self-start border-t-[3px] border-ink pt-6 lg:sticky lg:top-[calc(var(--nav-h)+24px)] lg:block"
+          >
             <p className="occhiello">Vuoi organizzare i pasti?</p>
-            <h2 className="mt-3 font-disp text-2xl font-bold">Partiamo dal menu.</h2>
+            <h2 id="titolo-invito" className="mt-3 font-disp text-2xl font-bold">
+              Partiamo dal menu.
+            </h2>
             <p className="mt-3 text-muted">
               Consulta i piatti e componi una proposta per la tua settimana. Per giorni, ritiro e consegna, chiedi
               conferma a Matteo.
             </p>
             <div className="mt-6 grid gap-3">
-              <Link href="/settimana" className="btn btn-ink w-full">
+              <Link href="/settimana" className="btn btn-ink w-full !px-4">
                 Componi la settimana <span className="freccia">→</span>
               </Link>
               <Link href="/menu" className="btn btn-linea w-full">

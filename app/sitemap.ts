@@ -31,8 +31,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // Le cinque schede degli abbonamenti, /abbonamento/<formula>.
     ...PAGINE_FORMULE.map((p) => voce(p)),
     ...PIATTI.map((p) => voce(paginaPiatto(p), [p.img])),
-    // Pagine di altri reparti del sito: pubbliche, quindi in mappa.
-    { url: assoluto("/richiesta"), lastModified: AGGIORNAMENTO, changeFrequency: "yearly", priority: 0.5 },
+    // Il blog sta fuori da PAGINE (lo scrive un altro reparto): pubblico, quindi in mappa.
     { url: assoluto("/blog"), lastModified: AGGIORNAMENTO, changeFrequency: "weekly", priority: 0.6 },
     ...CATEGORIE.filter((c) => articoliPerCategoria(c.id).length).map((c) => ({
       url: assoluto(`/blog/categoria/${c.id}`),

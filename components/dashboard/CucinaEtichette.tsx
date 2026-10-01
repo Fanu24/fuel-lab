@@ -21,7 +21,7 @@ import {
   type Etichetta,
 } from "@/lib/produzione";
 import { useMemoria } from "./CucinaMemoria";
-import { Avviso } from "./ui";
+import { Avviso, Vuoto } from "./ui";
 
 const GIORNI_SCADENZA = [1, 2, 3, 4, 5, 6, 7];
 const SCADENZA_PREDEFINITA = 3;
@@ -87,6 +87,12 @@ export default function CucinaEtichette({ ordini, abbonamenti = [], giorno }: { 
           foglio di carta normale e sovrapponilo al foglio di etichette controluce.
         </Avviso>
       </div>
+
+      {lista.length === 0 ? (
+        <div className="print:hidden">
+          <Vuoto>Niente da etichettare: gli ordini di questo giorno non hanno piatti del menu (home cooking). Le etichette partono dai piatti.</Vuoto>
+        </div>
+      ) : null}
 
       <div className="cu-fogli">
         {fogli.map((foglio, i) => (

@@ -37,7 +37,10 @@ export default async function PaginaPiatto({ params }: Props) {
   if (!piatto) notFound();
 
   const consiglio = piatto.allenamento === "entrambi" ? null : CONSIGLI[piatto.allenamento];
-  const altri = PIATTI.filter((p) => p.id !== piatto.id).slice(0, 3);
+  // I tre piatti che seguono questo nel menu, ricominciando da capo alla fine: ogni scheda ha i suoi vicini
+  // (con "i primi tre" l'ultimo piatto rimandava sempre agli stessi).
+  const posto = PIATTI.findIndex((p) => p.id === piatto.id);
+  const altri = [1, 2, 3].map((n) => PIATTI[(posto + n) % PIATTI.length]);
   const scheda = paginaPiatto(piatto);
   const briciole = [
     { nome: PAGINE.menu.breve, href: PAGINE.menu.percorso },

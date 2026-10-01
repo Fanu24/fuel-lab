@@ -11,6 +11,7 @@ import ScontiEProva from "@/components/abbonamento/ScontiEProva";
 import { FasciaProvider } from "@/components/abbonamento/FasciaScelta";
 import Simulatore from "@/components/abbonamento/Simulatore";
 import {
+  CIRCA_A_PASTO_FRASE,
   PASTI_SETTIMANA_MAX,
   PASTI_SETTIMANA_MIN,
   ZONA_A_PAROLE,
@@ -28,8 +29,8 @@ import {
   DIETE,
   FORMULE,
   LINK_SCRIVI_ABBONAMENTO,
+  NOMI_FASCIA,
   NOTE_FASCIA,
-  PASTO_STANDARD_CIRCA,
   PREZZO_DA_TESTO,
   SCONTI,
 } from "@/lib/abbonamento";
@@ -51,7 +52,9 @@ const PREZZO_PASTO = prezzoIt(SOGLIA_PREZZO);
 
 export const metadata = metadatiPagina(PAGINA);
 
-const PREZZI_STANDARD = FORMULE.map((f) => `${f.nome} ${f.prezzo.standard} €`).join(", ");
+/* "Full 6: 624 €": con i due punti la cifra del nome ("Full 6") e il prezzo non si leggono come un numero solo.
+   Lo spazio prima del "€" non va a capo (U+00A0). */
+const PREZZI_STANDARD = FORMULE.map((f) => `${f.nome}: ${f.prezzo.standard}\u00a0€`).join("; ");
 const PLUS_DA = Math.min(...FORMULE.map((f) => f.prezzo.plus));
 const PLUS_FINO_A = Math.max(...FORMULE.map((f) => f.prezzo.plus));
 
@@ -83,19 +86,22 @@ const CONFRONTO = [
   },
 ];
 
+/* "Per chi vuole..." diventa "per chi vuole...": le note delle fasce sono frasi intere, qui stanno dopo i due punti. */
+const minuscola = (t: string) => t.charAt(0).toLowerCase() + t.slice(1);
+
 /* Solo testo: le stesse stringhe finiscono nei dati strutturati FAQPage. */
 const DOMANDE: DomandaTesto[] = [
   {
     q: "Quanto costa un abbonamento?",
-    a: `Dipende dalla formula e dalla fascia. In fascia Standard, al mese: ${PREZZI_STANDARD}, circa ${PASTO_STANDARD_CIRCA} € a pasto. La fascia Plus costa di più: da ${PLUS_DA} a ${PLUS_FINO_A} € al mese. Ritiro in laboratorio ${percentuale(SCONTI.ritiro)}, in coppia ${percentuale(SCONTI.coppia)}, in famiglia ${percentuale(SCONTI.famiglia)}. Il prezzo finale lo conferma Matteo: sul sito non si paga niente.`,
+    a: `Dipende dalla formula e dalla fascia. In fascia Standard, al mese: ${PREZZI_STANDARD}. ${CIRCA_A_PASTO_FRASE} La fascia Plus costa di più: da ${PLUS_DA} a ${PLUS_FINO_A} € al mese. Ritiro in laboratorio ${percentuale(SCONTI.ritiro)}, in coppia ${percentuale(SCONTI.coppia)}, in famiglia ${percentuale(SCONTI.famiglia)}. Il prezzo finale lo conferma Matteo: sul sito non si paga niente.`,
   },
   {
     q: "Che differenza c'è fra Standard e Plus?",
-    a: `Standard: ${NOTE_FASCIA.standard} Circa ${PASTO_STANDARD_CIRCA} € a pasto. Plus: ${NOTE_FASCIA.plus} Ogni formula esiste in tutte e due le fasce.`,
+    a: `${NOMI_FASCIA.standard}: ${minuscola(NOTE_FASCIA.standard)} ${CIRCA_A_PASTO_FRASE} ${NOMI_FASCIA.plus}: ${minuscola(NOTE_FASCIA.plus)} Ogni formula esiste in tutte e due le fasce.`,
   },
   {
     q: "Che cosa devo portare?",
-    a: "Il piano scritto dal tuo nutrizionista. Ce lo lasci e noi lo prepariamo ai grammi, nel nostro laboratorio a Pescara: nessuna dieta da inventare, niente spesa, niente bilancia. Non è una dieta e non è una consulenza: i numeri li decide il professionista che ti segue, Matteo li cucina.",
+    a: "Il piano scritto dal tuo nutrizionista. Ce lo lasci e noi lo prepariamo ai grammi, nel nostro laboratorio a Pescara: nessuna dieta da inventare, niente spesa, niente bilancia. Quando richiedi l'abbonamento lo scrivi o lo incolli nella scheda per Matteo; se scrivi senza account, nel messaggio. Non è una dieta e non è una consulenza: i numeri li decide il professionista che ti segue, Matteo li cucina.",
   },
   {
     q: "Non ho un nutrizionista: posso abbonarmi lo stesso?",
@@ -107,7 +113,7 @@ const DOMANDE: DomandaTesto[] = [
   },
   {
     q: "Come arrivano i pasti?",
-    a: `Ogni ${CONSEGNA_OGNI_GIORNI} giorni te li portiamo a casa, oppure li ritiri in laboratorio in ${INDIRIZZO_RIGA} con ${percentuale(SCONTI.ritiro)}: sono i pasti dei ${inLettere(CONSEGNA_OGNI_GIORNI)} giorni successivi, già pronti da scaldare. ${ZONA_A_PAROLE}. Giorno e orario si concordano con Matteo, e la copertura del tuo indirizzo si conferma prima di iniziare.`,
+    a: `Ogni ${inLettere(CONSEGNA_OGNI_GIORNI)} giorni te li portiamo a casa, oppure li ritiri in laboratorio in ${INDIRIZZO_RIGA} con ${percentuale(SCONTI.ritiro)}: sono i pasti dei ${inLettere(CONSEGNA_OGNI_GIORNI)} giorni successivi, già pronti da scaldare. ${ZONA_A_PAROLE}. Giorno e orario si concordano con Matteo, e la copertura del tuo indirizzo si conferma prima di iniziare.`,
   },
   {
     q: "Come funziona la settimana di prova?",
@@ -119,7 +125,7 @@ const DOMANDE: DomandaTesto[] = [
   },
   {
     q: "Che differenza c'è con il menu della settimana?",
-    a: `Con il menu della settimana scegli tu i piatti, anche solo per qualche giorno, da ${PREZZO_PASTO} € a pasto, con consegna ogni giorno. Con l'abbonamento Matteo cucina il piano scritto dal tuo nutrizionista, a un prezzo al mese (da ${PREZZO_DA_TESTO}), e te lo porta ogni ${CONSEGNA_OGNI_GIORNI} giorni.`,
+    a: `Con il menu della settimana scegli tu i piatti, anche solo per qualche giorno, da ${PREZZO_PASTO} € a pasto, con consegna ogni giorno. Con l'abbonamento Matteo cucina il piano scritto dal tuo nutrizionista, a un prezzo al mese (da ${PREZZO_DA_TESTO}), e te lo porta ogni ${inLettere(CONSEGNA_OGNI_GIORNI)} giorni.`,
   },
   {
     q: "Cosa sono le box del giorno?",
@@ -162,7 +168,17 @@ export default function AbbonamentoPage() {
                 </span>
               </h1>
               <p className="titolo-s mt-4 text-muted">Il piano del tuo nutrizionista, cucinato.</p>
-              <p className="lead mt-8">
+              {/* Sul telefono il riquadro dei prezzi sta sotto il testo, fuori dal primo schermo: il prezzo si
+                  legge subito qui. Dal computer il riquadro e' accanto, e questa riga non serve. */}
+              <p className="mt-6 lg:hidden">
+                <span className="evidenzia font-disp text-xl font-bold tracking-[.06em] uppercase">
+                  Da {PREZZO_DA_TESTO} al mese
+                </span>
+                <span className="mt-2 block text-sm text-muted">
+                  Cinque formule, in Standard o Plus. La prima settimana è di prova, senza impegno.
+                </span>
+              </p>
+              <p className="lead mt-6 lg:mt-8">
                 Porti la dieta. Pensiamo noi a tutto il resto. FUEL LAB cucina i pasti della tua dieta e te li porta
                 pronti a casa, ogni {inLettere(CONSEGNA_OGNI_GIORNI)} giorni, a Pescara e nel raggio di venti
                 chilometri. Tu ci consegni il piano scritto dal tuo nutrizionista, noi lo prepariamo ai grammi nel
@@ -264,8 +280,10 @@ export default function AbbonamentoPage() {
               </div>
             ))}
           </dl>
-          <div className="mt-12 hidden overflow-x-auto md:block" role="region" tabIndex={0} aria-label="Confronto fra i due servizi">
-            <table className="w-full min-w-[620px] border-collapse text-left">
+          {/* Da 768px la tabella entra sempre nella pagina: niente scorrimento e niente area da raggiungere con Tab.
+              Sotto i 768px c'e' la lista qui sopra. */}
+          <div className="mt-12 hidden md:block">
+            <table className="w-full border-collapse text-left">
               <caption className="sr-only">Differenze fra il menu della settimana e l&apos;abbonamento</caption>
               <thead>
                 <tr className="font-disp text-[11px] font-semibold tracking-[.16em] text-muted uppercase">

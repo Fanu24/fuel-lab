@@ -1,9 +1,12 @@
 import Link from "next/link";
+import { RAGGIO_CONSEGNA_KM } from "@/lib/abbonamento";
 import { EMAIL_CONTATTI, INDIRIZZO, linkMappa } from "@/lib/contatto";
+import { elencoZone } from "@/lib/sito";
 
 /* Dove siamo e le domande che arrivano sempre prima del primo ordine. Niente
    orari inventati: il ritiro si concorda con Matteo, e si cucina e si consegna
-   ogni giorno, come il sito dichiara ovunque (lib/sito.ts). */
+   ogni giorno, come il sito dichiara ovunque (lib/sito.ts). Il raggio e' quello
+   del volantino (lib/abbonamento.ts), le zone sono quelle di lib/sito.ts. */
 
 const DOMANDE_CONTATTI: { domanda: string; risposta: React.ReactNode }[] = [
   {
@@ -37,8 +40,25 @@ const DOMANDE_CONTATTI: { domanda: string; risposta: React.ReactNode }[] = [
     domanda: "Consegnate a casa mia?",
     risposta: (
       <>
-        La consegna è in zona Pescara, tutti i giorni. Scrivi il tuo comune: Matteo ti conferma se il tuo indirizzo è
-        coperto e in quale giorno può arrivare.
+        Sì, a Pescara e dintorni, fino a {RAGGIO_CONSEGNA_KM} km, tutti i giorni. Scrivi il tuo comune: Matteo ti
+        conferma se il tuo indirizzo è coperto e in quale giorno può arrivare. I comuni, uno per uno, sono in{" "}
+        <Link href="/consegna-pasti-pescara" className="link">
+          Consegna pasti a Pescara
+        </Link>
+        .
+      </>
+    ),
+  },
+  {
+    domanda: "Voglio un abbonamento mensile: come faccio?",
+    risposta: (
+      <>
+        Guarda le cinque formule in{" "}
+        <Link href="/abbonamento" className="link">
+          Abbonamenti
+        </Link>{" "}
+        e poi scrivi qui, scegliendo “Abbonamento mensile” nel modulo, oppure chiedilo dall’account. La prima
+        settimana è di prova, senza impegno.
       </>
     ),
   },
@@ -81,6 +101,12 @@ export default function DoveSiamo() {
             <div>
               <dt className="font-disp text-xs font-semibold tracking-[.18em] uppercase">Si cucina</dt>
               <dd className="mt-1 text-muted">Ogni giorno, fresco e mai surgelato. Si consegna ogni giorno.</dd>
+            </div>
+            <div>
+              <dt className="font-disp text-xs font-semibold tracking-[.18em] uppercase">Consegna a casa</dt>
+              <dd className="mt-1 text-muted">
+                Pescara e dintorni, fino a {RAGGIO_CONSEGNA_KM} km: {elencoZone()}. L’indirizzo si conferma con Matteo.
+              </dd>
             </div>
             <div>
               <dt className="font-disp text-xs font-semibold tracking-[.18em] uppercase">Email</dt>

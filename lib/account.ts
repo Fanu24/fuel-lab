@@ -311,6 +311,10 @@ export function traduciErroreAuth(errore: ErroreGrezzo | null | undefined, conte
   if (status === 429) {
     return { tipo: "troppi", messaggio: "Troppi tentativi in poco tempo. Aspetta un minuto e riprova." };
   }
+  // Dentro l'area cliente un 401 senza codice e' la sessione finita (accesso e registrazione hanno i loro codici).
+  if (status === 401 && (contesto === "cambio-password" || contesto === "elimina" || contesto === "nome" || contesto === "esci")) {
+    return { tipo: "sessione", messaggio: "La sessione è scaduta. Accedi di nuovo e riprova." };
+  }
   if (contesto === "elimina" && status === 404) {
     return {
       tipo: "non-attivo",
@@ -320,6 +324,7 @@ export function traduciErroreAuth(errore: ErroreGrezzo | null | undefined, conte
   if (contesto === "elimina" && status === 403) {
     return { tipo: "vietato", messaggio: "Questo account non si può eliminare da qui." };
   }
+  if (status === 413) return { tipo: "altro", messaggio: "I dati sono troppo lunghi per essere inviati: accorcia il testo e riprova." };
   if (status !== undefined && status >= 500) {
     return { tipo: "altro", messaggio: "Servizio non disponibile. Riprova tra poco." };
   }
@@ -357,8 +362,17 @@ export function erroreDiRitorno(codice: string | null | undefined): string | nul
   }
 }
 
-/** Il messaggio di un errore delle nostre API (gia' in italiano) o un ripiego. */
+/** La sessione e' finita (cookie scaduto, "esci da tutti i dispositivi" fatto altrove): il server risponde 401. */
+export const eSessioneScaduta = (errore: unknown): boolean => errore instanceof ApiError && errore.status === 401;
+
+/**
+ * Il messaggio di un errore delle nostre API (gia' in italiano) o un ripiego.
+ * Un 401 vale la stessa frase ovunque: ogni rotta lo dice a modo suo ("Accedi
+ * per salvare il piano", "Accedi prima di inviare...") e a chi sta compilando
+ * un modulo serve sapere una cosa sola, che deve rientrare.
+ */
 export function messaggioDa(errore: unknown, ripiego = "Qualcosa non ha funzionato. Riprova tra poco."): string {
+  if (eSessioneScaduta(errore)) return "La sessione è scaduta. Accedi di nuovo e riprova.";
   if (errore instanceof ApiError && errore.message) return errore.message;
   return ripiego;
 }
@@ -387,6 +401,28 @@ export function iniziale(nome: string | null | undefined, email?: string | null)
 /* ---------- Profilo ---------- */
 
 export const cifreTelefono = (telefono: string) => telefono.replace(/\D/g, "");
+
+/** Quanti caratteri puo' avere un numero scritto a mano: "+39 333 123 4567" ne ha 16, con le parentesi 18. */
+export const TELEFONO_MAX = 20;
+
+/**
+ * Cosa non va in un numero di telefono scritto in un campo, a parole; null se va
+ * bene o se e' vuoto (chi lo vuole obbligatorio controlla prima il vuoto). Lo
+ * stesso controllo sta nel modulo della richiesta e nel profilo: lo scrivono a
+ * mano e finisce a Matteo, che deve poter chiamare. Cifre, spazi e i segni che si
+ * usano davvero (+ - . / parentesi); da 9 a 15 cifre, il massimo di un numero
+ * internazionale.
+ */
+export function erroreTelefono(telefono: string): string | null {
+  const t = telefono.trim();
+  if (!t) return null;
+  if (!/^[\d\s+().\/-]+$/.test(t)) return "Nel telefono vanno solo cifre, spazi e il segno +: controlla il numero.";
+  if (t.length > TELEFONO_MAX) return `Il numero è troppo lungo: al massimo ${TELEFONO_MAX} caratteri, per esempio +39 333 1234567.`;
+  const cifre = cifreTelefono(t).length;
+  if (cifre < 9) return "Il numero sembra troppo corto: controlla le cifre.";
+  if (cifre > 15) return "Il numero ha troppe cifre: controlla di averlo scritto una volta sola.";
+  return null;
+}
 
 /** Cosa manca al profilo per inviare una richiesta senza riscriverlo ogni volta. */
 export function campiMancanti(profilo: Profilo | null | undefined): ("telefono" | "comune")[] {
@@ -549,6 +585,29 @@ export function periodoRichiesta(o: Pick<Ordine, "service" | "fulfillment_date">
 /** L'ultimo giorno di un abbonamento confermato, o null. */
 export const fineRichiesta = (o: Pick<Ordine, "service" | "fulfillment_date">) =>
   o.service === "abbonamento" && o.fulfillment_date && dataValida(o.fulfillment_date) ? fineAbbonamento(o.fulfillment_date) : null;
+
+/**
+ * La riga "quando" di una richiesta: il periodo di un abbonamento confermato,
+ * il giorno di ritiro o consegna, oppure quello che il cliente ha chiesto (da
+ * confermare). Una richiesta annullata non ha un quando: il giorno che Matteo
+ * aveva scritto prima di annullarla non e' piu' di nessuno e leggerlo fa credere
+ * che il ritiro sia ancora fissato.
+ */
+export function quandoRichiesta(
+  o: Pick<Ordine, "service" | "status" | "fulfillment" | "fulfillment_date" | "requested_date">,
+  oggi: string,
+): { etichetta: string; valore: string } | null {
+  if (o.status === "cancelled") return null;
+  const abbonamento = o.service === "abbonamento";
+  const ritiro = o.fulfillment === "pickup";
+  const periodo = periodoRichiesta(o, oggi);
+  if (periodo) return { etichetta: "Periodo", valore: periodo };
+  if (o.fulfillment_date) return { etichetta: ritiro ? "Ritiro" : "Consegna", valore: formattaGiorno(o.fulfillment_date, oggi) };
+  if (o.requested_date) {
+    return { etichetta: abbonamento ? "Inizio desiderato" : "Giorno preferito", valore: `${formattaGiorno(o.requested_date, oggi)}, da confermare` };
+  }
+  return { etichetta: abbonamento ? "Inizio" : ritiro ? "Ritiro" : "Consegna", valore: "Da concordare" };
+}
 
 /* ---------- Come si legge un abbonamento ---------- */
 
@@ -772,10 +831,11 @@ export function validaRichiesta(
   if (!nome) e.nome = "Scrivi il nome a cui intestare la richiesta.";
   else if (nome.length > 100) e.nome = "Il nome può avere al massimo 100 caratteri.";
 
-  const cifre = cifreTelefono(d.telefono);
-  if (!cifre) e.telefono = "Serve un numero di telefono: Matteo ti ricontatta lì per confermare.";
-  else if (cifre.length < 9) e.telefono = "Il numero sembra troppo corto: controlla le cifre.";
-  else if (d.telefono.trim().length > 40) e.telefono = "Il numero è troppo lungo.";
+  if (!d.telefono.trim()) e.telefono = "Serve un numero di telefono: Matteo ti ricontatta lì per confermare.";
+  else {
+    const errore = erroreTelefono(d.telefono);
+    if (errore) e.telefono = errore;
+  }
 
   if (d.comune.trim().length < 2) e.comune = "Scrivi il comune: serve per organizzare ritiro o consegna.";
   else if (d.comune.trim().length > 100) e.comune = "Il comune può avere al massimo 100 caratteri.";
@@ -871,6 +931,91 @@ export function stimaAbbonamento(d: Pick<DatiRichiesta, "formula" | "fascia" | "
         ? `Listino ${listino}, sconto ${scontoPercento}% per ${spettano[0].chi}.`
         : `Listino ${listino}, sconto ${scontoPercento}%: ti spettano ${voce(spettano[0])} e ${voce(spettano[1])}, si applica il più alto.`;
   return { listino, totale: euroInteri(totaleCentesimi / 100), scontoPercento, dettaglio };
+}
+
+/* ---------- La richiesta a meta' ---------- */
+
+/** sessionStorage: solo in questa scheda e solo finche' resta aperta. */
+export const CHIAVE_BOZZA_RICHIESTA = "fuellab.bozza-richiesta.v1";
+
+/**
+ * Una richiesta lunga (la scheda dell'abbonamento e' mezza pagina di testo) non
+ * deve sparire se il telefono ricarica la scheda o se la sessione scade a
+ * meta'. La bozza e' di un utente e di un indirizzo (`ricerca`: la query con cui
+ * si e' aperto il modulo): un altro link "Richiedi" del sito (altra formula,
+ * altro servizio) riparte da zero, la stessa pagina ricaricata (o ritrovata dopo
+ * l'accesso) no. Chi torna dal solo menu dell'area cliente ("Nuova richiesta",
+ * senza scelte nell'indirizzo) ritrova quello che stava scrivendo.
+ */
+export function serializzaBozza(utente: string, ricerca: string, dati: DatiRichiesta): string {
+  return JSON.stringify({ v: 1, utente, ricerca, dati });
+}
+
+/**
+ * La bozza riletta da sessionStorage, che si puo' riscrivere a mano: o e'
+ * intera e valida, o non c'e'. Un giorno che nel frattempo e' passato (prima di
+ * `min`) si scarta, il resto si tiene.
+ */
+export function leggiBozza(raw: string | null | undefined, utente: string, ricerca: string, min: string): DatiRichiesta | null {
+  if (!raw) return null;
+  let b: unknown;
+  try {
+    b = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+  if (!b || typeof b !== "object") return null;
+  const { v, utente: chi, ricerca: dove, dati } = b as Record<string, unknown>;
+  if (v !== 1 || chi !== utente || !dati || typeof dati !== "object") return null;
+  const senzaScelte = (q: string) => {
+    const p = new URLSearchParams(q);
+    p.delete("sezione");
+    return p.toString() === "";
+  };
+  if (dove !== ricerca && !senzaScelte(ricerca)) return null;
+  const d = dati as Record<string, unknown>;
+  const testo = (valore: unknown, max: number) => (typeof valore === "string" ? valore.slice(0, max) : "");
+  if (typeof d.servizio !== "string" || !Object.prototype.hasOwnProperty.call(SERVIZIO_CON_PIATTI, d.servizio)) return null;
+  if (d.modalita !== "pickup" && d.modalita !== "delivery") return null;
+  if (!eFormulaId(d.formula) || !eFascia(d.fascia) || !eNucleo(d.nucleo) || typeof d.prova !== "boolean") return null;
+  const data = typeof d.data === "string" && dataValida(d.data) && d.data >= min ? d.data : "";
+  return {
+    servizio: d.servizio as Servizio,
+    nome: testo(d.nome, 100),
+    telefono: testo(d.telefono, 40),
+    comune: testo(d.comune, 100),
+    indirizzo: testo(d.indirizzo, 240),
+    modalita: d.modalita,
+    data,
+    note: testo(d.note, NOTE_MAX),
+    formula: d.formula,
+    fascia: d.fascia,
+    nucleo: d.nucleo,
+    prova: d.prova,
+  };
+}
+
+/* ---------- Da dove cominciare ---------- */
+
+export type PassoAvvio = {
+  id: "scelta" | "profilo" | "invio";
+  /** Il passo e' fatto. Il terzo non lo e' mai qui: quando la prima richiesta parte, la panoramica cambia. */
+  fatto: boolean;
+};
+
+/**
+ * I tre passi che portano un cliente nuovo alla prima richiesta, a che punto
+ * sono: cosa chiedere (la settimana composta, o un abbonamento che si sceglie
+ * nel modulo), i recapiti, l'invio. `profiloCompleto` e' null finche' il
+ * profilo non e' stato letto: il passo non si dichiara ne' fatto ne' da fare a
+ * caso. `piatti` e' la conta della settimana composta in questo browser.
+ */
+export function passiDiAvvio({ profiloCompleto, piatti }: { profiloCompleto: boolean | null; piatti: number }): PassoAvvio[] {
+  return [
+    { id: "scelta", fatto: piatti > 0 },
+    { id: "profilo", fatto: profiloCompleto === true },
+    { id: "invio", fatto: false },
+  ];
 }
 
 /* ---------- Privacy ---------- */

@@ -257,7 +257,7 @@ export const APPROFONDIMENTI: Record<string, Approfondimento> = {
   },
   "pasti-con-proteine-menu-settimanale": {
     risposta: "Per variare le fonti proteiche nella settimana alterna carne, pesce, uova, latticini e legumi, cambiando anche cotture e condimenti. Le linee guida CREA indicano per gli adulti pesce almeno 2–3 volte a settimana, 2–4 uova, 2–4 porzioni di legumi e carni magre con moderazione; le quantità per te vanno valutate individualmente.",
-    scenario: "Su dieci pranzi e cene metti due piatti di pesce, tre di legumi, uno di uova e il resto tra carne e latticini. Se tre pasti arrivano dal menu FUEL LAB, per esempio pollo, maiale e uova, a casa cucini pesce e legumi. Se un alimento non ti piace o non puoi mangiarlo, lo sostituisci: la tabella è un punto di partenza, non un obbligo.",
+    scenario: "Su dieci pranzi e cene metti due piatti di pesce, tre di legumi, due di uova e il resto tra carne e latticini. Se tre pasti arrivano dal menu FUEL LAB, per esempio pollo, maiale e uova, a casa cucini pesce e legumi. Se un alimento non ti piace o non puoi mangiarlo, lo sostituisci: la tabella è un punto di partenza, non un obbligo.",
     passi: [
       "Controlla quali fonti proteiche ci sono nei piatti che hai già scelto.",
       "Completa la settimana con le fonti che mancano, spesso pesce e legumi.",

@@ -4,7 +4,7 @@
 
 export function AttesaAccount() {
   return (
-    <div aria-busy="true">
+    <div aria-busy="true" className="acc-schermata">
       <header className="acc-testata wrap">
         <p className="occhiello">Il tuo spazio</p>
         <h1 className="titolo mt-4">Area cliente.</h1>
@@ -24,7 +24,7 @@ export function AttesaAccount() {
 
 export function AttesaAccesso() {
   return (
-    <section className="acc-testata wrap pb-[var(--sezione)]" aria-busy="true">
+    <section className="acc-testata acc-schermata wrap pb-[var(--sezione)]" aria-busy="true">
       <p className="occhiello">Il tuo spazio FUEL LAB</p>
       <h1 className="titolo mt-5">Accedi.</h1>
       <p className="mt-4 text-muted" role="status">Carico l’accesso…</p>
@@ -34,7 +34,7 @@ export function AttesaAccesso() {
 
 export function AttesaReimposta() {
   return (
-    <section className="acc-testata wrap pb-[var(--sezione)]" aria-busy="true">
+    <section className="acc-testata acc-schermata wrap pb-[var(--sezione)]" aria-busy="true">
       <p className="occhiello">Recupero dell’accesso</p>
       <h1 className="titolo mt-5">Nuova password.</h1>
       <p className="mt-4 text-muted" role="status">Carico…</p>

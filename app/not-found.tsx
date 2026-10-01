@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import FotoPiena from "@/components/ui/FotoPiena";
 import { PAGINE } from "@/components/seo/pagine";
@@ -12,22 +13,27 @@ export const metadata: Metadata = {
   robots: { index: false, follow: true },
 };
 
+/* Il menu non c'e': e' il link accanto al bottone, qui sotto le strade piu' battute. */
 const USCITE = [
-  { href: "/menu", label: "Il menu" },
+  { href: PAGINE.abbonamento.percorso, label: "Abbonamenti" },
+  { href: "/settimana", label: "Componi la settimana" },
+  { href: "/come-funziona", label: "Come funziona" },
   { href: PAGINE.mealPrep.percorso, label: "Meal prep a Pescara" },
   { href: PAGINE.consegna.percorso, label: "Ritiro e consegna" },
-  { href: "/come-funziona", label: "Come funziona" },
   { href: "/blog", label: "Blog" },
   { href: "/richiesta", label: "Scrivi a Matteo" },
 ];
 
 /* La 404 sta fuori dal gruppo (sito), quindi senza nav: e' una pagina intera,
-   scura, con due uscite chiare e le pagine piu' cercate sotto. */
+   scura, col marchio in cima, due uscite chiare e le pagine piu' cercate sotto. */
 export default function NonTrovata() {
   return (
     <main className="notte relative grid min-h-svh place-items-center overflow-hidden px-5 py-16">
       <FotoPiena foto="presa" velo="forte" />
       <div className="relative max-w-xl text-center">
+        <Link href="/" aria-label="FUEL LAB, home" className="mx-auto mb-12 flex min-h-11 w-fit items-center">
+          <Image src="/logo-fuellab.png" alt="" width={1095} height={360} className="h-10 w-auto invert" />
+        </Link>
         <p className="occhiello justify-center">Errore 404</p>
         <h1 className="titolo-xl mt-6">Serie saltata.</h1>
         <p className="mt-6 text-steel">Questa pagina non esiste, o non esiste più. Il menu invece c&apos;è sempre.</p>
@@ -39,11 +45,11 @@ export default function NonTrovata() {
             Guarda il menu
           </Link>
         </div>
-        <nav aria-label="Pagine utili" className="mt-12 border-t pt-6" style={{ borderColor: "var(--line)" }}>
-          <ul className="flex flex-wrap justify-center gap-x-6 gap-y-3 text-sm text-steel">
+        <nav aria-label="Pagine utili" className="mt-12 border-t pt-4" style={{ borderColor: "var(--line)" }}>
+          <ul className="flex flex-wrap justify-center gap-x-6 text-sm text-steel">
             {USCITE.map((u) => (
               <li key={u.href}>
-                <Link href={u.href} className="underline underline-offset-4 hover:text-lime">
+                <Link href={u.href} className="inline-flex min-h-11 min-w-11 items-center justify-center underline underline-offset-4 hover:text-lime">
                   {u.label}
                 </Link>
               </li>

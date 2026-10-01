@@ -81,7 +81,7 @@ export default function ResetPasswordPanel() {
   }
 
   return (
-    <section className="acc-testata wrap pb-[var(--sezione)]">
+    <section className="acc-testata acc-schermata wrap pb-[var(--sezione)]">
       <div className="mx-auto max-w-2xl">
         <p className="occhiello">Recupero dell’accesso</p>
         <h1 className="titolo mt-5">Nuova password.</h1>
@@ -112,7 +112,7 @@ export default function ResetPasswordPanel() {
                 etichetta="Nuova password"
                 autoComplete="new-password"
                 valore={password}
-                onCambia={setPassword}
+                onCambia={(v) => { setPassword(v); setErroriCampo({}); }}
                 errore={erroriCampo.password}
                 descrittaDa="np-requisiti"
               />
@@ -121,12 +121,12 @@ export default function ResetPasswordPanel() {
                 etichetta="Ripeti la nuova password"
                 autoComplete="new-password"
                 valore={conferma}
-                onCambia={setConferma}
+                onCambia={(v) => { setConferma(v); setErroriCampo((e) => (e.conferma ? {} : e)); }}
                 errore={erroriCampo.conferma}
                 descrittaDa="np-requisiti"
               />
               <RequisitiPassword id="np-requisiti" password={password} conferma={conferma} />
-              <button className="btn btn-lime w-full sm:w-auto sm:justify-self-start" type="submit" disabled={attesa}>
+              <button className="btn btn-lime w-full sm:w-auto sm:justify-self-start" type="submit" aria-disabled={attesa ? true : undefined}>
                 {attesa ? "Salvo…" : "Salva la nuova password"}
               </button>
             </form>

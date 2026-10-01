@@ -9,9 +9,10 @@ import { STATI_ORDINE, adminApi, euro, type Metriche } from "@/lib/api";
 import { FORMULE } from "@/lib/abbonamento";
 import { getPiatto } from "@/lib/catalogo";
 import { euroTondo, somma } from "@/lib/produzione";
+import { ErroreCaricamento, eSessioneScaduta } from "./ClientiErrore";
 import GraficoBarre from "./GraficoBarre";
 import GraficoGiorni from "./GraficoGiorni";
-import { Avviso, Caricamento, Kpi, Sezione, Stato, TestaPagina, Vuoto } from "./ui";
+import { Caricamento, Kpi, Sezione, Stato, TestaPagina, Vuoto } from "./ui";
 
 const INTERVALLI = [7, 30, 90] as const;
 
@@ -57,6 +58,7 @@ export default function Statistiche() {
   const [tentativo, setTentativo] = useState(0);
   const [dati, setDati] = useState<Metriche | null>(null);
   const [errore, setErrore] = useState("");
+  const [sessione, setSessione] = useState(false);
   const [caricando, setCaricando] = useState(true);
 
   useEffect(() => {
@@ -66,11 +68,15 @@ export default function Statistiche() {
         if (!vivo) return;
         setDati(r);
         setErrore("");
+        setSessione(false);
         setCaricando(false);
       },
       (e: unknown) => {
         if (!vivo) return;
         setErrore(e instanceof Error ? e.message : "Non riesco a caricare i numeri.");
+        setSessione(eSessioneScaduta(e));
+        // I numeri di un altro periodo non restano sotto il bottone "Ultimi 90 giorni" appena scelto: o sono questi o niente.
+        setDati((corrente) => (corrente?.days === giorni ? corrente : null));
         setCaricando(false);
       },
     );
@@ -106,10 +112,12 @@ export default function Statistiche() {
 
       {errore ? (
         <div className="grid gap-3">
-          <Avviso>{errore}</Avviso>
-          <button type="button" className="btn btn-ink btn-sm justify-self-start" onClick={riprova} disabled={caricando}>
-            Riprova
-          </button>
+          <ErroreCaricamento testo={errore} sessioneScaduta={sessione} />
+          {sessione ? null : (
+            <button type="button" className="btn btn-ink btn-sm justify-self-start" onClick={riprova} disabled={caricando}>
+              Riprova
+            </button>
+          )}
         </div>
       ) : null}
 
@@ -136,8 +144,8 @@ function Cruscotto({ dati, caricando }: { dati: Metriche; caricando: boolean }) 
       </p>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <Kpi label="Richieste" valore={numero(richieste)} nota={periodo} />
-        <Kpi label="Pasti richiesti" valore={numero(pasti)} nota={periodo} />
+        <Kpi label="Richieste" valore={numero(richieste)} nota={`${periodo}, annullate escluse`} />
+        <Kpi label="Pasti richiesti" valore={numero(pasti)} nota={`${periodo}, annullate escluse`} />
         <Kpi label="Nuovi clienti" valore={numero(dati.newCustomers)} nota={`${numero(dati.customers)} ${dati.customers === 1 ? "cliente" : "clienti"} in tutto`} />
         <Kpi label="Visite" valore={numero(visite)} nota="solo chi accetta Analytics" />
         <Kpi
@@ -161,7 +169,7 @@ function Cruscotto({ dati, caricando }: { dati: Metriche; caricando: boolean }) 
         />
       </div>
 
-      <Sezione titolo="Richieste" id="gr-richieste" sotto="Quante richieste arrivano dal sito e quanti pasti contengono.">
+      <Sezione titolo="Richieste" id="gr-richieste" sotto="Quante richieste arrivano dal sito e quanti pasti contengono. Le annullate non contano.">
         <div className="grid gap-6 pt-4 lg:grid-cols-2">
           <GraficoGiorni
             titolo="Richieste al giorno"
@@ -202,14 +210,14 @@ function Cruscotto({ dati, caricando }: { dati: Metriche; caricando: boolean }) 
         <div className="grid gap-6 pt-4 lg:grid-cols-2">
           <GraficoBarre
             titolo="Stati degli ordini"
-            sotto="Dove sono adesso gli ordini arrivati nel periodo, nell’ordine del lavoro."
+            sotto="Dove sono adesso gli ordini arrivati nel periodo, nell’ordine del lavoro. Qui ci sono anche gli annullati."
             dati={STATI_ORDINE.map((s) => ({ chiave: s.id, etichetta: <Stato stato={s.id} />, valore: perStato.get(s.id) ?? 0 }))}
             unita={["ordine", "ordini"]}
             vuoto="Nessun ordine in questo periodo."
           />
           <GraficoBarre
             titolo="Piatti più richiesti"
-            sotto="Porzioni richieste per piatto."
+            sotto="Porzioni richieste per piatto, annullate escluse."
             dati={[...dati.topDishes]
               .sort((a, b) => b.count - a.count)
               .slice(0, 10)

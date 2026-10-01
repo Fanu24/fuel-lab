@@ -4,24 +4,27 @@ import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 import {
   confermaEliminazione,
+  eSessioneScaduta,
   messaggioDa,
   nomeFileDati,
   PAROLA_ELIMINA,
   PASSWORD_MAX,
   PASSWORD_MIN,
+  STATI_IN_CORSO,
   traduciErroreAuth,
 } from "@/lib/account";
-import { api, type Providers, type Utente } from "@/lib/api";
+import { api, type Ordine, type Providers, type Utente } from "@/lib/api";
 import { authClient } from "@/lib/auth-client";
+import { cancellaBozzaRichiesta } from "../bozza";
 import { Avviso, CampoPassword, EsitoAzione, RequisitiPassword, TitoloSezione, useConferma } from "../ui";
-import type { Esito } from "./tipi";
+import type { Dati, Esito } from "./tipi";
 
 /* Password, sessioni, copia dei dati ed eliminazione (artt. 15, 17 e 20 GDPR).
    L'account di Matteo non si elimina da qui: il server lo rifiuta comunque. */
 
-type Props = { utente: Utente; providers: Providers | null; onEliminato: () => void };
+type Props = { utente: Utente; providers: Providers | null; ordini: Dati<Ordine[]>; onEliminato: () => void };
 
-export default function Sicurezza({ utente, providers, onEliminato }: Props) {
+export default function Sicurezza({ utente, providers, ordini, onEliminato }: Props) {
   // null finche' non si sa (o se la lettura fallisce): nel dubbio si mostra il modulo della password.
   const [metodi, setMetodi] = useState<string[] | null>(null);
   const [chiedi, dialogo] = useConferma();
@@ -41,6 +44,7 @@ export default function Sicurezza({ utente, providers, onEliminato }: Props) {
 
   const haPassword = metodi === null || metodi.includes("credential");
   const admin = utente.role === "admin";
+  const inCorso = ordini.stato === "pronto" ? ordini.dati.filter((o) => STATI_IN_CORSO.includes(o.status)).length : 0;
 
   return (
     <section aria-labelledby="t-sicurezza" className="grid gap-8">
@@ -70,7 +74,7 @@ export default function Sicurezza({ utente, providers, onEliminato }: Props) {
             chiuderlo, va fatto direttamente sul database, dopo aver dato l’accesso a un altro amministratore.
           </p>
         ) : (
-          <Elimina haPassword={haPassword} onEliminato={onEliminato} />
+          <Elimina haPassword={haPassword} inCorso={inCorso} onEliminato={onEliminato} />
         )}
       </article>
 
@@ -90,6 +94,18 @@ function CambiaPassword({ utente }: { utente: Utente }) {
   const [errori, setErrori] = useState<Partial<Record<"attuale" | "nuova" | "conferma", string>>>({});
   const [invio, setInvio] = useState(false);
   const [esito, setEsito] = useState<Esito | null>(null);
+
+  /* Un errore sotto un campo sparisce appena lo si corregge; "non coincidono" anche se cambia l'altra password. */
+  function scrivi(campo: "attuale" | "nuova" | "conferma", set: (v: string) => void, valore: string) {
+    set(valore);
+    setErrori((e) => {
+      if (!e[campo] && !(campo === "nuova" && e.conferma)) return e;
+      const resto = { ...e };
+      delete resto[campo];
+      if (campo === "nuova") delete resto.conferma;
+      return resto;
+    });
+  }
 
   async function invia(e: FormEvent) {
     e.preventDefault();
@@ -116,7 +132,7 @@ function CambiaPassword({ utente }: { utente: Utente }) {
           setErrori({ attuale: t.messaggio });
           document.getElementById("cp-attuale")?.focus();
         } else {
-          setEsito({ ok: false, testo: t.messaggio });
+          setEsito({ ok: false, testo: t.messaggio, sessione: t.tipo === "sessione" });
         }
       } else {
         setAttuale("");
@@ -134,12 +150,12 @@ function CambiaPassword({ utente }: { utente: Utente }) {
     <form noValidate onSubmit={(e) => void invia(e)} className="mt-5 grid gap-5" aria-busy={invio}>
       {/* Per i gestori di password: sanno a quale account appartiene la nuova. */}
       <input type="email" name="username" autoComplete="username" value={utente.email} readOnly hidden />
-      <CampoPassword id="cp-attuale" etichetta="Password attuale" autoComplete="current-password" valore={attuale} onCambia={setAttuale} errore={errori.attuale} />
-      <CampoPassword id="cp-nuova" etichetta="Nuova password" autoComplete="new-password" valore={nuova} onCambia={setNuova} errore={errori.nuova} descrittaDa="cp-requisiti" />
-      <CampoPassword id="cp-conferma" etichetta="Ripeti la nuova password" autoComplete="new-password" valore={conferma} onCambia={setConferma} errore={errori.conferma} descrittaDa="cp-requisiti" />
+      <CampoPassword id="cp-attuale" etichetta="Password attuale" autoComplete="current-password" valore={attuale} onCambia={(v) => scrivi("attuale", setAttuale, v)} errore={errori.attuale} />
+      <CampoPassword id="cp-nuova" etichetta="Nuova password" autoComplete="new-password" valore={nuova} onCambia={(v) => scrivi("nuova", setNuova, v)} errore={errori.nuova} descrittaDa="cp-requisiti" />
+      <CampoPassword id="cp-conferma" etichetta="Ripeti la nuova password" autoComplete="new-password" valore={conferma} onCambia={(v) => scrivi("conferma", setConferma, v)} errore={errori.conferma} descrittaDa="cp-requisiti" />
       <RequisitiPassword id="cp-requisiti" password={nuova} conferma={conferma} />
       <p className="text-sm text-muted">Cambiandola, chiudiamo le sessioni aperte sugli altri dispositivi.</p>
-      <button type="submit" className="btn btn-ink btn-sm justify-self-start" disabled={invio}>
+      <button type="submit" className="btn btn-ink btn-sm justify-self-start" aria-disabled={invio ? true : undefined}>
         {invio ? "Salvo…" : "Cambia password"}
       </button>
       <EsitoAzione esito={esito} />
@@ -152,6 +168,7 @@ function SenzaPassword({ utente, mailAttiva }: { utente: Utente; mailAttiva: boo
   const [esito, setEsito] = useState<Esito | null>(null);
 
   async function creaPassword() {
+    if (invio) return;
     setInvio(true);
     setEsito(null);
     try {
@@ -174,7 +191,7 @@ function SenzaPassword({ utente, mailAttiva }: { utente: Utente; mailAttiva: boo
       {mailAttiva ? (
         <>
           <p className="text-sm text-muted">Vuoi poter entrare anche con email e password? Ti mandiamo un link per crearne una.</p>
-          <button type="button" className="btn btn-ink btn-sm justify-self-start" disabled={invio} onClick={() => void creaPassword()}>
+          <button type="button" className="btn btn-ink btn-sm justify-self-start" aria-disabled={invio ? true : undefined} onClick={() => void creaPassword()}>
             {invio ? "Invio…" : "Crea una password"}
           </button>
         </>
@@ -189,6 +206,7 @@ function Sessioni({ chiedi }: { chiedi: ReturnType<typeof useConferma>[0] }) {
   const [esito, setEsito] = useState<Esito | null>(null);
 
   async function esci() {
+    if (attesa) return;
     setAttesa("esci");
     try {
       const r = await authClient.signOut();
@@ -202,11 +220,13 @@ function Sessioni({ chiedi }: { chiedi: ReturnType<typeof useConferma>[0] }) {
       setAttesa(null);
       return;
     }
+    cancellaBozzaRichiesta();
     // Pagina nuova (e niente "indietro" nell'area cliente): nav e sessione ripartono da zero.
     window.location.replace("/");
   }
 
   async function esciOvunque() {
+    if (attesa) return;
     const ok = await chiedi({
       titolo: "Uscire da tutti i dispositivi?",
       testo: <p>Chiudiamo ogni sessione aperta, compresa questa: per rientrare servirà di nuovo la password (o Google).</p>,
@@ -227,6 +247,7 @@ function Sessioni({ chiedi }: { chiedi: ReturnType<typeof useConferma>[0] }) {
       setAttesa(null);
       return;
     }
+    cancellaBozzaRichiesta();
     window.location.replace("/");
   }
 
@@ -235,14 +256,14 @@ function Sessioni({ chiedi }: { chiedi: ReturnType<typeof useConferma>[0] }) {
       <h3 id="t-sessioni" className="acc-card-titolo">Sessioni</h3>
       <p className="mt-3 text-muted">Hai usato un computer non tuo, o hai perso il telefono? Esci da tutti i dispositivi insieme.</p>
       <div className="mt-5 flex flex-wrap gap-3">
-        <button type="button" className="btn btn-ink btn-sm" disabled={!!attesa} onClick={() => void esci()}>
+        <button type="button" className="btn btn-ink btn-sm" aria-disabled={attesa ? true : undefined} onClick={() => void esci()}>
           {attesa === "esci" ? "Esco…" : "Esci"}
         </button>
-        <button type="button" className="btn btn-linea btn-sm" disabled={!!attesa} onClick={() => void esciOvunque()}>
+        <button type="button" className="btn btn-linea btn-sm" aria-disabled={attesa ? true : undefined} onClick={() => void esciOvunque()}>
           {attesa === "ovunque" ? "Chiudo tutto…" : "Esci da tutti i dispositivi"}
         </button>
       </div>
-      <EsitoAzione esito={esito} className="mt-4" />
+      <EsitoAzione esito={esito} className="mt-4 empty:mt-0" />
     </article>
   );
 }
@@ -252,6 +273,7 @@ function IMieiDati() {
   const [esito, setEsito] = useState<Esito | null>(null);
 
   async function scarica() {
+    if (invio) return;
     setInvio(true);
     setEsito(null);
     try {
@@ -267,7 +289,7 @@ function IMieiDati() {
       window.setTimeout(() => URL.revokeObjectURL(url), 2000);
       setEsito({ ok: true, testo: "File scaricato: lo trovi nella cartella dei download." });
     } catch (e) {
-      setEsito({ ok: false, testo: messaggioDa(e, "Non riesco a preparare il file. Riprova tra poco.") });
+      setEsito({ ok: false, testo: messaggioDa(e, "Non riesco a preparare il file. Riprova tra poco."), sessione: eSessioneScaduta(e) });
     }
     setInvio(false);
   }
@@ -278,22 +300,39 @@ function IMieiDati() {
       <p className="mt-3 text-muted">
         Una copia di tutto ciò che conserviamo su di te: profilo, settimana salvata, richieste con la loro cronologia, messaggi e accessi.
       </p>
-      <button type="button" className="btn btn-ink btn-sm mt-5" disabled={invio} onClick={() => void scarica()}>
+      <button type="button" className="btn btn-ink btn-sm mt-5" aria-disabled={invio ? true : undefined} onClick={() => void scarica()}>
         {invio ? "Preparo il file…" : "Scarica i miei dati"}
       </button>
       <p className="mt-3 text-xs text-muted">File JSON, si apre con qualunque editor di testo.</p>
-      <EsitoAzione esito={esito} className="mt-4" />
+      <EsitoAzione esito={esito} className="mt-4 empty:mt-0" />
     </article>
   );
 }
 
-function Elimina({ haPassword, onEliminato }: { haPassword: boolean; onEliminato: () => void }) {
+function Elimina({ haPassword, inCorso, onEliminato }: { haPassword: boolean; inCorso: number; onEliminato: () => void }) {
   const [aperto, setAperto] = useState(false);
   const [parola, setParola] = useState("");
   const [password, setPassword] = useState("");
   const [errori, setErrori] = useState<Partial<Record<"parola" | "password", string>>>({});
   const [invio, setInvio] = useState(false);
   const [esito, setEsito] = useState<Esito | null>(null);
+
+  /* Una richiesta in corso e' un impegno di Matteo (spesa, cucina, consegna): se l'account sparisce non ne
+     resta traccia per il cliente. Lo si dice prima, con le parole di chi sta per perdere qualcosa. */
+  const avvisoInCorso =
+    inCorso > 0
+      ? `Hai ${inCorso === 1 ? "una richiesta in corso" : `${inCorso} richieste in corso`}: eliminando l’account non le vedrai più. Se ${inCorso === 1 ? "è" : "ce n’è una"} già confermata, avvisa prima Matteo.`
+      : "";
+
+  function scrivi(campo: "parola" | "password", set: (v: string) => void, valore: string) {
+    set(valore);
+    setErrori((e) => {
+      if (!e[campo]) return e;
+      const resto = { ...e };
+      delete resto[campo];
+      return resto;
+    });
+  }
 
   function apri() {
     setAperto(true);
@@ -302,6 +341,7 @@ function Elimina({ haPassword, onEliminato }: { haPassword: boolean; onEliminato
   }
 
   function chiudi() {
+    if (invio) return;
     setAperto(false);
     setParola("");
     setPassword("");
@@ -328,11 +368,14 @@ function Elimina({ haPassword, onEliminato }: { haPassword: boolean; onEliminato
       const r = await authClient.deleteUser(haPassword ? { password } : {});
       if (r.error) {
         const t = traduciErroreAuth(r.error, "elimina");
-        if (r.error.code === "INVALID_PASSWORD") {
+        if (r.error.code === "INVALID_PASSWORD" && haPassword) {
           setErrori({ password: t.messaggio });
           document.getElementById("el-password")?.focus();
+        } else if (r.error.code === "INVALID_PASSWORD") {
+          // Il server la chiede e il modulo non ha il campo (non sapevamo che l'account ne avesse una): si ricarica e riappare.
+          setEsito({ ok: false, testo: "Per eliminare l’account serve la tua password. Ricarica la pagina e riprova." });
         } else {
-          setEsito({ ok: false, testo: t.messaggio });
+          setEsito({ ok: false, testo: t.messaggio, sessione: t.tipo === "sessione" });
         }
         setInvio(false);
         return;
@@ -342,6 +385,7 @@ function Elimina({ haPassword, onEliminato }: { haPassword: boolean; onEliminato
         setInvio(false);
         return;
       }
+      cancellaBozzaRichiesta();
       onEliminato();
     } catch {
       setEsito({ ok: false, testo: traduciErroreAuth({ status: 0 }, "elimina").messaggio });
@@ -356,6 +400,7 @@ function Elimina({ haPassword, onEliminato }: { haPassword: boolean; onEliminato
           Cancelliamo per sempre accesso, profilo, settimana salvata e richieste con la loro cronologia. Non si torna indietro:
           se vuoi tenerne una copia, scarica prima i tuoi dati.
         </p>
+        {avvisoInCorso ? <p className="max-w-[60ch] font-semibold">{avvisoInCorso}</p> : null}
         <button id="el-apri" type="button" className="btn btn-sm acc-btn-pericolo-linea justify-self-start" onClick={apri}>
           Voglio eliminare l’account
         </button>
@@ -367,6 +412,7 @@ function Elimina({ haPassword, onEliminato }: { haPassword: boolean; onEliminato
     <form noValidate onSubmit={(e) => void elimina(e)} className="mt-4 grid max-w-xl gap-5" aria-busy={invio}>
       <Avviso tipo="errore" titolo="Ultimo passaggio">
         Eliminando l’account cancelliamo tutto quello che lo riguarda, richieste comprese. Matteo non potrà più ritrovarle.
+        {avvisoInCorso ? <strong className="mt-2 block">{avvisoInCorso}</strong> : null}
       </Avviso>
       <div className="campo">
         <label htmlFor="el-parola">Scrivi {PAROLA_ELIMINA} per confermare</label>
@@ -377,24 +423,24 @@ function Elimina({ haPassword, onEliminato }: { haPassword: boolean; onEliminato
           autoCorrect="off"
           spellCheck={false}
           value={parola}
-          onChange={(e) => setParola(e.target.value)}
+          onChange={(e) => scrivi("parola", setParola, e.target.value)}
           aria-invalid={errori.parola ? true : undefined}
           aria-describedby={errori.parola ? "el-parola-errore" : undefined}
         />
         {errori.parola ? <p id="el-parola-errore" className="errore">{errori.parola}</p> : null}
       </div>
       {haPassword ? (
-        <CampoPassword id="el-password" etichetta="La tua password" autoComplete="current-password" valore={password} onCambia={setPassword} errore={errori.password} />
+        <CampoPassword id="el-password" etichetta="La tua password" autoComplete="current-password" valore={password} onCambia={(v) => scrivi("password", setPassword, v)} errore={errori.password} />
       ) : (
         <p className="text-sm text-muted">
           Entri con Google: per sicurezza l’eliminazione funziona solo entro un giorno dall’ultimo accesso. Se ti viene chiesto, esci e rientra.
         </p>
       )}
       <div className="flex flex-wrap gap-3">
-        <button type="submit" className="btn btn-sm acc-btn-pericolo" disabled={invio}>
+        <button type="submit" className="btn btn-sm acc-btn-pericolo" aria-disabled={invio ? true : undefined}>
           {invio ? "Elimino…" : "Elimina definitivamente"}
         </button>
-        <button type="button" className="btn btn-linea btn-sm" disabled={invio} onClick={chiudi}>
+        <button type="button" className="btn btn-linea btn-sm" aria-disabled={invio ? true : undefined} onClick={chiudi}>
           Annulla
         </button>
       </div>

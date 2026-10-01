@@ -54,6 +54,9 @@ export function giorniAParole(f: Formula): string {
   return `${inLettere(g.length)} giorni su sette`;
 }
 
+/** "Dal lunedì al venerdì", "Tutti i giorni": i giorni coperti, come inizio di frase. */
+export const giorniCopertiAParole = (f: Formula) => maiuscola(giorniAParole(f));
+
 /** "Pranzo e cena · tutti i giorni": la riga che dice cosa copre una formula. */
 export function coperturaAParole(f: Formula): string {
   return `${pastiAParole(f)} · ${giorniAParole(f)}`;
@@ -66,7 +69,7 @@ export function pastiPerConsegna(f: Formula): string {
 
 /** Cosa arriva a ogni consegna, in due frasi: i pasti dei tre giorni successivi, nei soli giorni coperti. */
 export function esempioConsegna(f: Formula): string {
-  const base = `Ogni ${CONSEGNA_OGNI_GIORNI} giorni ricevi (o ritiri) i pasti dei ${inLettere(CONSEGNA_OGNI_GIORNI)} giorni successivi: ${pastiPerConsegna(f)}, già pronti.`;
+  const base = `Ogni ${inLettere(CONSEGNA_OGNI_GIORNI)} giorni ricevi (o ritiri) i pasti dei ${inLettere(CONSEGNA_OGNI_GIORNI)} giorni successivi: ${pastiPerConsegna(f)}, già pronti.`;
   return f.giorni.length < 7 ? `${base} Nei giorni che la formula non copre non c'è nessun pasto da portare.` : base;
 }
 

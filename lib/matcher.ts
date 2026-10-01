@@ -230,11 +230,18 @@ export interface EsitoPiano {
   aCentro: boolean;
 }
 
-function versaNelPiano(caselle: Casella[]): Piano {
+/**
+ * Le caselle scelte vanno nella settimana dal lunedi'. Con un pasto al giorno
+ * sono i pranzi di giorni consecutivi (cinque pasti = lunedi'-venerdi', a
+ * pranzo), non pranzo e cena dei primi giorni: chi chiede "1 pasto, 5 giorni"
+ * si aspetta cinque giorni coperti, non due e mezzo.
+ */
+function versaNelPiano(caselle: Casella[], soloPranzo: boolean): Piano {
   const piano: Piano = {};
+  const pasti = soloPranzo ? PASTI.slice(0, 1) : PASTI;
   let i = 0;
   for (const g of GIORNI) {
-    for (const m of PASTI) {
+    for (const m of pasti) {
       const c = caselle[i++];
       if (!c) return piano;
       piano[g] = { ...piano[g], [m]: { ...c, extra: [...c.extra] } };
@@ -265,5 +272,5 @@ export function componiPiano(target: Target, vincoli: Vincoli = VINCOLI_DEFAULT)
   if (!pool.length || posti < 1) return esitoPiano({}, bersaglio);
 
   const scelte = scegli(pool, posti, bersaglioDi(perPasto, posti), vincoli.maxRipetizioni);
-  return esitoPiano(versaNelPiano(scelte.map((o) => o.valore)), bersaglio);
+  return esitoPiano(versaNelPiano(scelte.map((o) => o.valore), Math.round(target.pastiAlGiorno) <= 1), bersaglio);
 }

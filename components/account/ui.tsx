@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   forwardRef,
   useCallback,
@@ -10,7 +12,7 @@ import {
   type ReactNode,
   type Ref,
 } from "react";
-import { PASSWORD_MAX, requisitiPassword } from "@/lib/account";
+import { eSessioneScaduta, hrefAccedi, PASSWORD_MAX, requisitiPassword } from "@/lib/account";
 
 /* I pezzi che accesso, recupero e area cliente condividono: avvisi, campo
    password, finestra di conferma, scheletri di caricamento, icone. */
@@ -60,12 +62,43 @@ export function Stato({ children, className = "" }: { children?: ReactNode; clas
   );
 }
 
-/** L'esito di un'azione dentro una regione live: verde lime se e' andata, rosso se no. */
-export function EsitoAzione({ esito, className = "" }: { esito: { ok: boolean; testo: string } | null; className?: string }) {
+/**
+ * "Accedi di nuovo", per quando la sessione e' finita a meta' di un'azione: si
+ * rientra e si torna esattamente qui, query compresa (la richiesta a meta' si
+ * ritrova, vedi lib/account.ts: leggiBozza).
+ */
+export function LinkAccediDiNuovo({ className = "btn btn-ink btn-sm" }: { className?: string }) {
+  const parametri = useSearchParams();
+  const q = parametri.toString();
+  return (
+    <Link href={hrefAccedi(q ? `/account?${q}` : "/account")} className={className}>
+      Accedi di nuovo
+    </Link>
+  );
+}
+
+/**
+ * L'esito di un'azione dentro una regione live: verde lime se e' andata, rosso
+ * se no. Con `sessione` (il server ha risposto 401) c'e' anche il modo di rientrare.
+ */
+export function EsitoAzione({
+  esito,
+  className = "",
+}: {
+  esito: { ok: boolean; testo: string; sessione?: boolean } | null;
+  className?: string;
+}) {
   return (
     <Stato className={className}>
       {esito ? (
-        <p className={`acc-avviso ${esito.ok ? "acc-avviso-successo" : "acc-avviso-errore"}`}>{esito.testo}</p>
+        <div className={`acc-avviso ${esito.ok ? "acc-avviso-successo" : "acc-avviso-errore"}`}>
+          <p>{esito.testo}</p>
+          {esito.sessione ? (
+            <div className="acc-avviso-azioni">
+              <LinkAccediDiNuovo />
+            </div>
+          ) : null}
+        </div>
       ) : null}
     </Stato>
   );
@@ -108,7 +141,8 @@ export function Caricamento({ testo = "Carico…", righe = 3 }: { testo?: string
 export type Caricabile<T> =
   | { stato: "attesa" }
   | { stato: "pronto"; dati: T }
-  | { stato: "errore"; messaggio: string };
+  /** `sessione`: il server ha risposto 401, la sessione e' finita (l'area cliente lo verifica e rimanda all'accesso). */
+  | { stato: "errore"; messaggio: string; sessione?: boolean };
 
 /**
  * Carica una volta al montaggio (e quando `carica` cambia). `carica` deve essere
@@ -122,7 +156,7 @@ export function useDati<T>(carica: () => Promise<T>, errore: (e: unknown) => str
     let vivo = true;
     carica().then(
       (dati) => { if (vivo) setStato({ stato: "pronto", dati }); },
-      (e: unknown) => { if (vivo) setStato({ stato: "errore", messaggio: errore(e) }); },
+      (e: unknown) => { if (vivo) setStato({ stato: "errore", messaggio: errore(e), sessione: eSessioneScaduta(e) }); },
     );
     return () => {
       vivo = false;
@@ -133,7 +167,7 @@ export function useDati<T>(carica: () => Promise<T>, errore: (e: unknown) => str
     () =>
       carica().then(
         (dati) => setStato({ stato: "pronto", dati }),
-        (e: unknown) => setStato({ stato: "errore", messaggio: errore(e) }),
+        (e: unknown) => setStato({ stato: "errore", messaggio: errore(e), sessione: eSessioneScaduta(e) }),
       ),
     [carica, errore],
   );

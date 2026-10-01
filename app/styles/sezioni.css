@@ -26,6 +26,7 @@
     color: var(--color-paper);
     --color-muted: var(--color-steel);
     --line: var(--line-night);
+    -webkit-tap-highlight-color: rgba(243, 239, 230, 0.16);
   }
 
   .carta-2 {
@@ -149,7 +150,8 @@
   transform: none;
 }
 
-@media (prefers-reduced-motion: reduce) {
+/* Con movimento ridotto o in stampa nulla resta nascosto in attesa dello scroll. */
+@media (prefers-reduced-motion: reduce), print {
   .js .reveal,
   .js .reveal.in {
     opacity: 1;

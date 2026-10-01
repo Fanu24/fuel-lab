@@ -3,15 +3,19 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState, type KeyboardEvent as KeyboardEventReact } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSessione } from "@/components/account/sessione";
 import { IconaPersona } from "@/components/account/ui";
 import WhatsAppCta from "@/components/ui/WhatsAppCta";
 import { iniziale, nomeBreve } from "@/lib/account";
+import { EMAIL } from "@/lib/sito";
 
 /* Cio' che il browser mette nel giro di Tab dentro un pannello. */
 const FOCUSABILI =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+/* Una voce di menu e' la pagina corrente se e' la sua rotta o una sottopagina. */
+const inRotta = (percorso: string, href: string) => percorso === href || percorso.startsWith(href + "/");
 
 /* Nella barra del computer "Contatti" non c'e': porta alla stessa pagina del
    bottone "Scrivi a Matteo" che sta accanto alla nav, e con "Abbonamento" non
@@ -42,6 +46,14 @@ export default function Nav() {
   const [aperto, setAperto] = useState(false);
   const [scorso, setScorso] = useState(false);
   const percorso = usePathname();
+  /* Se la pagina cambia a menu aperto (l'"indietro" del browser, un link da
+     tastiera) il menu si chiude: altrimenti resterebbe sopra la pagina nuova. */
+  const [percorsoVisto, setPercorsoVisto] = useState(percorso);
+  if (percorso !== percorsoVisto) {
+    setPercorsoVisto(percorso);
+    setAperto(false);
+  }
+  const testata = useRef<HTMLElement>(null);
   const pannello = useRef<HTMLDivElement>(null);
   const bottoneMenu = useRef<HTMLButtonElement>(null);
   /* Una sola chiamata a /api/me per pagina, condivisa con l'area cliente. Finche'
@@ -72,47 +84,63 @@ export default function Nav() {
 
   useEffect(() => {
     if (!aperto) return;
-    const suEsc = (e: KeyboardEvent) => {
+    const visibili = (radice: HTMLElement | null) =>
+      radice
+        ? Array.from(radice.querySelectorAll<HTMLElement>(FOCUSABILI)).filter((n) => n.getClientRects().length > 0)
+        : [];
+    const suTasto = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         setAperto(false);
         // Il fuoco torna al bottone che ha aperto il menu, non si perde sul body.
         bottoneMenu.current?.focus();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      /* Trappola di Tab: senza, il fuoco scivola sulla pagina dietro l'overlay
+         opaco, invisibile e con lo scroll bloccato. Il giro comprende la barra
+         (logo, account, la X che chiude: restano sopra il pannello) e il pannello. */
+      const nodi = [...visibili(testata.current), ...visibili(pannello.current)];
+      if (nodi.length === 0) return;
+      const primo = nodi[0];
+      const ultimo = nodi[nodi.length - 1];
+      const attivo = document.activeElement as HTMLElement | null;
+      const dentro = attivo === pannello.current || (attivo !== null && nodi.includes(attivo));
+      if (!dentro) {
+        e.preventDefault();
+        primo.focus();
+      } else if (e.shiftKey && attivo === primo) {
+        e.preventDefault();
+        ultimo.focus();
+      } else if (!e.shiftKey && attivo === ultimo) {
+        e.preventDefault();
+        primo.focus();
       }
     };
+    /* Girando il tablet in orizzontale la barra del computer prende il posto del
+       menu: se restasse "aperto" (nascosto da lg:hidden) lo scroll sarebbe
+       bloccato senza che nessun pannello lo giustifichi. Stessa soglia di lg. */
+    const computer = window.matchMedia("(min-width: 1024px)");
+    const suLarghezza = () => {
+      if (computer.matches) setAperto(false);
+    };
+    computer.addEventListener("change", suLarghezza);
     const overflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    window.addEventListener("keydown", suEsc);
+    window.addEventListener("keydown", suTasto);
     pannello.current?.focus();
     return () => {
       document.body.style.overflow = overflow;
-      window.removeEventListener("keydown", suEsc);
+      window.removeEventListener("keydown", suTasto);
+      computer.removeEventListener("change", suLarghezza);
     };
   }, [aperto]);
-
-  /* Trappola di Tab: senza, il fuoco scivola sulla pagina dietro l'overlay
-     opaco, invisibile e con lo scroll bloccato. Esc resta l'unica uscita. */
-  function suTasto(e: KeyboardEventReact<HTMLDivElement>) {
-    if (e.key !== "Tab" || !pannello.current) return;
-    const nodi = Array.from(pannello.current.querySelectorAll<HTMLElement>(FOCUSABILI)).filter(
-      (n) => n.offsetParent !== null,
-    );
-    if (nodi.length === 0) return;
-    const primo = nodi[0];
-    const ultimo = nodi[nodi.length - 1];
-    if (e.shiftKey && (document.activeElement === primo || document.activeElement === pannello.current)) {
-      e.preventDefault();
-      ultimo.focus();
-    } else if (!e.shiftKey && document.activeElement === ultimo) {
-      e.preventDefault();
-      primo.focus();
-    }
-  }
 
   const trasparente = SU_NOTTE.has(percorso) && !scorso && !aperto;
 
   return (
     <>
       <header
+        ref={testata}
         className={`fixed inset-x-0 top-0 z-60 transition-colors duration-500 ${
           trasparente ? "bg-transparent text-paper" : "border-b bg-paper/92 text-ink backdrop-blur-md"
         }`}
@@ -133,13 +161,13 @@ export default function Nav() {
 
           <nav aria-label="Principale" className="hidden items-center gap-4 lg:flex xl:gap-6 2xl:gap-8">
             {VOCI.filter((v) => v.href !== "/account").map((v) => {
-              const attiva = percorso === v.href || percorso.startsWith(v.href + "/");
+              const attiva = inRotta(percorso, v.href);
               return (
                 <Link
                   key={v.href}
                   href={v.href}
                   aria-current={attiva ? "page" : undefined}
-                  className="relative py-2 font-disp text-[13px] font-semibold tracking-[.12em] whitespace-nowrap uppercase 2xl:tracking-[.16em]"
+                  className="relative py-3 font-disp text-[13px] font-semibold tracking-[.12em] whitespace-nowrap uppercase 2xl:tracking-[.16em]"
                 >
                   {v.label}
                   <span
@@ -154,7 +182,7 @@ export default function Nav() {
             {admin ? (
               <Link
                 href="/dashboard"
-                className="hidden py-2 font-disp text-[13px] font-semibold tracking-[.12em] whitespace-nowrap uppercase xl:inline-block 2xl:tracking-[.16em]"
+                className="hidden py-3 font-disp text-[13px] font-semibold tracking-[.12em] whitespace-nowrap uppercase xl:inline-block 2xl:tracking-[.16em]"
               >
                 Pannello
               </Link>
@@ -209,24 +237,27 @@ export default function Nav() {
         ref={pannello}
         hidden={!aperto}
         tabIndex={-1}
-        onKeyDown={suTasto}
-        className={`notte fixed inset-0 z-50 flex-col justify-between overflow-y-auto px-6 pt-28 pb-8 outline-none lg:hidden ${aperto ? "flex" : "hidden"}`}
+        className={`notte fixed inset-0 z-50 flex-col justify-between overflow-y-auto overscroll-contain px-[var(--gut)] pt-28 pb-8 outline-none focus:shadow-none lg:hidden ${aperto ? "flex" : "hidden"}`}
       >
         <nav aria-label="Principale" className="flex flex-col">
-          {vociMobile.map((v, i) => (
-            <Link
-              key={v.href}
-              href={v.href}
-              onClick={() => setAperto(false)}
-              className="border-b py-3 font-disp text-[clamp(26px,8vw,40px)] leading-none font-bold uppercase"
-              style={{
-                borderColor: "var(--line)",
-                animation: aperto ? `fuel-sale .6s var(--e-out) both ${60 + i * 50}ms` : undefined,
-              }}
-            >
-              {v.label}
-            </Link>
-          ))}
+          {vociMobile.map((v, i) => {
+            const attiva = inRotta(percorso, v.href);
+            return (
+              <Link
+                key={v.href}
+                href={v.href}
+                onClick={() => setAperto(false)}
+                aria-current={attiva ? "page" : undefined}
+                className={`border-b py-3 font-disp text-[clamp(26px,8vw,40px)] leading-none font-bold uppercase ${attiva ? "text-lime" : ""}`}
+                style={{
+                  borderColor: "var(--line)",
+                  animation: aperto ? `fuel-sale .6s var(--e-out) both ${60 + i * 50}ms` : undefined,
+                }}
+              >
+                {v.label}
+              </Link>
+            );
+          })}
         </nav>
         <div className="mt-8">
           <WhatsAppCta
@@ -234,7 +265,9 @@ export default function Nav() {
             onClick={() => setAperto(false)}
             buttonClassName="w-full justify-between"
           />
-          <a href="mailto:info@fuelchef.it" className="mt-4 inline-block py-2 text-sm underline underline-offset-4">Oppure scrivi a info@fuelchef.it</a>
+          <a href={`mailto:${EMAIL}`} className="mt-4 inline-flex min-h-11 items-center text-sm underline underline-offset-4">
+            Oppure scrivi a {EMAIL}
+          </a>
         </div>
       </div>
     </>

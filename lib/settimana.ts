@@ -107,9 +107,13 @@ export function leggiCasella(v: unknown): Casella | undefined {
     c.piatto = o.piatto;
   }
   if (Array.isArray(o.extra)) {
-    c.extra = (o.extra as unknown[]).filter(
-      (id): id is string => typeof id === "string" && !!getExtra(id),
-    );
+    // Una aggiunta vale una volta sola: dati riscritti a mano o venuti da un link possono ripeterla,
+    // e due volte lo stesso extra sommerebbe due volte i macro (e il supplemento).
+    c.extra = [
+      ...new Set(
+        (o.extra as unknown[]).filter((id): id is string => typeof id === "string" && !!getExtra(id)),
+      ),
+    ];
   }
   return casellaVuota(c) ? undefined : c;
 }

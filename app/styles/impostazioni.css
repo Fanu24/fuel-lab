@@ -411,6 +411,16 @@
     }
   }
 
+  /* Una nota che non blocca: sovrapposizioni e chiusure lunghissime. Stesso ambra del piatto spento. */
+  .pn-imp-attenzione {
+    padding: 8px 10px;
+    border-left: 4px solid #c98a00;
+    background: #fff1db;
+    color: #4a2400;
+    font-size: 14px;
+    line-height: 1.4;
+  }
+
   /* ---------- Avviso: anteprima ---------- */
   .pn-imp-anteprima {
     display: grid;

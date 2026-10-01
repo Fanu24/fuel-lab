@@ -128,10 +128,28 @@ function nomePiatto(id: string | undefined): string | undefined {
   return id ? getPiatto(id)?.nome : undefined;
 }
 
-function nomeExtra(id: string): string | undefined {
+/**
+ * Quanto dettaglio mettere nel messaggio. wa.me porta il testo nell'indirizzo, e
+ * un indirizzo troppo lungo si perde per strada: una settimana piena di aggiunte
+ * puo' superare i 5.000 caratteri. Si parte dal messaggio completo (aggiunte con
+ * il supplemento) e si accorcia solo se serve: prima senza i prezzi, poi con il
+ * solo numero di aggiunte per casella.
+ */
+type Dettaglio = "completo" | "senzaPrezzi" | "sintetico";
+
+/**
+ * Caratteri massimi della sola settimana, gia' codificata per l'indirizzo (ogni
+ * spazio e ogni accento ne valgono tre o sei): una settimana senza aggiunte ne
+ * occupa circa 1.400. WhatsApp non dichiara un limite, ma gli indirizzi oltre i
+ * 3.000 caratteri si perdono in browser, anteprime e app di terze parti: con questo
+ * tetto il resto del messaggio (saluto, servizio, contatti) resta sotto quella soglia.
+ */
+export const LIMITE_SETTIMANA_URL = 2400;
+
+function nomeExtra(id: string, conPrezzo: boolean): string | undefined {
   const e = getExtra(id);
   if (!e) return undefined;
-  if (e.prezzoEuro != null) return `${e.nome} (${etichettaPrezzo(e, true)})`;
+  if (conPrezzo && e.prezzoEuro != null) return `${e.nome} (${etichettaPrezzo(e, true)})`;
   return e.nome;
 }
 
@@ -140,9 +158,15 @@ function nomeExtra(id: string): string | undefined {
  * "solo extra" e' raro ma valido: una casella non e' vuota se ha almeno
  * un extra dentro, quindi va descritta invece di sparire dal messaggio.
  */
-function descrizioneCasella(c: Casella): string {
+function descrizioneCasella(c: Casella, dettaglio: Dettaglio): string {
   const piatto = nomePiatto(c.piatto);
-  const extra = c.extra.map(nomeExtra).filter((n): n is string => !!n);
+  const noti = c.extra.filter((id) => !!getExtra(id));
+  const extra =
+    dettaglio === "sintetico"
+      ? noti.length > 0
+        ? [`${noti.length} ${noti.length === 1 ? "aggiunta" : "aggiunte"}`]
+        : []
+      : noti.map((id) => nomeExtra(id, dettaglio === "completo")).filter((n): n is string => !!n);
   if (piatto) {
     return extra.length > 0 ? `${piatto} + ${extra.join(", ")}` : piatto;
   }
@@ -153,32 +177,26 @@ function descrizioneCasella(c: Casella): string {
  * Una riga per giorno, per i giorni con almeno un pasto scelto o con un allenamento.
  * L'allenamento va accanto al giorno ("Lunedì · Pesi: ...") perche' e' la chiave con
  * cui Matteo legge la settimana: un giorno di pesi senza pasti e' comunque un'informazione.
+ * Pranzo e cena stanno separati da un punto e virgola: la barra "/" compare gia' nei
+ * nomi delle aggiunte ("Basmati / integrale") e farebbe confondere i due pasti.
  */
-function rigaGiorno(g: GiornoSettimana, p: Piano, a: Allenamenti): string | undefined {
+function rigaGiorno(g: GiornoSettimana, p: Piano, a: Allenamenti, dettaglio: Dettaglio): string | undefined {
   const parti: string[] = [];
   for (const m of PASTI) {
     const c = p[g]?.[m];
-    if (c) parti.push(`${m} ${descrizioneCasella(c)}`);
+    if (c) parti.push(`${m} ${descrizioneCasella(c, dettaglio)}`);
   }
   const tipo = a[g];
   if (parti.length === 0 && !tipo) return undefined;
   const giorno = tipo ? `${NOMI_GIORNO[g]} · ${NOMI_GIORNATA[tipo]}` : NOMI_GIORNO[g];
-  return `${giorno}: ${parti.length > 0 ? parti.join(" / ") : "nessun pasto scelto"}`;
+  return `${giorno}: ${parti.length > 0 ? parti.join("; ") : "nessun pasto scelto"}`;
 }
 
-/**
- * Il messaggio che Matteo legge quando arriva dalla richiesta legata a una
- * settimana: chi manda, i giorni con il piatto e le aggiunte, e la riga finale
- * dei macro totali. I ritorni a capo sono `\n` veri: e' compito di
- * linkWhatsApp codificarli nell'URL, non di questa funzione.
- */
-export function messaggioPiano(
-  p: Piano,
-  macro: Macros,
-  nome?: string,
-  allenamenti: Allenamenti = {},
-): string {
-  const righeGiorni = GIORNI.map((g) => rigaGiorno(g, p, allenamenti)).filter(
+/** I totali con il punto delle migliaia all'italiana: "22.290 kcal", non "22290 kcal". */
+const numero = (n: number) => Math.round(n).toLocaleString("it-IT");
+
+function testoPiano(p: Piano, macro: Macros, nome: string | undefined, allenamenti: Allenamenti, dettaglio: Dettaglio): string {
+  const righeGiorni = GIORNI.map((g) => rigaGiorno(g, p, allenamenti, dettaglio)).filter(
     (r): r is string => !!r,
   );
 
@@ -188,13 +206,36 @@ export function messaggioPiano(
     "",
     righeGiorni.length > 0 ? righeGiorni.join("\n") : "Non ho ancora scelto nessun pasto.",
     "",
-    `Totale settimana: ${macro.kcal} kcal, ${macro.proteine} g proteine, ` +
-      `${macro.carboidrati} g carboidrati, ${macro.grassi} g grassi.`,
+    `Totale settimana: ${numero(macro.kcal)} kcal, ${numero(macro.proteine)} g di proteine, ` +
+      `${numero(macro.carboidrati)} g di carboidrati, ${numero(macro.grassi)} g di grassi.`,
     "",
     "Mi dici come possiamo organizzarci?",
   ];
 
   return blocchi.join("\n");
+}
+
+/**
+ * Il messaggio che Matteo legge quando arriva dalla richiesta legata a una
+ * settimana: chi manda, i giorni con il piatto e le aggiunte, e la riga finale
+ * dei macro totali. I ritorni a capo sono `
+` veri: e' compito di
+ * linkWhatsApp codificarli nell'URL, non di questa funzione. Se la settimana
+ * completa non ci sta nell'indirizzo, accorcia le aggiunte (vedi Dettaglio).
+ */
+export function messaggioPiano(
+  p: Piano,
+  macro: Macros,
+  nome?: string,
+  allenamenti: Allenamenti = {},
+): string {
+  const livelli: Dettaglio[] = ["completo", "senzaPrezzi", "sintetico"];
+  let testo = "";
+  for (const d of livelli) {
+    testo = testoPiano(p, macro, nome, allenamenti, d);
+    if (encodeURIComponent(testo).length <= LIMITE_SETTIMANA_URL) break;
+  }
+  return testo;
 }
 
 /* =========================================================================

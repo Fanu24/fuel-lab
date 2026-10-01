@@ -3,11 +3,12 @@ import Link from "next/link";
 import Reveal from "@/components/Reveal";
 import ChiusuraCta from "@/components/home/ChiusuraCta";
 import Faq from "@/components/come-funziona/Faq";
+import Aggiornato from "@/components/seo/Aggiornato";
 import Briciole from "@/components/seo/Briciole";
 import JsonLd from "@/components/seo/JsonLd";
 import LinkBlog from "@/components/seo/LinkBlog";
 import { AGGIORNAMENTO, PAGINE, metadatiPagina } from "@/components/seo/pagine";
-import { nodiPagina, nodoServizio, prezzoIt, type DomandaTesto } from "@/components/seo/schema";
+import { idServizio, nodiPagina, nodoServizio, prezzoIt, type DomandaTesto } from "@/components/seo/schema";
 import { FOTO } from "@/lib/immagini";
 import { SOGLIA_PREZZO, getServizio } from "@/lib/servizi";
 import { INDIRIZZO_RIGA, elencoZone } from "@/lib/sito";
@@ -100,6 +101,7 @@ export default function CuocoADomicilioPescara() {
             descrizione: PAGINA.descrizione,
             briciole,
             faq: DOMANDE,
+            about: { "@id": idServizio(PAGINA.percorso, "home-cooking") },
             dataModifica: AGGIORNAMENTO,
           }),
           nodoServizio({
@@ -125,7 +127,7 @@ export default function CuocoADomicilioPescara() {
               dedicato solo a te, e per questo non ha un prezzo a pasto ma un preventivo.
             </p>
             <div className="mt-9 flex flex-wrap items-center gap-x-8 gap-y-4">
-              <Link href="/richiesta?servizio=home-cooking" className="btn btn-ink">
+              <Link href="/richiesta?servizio=home-cooking#scrivi" className="btn btn-ink">
                 Chiedi un preventivo <span className="freccia">→</span>
               </Link>
               <Link href={PAGINE.chiSiamo.percorso} className="link">
@@ -247,14 +249,23 @@ export default function CuocoADomicilioPescara() {
               </tbody>
             </table>
           </div>
+          <p className="mt-4 text-sm font-semibold text-steel md:hidden">Scorri la tabella di lato per vedere tutte le colonne.</p>
           <p className="mt-10 max-w-[60ch] text-steel">
             Ti basta ricevere i piatti già pronti?{" "}
             <Link href={PAGINE.mealPrep.percorso} className="link">
               Il meal prep a Pescara
             </Link>{" "}
-            parte dal menu e arriva con{" "}
+            parte dal{" "}
+            <Link href="/menu" className="link">
+              menu
+            </Link>{" "}
+            e arriva con{" "}
             <Link href={PAGINE.consegna.percorso} className="link">
               ritiro o consegna
+            </Link>
+            ; se vuoi i pasti di tutto il mese, ci sono gli{" "}
+            <Link href={PAGINE.abbonamento.percorso} className="link">
+              abbonamenti
             </Link>
             .
           </p>
@@ -268,6 +279,9 @@ export default function CuocoADomicilioPescara() {
             <h2 className="titolo mt-5">Cuoco a domicilio: le risposte.</h2>
           </div>
           <Faq domande={DOMANDE} />
+        </div>
+        <div className="wrap mt-10">
+          <Aggiornato />
         </div>
       </section>
 

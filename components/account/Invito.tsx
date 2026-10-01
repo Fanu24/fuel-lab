@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useRef } from "react";
 import { hrefAccedi, type SezioneAccount } from "@/lib/account";
 import { LINK_SCRIVI_ABBONAMENTO } from "@/lib/abbonamento";
 import type { Servizio } from "@/lib/api";
@@ -13,17 +16,20 @@ export function Invito({
   sezione,
   servizio,
   errore,
+  scaduta = false,
 }: {
   qui: string;
   sezione: SezioneAccount;
   servizio: Servizio;
   errore: string | null;
+  /** Era collegato e non lo e' piu': la sessione e' finita mentre usava la pagina. */
+  scaduta?: boolean;
 }) {
   const perInviare = sezione === "richiesta";
   // L'abbonamento non si compone: si sceglie la formula e la si chiede. Il muro non deve parlare di piatti e settimana.
   const abbonamento = perInviare && servizio === "abbonamento";
   return (
-    <section className="acc-testata wrap pb-[var(--sezione)]">
+    <section className="acc-testata acc-schermata wrap pb-[var(--sezione)]">
       <div className="notte acc-invito">
         <div>
           <p className="occhiello">Area cliente</p>
@@ -40,6 +46,10 @@ export function Invito({
           {errore ? (
             <p role="alert" className="acc-avviso acc-avviso-errore mt-6">
               {errore}
+            </p>
+          ) : scaduta ? (
+            <p role="status" className="acc-avviso acc-avviso-info mt-6">
+              La sessione è scaduta. Accedi di nuovo: torni qui, dov’eri.
             </p>
           ) : null}
           <div className="mt-8 flex flex-wrap gap-3">
@@ -68,12 +78,22 @@ export function Invito({
   );
 }
 
+/**
+ * Dopo l'eliminazione la pagina resta com'era: scorsa fino al bottone "Elimina",
+ * quindi l'addio comparirebbe fuori dallo schermo. Si torna in cima e il titolo
+ * prende il fuoco (chi usa un lettore di schermo lo sente, e il fuoco non cade sul body).
+ */
 export function Addio() {
+  const titolo = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    window.scrollTo({ top: 0 });
+    titolo.current?.focus({ preventScroll: true });
+  }, []);
   return (
-    <section className="acc-testata wrap pb-[var(--sezione)]">
+    <section className="acc-testata acc-schermata wrap pb-[var(--sezione)]">
       <div className="notte p-6 sm:p-10 md:p-14" role="status">
         <p className="occhiello">Account eliminato</p>
-        <h1 className="titolo mt-5 max-w-[16ch]">Il tuo account non c’è più.</h1>
+        <h1 ref={titolo} tabIndex={-1} className="titolo mt-5 max-w-[16ch]">Il tuo account non c’è più.</h1>
         <p className="mt-6 max-w-[52ch] text-steel">
           Abbiamo cancellato accesso, profilo, settimana salvata e richieste. La settimana composta su questo dispositivo resta
           qui finché non la svuoti dal compositore. Se cambi idea, puoi creare un nuovo account quando vuoi.

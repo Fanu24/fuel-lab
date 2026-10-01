@@ -6,6 +6,9 @@ describe("date del server", () => {
     expect(tsSqlite("2026-09-27 11:37:38")).toBe("2026-09-27 11:37:38");
     expect(tsSqlite("2026-09-27T11:37:38.936Z")).toBe("2026-09-27 11:37:38");
     expect(tsSqlite(Date.UTC(2026, 8, 27, 11, 37, 38))).toBe("2026-09-27 11:37:38");
+    // con i millisecondi (la versione del piano salvato) e' comunque UTC, qualunque sia il fuso della macchina
+    expect(tsSqlite("2026-10-01 14:56:24.231")).toBe("2026-10-01 14:56:24");
+    expect(giornoRoma("2026-09-29 22:30:00.500")).toBe("2026-09-30");
     expect(tsSqlite("non una data")).toBeNull();
     expect(daTimestamp("")).toBeNull();
   });

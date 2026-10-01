@@ -15,7 +15,7 @@
 @layer components {
   .pn-h1 {
     font-family: var(--font-disp);
-    font-size: clamp(28px, 4vw, 40px);
+    font-size: clamp(24px, 4vw, 40px);
     line-height: 1;
   }
   .pn-h2 {
@@ -52,6 +52,28 @@
     flex-wrap: wrap;
     align-items: center;
     gap: 10px;
+  }
+  /* Oggi e Ordini sul telefono: "Nuovo ordine" e "Aggiorna" sulla stessa riga, l'ora dell'ultimo giro sotto.
+     Il blocco dell'aggiornamento si scioglie nella griglia (display: contents) per riordinare i suoi due pezzi. */
+  @media (max-width: 639px) {
+    .pn-testa {
+      gap: 12px;
+      padding-bottom: 14px;
+    }
+    .pn-testa-azioni:has(> .pn-aggiornato) {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 6px 8px;
+      width: 100%;
+    }
+    .pn-testa-azioni > .pn-aggiornato {
+      display: contents;
+    }
+    .pn-aggiornato-ora {
+      grid-column: 1 / -1;
+      grid-row: 2;
+      font-size: 13px;
+    }
   }
 
   .pn-sezione-testa {
@@ -246,6 +268,16 @@
   .pn-voce:hover {
     color: var(--color-paper);
   }
+  /* Fra tablet e computer le sei sezioni (con i numerini) non starebbero in 768px: via le icone, restano le parole. */
+  @media (min-width: 768px) and (max-width: 1023px) {
+    .pn-voce {
+      gap: 8px;
+      padding: 0 14px;
+    }
+    .pn-voce > svg {
+      display: none;
+    }
+  }
   .pn-voce[aria-current="page"] {
     color: var(--color-paper);
     box-shadow: inset 0 -4px 0 var(--color-lime);
@@ -287,7 +319,7 @@
     gap: 3px;
     min-height: 60px;
     padding: 6px 2px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     line-height: 1.1;
     color: var(--color-steel);
@@ -495,9 +527,14 @@
     font-weight: 700;
     line-height: 1.25;
   }
+  /* I nomi lunghi non devono mangiare mezzo schermo: tre righe al massimo, il resto sta nella pagina a cui porta. */
   .pn-azione-dettaglio {
-    display: block;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
     margin-top: 3px;
+    overflow: hidden;
+    overflow-wrap: anywhere;
     font-size: 15px;
     line-height: 1.4;
     color: var(--color-muted);
@@ -524,8 +561,8 @@
 
   /* Un importo in euro e' piu' lungo di un conteggio: a 360px deve stare nella casella. */
   .pn-kpi-valore-lungo {
-    font-size: clamp(22px, 6vw, 36px);
-    overflow-wrap: anywhere;
+    font-size: clamp(20px, 5.2vw, 36px);
+    white-space: nowrap;
   }
 
   .pn-kpi-griglia {
@@ -571,6 +608,7 @@
   }
   .pn-riga-abb-dettaglio {
     display: block;
+    overflow-wrap: anywhere;
     font-size: 15px;
     line-height: 1.35;
     color: var(--color-muted);
@@ -733,6 +771,23 @@
     line-height: 1.1;
     color: var(--color-ink);
   }
+  /* Sul telefono il giorno ha una riga sua e i due dati si dividono la larghezza: niente colonnine da tre parole. */
+  @media (max-width: 899px) {
+    .pn-giorno {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px 12px;
+    }
+    .pn-giorno > div:first-child {
+      grid-column: 1 / -1;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 4px 8px;
+    }
+    .pn-giorno-etichetta {
+      margin: 0;
+    }
+  }
   @media (min-width: 900px) {
     .pn-settimana {
       grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -747,6 +802,7 @@
 
   /* ---------- Ordini: filtri ---------- */
   .pn-chips {
+    position: relative;
     display: flex;
     gap: 8px;
     margin-inline: -2px;
@@ -798,25 +854,32 @@
 
   .pn-strumenti {
     display: grid;
-    gap: 14px;
+    gap: 10px;
+  }
+  .pn-chips-rapidi {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
   }
   @media (min-width: 900px) {
     .pn-strumenti {
       grid-template-columns: minmax(0, 1fr) auto;
-      align-items: end;
+      align-items: center;
+      gap: 16px;
     }
   }
-  .pn-cerca {
+  /* Il campo di ricerca: la lente sta dentro il riquadro, qualunque cosa ci sia sopra o sotto (etichetta, errore). */
+  .pn-cerca-campo {
     position: relative;
   }
-  .pn-cerca svg {
+  .pn-cerca-campo svg {
     position: absolute;
     left: 14px;
-    bottom: 14px;
+    top: 16px;
     color: var(--color-muted);
     pointer-events: none;
   }
-  .pn-cerca input {
+  .pn-cerca-campo input {
     width: 100%;
     padding-left: 46px;
   }
@@ -855,6 +918,11 @@
     background: var(--color-ink);
     color: var(--color-paper);
   }
+  @media (max-width: 639px) {
+    .pn-segmenti button {
+      padding: 0 12px;
+    }
+  }
 
   /* ---------- Ordini: elenco ---------- */
   .pn-elenco {
@@ -888,6 +956,8 @@
     margin-top: 4px;
     font-size: 15px;
     color: var(--color-muted);
+    /* Un comune o un nome lungo senza spazi si spezza invece di allargare tutta la pagina. */
+    overflow-wrap: anywhere;
   }
   .pn-ordine-soldi {
     font-size: 15px;
@@ -900,6 +970,7 @@
   .pn-ordine-date {
     grid-column: 1 / -1;
     font-size: 15px;
+    overflow-wrap: anywhere;
   }
   @media (min-width: 900px) {
     .pn-ordine {
@@ -943,6 +1014,8 @@
   .pn-carta {
     display: grid;
     gap: 8px;
+    min-width: 0;
+    overflow-wrap: anywhere;
     padding: 12px;
     background: #fbf9f4;
     border: 1px solid rgba(18, 20, 18, 0.14);
@@ -1016,9 +1089,12 @@
     position: relative;
     flex: 1;
     display: grid;
+    /* minmax(0, 1fr): senza, un'email o un nome lunghissimo allarga la colonna oltre lo schermo e i campi escono a destra. */
+    grid-template-columns: minmax(0, 1fr);
     align-content: start;
     gap: 30px;
     padding: 20px;
+    overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior: contain;
   }
@@ -1273,7 +1349,7 @@
   .pn-proposta {
     display: grid;
     gap: 10px;
-    padding: 14px 16px;
+    padding: 12px 14px;
     border: 3px solid var(--color-ink);
     background: var(--color-lime);
     color: var(--color-ink);
@@ -1401,6 +1477,45 @@
   .pn-toast-errore {
     background: #6e140d;
   }
+
+  /* Una richiesta o un messaggio arrivati mentre il pannello e' aperto: in alto, lime come il numerino. */
+  .pn-novita {
+    position: fixed;
+    top: calc(8px + env(safe-area-inset-top));
+    left: 50%;
+    z-index: 60;
+    display: flex;
+    align-items: center;
+    gap: 4px 12px;
+    width: max-content;
+    max-width: calc(100vw - 24px);
+    padding: 4px 4px 4px 16px;
+    transform: translateX(-50%);
+    border: 3px solid var(--color-ink);
+    background: var(--color-lime);
+    color: var(--color-ink);
+    font-size: 16px;
+    box-shadow: 0 10px 30px rgba(14, 16, 15, 0.35);
+    animation: pn-novita-entra 0.3s var(--e-out);
+  }
+  .pn-novita-testo {
+    font-weight: 700;
+  }
+  .pn-novita a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 16px;
+    background: var(--color-ink);
+    color: var(--color-lime);
+    font-weight: 700;
+  }
+  .pn-novita button {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+  }
   @media (min-width: 768px) {
     .pn-toast {
       bottom: 24px;
@@ -1410,6 +1525,24 @@
 
 html:has(.pn-scheda[open]) {
   overflow: hidden;
+}
+
+/* I salti a una sezione (/dashboard#oggi-uscita) devono lasciare il titolo in vista: sul telefono la testata
+   scorre via con la pagina, dal tablet in su resta fissa (due righe, circa 116px) e lo coprirebbe. */
+html:has(.pn-contenuto) {
+  scroll-padding-top: 16px;
+}
+@media (min-width: 768px) {
+  html:has(.pn-contenuto) {
+    scroll-padding-top: 136px;
+  }
+}
+
+@keyframes pn-novita-entra {
+  from {
+    transform: translate(-50%, -16px);
+    opacity: 0;
+  }
 }
 
 @keyframes pn-entra {

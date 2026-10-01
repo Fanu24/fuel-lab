@@ -151,6 +151,8 @@ export interface CtxPiano {
   /** `null` toglie il giorno: "non l'ho detto" e' diverso da "riposo" */
   impostaAllenamento: (g: GiornoSettimana, t: TipoGiornata | null) => void;
   svuotaAllenamenti: () => void;
+  /** tutti i giorni in una volta (una scrittura sola): un preset, o "annulla" che riporta la settimana com'era */
+  sostituisciAllenamenti: (a: Allenamenti) => void;
 }
 
 const Ctx = createContext<CtxPiano | null>(null);
@@ -230,6 +232,8 @@ export function PianoProvider({ children }: { children: React.ReactNode }) {
     storeAllenamenti.scrivi(prossimi);
   }, []);
   const svuotaAllenamenti = useCallback(() => storeAllenamenti.scrivi({}), []);
+  // Passa dalla potatura come sostituisciPiano: gli allenamenti possono arrivare da un link.
+  const sostituisciAllenamenti = useCallback((a: Allenamenti) => storeAllenamenti.scrivi(potaAllenamenti(a)), []);
 
   const valore = useMemo<CtxPiano>(() => {
     const casella = (g: GiornoSettimana, m: Pasto) => corrente[g]?.[m];
@@ -266,6 +270,7 @@ export function PianoProvider({ children }: { children: React.ReactNode }) {
       allenamenti,
       impostaAllenamento,
       svuotaAllenamenti,
+      sostituisciAllenamenti,
     };
   }, [
     corrente,
@@ -281,6 +286,7 @@ export function PianoProvider({ children }: { children: React.ReactNode }) {
     allenamenti,
     impostaAllenamento,
     svuotaAllenamenti,
+    sostituisciAllenamenti,
   ]);
 
   return <Ctx.Provider value={valore}>{children}</Ctx.Provider>;

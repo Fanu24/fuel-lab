@@ -52,7 +52,7 @@ export default function Formule() {
 
       <ul className="abb-righe mt-8">
         {FORMULE.map((f) => (
-          <li key={f.id} className="abb-riga">
+          <li key={f.id} className={f.consigliato ? "abb-riga abb-riga-consigliata" : "abb-riga"}>
             <div className="abb-nome">
               <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                 <h3 className="font-disp text-3xl leading-none font-bold tracking-[.02em] uppercase md:text-4xl">
@@ -74,8 +74,10 @@ export default function Formule() {
             </p>
 
             <div className="abb-azioni">
+              {/* "Consegna a casa" e' il listino che la riga mostra: senza, il modulo partirebbe dal ritiro (-10%) e il
+                  prezzo letto qui e quello della richiesta non coinciderebbero. */}
               <Link
-                href={linkRichiediAbbonamento({ formula: f.id, fascia })}
+                href={linkRichiediAbbonamento({ formula: f.id, fascia, ritiro: false })}
                 className="btn btn-ink btn-sm"
                 aria-label={`Richiedi ${f.nome}, fascia ${NOMI_FASCIA[fascia]}`}
               >

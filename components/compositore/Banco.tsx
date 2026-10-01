@@ -31,6 +31,7 @@ export default function Banco({
   annuncia: (testo: string) => void;
 }) {
   const tengoSlot = stato.modo === "presa" && stato.presa.tipo === "slot";
+  const tengoPiatto = stato.modo === "presa" && stato.presa.tipo === "banco";
   const sopra = stato.modo === "presa" && stato.trascino && stato.sopra === "banco";
   const cerca = stato.modo === "cerca";
   const [spiega, setSpiega] = useState(false);
@@ -57,15 +58,23 @@ export default function Banco({
       className={`banco ${tengoSlot ? "banco-togli" : ""} ${sopra ? "is-sopra" : ""} ${cerca ? "banco-cerca" : ""}`}
     >
       <div className="flex items-baseline justify-between gap-3">
-        <h2 className="font-disp text-sm font-bold tracking-[.18em] uppercase">Il banco</h2>
-        <p className={`text-xs ${spiega && !tengoSlot ? "font-semibold text-ink" : "text-muted"}`}>
-          {tengoSlot
-            ? "Riporta qui per togliere"
-            : spiega
-              ? "Non disponibile questa settimana"
-              : cerca
-                ? `Scegli per ${destinazione ?? "questa casella"}`
-                : "Trascina o tocca"}
+        <h3 className="font-disp text-sm font-bold tracking-[.18em] uppercase">Il banco</h3>
+        <p className={`text-right text-xs ${spiega && !tengoSlot ? "font-semibold text-ink" : "text-muted"}`}>
+          {tengoSlot ? (
+            "Riporta qui per togliere"
+          ) : spiega ? (
+            "Non disponibile questa settimana"
+          ) : cerca ? (
+            `Scegli per ${destinazione ?? "questa casella"}`
+          ) : tengoPiatto ? (
+            stato.trascino ? "Lascialo su una casella" : "Ora tocca una casella"
+          ) : (
+            <>
+              {/* col dito non si trascina (serve a scorrere): l'istruzione e' un'altra */}
+              <span className="solo-mouse">Trascina o tocca</span>
+              <span className="solo-tocco">Tocca un piatto, poi una casella</span>
+            </>
+          )}
         </p>
       </div>
       <ul className="banco-lista mt-3">
@@ -87,14 +96,14 @@ export default function Banco({
                   <Image src={p.img} alt="" fill sizes="56px" loading="eager" draggable={false} className="object-cover" />
                 </span>
                 <span className="min-w-0 text-left">
-                  <span className="block truncate text-sm font-semibold">{p.nome}</span>
+                  <span className="piatto-banco-nome">{p.nome}</span>
                   <span className="mt-1 flex items-center gap-2">
                     {escluso ? (
                       <span className="piatto-banco-nd">Non disponibile</span>
                     ) : (
                       <>
                         <TagAllenamento tipo={p.allenamento} breve className="!h-5 !px-1.5 !text-[11px] !tracking-[.06em]" />
-                        <span className="num text-xs text-muted">{p.kcal} kcal</span>
+                        <span className="num whitespace-nowrap text-xs text-muted">{p.kcal} kcal</span>
                       </>
                     )}
                   </span>

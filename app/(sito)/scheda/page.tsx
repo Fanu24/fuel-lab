@@ -22,7 +22,7 @@ export default function SchedaPage() {
       <section className="testata">
         <div className="wrap">
           <h1>
-            <span className="occhiello">Meal prep sui tuoi macro</span>
+            <span className="occhiello">Meal prep sui tuoi macro</span>{" "}
             <span className="titolo-xl mt-6 block max-w-[12ch]">Hai già una scheda?</span>
           </h1>
           <p className="lead mt-6">

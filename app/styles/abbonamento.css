@@ -96,6 +96,14 @@
       "pasti prezzo"
       "azioni azioni";
   }
+  /* La formula consigliata: una fascia di carta piu' chiara con una barra scura a sinistra. Esce di 16px dalla colonna
+     (margine negativo e imbottitura uguali), cosi' il testo resta allineato a quello delle altre righe. */
+  .abb-riga-consigliata {
+    margin-inline: -16px;
+    padding-inline: 16px;
+    background: var(--color-paper);
+    box-shadow: inset 4px 0 0 var(--color-ink);
+  }
   .abb-nome {
     grid-area: nome;
   }

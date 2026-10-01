@@ -99,6 +99,25 @@
     font-size: 12px;
   }
 
+  /* Sotto i 360 px (iPhone SE, telefoni piccoli) "Componi la tua settimana →"
+     in 280 px di spazio perdeva la freccia: si stringono lettere e margini. */
+  @media (max-width: 359px) {
+    .btn {
+      gap: 8px;
+      padding-inline: 16px;
+      font-size: 13px;
+      letter-spacing: 0.08em;
+    }
+    .btn-sm {
+      padding-inline: 14px;
+      font-size: 12px;
+    }
+    .btn-whatsapp {
+      font-size: 14px;
+      letter-spacing: 0.04em;
+    }
+  }
+
   .freccia {
     display: inline-block;
     transition: transform 0.35s var(--e-out);
@@ -109,13 +128,13 @@
   }
 
   /* Link testuale con sottolineatura spessa.
-     Padding verticale e margine negativo uguale: l'area da toccare arriva a
-     44px sul telefono senza spostare di un pixel l'impaginazione (su un inline il
-     padding non muove le righe, su un inline-block o un bottone lo compensa il
-     margine). */
+     Padding e margine negativo uguale: l'area da toccare arriva a 44px sul
+     telefono (anche per le parole corte, "Home", "Menu") senza spostare di un
+     pixel l'impaginazione (su un inline il padding non muove le righe, su un
+     inline-block o un bottone lo compensa il margine). */
   .link {
-    padding-block: 12px;
-    margin-block: -12px;
+    padding: 14px 6px;
+    margin: -14px -6px;
     font-weight: 700;
     text-decoration: underline;
     text-decoration-thickness: 2px;
@@ -178,6 +197,10 @@
     color: var(--color-muted);
     transition: background-color 0.3s var(--e-out), color 0.3s var(--e-out);
   }
+  .segmenti button:not([aria-pressed="true"]):hover {
+    background: rgba(18, 20, 18, 0.08);
+    color: var(--color-ink);
+  }
   .segmenti button[aria-pressed="true"] {
     background: var(--color-ink);
     color: var(--color-paper);
@@ -200,22 +223,33 @@
     min-height: 52px;
     padding: 12px 16px;
     background: var(--color-paper);
-    border: 2px solid var(--line);
+    border: 2px solid var(--line-campo);
     border-radius: 0;
     font: inherit;
     color: var(--color-ink);
     transition: border-color 0.3s var(--e-out);
   }
+  /* Il fuoco: bordo pieno e alone lime, piu' l'anello d'inchiostro (il lime da
+     solo sulla carta non si vede: 1,01:1). */
   .campo input:focus,
   .campo textarea:focus,
   .campo select:focus {
     border-color: var(--color-ink);
     outline: none;
-    box-shadow: 0 0 0 3px var(--color-lime);
+    box-shadow:
+      0 0 0 3px var(--color-lime),
+      0 0 0 5px var(--color-ink);
+  }
+  /* Campo con un errore: il bordo diventa rosso, ma il segnale resta anche il
+     messaggio sotto (il colore da solo non basta). */
+  .campo input[aria-invalid="true"],
+  .campo textarea[aria-invalid="true"],
+  .campo select[aria-invalid="true"] {
+    border-color: var(--color-errore);
   }
   .campo .errore {
     font-size: 14px;
     font-weight: 600;
-    color: #a3261b; /* 6.6:1 su paper */
+    color: var(--color-errore); /* 6.6:1 su paper */
   }
 }

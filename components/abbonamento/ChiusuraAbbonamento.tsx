@@ -7,7 +7,7 @@ import { ZONA_A_PAROLE } from "./righe";
 
 /* La chiusura di /abbonamento e delle cinque schede: "Prenota la tua settimana
    di prova." Sulla scheda di una formula il bottone porta alla richiesta con la
-   formula gia' scelta. */
+   formula gia' scelta, sulla consegna a casa (il listino che la scheda ha mostrato). */
 
 export default function ChiusuraAbbonamento({
   formula,
@@ -29,7 +29,7 @@ export default function ChiusuraAbbonamento({
           </p>
           <div className="mt-10 flex flex-wrap items-center gap-x-8 gap-y-4">
             <Link
-              href={linkRichiediAbbonamento({ formula })}
+              href={linkRichiediAbbonamento(formula ? { formula, ritiro: false } : {})}
               className="btn btn-lime min-w-[min(100%,340px)] justify-between whitespace-normal py-3 text-left"
             >
               <span>Prenota la tua settimana di prova</span>

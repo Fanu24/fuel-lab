@@ -18,8 +18,15 @@ import { CONSEGNA_OGNI_GIORNI, FORMULE, PREZZO_DA_TESTO, getFormula, percorsoFor
 /** Il suffisso dei titoli: il layout usa lo stesso template. */
 export const TEMPLATE_TITOLO = `%s · ${NOME_ATTIVITA}`;
 
-/** Data dell'ultima revisione dei contenuti: finisce in sitemap e dati strutturati. */
-export const AGGIORNAMENTO = "2026-09-30";
+/** Data dell'ultima revisione dei contenuti: finisce in sitemap, dati strutturati e nella riga "Pagina aggiornata il". */
+export const AGGIORNAMENTO = "2026-10-01";
+
+/** "1 ottobre 2026": una data ISO scritta all'italiana (UTC: e' un giorno, non un istante). */
+export function dataLeggibile(iso: string): string {
+  return new Intl.DateTimeFormat("it-IT", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }).format(
+    new Date(`${iso}T00:00:00Z`),
+  );
+}
 
 export const IMMAGINE_OG = {
   url: "/opengraph-image.jpg",
@@ -160,6 +167,15 @@ export const PAGINE = {
     breve: "Componi la settimana",
     priorita: 0.6,
     frequenza: "monthly",
+  },
+  richiesta: {
+    percorso: "/richiesta",
+    titolo: "Contatti: scrivi a Matteo, meal prep a Pescara",
+    descrizione:
+      "Scrivi a Matteo di FUEL LAB, meal prep a Pescara: modulo senza account, email o richiesta dall’account. Risposta di solito entro un giorno lavorativo.",
+    breve: "Contatti",
+    priorita: 0.5,
+    frequenza: "yearly",
   },
   privacy: {
     percorso: "/privacy",

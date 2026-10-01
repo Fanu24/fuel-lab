@@ -7,6 +7,7 @@ import Link from "next/link";
 import { ETICHETTE_SERVIZIO, daSqlite, euro, type ClienteAdmin, type Ordine } from "@/lib/api";
 import { euroTondo, nomeAbbonamento } from "@/lib/produzione";
 import { BottoniContatto } from "./ClientiContatti";
+import { ErroreCaricamento } from "./ClientiErrore";
 import { Avviso, Caricamento, Kpi, Sezione, Stato, TestaPagina, Vuoto, faTempo, giorno, quando } from "./ui";
 
 function dataLunga(ts: string | null | undefined) {
@@ -27,6 +28,7 @@ export default function ClientiScheda({
   cliente,
   clientiCaricati,
   errore,
+  sessioneScaduta,
   ordini,
   erroreOrdini,
   caricando,
@@ -36,6 +38,7 @@ export default function ClientiScheda({
   cliente: ClienteAdmin | null;
   clientiCaricati: boolean;
   errore: string;
+  sessioneScaduta: boolean;
   ordini: Ordine[] | null;
   erroreOrdini: string;
   caricando: boolean;
@@ -51,12 +54,15 @@ export default function ClientiScheda({
     return (
       <div className="grid gap-6">
         {indietro}
+        <TestaPagina occhiello="Pannello · Clienti" titolo="Scheda cliente" />
         {errore ? (
           <>
-            <Avviso>{errore}</Avviso>
-            <button type="button" className="btn btn-ink btn-sm justify-self-start" onClick={onRicarica} disabled={caricando}>
-              Riprova
-            </button>
+            <ErroreCaricamento testo={errore} sessioneScaduta={sessioneScaduta} />
+            {sessioneScaduta ? null : (
+              <button type="button" className="btn btn-ink btn-sm justify-self-start" onClick={onRicarica} disabled={caricando}>
+                Riprova
+              </button>
+            )}
           </>
         ) : clientiCaricati ? (
           <Avviso tipo="info">

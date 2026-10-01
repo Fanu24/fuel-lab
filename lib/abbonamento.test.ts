@@ -31,6 +31,7 @@ import {
   scontoApplicato,
   stessoGiornoMeseDopo,
 } from "./abbonamento";
+import { esempioConsegna, giorniAParole, giorniCopertiAParole, pastiAParole } from "../components/abbonamento/righe";
 
 /* Ottobre 2026: giovedi' 1, venerdi' 2, sabato 3, domenica 4, lunedi' 5. */
 
@@ -289,5 +290,44 @@ describe("le consegne ogni 3 giorni", () => {
     expect(prossimaConsegna("completo", "2026-10-01", "2026-10-05")).toBe("2026-10-07");
     expect(prossimaConsegna("completo", "2026-10-01", "2026-11-01")).toBeNull();
     expect(prossimaConsegna("pranzo", "2026-10-01", "2026-10-29")).toBeNull(); // 28 e' l'ultima con un pranzo
+  });
+});
+
+/* Le frasi delle pagine (components/abbonamento/righe.ts): giorni e pasti che il visitatore legge devono essere
+   quelli delle formule, e dove il volantino non lo dice (il giorno libero di Full 6) la pagina non lo inventa. */
+describe("le frasi sulle formule", () => {
+  it("dicono i giorni coperti di ogni formula", () => {
+    expect(giorniAParole(getFormula("pranzo"))).toBe("dal lunedì al venerdì");
+    expect(giorniAParole(getFormula("leggero"))).toBe("dal lunedì al venerdì");
+    expect(giorniAParole(getFormula("completo"))).toBe("tutti i giorni");
+    expect(giorniAParole(getFormula("full7"))).toBe("tutti i giorni");
+  });
+
+  it("per Full 6 il giorno libero si concorda: nessun giorno della settimana nominato", () => {
+    const frase = giorniAParole(getFormula("full6"));
+    expect(frase).toContain("sei giorni su sette");
+    expect(frase).toContain("concordi con Matteo");
+    expect(frase).not.toMatch(/domenica|luned|marted|mercoled|gioved|venerd|sabato/);
+  });
+
+  it("i giorni, scritti per cominciare una frase, hanno la maiuscola", () => {
+    expect(giorniCopertiAParole(getFormula("completo"))).toBe("Tutti i giorni");
+    expect(giorniCopertiAParole(getFormula("pranzo"))).toBe("Dal lunedì al venerdì");
+  });
+
+  it("elencano i pasti della formula nell'ordine in cui si mangiano", () => {
+    expect(pastiAParole(getFormula("pranzo"))).toBe("Pranzo");
+    expect(pastiAParole(getFormula("leggero"))).toBe("Pranzo e cena");
+    expect(pastiAParole(getFormula("full6"))).toBe("Colazione, pranzo e cena");
+  });
+
+  it("dicono cosa porta una consegna, e che nei giorni non coperti non c'è niente da portare", () => {
+    // in prosa il numero e' in lettere, da capo a fondo della frase ("ogni tre giorni ... dei tre giorni successivi")
+    expect(esempioConsegna(getFormula("completo"))).toMatch(/^Ogni tre giorni ricevi \(o ritiri\) i pasti dei tre giorni successivi/);
+    expect(esempioConsegna(getFormula("completo"))).toContain("tre pranzi e tre cene");
+    expect(esempioConsegna(getFormula("completo"))).not.toContain("non copre");
+    expect(esempioConsegna(getFormula("full7"))).toContain("tre colazioni, tre pranzi e tre cene");
+    expect(esempioConsegna(getFormula("pranzo"))).toContain("tre pranzi");
+    expect(esempioConsegna(getFormula("pranzo"))).toContain("non copre");
   });
 });

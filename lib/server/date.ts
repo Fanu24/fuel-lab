@@ -23,7 +23,8 @@ export function daTimestamp(value: unknown): Date | null {
     return Number.isNaN(d.getTime()) ? null : d;
   }
   if (typeof value !== "string" || !value) return null;
-  const iso = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}(:\d{2})?$/.test(value) ? `${value.replace(" ", "T")}Z` : value;
+  // Anche con i millisecondi ("2026-10-01 14:56:24.231", come li scrive il piano salvato): senza la Z si leggerebbe nel fuso della macchina.
+  const iso = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}(:\d{2}(\.\d{1,9})?)?$/.test(value) ? `${value.replace(" ", "T")}Z` : value;
   const d = new Date(iso);
   return Number.isNaN(d.getTime()) ? null : d;
 }

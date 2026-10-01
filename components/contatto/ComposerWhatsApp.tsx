@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { getFormula, NOMI_FASCIA } from "@/lib/abbonamento";
 import { getPiatto } from "@/lib/catalogo";
 import { sceltaAbbonamentoDaParam } from "@/lib/contatto";
@@ -54,11 +54,19 @@ export default function ComposerWhatsApp({
   const [dati, setDati] = useState<DatiContatto>({ nome: "", telefono: "", comune: "", note: "" });
   const [provato, setProvato] = useState(false);
   const [inviata, setInviata] = useState(false);
+  // Il link usato, per riproporlo se il telefono ha bloccato la finestra: window.open fuori da un tocco diretto puo' essere negato.
+  const [apertoCon, setApertoCon] = useState<string | null>(null);
+  const titoloEsito = useRef<HTMLHeadingElement>(null);
 
   const errori = useMemo(() => valida(dati), [dati]);
   const richiedePiano = RICHIEDE_PIANO[servizioId];
   const mancaPiano = richiedePiano && pronto && pasti === 0;
   const configurato = numeroConfigurato();
+
+  // A invio fatto il modulo sparisce: il fuoco va sul titolo dell'esito invece di cadere in fondo alla pagina.
+  useEffect(() => {
+    if (inviata) titoloEsito.current?.focus();
+  }, [inviata]);
 
   function invia(e: React.FormEvent) {
     e.preventDefault();
@@ -82,6 +90,7 @@ export default function ComposerWhatsApp({
 
     const href = linkWhatsApp(testo);
     if (href) window.open(href, "_blank", "noopener,noreferrer");
+    setApertoCon(href);
     setInviata(true);
   }
 
@@ -109,10 +118,21 @@ export default function ComposerWhatsApp({
       <div className="wrap">
         <div className="notte p-6 md:p-14" role="status">
           <p className="occhiello">Messaggio pronto</p>
-          <h3 className="titolo-s mt-5 max-w-[20ch]">Ora puoi scrivere a Matteo.</h3>
+          <h3 ref={titoloEsito} tabIndex={-1} className="titolo-s mt-5 max-w-[20ch] outline-none focus-visible:shadow-none">
+            Ora puoi scrivere a Matteo.
+          </h3>
           <p className="mt-6 max-w-[52ch] text-steel">
             Si è aperta WhatsApp col messaggio già scritto: premi invio e Matteo ti risponde, di solito in giornata.
           </p>
+          {apertoCon ? (
+            <p className="mt-4 max-w-[52ch] text-steel">
+              Non si è aperta?{" "}
+              <a href={apertoCon} target="_blank" rel="noopener noreferrer" className="link text-paper">
+                Apri WhatsApp
+                <span className="sr-only"> (si apre in una nuova scheda)</span>
+              </a>
+            </p>
+          ) : null}
           <div className="mt-10 flex flex-wrap gap-x-8 gap-y-4">
             <button type="button" className="btn btn-linea" onClick={() => setInviata(false)}>
               Torna al messaggio

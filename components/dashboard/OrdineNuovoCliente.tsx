@@ -127,23 +127,25 @@ export default function OrdineNuovoCliente({
 
       {campi.modo === "registrato" && !scelto ? (
         <div className="grid gap-3">
-          <div className="campo pn-cerca">
+          <div className="campo">
             <label htmlFor="nuovo-cerca-cliente">Cerca il cliente</label>
-            <Icona nome="cerca" className="size-5" />
-            <input
-              ref={cerca}
-              id="nuovo-cerca-cliente"
-              type="search"
-              value={ricerca}
-              onChange={(e) => setRicerca(e.target.value)}
-              onKeyDown={suTasto}
-              placeholder="Nome, email o telefono"
-              autoComplete="off"
-              enterKeyHint="search"
-              aria-controls="nuovo-risultati"
-              aria-invalid={errori.cliente ? true : undefined}
-              aria-describedby={errori.cliente ? "nuovo-cerca-cliente-errore" : undefined}
-            />
+            <div className="pn-cerca-campo">
+              <Icona nome="cerca" className="size-5" />
+              <input
+                ref={cerca}
+                id="nuovo-cerca-cliente"
+                type="search"
+                value={ricerca}
+                onChange={(e) => setRicerca(e.target.value)}
+                onKeyDown={suTasto}
+                placeholder="Nome, email o telefono"
+                autoComplete="off"
+                enterKeyHint="search"
+                aria-controls="nuovo-risultati"
+                aria-invalid={errori.cliente ? true : undefined}
+                aria-describedby={errori.cliente ? "nuovo-cerca-cliente-errore" : undefined}
+              />
+            </div>
             {errori.cliente ? <p id="nuovo-cerca-cliente-errore" className="pn-errore-campo">{errori.cliente}</p> : null}
           </div>
 

@@ -164,5 +164,24 @@ describe("email", () => {
     const mail = emailAccesso("Verifica la tua email FUEL LAB", "https://fuelchef.it/api/auth/verify-email?token=a&b=c");
     expect(mail.text).toContain("https://fuelchef.it/api/auth/verify-email?token=a&b=c");
     expect(mail.html).toContain('href="https://fuelchef.it/api/auth/verify-email?token=a&amp;b=c"');
+    expect(mail.text).toContain("Il link vale un'ora.");
+    expect(mail.text).toContain("ignora questa email");
+  });
+
+  it("nessun campo del cliente rompe l'HTML ne' l'oggetto: apici angolari, virgolette, a capo e intestazioni finte", () => {
+    const ostile = "<img src=x onerror=alert(1)>\r\nBcc: spia@x.it \"'&";
+    const richiesta = emailNuovaRichiesta({
+      id: "id\"><script>", customer_name: ostile, email: "a@b.it", phone: ostile, comune: ostile, address: ostile, fulfillment: "delivery",
+      service: "menu-settimana", requested_date: "2026-10-05", notes: ostile, meals: 1,
+      items: [{ id: "x", name: ostile, day: "lun", meal: "pranzo", extras: [ostile] }],
+    });
+    const messaggio = emailNuovoMessaggio({ name: ostile, email: "a@b.it", phone: "", comune: ostile, topic: "info", message: ostile });
+    for (const mail of [richiesta, messaggio]) {
+      expect(mail.html).not.toMatch(/<img|<script/);
+      expect(mail.html).toContain("&lt;img src=x onerror=alert(1)&gt;");
+      // l'oggetto sta su una riga: niente CR/LF che aprano un'altra intestazione
+      expect(mail.subject).not.toMatch(/[\r\n]/);
+    }
+    expect(richiesta.html).toContain("id%22%3E%3Cscript%3E");
   });
 });

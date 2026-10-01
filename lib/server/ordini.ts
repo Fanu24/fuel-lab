@@ -9,6 +9,7 @@ import { calcolaPrezzo, eFascia, eFormulaId, eNucleo, etichettaFormula, fineAbbo
 import { etichettaStato, type DettaglioOrdine, type EventoOrdine, type Modalita, type Ordine, type SceltaAbbonamento, type Servizio, type StatoOrdine, type VoceOrdine } from "../api";
 import { getExtra, getPiatto } from "../catalogo";
 import { GIORNI, PASTI, potaAllenamenti, potaPiano, type Allenamenti, type Piano } from "../settimana";
+import { unaRiga, testoLibero } from "./contatti";
 import { dataEstesa, dataValida, spostaGiorno, tsSqlite } from "./date";
 
 export const STATI: readonly StatoOrdine[] = ["requested", "confirmed", "preparing", "ready", "completed", "cancelled"];
@@ -126,7 +127,23 @@ export function dettaglioDaRiga(row: RigaOrdine, eventi: EventoOrdine[], admin: 
 
 /* ---------- Nuova richiesta dal cliente ---------- */
 
-const campo = (value: unknown, max: number) => (typeof value === "string" ? value.trim().slice(0, max) : "");
+/** Un campo su una riga: niente a capo ne' caratteri di controllo (finiscono in email, CSV ed etichette). */
+const campo = (value: unknown, max: number) => unaRiga(value).slice(0, max).trim();
+
+/**
+ * Il piano da un corpo non fidato: potato ai piatti che il catalogo conosce
+ * (potaPiano) e senza aggiunte ripetute. Un cliente che manda mille volte lo
+ * stesso extra riempirebbe il database e le email di righe uguali.
+ */
+export function pianoDaCorpo(value: unknown): Piano {
+  const piano = potaPiano(value);
+  const out: Piano = {};
+  for (const giorno of GIORNI) for (const pasto of PASTI) {
+    const casella = piano[giorno]?.[pasto];
+    if (casella) out[giorno] = { ...out[giorno], [pasto]: { ...casella, extra: [...new Set(casella.extra)] } };
+  }
+  return out;
+}
 
 /** Le righe della richiesta, lette dal piano: solo piatti ed extra che il catalogo conosce ancora. */
 export function vociDalPiano(plan: Piano): VoceOrdine[] {
@@ -141,7 +158,7 @@ export function vociDalPiano(plan: Piano): VoceOrdine[] {
       name: dish.nome,
       day,
       meal,
-      extras: slot.extra.map((id) => getExtra(id)?.nome).filter((nome): nome is string => !!nome),
+      extras: [...new Set(slot.extra)].map((id) => getExtra(id)?.nome).filter((nome): nome is string => !!nome),
     });
   }
   return voci;
@@ -214,17 +231,20 @@ export type NuovoOrdineValido = {
  * calcolaPrezzo (lib/abbonamento.ts) per formula, fascia, ritiro e nucleo.
  */
 export function leggiNuovoOrdine(body: Record<string, unknown>, nomeAccount: string, oggi: string): Esito<NuovoOrdineValido> {
-  const name = campo(body.name, 100) || nomeAccount.trim().slice(0, 100);
+  const name = campo(body.name, 100) || campo(nomeAccount, 100);
   const phone = campo(body.phone, 40);
   const comune = campo(body.comune, 100);
   const address = campo(body.address, 240);
-  const notes = campo(body.notes, 1500);
+  const notes = testoLibero(body.notes).slice(0, 1500).trim();
   const fulfillment = body.fulfillment === "pickup" || body.fulfillment === "delivery" ? body.fulfillment : null;
   const service = (SERVIZI as readonly unknown[]).includes(body.service) ? body.service as Servizio : "menu-settimana";
-  const requestedDate = dataValida(body.requestedDate) ? body.requestedDate : null;
+  const dataScelta = typeof body.requestedDate === "string" ? body.requestedDate.trim() : body.requestedDate;
+  const requestedDate = dataValida(dataScelta) ? dataScelta : null;
   if (!name || phone.replace(/\D/g, "").length < 9 || !comune || !fulfillment || (fulfillment === "delivery" && !address)) {
     return errore(400, "Completa nome, telefono e dati di ritiro o consegna");
   }
+  // Una data scritta male e' un errore, non un "nessuna preferenza": chi la sceglie deve sapere che Matteo non la vedrebbe.
+  if (dataScelta !== undefined && dataScelta !== null && dataScelta !== "" && !requestedDate) return errore(400, "La data scelta non è valida");
   if (requestedDate && (requestedDate < oggi || requestedDate > spostaGiorno(oggi, 90))) {
     return errore(400, "Scegli una data nei prossimi 90 giorni");
   }
@@ -235,7 +255,8 @@ export function leggiNuovoOrdine(body: Record<string, unknown>, nomeAccount: str
     if (!scelta.ok) return scelta;
     subscription = scelta.value;
   }
-  const plan = subscription ? soloPastiDellaFormula(potaPiano(body.plan), subscription.plan) : potaPiano(body.plan);
+  const piano = pianoDaCorpo(body.plan);
+  const plan = subscription ? soloPastiDellaFormula(piano, subscription.plan) : piano;
   const training = potaAllenamenti(body.training);
   const items = vociDalPiano(plan);
   if (!SERVIZI_SENZA_PIATTI.includes(service) && !items.length) return errore(400, "Componi almeno un piatto prima di inviare");

@@ -21,7 +21,8 @@ export default function Allenamento() {
             <FotoPiena foto={c.foto} sizes="(min-width: 768px) 50vw, 100vw" />
             <Reveal className="relative p-6 md:p-12">
               <p className="occhiello">{c.nome}</p>
-              <h3 className="titolo mt-4 text-lime">{c.regola}</h3>
+              {/* A meta' pagina (da 768 px) il titolo grande non entra nella colonna: "L'ALLENAMENTO." sconfinava nell'altra. */}
+              <h3 className="titolo mt-4 text-lime md:text-[clamp(28px,3.6vw,56px)]">{c.regola}</h3>
               <p className="mt-4 max-w-[42ch]" style={{ color: "rgb(243 239 230 / .88)" }}>
                 {c.perche}
               </p>
@@ -31,8 +32,7 @@ export default function Allenamento() {
       </div>
       <div className="wrap flex flex-wrap items-center justify-between gap-6 py-10">
         <p className="max-w-[52ch] text-steel">
-          È la stessa regola che usa il compositore: scegli l&apos;allenamento di ogni giorno e i piatti arrivano da
-          soli.
+          Il compositore parte da questi consigli: scegli l&apos;allenamento di ogni giorno e ti propone i piatti.
         </p>
         <div className="flex flex-wrap items-center gap-x-8 gap-y-4">
           <Link href="/pasti-proteici-pescara" className="link">

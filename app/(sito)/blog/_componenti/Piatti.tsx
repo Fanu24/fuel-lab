@@ -60,38 +60,53 @@ export function PiattiCollegati({ id }: { id: string[] }) {
   );
 }
 
-/** La tabella di confronto dei piatti, dentro una sezione dell’articolo. */
+/**
+ * La tabella di confronto dei piatti, dentro una sezione dell’articolo. Sotto i
+ * 640px ogni piatto diventa una scheda (nome, allenamento, poi i quattro numeri
+ * in fila con la loro etichetta): le colonne dei macro, tagliate a destra, erano
+ * proprio quello che il lettore cercava. Le regole sono in app/styles/blog.css.
+ */
 export function TabellaPiatti({ id }: { id: string[] }) {
   const piatti = piattiDa(id);
   if (!piatti.length) return null;
+  const numeri = [
+    { nome: "kcal", valore: (p: Piatto) => `${p.kcal}` },
+    { nome: "Prot.", valore: (p: Piatto) => `${p.proteine} g` },
+    { nome: "Carbo", valore: (p: Piatto) => `${p.carboidrati} g` },
+    { nome: "Grassi", valore: (p: Piatto) => `${p.grassi} g` },
+  ];
   return (
     <figure className="mt-7">
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[560px] border-collapse text-left text-sm">
+        <table className="blog-tabella blog-tabella-piatti" role="table">
           <caption className="sr-only">Piatti del menu con allenamento indicato e valori per porzione</caption>
           <thead>
-            <tr className="border-b-[3px] border-ink">
-              <th scope="col" className="py-3 pr-4 font-disp text-xs tracking-[.14em] uppercase">Piatto</th>
-              <th scope="col" className="py-3 pr-4 font-disp text-xs tracking-[.14em] uppercase">Allenamento</th>
-              <th scope="col" className="py-3 pr-4 text-right font-disp text-xs tracking-[.14em] uppercase">kcal</th>
-              <th scope="col" className="py-3 pr-4 text-right font-disp text-xs tracking-[.14em] uppercase">Prot.</th>
-              <th scope="col" className="py-3 pr-4 text-right font-disp text-xs tracking-[.14em] uppercase">Carbo</th>
-              <th scope="col" className="py-3 text-right font-disp text-xs tracking-[.14em] uppercase">Grassi</th>
+            <tr role="row">
+              <th scope="col" role="columnheader">Piatto</th>
+              <th scope="col" role="columnheader">Allenamento</th>
+              {numeri.map((numero) => (
+                <th key={numero.nome} scope="col" role="columnheader" className="blog-numero">
+                  {numero.nome}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
             {piatti.map((piatto) => (
-              <tr key={piatto.id} className="border-b" style={{ borderColor: "var(--line)" }}>
-                <th scope="row" className="py-3 pr-4 font-semibold">
+              <tr key={piatto.id} role="row">
+                <th scope="row" role="rowheader">
                   <Link href={`/menu/${piatto.id}`} className="underline decoration-2 underline-offset-4 hover:decoration-lime">
                     {piatto.nome}
                   </Link>
                 </th>
-                <td className="py-3 pr-4 text-muted">{etichettaAllenamento(piatto.allenamento)}</td>
-                <td className="num py-3 pr-4 text-right">{piatto.kcal}</td>
-                <td className="num py-3 pr-4 text-right">{piatto.proteine} g</td>
-                <td className="num py-3 pr-4 text-right">{piatto.carboidrati} g</td>
-                <td className="num py-3 text-right">{piatto.grassi} g</td>
+                <td role="cell" className="blog-allenamento">
+                  {etichettaAllenamento(piatto.allenamento)}
+                </td>
+                {numeri.map((numero) => (
+                  <td key={numero.nome} role="cell" data-label={numero.nome} className="blog-numero num">
+                    {numero.valore(piatto)}
+                  </td>
+                ))}
               </tr>
             ))}
           </tbody>

@@ -81,7 +81,8 @@ export default async function CategoriaPage({ params }: Props) {
       <section className="testata">
         <div className="wrap">
           <Briciole voci={[{ nome: "Home", href: "/" }, { nome: "Blog", href: "/blog" }, { nome: categoria.nome }]} />
-          <p className="occhiello mt-8">Blog FUEL LAB · {categoria.nome}</p>
+          {/* leading-snug: con il nome più lungo va su due righe a 390px, e a line-height 1 le righe si toccano */}
+          <p className="occhiello mt-8 leading-snug">Blog FUEL LAB · {categoria.nome}</p>
           <h1 className="titolo-xl mt-6 max-w-[16ch]">{categoria.titolo}</h1>
           <p className="lead mt-6 max-w-[62ch]">{categoria.introduzione}</p>
           <div className="mt-10">
@@ -96,9 +97,9 @@ export default async function CategoriaPage({ params }: Props) {
             {articoli.length} guide in questa categoria
           </h2>
           <ul className="mt-10 grid gap-x-8 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
-            {articoli.map((articolo, posizione) => (
+            {articoli.map((articolo) => (
               <li key={articolo.slug}>
-                <SchedaArticolo articolo={articolo} conFoto={posizione < 3} livello="h2" />
+                <SchedaArticolo articolo={articolo} conFoto conCategoria={false} />
               </li>
             ))}
           </ul>

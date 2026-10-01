@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import {
   campiMancanti,
   contaPiatti,
@@ -9,6 +9,7 @@ import {
   formattaGiornoDa,
   hrefSezione,
   nomeServizioRichiesta,
+  passiDiAvvio,
   periodoRichiesta,
   prossimaConsegna,
   prossimaUscitaDi,
@@ -22,7 +23,7 @@ import { authClient } from "@/lib/auth-client";
 import { CASELLE_TOTALI, usePiano } from "@/lib/piano";
 import Passi from "../Passi";
 import { caricaUtente } from "../sessione";
-import { Avviso, Caricamento, EsitoAzione, Scheletro, TitoloSezione } from "../ui";
+import { Avviso, Caricamento, EsitoAzione, IconaSpunta, Scheletro, TitoloSezione } from "../ui";
 import type { Esito, PropsArea } from "./tipi";
 
 /* La prima schermata: cosa sta per arrivare, cosa aspetta una risposta, a che
@@ -39,8 +40,11 @@ export default function Panoramica({ utente, profilo, ordini, providers, oggi }:
   const daVerificare = !utente.emailVerified && !!providers?.emailVerification;
   const mancano = profilo.stato === "pronto" ? campiMancanti(profilo.dati) : [];
   const piatti = contaPiatti(piano);
+  // Nessuna richiesta mai inviata: invece di tanti riquadri vuoti, la strada fino alla prima.
+  const nuovo = ordini.stato === "pronto" && ordini.dati.length === 0;
 
   async function inviaVerifica() {
+    if (invio) return;
     setInvio(true);
     setEsitoVerifica(null);
     try {
@@ -61,23 +65,23 @@ export default function Panoramica({ utente, profilo, ordini, providers, oggi }:
     <section aria-labelledby="t-panoramica" className="grid gap-8">
       <TitoloSezione id="t-panoramica">A colpo d’occhio.</TitoloSezione>
 
-      {daVerificare || mancano.length ? (
+      {daVerificare || (mancano.length && !nuovo) ? (
         <div className="grid gap-3">
           {daVerificare ? (
             <Avviso
               tipo="info"
               titolo="Conferma la tua email"
               azioni={
-                <button type="button" className="btn btn-ink btn-sm" disabled={invio} onClick={() => void inviaVerifica()}>
+                <button type="button" className="btn btn-ink btn-sm" aria-disabled={invio ? true : undefined} onClick={() => void inviaVerifica()}>
                   {invio ? "Invio…" : "Invia di nuovo il link"}
                 </button>
               }
             >
-              Così gli aggiornamenti delle tue richieste arrivano davvero a <strong className="break-all">{utente.email}</strong>.
-              <EsitoAzione esito={esitoVerifica} className="mt-3" />
+              Così gli aggiornamenti delle tue richieste arrivano davvero a <strong className="[overflow-wrap:anywhere]">{utente.email}</strong>.
+              <EsitoAzione esito={esitoVerifica} className="mt-3 empty:mt-0" />
             </Avviso>
           ) : null}
-          {mancano.length ? (
+          {mancano.length && !nuovo ? (
             <Avviso
               tipo="info"
               titolo="Completa il profilo"
@@ -90,19 +94,25 @@ export default function Panoramica({ utente, profilo, ordini, providers, oggi }:
       ) : null}
 
       <div className="grid gap-5 lg:grid-cols-[1.25fr_1fr]">
-        <ProssimaConsegna ordini={ordini} oggi={oggi} />
+        {nuovo ? (
+          <DaDoveCominciare profiloCompleto={profilo.stato === "pronto" ? mancano.length === 0 : null} piatti={piatti} />
+        ) : (
+          <ProssimaConsegna ordini={ordini} oggi={oggi} />
+        )}
 
         <div className="grid content-start gap-5">
-          <article className="acc-card" aria-labelledby="t-attesa">
-            <h3 id="t-attesa" className="acc-card-titolo">In attesa di conferma</h3>
-            {ordini.stato === "attesa" ? (
-              <Scheletro righe={2} className="mt-4" />
-            ) : ordini.stato === "errore" ? (
-              <p className="mt-3 text-muted">Non riesco a leggere le richieste.</p>
-            ) : (
-              <InAttesa ordini={ordini.dati} oggi={oggi} />
-            )}
-          </article>
+          {nuovo ? null : (
+            <article className="acc-card" aria-labelledby="t-attesa">
+              <h3 id="t-attesa" className="acc-card-titolo">In attesa di conferma</h3>
+              {ordini.stato === "attesa" ? (
+                <Scheletro righe={2} className="mt-4" />
+              ) : ordini.stato === "errore" ? (
+                <p className="mt-3 text-muted">Non riesco a leggere le richieste.</p>
+              ) : (
+                <InAttesa ordini={ordini.dati} oggi={oggi} />
+              )}
+            </article>
+          )}
 
           <article className="acc-card" aria-labelledby="t-settimana-breve">
             <h3 id="t-settimana-breve" className="acc-card-titolo">La settimana in composizione</h3>
@@ -135,19 +145,81 @@ export default function Panoramica({ utente, profilo, ordini, providers, oggi }:
         </div>
       </div>
 
-      <nav aria-label="Scorciatoie" className="grid gap-3 sm:grid-cols-3">
-        <Scorciatoia href="/settimana" numero="01" titolo="Componi la settimana" testo="Scegli i piatti giorno per giorno." />
-        <Scorciatoia href={hrefSezione("richiesta")} numero="02" titolo="Nuova richiesta" testo="Invia la settimana a Matteo." />
-        <Scorciatoia href={hrefSezione("profilo")} numero="03" titolo="Profilo" testo="Telefono, indirizzo, allergie." />
-      </nav>
+      {nuovo ? null : (
+        <nav aria-label="Scorciatoie" className="grid gap-3 sm:grid-cols-3">
+          <Scorciatoia href="/settimana" numero="01" titolo="Componi la settimana" testo="Scegli i piatti giorno per giorno." />
+          <Scorciatoia href={hrefSezione("richiesta")} numero="02" titolo="Nuova richiesta" testo="Invia la settimana a Matteo." />
+          <Scorciatoia href={hrefSezione("profilo")} numero="03" titolo="Profilo" testo="Telefono, indirizzo, allergie." />
+        </nav>
+      )}
     </section>
+  );
+}
+
+/* Per chi non ha ancora mandato niente: i tre passi fino alla prima richiesta, con a che punto e' ciascuno.
+   Il profilo non blocca: il modulo chiede comunque telefono e comune e li salva da solo. */
+function DaDoveCominciare({ profiloCompleto, piatti }: { profiloCompleto: boolean | null; piatti: number }) {
+  const [scelta, profilo] = passiDiAvvio({ profiloCompleto, piatti });
+  const passo = (n: number, fatto: boolean, titolo: string, children: ReactNode) => (
+    <li data-fatto={fatto}>
+      <span className="acc-avvio-segno num" aria-hidden="true">{fatto ? <IconaSpunta ok /> : n}</span>
+      <div className="grid gap-1">
+        <p className="acc-avvio-titolo">
+          {titolo}
+          <span className="sr-only">{fatto ? ": fatto" : ": da fare"}</span>
+        </p>
+        {children}
+      </div>
+    </li>
+  );
+  return (
+    <article className="acc-card notte" aria-labelledby="t-inizio">
+      <p id="t-inizio" className="occhiello">Per cominciare</p>
+      <h3 className="titolo-s mt-5">Tre passi fino alla tua prima richiesta.</h3>
+      <ol className="acc-avvio mt-7">
+        {passo(1, scelta.fatto, "Scegli cosa chiedere", (
+          <>
+            <p className="text-sm text-steel">
+              {scelta.fatto
+                ? `Hai scelto ${piatti} ${piatti === 1 ? "pasto" : "pasti"} nella settimana.`
+                : "Componi la settimana pasto per pasto, oppure scegli un abbonamento mensile."}
+            </p>
+            <div className="mt-1 flex flex-wrap gap-x-6 gap-y-3">
+              <Link href="/settimana" className="link text-sm text-lime">{scelta.fatto ? "Modifica la settimana" : "Componi la settimana"}</Link>
+              <Link href={hrefSezione("richiesta", { servizio: "abbonamento" })} scroll={false} className="link text-sm text-lime">Chiedi un abbonamento</Link>
+            </div>
+          </>
+        ))}
+        {passo(2, profilo.fatto, "Lascia i tuoi recapiti", (
+          <>
+            <p className="text-sm text-steel">
+              {profilo.fatto
+                ? "Telefono e comune ci sono: la richiesta parte già compilata."
+                : "Telefono e comune: Matteo ti ricontatta lì per confermare. Li scrivi qui una volta, o direttamente nella richiesta."}
+            </p>
+            {profilo.fatto ? null : (
+              <Link href={hrefSezione("profilo")} scroll={false} className="link mt-1 self-start text-sm text-lime">Completa il profilo</Link>
+            )}
+          </>
+        ))}
+        {passo(3, false, "Invia a Matteo", (
+          <p className="text-sm text-steel">
+            La guarda e ti conferma giorno, dettagli e totale: lo vedi qui, nelle tue richieste. Nessun pagamento online.
+          </p>
+        ))}
+      </ol>
+      <Link href={hrefSezione("richiesta")} scroll={false} className="btn btn-lime mt-8">
+        {scelta.fatto ? "Invia la settimana" : "Nuova richiesta"} <span className="freccia" aria-hidden="true">→</span>
+      </Link>
+    </article>
   );
 }
 
 function ProssimaConsegna({ ordini, oggi }: Pick<PropsArea, "ordini" | "oggi">) {
   if (ordini.stato === "attesa") {
     return (
-      <article className="acc-card notte" aria-label="Prossima consegna">
+      // Alta quanto la scheda che arriva, o quasi: il resto della pagina (le altre schede, le scorciatoie) non scende di colpo.
+      <article className="acc-card acc-card-attesa notte" aria-label="Prossima consegna">
         <Caricamento testo="Carico le richieste…" />
       </article>
     );

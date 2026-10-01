@@ -74,5 +74,7 @@ export function useSpunte(chiave: string) {
     [spunte, imposta],
   );
   const azzera = useCallback(() => imposta(null), [imposta]);
-  return { spunte, cambia, azzera };
+  /** Rimette un insieme di spunte salvato prima (serve all'"Annulla" dopo "Togli tutte le spunte"). */
+  const ripristina = useCallback((ids: ReadonlySet<string>) => imposta(ids.size ? JSON.stringify([...ids]) : null), [imposta]);
+  return { spunte, cambia, azzera, ripristina };
 }

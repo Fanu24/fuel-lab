@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type FormEvent, type InputHTMLAttributes } from "react";
-import { cifreTelefono, messaggioDa, traduciErroreAuth } from "@/lib/account";
+import { erroreTelefono, eSessioneScaduta, messaggioDa, traduciErroreAuth } from "@/lib/account";
 import { api, type Profilo as TipoProfilo, type Utente } from "@/lib/api";
 import { authClient } from "@/lib/auth-client";
 import { impostaUtente } from "../sessione";
@@ -45,12 +45,24 @@ function Modulo({ utente, iniziale, onSalvato }: { utente: Utente; iniziale: Tip
   const [invio, setInvio] = useState(false);
   const [esito, setEsito] = useState<Esito | null>(null);
 
+  /* L'errore di un campo sparisce appena lo si corregge, e un salvataggio gia' riuscito non resta scritto
+     sopra modifiche nuove: "Profilo salvato." accanto a un campo cambiato dopo non e' piu' vero. */
+  function modifica(campo: Campo) {
+    setErrori((e) => {
+      if (!e[campo]) return e;
+      const resto = { ...e };
+      delete resto[campo];
+      return resto;
+    });
+    setEsito((s) => (s?.ok ? null : s));
+  }
+
   function controlla(): Partial<Record<Campo, string>> {
     const e: Partial<Record<Campo, string>> = {};
     if (!nome.trim()) e.nome = "Scrivi il tuo nome.";
     else if (nome.trim().length > 100) e.nome = "Il nome può avere al massimo 100 caratteri.";
-    const cifre = cifreTelefono(campi.phone);
-    if (campi.phone.trim() && cifre.length < 9) e.phone = "Il numero sembra troppo corto: controlla le cifre.";
+    const telefono = erroreTelefono(campi.phone);
+    if (telefono) e.phone = telefono;
     if (campi.preferences.length > PREFERENZE_MAX) e.preferences = `Al massimo ${PREFERENZE_MAX} caratteri.`;
     return e;
   }
@@ -72,7 +84,8 @@ function Modulo({ utente, iniziale, onSalvato }: { utente: Utente; iniziale: Tip
       if (nuovoNome !== utente.name) {
         const r = await authClient.updateUser({ name: nuovoNome });
         if (r.error) {
-          setEsito({ ok: false, testo: traduciErroreAuth(r.error, "nome").messaggio });
+          const t = traduciErroreAuth(r.error, "nome");
+          setEsito({ ok: false, testo: t.messaggio, sessione: t.tipo === "sessione" });
           setInvio(false);
           return;
         }
@@ -88,7 +101,7 @@ function Modulo({ utente, iniziale, onSalvato }: { utente: Utente; iniziale: Tip
       setCampi(r.profile);
       setEsito({ ok: true, testo: "Profilo salvato." });
     } catch (err) {
-      setEsito({ ok: false, testo: messaggioDa(err, "Non riesco a salvare il profilo. Riprova tra poco.") });
+      setEsito({ ok: false, testo: messaggioDa(err, "Non riesco a salvare il profilo. Riprova tra poco."), sessione: eSessioneScaduta(err) });
     }
     setInvio(false);
   }
@@ -103,7 +116,7 @@ function Modulo({ utente, iniziale, onSalvato }: { utente: Utente; iniziale: Tip
       <input
         id={`pr-${k}`}
         value={campi[k]}
-        onChange={(e) => setCampi((c) => ({ ...c, [k]: e.target.value }))}
+        onChange={(e) => { setCampi((c) => ({ ...c, [k]: e.target.value })); modifica(k); }}
         aria-invalid={errori[k] ? true : undefined}
         aria-describedby={errori[k] ? `pr-${k}-errore` : undefined}
         {...extra}
@@ -122,7 +135,7 @@ function Modulo({ utente, iniziale, onSalvato }: { utente: Utente; iniziale: Tip
             autoComplete="name"
             maxLength={100}
             value={nome}
-            onChange={(e) => setNome(e.target.value)}
+            onChange={(e) => { setNome(e.target.value); modifica("nome"); }}
             aria-invalid={errori.nome ? true : undefined}
             aria-describedby={errori.nome ? "pr-nome-errore" : undefined}
           />
@@ -130,7 +143,7 @@ function Modulo({ utente, iniziale, onSalvato }: { utente: Utente; iniziale: Tip
         </div>
         <div className="sm:col-span-2">
           <p className="acc-etichetta">Email</p>
-          <p className="mt-2 break-all">{utente.email}</p>
+          <p className="mt-2 [overflow-wrap:anywhere]">{utente.email}</p>
           <p className="mt-1 text-sm text-muted">
             Per cambiarla scrivi a <a className="underline underline-offset-2" href="mailto:info@fuelchef.it">info@fuelchef.it</a>.
           </p>
@@ -150,7 +163,7 @@ function Modulo({ utente, iniziale, onSalvato }: { utente: Utente; iniziale: Tip
             rows={4}
             maxLength={PREFERENZE_MAX}
             value={campi.preferences}
-            onChange={(e) => setCampi((c) => ({ ...c, preferences: e.target.value }))}
+            onChange={(e) => { setCampi((c) => ({ ...c, preferences: e.target.value })); modifica("preferences"); }}
             placeholder="Es. niente lattosio, allergia alla frutta a guscio, poco piccante"
             aria-invalid={errori.preferences ? true : undefined}
             aria-describedby={["pr-preferences-aiuto", errori.preferences ? "pr-preferences-errore" : null].filter(Boolean).join(" ")}
@@ -162,7 +175,7 @@ function Modulo({ utente, iniziale, onSalvato }: { utente: Utente; iniziale: Tip
         </div>
       </div>
       <div className="flex flex-wrap items-center gap-4">
-        <button type="submit" className="btn btn-ink" disabled={invio}>
+        <button type="submit" className="btn btn-ink" aria-disabled={invio ? true : undefined}>
           {invio ? "Salvo…" : "Salva il profilo"}
         </button>
       </div>

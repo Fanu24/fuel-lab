@@ -187,7 +187,7 @@ export function CalendarioConsegne({
   return (
     <div className="grid gap-3" id={id} aria-live="polite">
       <p className="text-[16px]">
-        Dal <strong>{giornoLungo(c.dal)}</strong> al <strong>{giornoLungo(c.al)}</strong> · <span className="num">{c.pasti}</span> pasti in{" "}
+        Da <strong>{giornoLungo(c.dal)}</strong> a <strong>{giornoLungo(c.al)}</strong> · <span className="num">{c.pasti}</span> pasti in{" "}
         <span className="num">{c.consegne.length}</span> consegne, una ogni 3 giorni
         {c.consegne.length ? (
           <>

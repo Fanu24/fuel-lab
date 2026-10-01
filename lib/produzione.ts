@@ -426,6 +426,28 @@ export function allergeniVoce(v: VoceOrdine): string[] | null {
   return [...tutti].sort((a, b) => a.localeCompare(b, "it"));
 }
 
+export type ClienteConPreferenze = { chiave: string; cliente: string; preferenze: string; ordini: number };
+
+/**
+ * Chi ha scritto allergie o preferenze nel profilo, una riga per persona: lo
+ * stesso cliente con un ordine e un abbonamento nello stesso giorno non deve
+ * comparire due volte nel riquadro rosso (si smette di leggerlo).
+ */
+export function clientiConPreferenze(ordini: Ordine[]): ClienteConPreferenze[] {
+  const righe = new Map<string, ClienteConPreferenze>();
+  const visti = new Set<string>();
+  for (const o of ordini) {
+    const preferenze = o.dietary_preferences?.trim();
+    if (!preferenze || visti.has(o.id)) continue;
+    visti.add(o.id);
+    const chiave = `${o.user_id}|${perCercare(o.customer_name)}|${perCercare(preferenze)}`;
+    const riga = righe.get(chiave);
+    if (riga) riga.ordini += 1;
+    else righe.set(chiave, { chiave, cliente: o.customer_name || o.email, preferenze, ordini: 1 });
+  }
+  return [...righe.values()];
+}
+
 export type RigaAllergene = { allergene: string; porzioni: number; fonti: string[] };
 
 /** Ogni allergene presente nel giorno, con quante porzioni lo contengono e da dove arriva. */
@@ -447,7 +469,8 @@ export function allergeniDelGiorno(ordini: Ordine[]): RigaAllergene[] {
       }
       for (const e of v.extras) {
         for (const a of allergeniExtra(e)) {
-          segna(a, e, !giaContati.has(a));
+          // "(extra)": "Pasta" o "Soia" accanto ai piatti si leggerebbero come piatti.
+          segna(a, `${e} (extra)`, !giaContati.has(a));
           giaContati.add(a);
         }
       }
@@ -586,6 +609,10 @@ export function listaSpesa(ordini: Ordine[]): ListaSpesa {
       }
     }
   }
+
+  // "Aglio q.b." in un piatto e "Aglio 3 spicchi" in un altro: si compra una volta sola, resta la riga con la quantita'.
+  const comprati = new Set([...peso.keys(), ...[...pezzi.values()].map((v) => v.nome.toLowerCase())]);
+  for (const chiave of qb.keys()) if (comprati.has(chiave)) qb.delete(chiave);
 
   const perNome = <T extends { nome: string }>(a: T, b: T) => a.nome.localeCompare(b.nome, "it");
   const reparti = REPARTI_SPESA.map((reparto) => ({

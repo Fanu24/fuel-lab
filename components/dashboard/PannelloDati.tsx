@@ -13,6 +13,8 @@ import { oggiRoma } from "@/lib/operazioni";
 const OGNI = 60_000;
 /** Tornando sulla scheda si ricarica solo se l'ultimo giro e' piu' vecchio di cosi'. */
 const AL_RITORNO = 10_000;
+/** Oltre questo tempo un giro di aggiornamento si considera fallito. */
+const TEMPO_MASSIMO = 25_000;
 
 export type DatiPannello = {
   /** null finche' la prima risposta non e' arrivata. */
@@ -69,19 +71,27 @@ export default function PannelloDati({ children }: { children: ReactNode }) {
     if (inCorso.current) return;
     inCorso.current = true;
     setAggiornando(true);
-    const [risposta, messaggi] = await Promise.allSettled([api.ordini(), adminApi.messaggi()]);
-    if (risposta.status === "fulfilled") {
-      setOrdini(risposta.value.orders);
-      setLimiteStorico(risposta.value.historyLimit ?? null);
-      setErrore("");
-      setSessioneScaduta(false);
-      setAggiornatoAlle(new Date());
+    // Su una rete che si pianta il giro non deve restare appeso per sempre: dopo 25 secondi si dice e si riprova al giro dopo.
+    let scaduto = false;
+    const attesa = new Promise<null>((r) => window.setTimeout(() => { scaduto = true; r(null); }, TEMPO_MASSIMO));
+    const esito = await Promise.race([Promise.allSettled([api.ordini(), adminApi.messaggi()]), attesa]);
+    if (!esito || scaduto) {
+      setErrore("La rete è lenta e non riesco ad aggiornare gli ordini. Riprovo tra poco.");
     } else {
-      const e = risposta.reason;
-      setErrore(e instanceof ApiError ? e.message : "Non riesco a caricare gli ordini. Riprova.");
-      setSessioneScaduta(e instanceof ApiError && (e.status === 401 || e.status === 403));
+      const [risposta, messaggi] = esito;
+      if (risposta.status === "fulfilled") {
+        setOrdini(risposta.value.orders);
+        setLimiteStorico(risposta.value.historyLimit ?? null);
+        setErrore("");
+        setSessioneScaduta(false);
+        setAggiornatoAlle(new Date());
+      } else {
+        const e = risposta.reason;
+        setErrore(e instanceof ApiError ? e.message : "Non riesco a caricare gli ordini. Riprova.");
+        setSessioneScaduta(e instanceof ApiError && (e.status === 401 || e.status === 403));
+      }
+      if (messaggi.status === "fulfilled") setMessaggiNuovi(messaggi.value.messages.filter((m) => m.status === "new").length);
     }
-    if (messaggi.status === "fulfilled") setMessaggiNuovi(messaggi.value.messages.filter((m) => m.status === "new").length);
     setOggi(oggiRoma());
     ultimoGiro.current = Date.now();
     inCorso.current = false;
@@ -97,10 +107,14 @@ export default function PannelloDati({ children }: { children: ReactNode }) {
       if (!document.hidden && Date.now() - ultimoGiro.current > AL_RITORNO) void aggiorna();
     };
     document.addEventListener("visibilitychange", alRitorno);
+    // Tornata la rete (il telefono esce da una galleria, dal wifi del laboratorio...) si ricarica subito, senza aspettare il minuto.
+    const tornataLaRete = () => void aggiorna();
+    window.addEventListener("online", tornataLaRete);
     return () => {
       window.clearTimeout(primo);
       window.clearInterval(giro);
       document.removeEventListener("visibilitychange", alRitorno);
+      window.removeEventListener("online", tornataLaRete);
     };
   }, [aggiorna]);
 

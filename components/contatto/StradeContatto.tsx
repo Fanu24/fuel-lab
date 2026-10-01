@@ -15,7 +15,7 @@ export default function StradeContatto({ whatsappAttivo }: { whatsappAttivo: boo
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 lg:gap-5">
           <StradaAccount />
 
-          <article className="carta-2 flex flex-col p-6 md:p-8" aria-labelledby="strada-modulo">
+          <article className="carta-2 flex flex-col border-2 border-transparent p-[calc(1.5rem-2px)] md:p-[calc(2rem-2px)]" aria-labelledby="strada-modulo">
             <p className="occhiello">
               <span className="num">02</span> · Senza account
             </p>
@@ -34,7 +34,7 @@ export default function StradeContatto({ whatsappAttivo }: { whatsappAttivo: boo
           </article>
 
           <article
-            className="flex flex-col border-2 p-6 md:col-span-2 md:p-8 lg:col-span-1"
+            className="flex flex-col border-2 p-[calc(1.5rem-2px)] md:col-span-2 md:p-[calc(2rem-2px)] lg:col-span-1"
             style={{ borderColor: "var(--line)" }}
             aria-labelledby="strada-diretta"
           >

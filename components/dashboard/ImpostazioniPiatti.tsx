@@ -4,16 +4,20 @@
    si salva subito, senza bottone: il piatto cambia sotto il dito e, se il
    server dice di no, torna com'era con l'errore. Tocchi veloci uno dopo
    l'altro non si pestano i piedi: parte un salvataggio alla volta, e quello
-   dopo porta con se' tutte le scelte fatte nel frattempo. */
+   dopo porta con se' tutte le scelte fatte nel frattempo. Un piatto spento che
+   ha ancora ordini aperti lo dice sulla sua riga: sono clienti da avvisare. */
 
 import Image from "next/image";
 import { useRef, useState } from "react";
 import { PIATTI, getPiatto } from "@/lib/catalogo";
+import { ordiniApertiConPiatto } from "@/lib/impostazioni";
+import { usePannello } from "./PannelloDati";
 import { alle, EsitoSalvataggio, messaggio, Riquadro, useFuocoSullEsito, type Esito, type Salva } from "./ImpostazioniParti";
 
 type Azione = { testo: string; errore: string };
 
 export default function ImpostazioniPiatti({ esclusi, salva }: { esclusi: string[]; salva: Salva }) {
+  const { ordini } = usePannello();
   const [fuori, setFuori] = useState<string[]>(esclusi);
   const [salvando, setSalvando] = useState(false);
   const [esito, setEsito] = useState<Esito>(null);
@@ -100,6 +104,7 @@ export default function ImpostazioniPiatti({ esclusi, salva }: { esclusi: string
       <ul className="pn-imp-piatti">
         {PIATTI.map((p) => {
           const disponibile = !fuori.includes(p.id);
+          const aperti = disponibile || !ordini ? 0 : ordiniApertiConPiatto(ordini, p.id).ordini;
           return (
             <li key={p.id}>
               <button
@@ -116,6 +121,7 @@ export default function ImpostazioniPiatti({ esclusi, salva }: { esclusi: string
                   <span className="pn-imp-piatto-nome">{p.nome}</span>
                   <span className="pn-imp-piatto-stato">
                     {disponibile ? "Disponibile" : "Non disponibile questa settimana"}
+                    {aperti ? ` · ancora in ${aperti} ${aperti === 1 ? "ordine aperto" : "ordini aperti"}: avvisa i clienti` : ""}
                   </span>
                 </span>
                 <span className="pn-switch-binario" aria-hidden="true" />

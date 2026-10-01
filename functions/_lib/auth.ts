@@ -1,7 +1,8 @@
 import { betterAuth } from "better-auth";
-import { APIError } from "better-auth/api";
+import { APIError, createAuthMiddleware, getSessionFromCtx } from "better-auth/api";
 import { importPKCS8, SignJWT } from "jose";
 import type { D1Database } from "@cloudflare/workers-types";
+import { datiUtentePuliti } from "../../lib/server/account";
 import { emailAccesso } from "../../lib/server/email";
 import { json } from "./http";
 import { inviaEmail } from "./mail";
@@ -104,9 +105,41 @@ export function createAuth(env: Env, request: Request, waitUntil?: Context["wait
         await deliver(user.email, "Verifica la tua email FUEL LAB", url);
       },
     } } : {}),
+    // Il limite di richieste e le sessioni si riconoscono dall'indirizzo del visitatore. Su Cloudflare l'unico che
+    // il visitatore non puo' falsificare e' CF-Connecting-IP. Di X-Forwarded-For better-auth si fida solo se ha un
+    // valore: se manca, o ne arriva uno inventato (Cloudflare ne aggiunge il suo in coda), nessun indirizzo e'
+    // affidabile e tutti dividono lo stesso contatore (3 accessi ogni 10 secondi in tutto il sito: a Matteo e ai
+    // clienti basterebbe un solo malintenzionato per non poter piu' entrare). I cookie sono "Secure" se il sito e' https.
+    advanced: {
+      ipAddress: { ipAddressHeaders: ["cf-connecting-ip", "x-forwarded-for"], ipv6Subnet: 64 },
+      useSecureCookies: originOf(request).startsWith("https://"),
+    },
+    // Nome e immagine dell'utente arrivano dal browser: lunghezze e formato si decidono qui (lib/server/account.ts).
+    databaseHooks: {
+      user: {
+        create: { before: async (user) => ({ data: datiUtentePuliti(user, true) }) },
+        update: { before: async (user) => ({ data: datiUtentePuliti(user, false) }) },
+      },
+    },
+    hooks: {
+      // Eliminare un account e' irreversibile: chi ha una password la deve scrivere. better-auth, senza password,
+      // si accontenta di una sessione aperta da meno di un giorno (pensata per chi entra solo con Google): a chi ha
+      // trovato un telefono sbloccato basterebbe questo. Il sito manda sempre la password agli account con password.
+      before: createAuthMiddleware(async (ctx) => {
+        if (ctx.path !== "/delete-user") return;
+        const corpo = (ctx.body ?? {}) as { password?: unknown; token?: unknown };
+        if (corpo.password || corpo.token) return;
+        const sessione = await getSessionFromCtx(ctx);
+        if (!sessione) return;
+        const credenziali = await ctx.context.internalAdapter.findCredentialAccount(sessione.user.id);
+        if (credenziali?.password) {
+          throw APIError.from("BAD_REQUEST", { code: "INVALID_PASSWORD", message: "Per eliminare l'account scrivi la tua password." });
+        }
+      }),
+    },
     user: {
-      // POST /api/auth/delete-user: con { password } per gli account email,
-      // senza password solo se l'accesso risale a meno di un giorno (freshAge).
+      // POST /api/auth/delete-user: con { password } per gli account email; senza password
+      // (account Google) solo se l'accesso risale a meno di un giorno (freshAge).
       deleteUser: {
         enabled: true,
         beforeDelete: async (user) => {

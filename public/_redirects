@@ -4,3 +4,11 @@
 /chi-e-matteo /chi-siamo 301
 /chi-e-matteo/ /chi-siamo 301
 /chi-e-matteo.html /chi-siamo 301
+# Indirizzi che la gente prova a scrivere a mano (o che compaiono in vecchi link
+# e schede): la pagina dei contatti e' /richiesta, gli abbonamenti sono /abbonamento.
+/contatti /richiesta 301
+/contatti/ /richiesta 301
+/contatto /richiesta 301
+/contatto/ /richiesta 301
+/abbonamenti /abbonamento 301
+/abbonamenti/ /abbonamento 301

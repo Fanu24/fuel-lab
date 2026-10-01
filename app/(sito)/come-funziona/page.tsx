@@ -3,6 +3,7 @@ import Reveal from "@/components/Reveal";
 import TrePassi from "@/components/home/TrePassi";
 import ChiusuraCta from "@/components/home/ChiusuraCta";
 import FotoPiena from "@/components/ui/FotoPiena";
+import Passi from "@/components/abbonamento/Passi";
 import Faq from "@/components/come-funziona/Faq";
 import JsonLd from "@/components/seo/JsonLd";
 import { AGGIORNAMENTO, PAGINE, metadatiPagina } from "@/components/seo/pagine";
@@ -94,6 +95,29 @@ export default function ComeFunziona() {
                 Gli abbonamenti
               </Link>
             </p>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* Chi cerca "come funziona" per l'abbonamento lo trova qui: i tre passi sono gli stessi della sua pagina. */}
+      <section className="sezione carta-2">
+        <div className="wrap">
+          <Reveal>
+            <p className="occhiello">Non vuoi pensarci ogni settimana?</p>
+            <h2 className="titolo mt-5 max-w-[16ch]">Porti il piano. Al resto pensiamo noi.</h2>
+            <p className="lead mt-6">
+              Cinque formule mensili da {PREZZO_DA_TESTO}, in fascia Standard o Plus: porti il piano scritto dal tuo
+              nutrizionista e Matteo lo cucina ai grammi. Consegna a casa o ritiro in laboratorio ogni{" "}
+              {CONSEGNA_OGNI_GIORNI} giorni, e la prima settimana è di prova, senza impegno.
+            </p>
+          </Reveal>
+          <div className="mt-14">
+            <Passi />
+          </div>
+          <Reveal className="mt-12">
+            <Link href={PAGINE.abbonamento.percorso} className="btn btn-ink">
+              Scopri gli abbonamenti <span aria-hidden="true" className="freccia">→</span>
+            </Link>
           </Reveal>
         </div>
       </section>

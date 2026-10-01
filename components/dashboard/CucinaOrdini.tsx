@@ -9,7 +9,7 @@
 import Link from "next/link";
 import { fineAbbonamento } from "@/lib/abbonamento";
 import { ETICHETTE_SERVIZIO, type Ordine } from "@/lib/api";
-import { PASTO_IN_ABBONAMENTO, dettaglioAbbonamento, nomeGiornoPasto, pastiInConsegna, vociInOrdine } from "@/lib/produzione";
+import { dettaglioAbbonamento, nomeGiornoPasto, pastiInConsegna, vociInOrdine } from "@/lib/produzione";
 import { fraseConsegna } from "./AbbonamentoConsegna";
 import { BottoniContatto } from "./ClientiContatti";
 import { useSpunte } from "./CucinaMemoria";
@@ -110,7 +110,7 @@ function SchedaAbbonamento({
             <tr key={`${p.data}-${p.pasto}`}>
               <td className="cu-voce-quando">{p.quando}</td>
               <td>
-                {p.voce ? p.voce.name : `${PASTO_IN_ABBONAMENTO[p.pasto]}: da comporre sulla scheda`}
+                {p.voce ? p.voce.name : "Da comporre sulla scheda"}
                 {p.voce?.extras.length ? <span className="cu-voce-extra"> + {p.voce.extras.join(", ")}</span> : null}
               </td>
             </tr>

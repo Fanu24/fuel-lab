@@ -21,6 +21,7 @@
 
 # Le pagine private non vanno indicizzate (c'e' gia' il meta robots, questo e'
 # il rinforzo, e vale anche per le varianti .html e i payload dell'export).
+# Sono file statici dell'export: per questo qui bastano i loro percorsi.
 /dashboard
   X-Robots-Tag: noindex, nofollow
 
@@ -36,8 +37,9 @@
 /reimposta-password*
   X-Robots-Tag: noindex
 
-/api/*
-  X-Robots-Tag: noindex
+# Le API (/api/*) non stanno qui: _headers vale solo per i file statici, non per
+# le Pages Functions. Noindex, nosniff e no-store li imposta
+# functions/api/_middleware.ts, e robots.txt tiene fuori /api/.
 
 # I manifest delle app installabili (sito e pannello), con il tipo giusto.
 /manifest.webmanifest

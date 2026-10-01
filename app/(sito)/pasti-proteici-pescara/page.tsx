@@ -3,11 +3,12 @@ import Reveal from "@/components/Reveal";
 import ChiusuraCta from "@/components/home/ChiusuraCta";
 import Faq from "@/components/come-funziona/Faq";
 import TagAllenamento from "@/components/ui/TagAllenamento";
+import Aggiornato from "@/components/seo/Aggiornato";
 import Briciole from "@/components/seo/Briciole";
 import JsonLd from "@/components/seo/JsonLd";
 import LinkBlog from "@/components/seo/LinkBlog";
 import { AGGIORNAMENTO, PAGINE, metadatiPagina } from "@/components/seo/pagine";
-import { elencoPiatti, nodiPagina, type DomandaTesto } from "@/components/seo/schema";
+import { assoluto, elencoPiatti, nodiPagina, type DomandaTesto } from "@/components/seo/schema";
 import { PIATTI, extraPerReparto, type Piatto } from "@/lib/catalogo";
 import { PREZZO_DA_TESTO } from "@/lib/abbonamento";
 import { CONSIGLI } from "@/lib/consigli";
@@ -102,6 +103,8 @@ export default function PastiProteiciPescara() {
             tipo: "CollectionPage",
             briciole,
             faq: DOMANDE,
+            // Le domande occupano mainEntity: l'elenco dei piatti si aggancia alla pagina come "citato".
+            mentions: [{ "@id": `${assoluto(PAGINA.percorso)}#piatti` }],
             dataModifica: AGGIORNAMENTO,
           }),
           elencoPiatti(PAGINA.percorso, "Piatti FUEL LAB ordinati per proteine", PER_PROTEINE),
@@ -176,6 +179,7 @@ export default function PastiProteiciPescara() {
               </tbody>
             </table>
           </div>
+          <p className="mt-3 text-sm font-semibold lg:hidden">Scorri la tabella di lato per vedere tutte le colonne.</p>
           <p className="mt-5 max-w-[70ch] text-sm text-muted">
             Valori per porzione intera, dal menu di FUEL LAB. Le calorie sono proteine × 4 + carboidrati × 4 + grassi ×
             9. I numeri descrivono i piatti, non sono un piano alimentare: quantità e obiettivi li decide il
@@ -302,6 +306,9 @@ export default function PastiProteiciPescara() {
             <h2 className="titolo mt-5">Pasti proteici: le risposte.</h2>
           </div>
           <Faq domande={DOMANDE} />
+        </div>
+        <div className="wrap mt-10">
+          <Aggiornato />
         </div>
       </section>
 

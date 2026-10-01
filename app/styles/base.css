@@ -5,6 +5,9 @@
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;
+    /* Il lampo grigio/blu del tocco sul telefono, nel colore del sito: un velo
+       d'inchiostro sulla carta, un velo di carta sulla notte (sotto). */
+    -webkit-tap-highlight-color: rgba(18, 20, 18, 0.12);
     scroll-behavior: smooth;
     scroll-padding-top: calc(var(--nav-h) + 16px);
   }
@@ -46,6 +49,15 @@
   ::selection {
     background: var(--color-lime);
     color: var(--color-ink);
+  }
+
+  /* Il segnaposto prende il colore del testo del campo, attenuato: il grigio
+     predefinito del browser sulla carta non arriva a 4,5:1. Ink al 64% su carta
+     dà circa 5,2:1. */
+  ::placeholder {
+    color: #5a5d58; /* i browser senza color-mix (prima del 2023) */
+    color: color-mix(in srgb, currentColor 64%, transparent);
+    opacity: 1;
   }
 
   h1,

@@ -15,6 +15,7 @@ import {
   elencoNomi,
   etichettaStatoOrdine,
   filtraOrdini,
+  filtriNelIndirizzo,
   inRitardo,
   leggiEuro,
   leggiFiltroSpeciale,
@@ -27,6 +28,7 @@ import {
   prossimiGiorniCucina,
   scorciatoieDate,
   spostaGiorni,
+  statoDaIndirizzo,
   testoWhatsApp,
   vociPerGiorno,
 } from "./operazioni";
@@ -323,6 +325,33 @@ describe("da fare adesso", () => {
     expect(azioni[4].testo).toMatch(/^Incassa 45,00\s€ da 1 ordine consegnato$/);
   });
 
+  it("un abbonamento a mese finito non e' un ordine in ritardo: ha la sua voce e il suo filtro", () => {
+    const finito = abbonamento("Giulia", "2026-08-20"); // periodo fino al 19 settembre
+    const inCorso = abbonamento("Marco", "2026-09-20");
+    const ritardo = ordine("Sara", { status: "ready", production_date: "2026-09-24", fulfillment_date: "2026-09-25" });
+    const azioni = azioniDaFare([finito, inCorso, ritardo], OGGI);
+    expect(azioni.map((a) => a.id)).toEqual(["ritardo", "mese-finito"]);
+    expect(azioni[0].testo).toBe("1 ordine in ritardo");
+    expect(azioni[0].dettaglio).toBe("Sara: la data è passata, aggiorna lo stato o sposta le date.");
+    expect(azioni[1].testo).toBe("1 abbonamento a mese finito");
+    expect(azioni[1].dettaglio).toBe("Giulia: il periodo è scaduto, segna concluso o concorda il rinnovo.");
+    expect(azioni[1].href).toBe("/dashboard/ordini?id=Giulia");
+    // piu' di uno: la lista filtrata
+    const due = azioniDaFare([finito, abbonamento("Luca", "2026-08-22")], OGGI);
+    expect(due[0].href).toBe("/dashboard/ordini?solo=mese-finito");
+    // "In ritardo" e "Mese finito" mostrano esattamente gli ordini che dicono le due voci
+    const tutti = [finito, inCorso, ritardo];
+    expect(filtraOrdini(tutti, { stato: "aperti", speciale: "ritardo", ricerca: "" }, OGGI).map((o) => o.id)).toEqual(["Sara"]);
+    expect(filtraOrdini(tutti, { stato: "aperti", speciale: "mese-finito", ricerca: "" }, OGGI).map((o) => o.id)).toEqual(["Giulia"]);
+    expect(leggiFiltroSpeciale("mese-finito")).toBe("mese-finito");
+  });
+
+  it("una richiesta con la data preferita passata sta in 'Conferma', non fra i ritardi", () => {
+    const vecchia = ordine("Anna", { requested_date: "2026-09-20" });
+    expect(azioniDaFare([vecchia], OGGI).map((a) => a.id)).toEqual(["conferma"]);
+    expect(filtraOrdini([vecchia], { stato: "aperti", speciale: "ritardo", ricerca: "" }, OGGI)).toEqual([]);
+  });
+
   it("aggiunge cucina e uscite del giorno", () => {
     const azioni = azioniDaFare([
       ordine("a", { status: "confirmed", production_date: OGGI, fulfillment_date: OGGI, meals: 5 }),
@@ -340,7 +369,7 @@ describe("da fare adesso", () => {
     ], lunedi);
     expect(azioni.map((a) => a.testo)).toEqual(["Cucina 11 porzioni oggi", "Consegna 2 ordini oggi"]);
     expect(azioni[0].dettaglio).toBe("1 ordine e 1 consegna di abbonamento (6 pasti) · apri il foglio cucina con piatti ed extra.");
-    expect(azioni[0].quanti).toBe(2);
+    expect(azioni[0].quanti).toBe(11); // lo stesso numero del titolo: le porzioni
     expect(azioni[1].dettaglio).toBe("2 ritiri (di cui 1 in abbonamento)");
   });
 
@@ -482,6 +511,32 @@ describe("filtri e ricerca", () => {
   });
 });
 
+describe("filtri nell'indirizzo", () => {
+  it("senza uno stato esplicito 'Da incassare' guarda tutto, gli altri casi partono dagli aperti", () => {
+    expect(statoDaIndirizzo(null, null)).toBe("aperti");
+    expect(statoDaIndirizzo(null, "incassare")).toBe("tutti");
+    expect(statoDaIndirizzo("ready", "incassare")).toBe("ready");
+    expect(statoDaIndirizzo("boh", "abbonamenti")).toBe("aperti");
+  });
+
+  it("scrive solo cio' che differisce dal predefinito e lascia stare gli altri parametri", () => {
+    const base = new URLSearchParams("id=abc");
+    expect(filtriNelIndirizzo(base, { stato: "aperti", speciale: null, ricerca: "" }).toString()).toBe("id=abc");
+    expect(filtriNelIndirizzo(base, { stato: "requested", speciale: null, ricerca: " Rossi " }).toString()).toBe("id=abc&stato=requested&q=Rossi");
+    expect(filtriNelIndirizzo(new URLSearchParams("stato=requested&q=x"), { stato: "aperti", speciale: null, ricerca: "" }).toString()).toBe("");
+  });
+
+  it("l'indirizzo scritto si rilegge come stato di partenza (andata e ritorno)", () => {
+    for (const stato of ["aperti", "tutti", "ready", "completed"] as const) {
+      for (const speciale of [null, "incassare", "abbonamenti", "ritardo"] as const) {
+        const p = filtriNelIndirizzo(new URLSearchParams(), { stato, speciale, ricerca: "" });
+        expect(statoDaIndirizzo(p.get("stato"), p.get("solo"))).toBe(stato);
+        expect(leggiFiltroSpeciale(p.get("solo"))).toBe(speciale);
+      }
+    }
+  });
+});
+
 describe("testi pronti", () => {
   it("il WhatsApp saluta per nome e dice il giorno", () => {
     expect(testoWhatsApp({ customer_name: "Giulia Rossi", meals: 6, fulfillment: "pickup", fulfillment_date: "2026-10-01" }))
@@ -534,9 +589,37 @@ describe("CSV per Excel", () => {
   });
 
   it("neutralizza le formule scritte dal cliente", () => {
-    const csv = ordiniCsv([ordine("x", { notes: "=HYPERLINK(\"http://x\")", phone: "+39 333" })]);
+    const csv = ordiniCsv([ordine("x", { notes: "=HYPERLINK(\"http://x\")", phone: "+39 333", customer_name: "+cmd|' /C calc'!A0" })]);
     expect(csv).toContain(`"'=HYPERLINK(""http://x"")"`);
-    expect(csv).toContain(";'+39 333;");
+    expect(csv).toContain(";'+cmd|' /C calc'!A0;");
+  });
+
+  it("il telefono non prende l'apostrofo, e senza spazi non perde il + o lo zero in Excel", () => {
+    const telefono = (phone: string) => ordiniCsv([ordine("x", { phone })]).split("\r\n")[1].split(";")[3];
+    expect(telefono("+39 333 123 4567")).toBe("+39 333 123 4567");
+    expect(telefono("333 123 4567")).toBe("333 123 4567");
+    expect(telefono("(085) 421-2345")).toBe("(085) 421-2345");
+    expect(telefono("+393331234567")).toBe('"=""+393331234567"""');
+    expect(telefono("0854212345")).toBe('"=""0854212345"""');
+    // un numero normale senza zero iniziale resta com'e'
+    expect(telefono("3331234567")).toBe("3331234567");
+    // quello che non e' un telefono resta neutralizzato
+    expect(telefono("=1+1")).toBe("'=1+1");
+    expect(telefono("+")).toBe("'+");
+  });
+
+  it("i pasti di un abbonamento sono quelli del periodo, non zero", () => {
+    const pasti = (o: Ordine) => ordiniCsv([o]).split("\r\n")[1].split(";")[11];
+    expect(pasti(abbonamento("abb", "2026-10-05", "pranzo"))).toBe("23"); // lunedi-venerdi, dal 5 ottobre al 4 novembre: 4 settimane piene e 3 giorni
+    expect(pasti(abbonamento("senza-inizio", null, "pranzo", { status: "requested" }))).toBe("");
+    expect(pasti(ordine("x", { meals: 4 }))).toBe("4");
+  });
+
+  it("lo stato in CSV dice Concluso per un abbonamento e Ritirato per un ritiro fatto", () => {
+    const stato = (o: Ordine) => ordiniCsv([o]).split("\r\n")[1].split(";")[10];
+    expect(stato(abbonamento("abb", "2026-08-01", "pranzo", { status: "completed" }))).toBe("Concluso");
+    expect(stato(ordine("x", { status: "completed", fulfillment: "pickup" }))).toBe("Ritirato");
+    expect(stato(ordine("y", { status: "completed", fulfillment: "delivery" }))).toBe("Consegnato");
   });
 });
 

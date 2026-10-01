@@ -7,7 +7,7 @@
 
 import { useRef, useState } from "react";
 import type { Chiusura } from "@/lib/api";
-import { durata, MAX_CHIUSURE, MAX_MOTIVO, periodo, settimanaProssima } from "@/lib/impostazioni";
+import { durata, GIORNI_CHIUSURA_LUNGA, MAX_CHIUSURE, MAX_MOTIVO, periodo, settimanaProssima, sovrapposizioni } from "@/lib/impostazioni";
 import {
   alle,
   EsitoSalvataggio,
@@ -48,6 +48,7 @@ export default function ImpostazioniChiusure({ chiusure, oggi, salva }: { chiusu
   useAvvisoUscita(nonSalvato);
   const piena = righe.length >= MAX_CHIUSURE;
   const passate = righe.filter((r) => r.al && r.al < oggi);
+  const sovrapposte = sovrapposizioni(righe);
 
   function cambia(chiave: number, campo: keyof Chiusura, valore: string) {
     setRighe((rr) =>
@@ -224,13 +225,25 @@ export default function ImpostazioniChiusure({ chiusure, oggi, salva }: { chiusu
                       Togli<span className="sr-only"> la chiusura {n}</span>
                     </button>
                   </div>
-                  <p id={idAiuto} className={mostra ? "pn-errore-campo" : "pn-aiuto"}>
-                    {mostra
-                      ? mostra
-                      : r.dal && r.al
-                        ? `Chiuso ${periodo(r.dal, r.al, oggi)} · ${durata(r) === 1 ? "1 giorno" : `${durata(r)} giorni`}${r.motivo.trim() ? ` · il cliente legge «${r.motivo.trim()}»` : ""}`
-                        : "Scegli il primo e l’ultimo giorno: sono compresi tutti e due."}
-                  </p>
+                  <div id={idAiuto} className="grid gap-2">
+                    <p className={mostra ? "pn-errore-campo" : "pn-aiuto"}>
+                      {mostra
+                        ? mostra
+                        : r.dal && r.al
+                          ? `Chiuso ${periodo(r.dal, r.al, oggi)} · ${durata(r) === 1 ? "1 giorno" : `${durata(r)} giorni`}${r.motivo.trim() ? ` · il cliente legge «${r.motivo.trim()}»` : ""}`
+                          : "Scegli il primo e l’ultimo giorno: sono compresi tutti e due."}
+                    </p>
+                    {/* Avvisi che non bloccano il salvataggio: il server accetta anche queste, ma di solito e' uno sbaglio. */}
+                    {sovrapposte[i] ? (
+                      <p className="pn-imp-attenzione">
+                        Si sovrappone alla chiusura {sovrapposte[i]}: i giorni in comune contano una volta sola. Se è la stessa
+                        chiusura, togline una.
+                      </p>
+                    ) : null}
+                    {!mostra && r.dal && r.al && durata(r) > GIORNI_CHIUSURA_LUNGA ? (
+                      <p className="pn-imp-attenzione">Sono {durata(r)} giorni di chiusura: controlla di aver scritto l’anno giusto.</p>
+                    ) : null}
+                  </div>
                 </fieldset>
               </li>
             );

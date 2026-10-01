@@ -16,7 +16,8 @@ import {
   type OrdineClienti,
 } from "@/lib/produzione";
 import { BottoniContatto } from "./ClientiContatti";
-import { Avviso, Caricamento, Kpi, TestaPagina, Vuoto, faTempo } from "./ui";
+import { ErroreCaricamento } from "./ClientiErrore";
+import { Caricamento, Kpi, TestaPagina, Vuoto, faTempo } from "./ui";
 
 const FILTRI: { id: FiltroClienti; label: string }[] = [
   { id: "tutti", label: "Tutti" },
@@ -59,6 +60,7 @@ function scaricaCsv(nomeFile: string, testo: string) {
 export default function ClientiElenco({
   clienti,
   errore,
+  sessioneScaduta,
   caricando,
   onRicarica,
   cerca,
@@ -70,6 +72,7 @@ export default function ClientiElenco({
 }: {
   clienti: ClienteAdmin[] | null;
   errore: string;
+  sessioneScaduta: boolean;
   caricando: boolean;
   onRicarica: () => void;
   cerca: string;
@@ -110,8 +113,8 @@ export default function ClientiElenco({
 
       {errore ? (
         <div className="grid gap-3">
-          <Avviso>{errore}</Avviso>
-          {clienti === null ? (
+          <ErroreCaricamento testo={errore} sessioneScaduta={sessioneScaduta} />
+          {clienti === null && !sessioneScaduta ? (
             <button type="button" className="btn btn-ink btn-sm justify-self-start" onClick={onRicarica} disabled={caricando}>
               Riprova
             </button>

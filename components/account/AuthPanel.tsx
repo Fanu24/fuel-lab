@@ -107,6 +107,20 @@ export default function AuthPanel() {
     if (inviata) refTitoloInviata.current?.focus();
   }, [inviata]);
 
+  /* L'errore di un campo sparisce appena lo si corregge: restare a dire "troppo
+     corta" sotto una password ormai lunga a sufficienza fa dubitare del modulo. */
+  function scrivi(campo: Campo, set: (v: string) => void, valore: string) {
+    set(valore);
+    setErroriCampo((e) => {
+      if (!e[campo] && !(campo === "password" && e.conferma)) return e;
+      const resto = { ...e };
+      delete resto[campo];
+      // Cambiare la password rende vecchio anche "non coincidono" sotto il secondo campo.
+      if (campo === "password") delete resto.conferma;
+      return resto;
+    });
+  }
+
   function cambiaModo(prossimo: ModoAccesso, conFuoco: boolean) {
     fuocoAlCampo.current = conFuoco;
     setModo(prossimo);
@@ -173,8 +187,9 @@ export default function AuthPanel() {
         setAttesa(null);
         return;
       }
-      // Pagina ricaricata da capo: nav, piano e sessione ripartono puliti.
-      window.location.assign(destinazione);
+      // Pagina ricaricata da capo: nav, piano e sessione ripartono puliti. "replace": /accedi non resta nella cronologia,
+      // altrimenti il tasto indietro riporta qui e questa pagina rimanda subito avanti (non si esce piu').
+      window.location.replace(destinazione);
     } catch {
       setErrore(ERRORE_RETE);
       setAttesa(null);
@@ -191,7 +206,7 @@ export default function AuthPanel() {
         return;
       }
       if (r.data?.token) {
-        window.location.assign(destinazione);
+        window.location.replace(destinazione);
         return;
       }
       // Con la verifica attiva l'account aspetta il link: niente sessione finche' non si apre.
@@ -206,6 +221,7 @@ export default function AuthPanel() {
   }
 
   async function recupera() {
+    if (attesa) return;
     setAttesa("email");
     try {
       const ritorno = destinazione === DESTINAZIONE_PREDEFINITA ? "" : `?next=${encodeURIComponent(destinazione)}`;
@@ -263,6 +279,7 @@ export default function AuthPanel() {
   }
 
   async function esci() {
+    if (attesa) return;
     setAttesa("esci");
     try {
       await authClient.signOut();
@@ -290,7 +307,7 @@ export default function AuthPanel() {
           spellCheck={false}
           maxLength={254}
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) => scrivi("email", setEmail, e.target.value)}
           aria-invalid={erroriCampo.email ? true : undefined}
           aria-describedby={erroriCampo.email ? "acc-email-errore" : undefined}
         />
@@ -314,7 +331,7 @@ export default function AuthPanel() {
         </button>
       </>
     ) : errore.tipo === "non-verificata" && emailValida(email) ? (
-      <button type="button" className="btn btn-ink btn-sm" disabled={!!attesa} onClick={() => void inviaLinkVerifica(email.trim())}>
+      <button type="button" className="btn btn-ink btn-sm" aria-disabled={attesa ? true : undefined} onClick={() => void inviaLinkVerifica(email.trim())}>
         {attesa === "link" ? "Invio…" : "Invia di nuovo il link"}
       </button>
     ) : null
@@ -332,7 +349,7 @@ export default function AuthPanel() {
               Sei collegato come <strong className="text-ink">{utente.email}</strong>, che non è l’account di Matteo. Per aprire il pannello esci ed entra con l’account amministratore.
             </p>
             <div className="flex flex-wrap gap-3">
-              <button type="button" className="btn btn-ink btn-sm" disabled={attesa === "esci"} onClick={() => void esci()}>
+              <button type="button" className="btn btn-ink btn-sm" aria-disabled={attesa === "esci" ? true : undefined} onClick={() => void esci()}>
                 {attesa === "esci" ? "Esco…" : "Esci e cambia account"}
               </button>
               <Link href="/account" className="btn btn-linea btn-sm">Vai al tuo account</Link>
@@ -353,13 +370,13 @@ export default function AuthPanel() {
         {inviata.tipo === "verifica" ? (
           <>
             <p>
-              Ti abbiamo mandato un link a <strong className="break-all">{inviata.email}</strong>. Aprilo per attivare l’account: tornerai qui già dentro.
+              Ti abbiamo mandato un link a <strong className="[overflow-wrap:anywhere]">{inviata.email}</strong>. Aprilo per attivare l’account: tornerai qui già dentro.
             </p>
             <p className="text-sm text-muted">
               Non lo trovi? Guarda nello spam. Se con questa email hai già un account non ne creiamo un altro: accedi, o reimposta la password.
             </p>
             <div className="flex flex-wrap gap-3">
-              <button type="button" className="btn btn-ink btn-sm" disabled={!!attesa} onClick={() => void inviaLinkVerifica(inviata.email)}>
+              <button type="button" className="btn btn-ink btn-sm" aria-disabled={attesa ? true : undefined} onClick={() => void inviaLinkVerifica(inviata.email)}>
                 {attesa === "link" ? "Invio…" : "Invia di nuovo il link"}
               </button>
               <button type="button" className="btn btn-linea btn-sm" onClick={() => cambiaModo("accedi", true)}>
@@ -373,11 +390,11 @@ export default function AuthPanel() {
         ) : (
           <>
             <p>
-              Se <strong className="break-all">{inviata.email}</strong> è registrata, ti arriva un link per scegliere una nuova password. Vale un’ora.
+              Se <strong className="[overflow-wrap:anywhere]">{inviata.email}</strong> è registrata, ti arriva un link per scegliere una nuova password. Vale un’ora.
             </p>
             <p className="text-sm text-muted">Non lo trovi? Guarda nello spam, oppure chiedine un altro.</p>
             <div className="flex flex-wrap gap-3">
-              <button type="button" className="btn btn-ink btn-sm" disabled={!!attesa} onClick={() => void recupera()}>
+              <button type="button" className="btn btn-ink btn-sm" aria-disabled={attesa ? true : undefined} onClick={() => void recupera()}>
                 {attesa === "email" ? "Invio…" : "Invia di nuovo"}
               </button>
               <button type="button" className="btn btn-linea btn-sm" onClick={() => cambiaModo("accedi", true)}>
@@ -447,7 +464,7 @@ export default function AuthPanel() {
                     autoComplete="name"
                     maxLength={100}
                     value={nome}
-                    onChange={(e) => setNome(e.target.value)}
+                    onChange={(e) => scrivi("nome", setNome, e.target.value)}
                     aria-invalid={erroriCampo.nome ? true : undefined}
                     aria-describedby={erroriCampo.nome ? "acc-nome-errore" : undefined}
                   />
@@ -463,7 +480,7 @@ export default function AuthPanel() {
                   etichetta="Password"
                   autoComplete="current-password"
                   valore={password}
-                  onCambia={setPassword}
+                  onCambia={(v) => scrivi("password", setPassword, v)}
                   errore={erroriCampo.password}
                   nota={
                     <button type="button" className="link text-sm normal-case" onClick={() => cambiaModo("recupera", true)}>
@@ -480,7 +497,7 @@ export default function AuthPanel() {
                     etichetta="Password"
                     autoComplete="new-password"
                     valore={password}
-                    onCambia={setPassword}
+                    onCambia={(v) => scrivi("password", setPassword, v)}
                     errore={erroriCampo.password}
                     descrittaDa="acc-requisiti"
                   />
@@ -489,7 +506,7 @@ export default function AuthPanel() {
                     etichetta="Ripeti la password"
                     autoComplete="new-password"
                     valore={conferma}
-                    onCambia={setConferma}
+                    onCambia={(v) => scrivi("conferma", setConferma, v)}
                     errore={erroriCampo.conferma}
                     descrittaDa="acc-requisiti"
                   />
@@ -497,7 +514,9 @@ export default function AuthPanel() {
                 </>
               ) : null}
 
-              <button type="submit" className="btn btn-lime mt-1 w-full" disabled={!emailAttiva || !!attesa}>
+              {/* aria-disabled e non disabled durante l'attesa: un bottone che si disabilita mentre ha il fuoco lo fa
+                  cadere sul body, e chi usa la tastiera ricomincia da capo la pagina. */}
+              <button type="submit" className="btn btn-lime mt-1 w-full" disabled={!emailAttiva} aria-disabled={attesa ? true : undefined}>
                 {attesa === "email"
                   ? modo === "accedi" ? "Accesso in corso…" : modo === "crea" ? "Creo l’account…" : "Invio…"
                   : modo === "accedi" ? "Accedi" : modo === "crea" ? "Crea l’account" : "Invia il link"}
@@ -510,13 +529,13 @@ export default function AuthPanel() {
               <p className="acc-oppure"><span>oppure</span></p>
               <div className="mt-5 grid gap-3">
                 {providers.google ? (
-                  <button type="button" className="btn btn-linea btn-sm acc-btn-social" disabled={!!attesa} onClick={() => void social("google")}>
+                  <button type="button" className="btn btn-linea btn-sm acc-btn-social" aria-disabled={attesa ? true : undefined} onClick={() => void social("google")}>
                     <IconaGoogle />
                     {attesa === "google" ? "Ti porto su Google…" : "Continua con Google"}
                   </button>
                 ) : null}
                 {providers.apple ? (
-                  <button type="button" className="btn btn-linea btn-sm acc-btn-social" disabled={!!attesa} onClick={() => void social("apple")}>
+                  <button type="button" className="btn btn-linea btn-sm acc-btn-social" aria-disabled={attesa ? true : undefined} onClick={() => void social("apple")}>
                     <IconaApple />
                     {attesa === "apple" ? "Ti porto su Apple…" : "Continua con Apple"}
                   </button>
@@ -537,12 +556,12 @@ export default function AuthPanel() {
   }
 
   return (
-    <section className="acc-testata wrap pb-[var(--sezione)]">
+    <section className="acc-testata acc-schermata wrap pb-[var(--sezione)]">
       <div className="acc-accesso">
         <div className="acc-accesso-intro notte">
           <p className="occhiello">Il tuo spazio FUEL LAB</p>
-          <h1 className="titolo mt-5 max-w-[13ch]">La tua settimana, sempre con te.</h1>
-          <p className="mt-5 max-w-[45ch] text-steel">
+          <h1 className="titolo acc-accesso-titolo">La tua settimana, sempre con te.</h1>
+          <p className="acc-accesso-lead text-steel">
             Una richiesta non è un ordine: Matteo conferma disponibilità, giorno e prezzo prima di cucinare.
           </p>
         </div>

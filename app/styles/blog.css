@@ -1,0 +1,145 @@
+/* Il blog: le tabelle degli articoli e il titolo della guida in evidenza.
+   Il resto della pagina usa le utility di Tailwind; qui sta quello che le
+   utility non sanno dire (celle che diventano schede, etichette dalle
+   intestazioni). Dentro @layer components come gli altri file: una utility
+   scritta sullo stesso elemento vince sempre. */
+
+@layer components {
+  .blog-tabella {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 15px;
+    line-height: 1.35;
+  }
+  .blog-tabella thead tr {
+    border-bottom: 3px solid var(--color-ink);
+  }
+  .blog-tabella tbody tr {
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+  .blog-tabella th,
+  .blog-tabella td {
+    padding: 12px 16px 12px 0;
+  }
+  .blog-tabella th:last-child,
+  .blog-tabella td:last-child {
+    padding-right: 0;
+  }
+  .blog-tabella thead th {
+    vertical-align: bottom;
+    font-family: var(--font-disp);
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  .blog-tabella tbody th {
+    font-weight: 600;
+  }
+  .blog-tabella td {
+    color: var(--color-muted);
+  }
+
+  /* Tabella dei piatti: i numeri si allineano a destra, come in una busta paga. */
+  .blog-tabella-piatti {
+    font-size: 14px;
+  }
+  .blog-tabella-piatti .blog-numero {
+    text-align: right;
+    color: var(--color-ink);
+  }
+  .blog-tabella-piatti thead .blog-numero {
+    color: inherit;
+  }
+
+  /* Etichetta della colonna sopra la cella: la scheda per riga (telefono). */
+  @media (max-width: 639px) {
+    .blog-tabella-schede thead,
+    .blog-tabella-piatti thead {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      margin: -1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+
+    .blog-tabella-schede,
+    .blog-tabella-schede tbody,
+    .blog-tabella-schede tr,
+    .blog-tabella-schede th,
+    .blog-tabella-schede td,
+    .blog-tabella-piatti,
+    .blog-tabella-piatti tbody {
+      display: block;
+    }
+
+    .blog-tabella-schede tbody tr,
+    .blog-tabella-piatti tbody tr {
+      padding: 16px 0;
+    }
+    .blog-tabella-schede th,
+    .blog-tabella-schede td,
+    .blog-tabella-piatti th,
+    .blog-tabella-piatti td {
+      padding: 0;
+    }
+    .blog-tabella-schede tbody th,
+    .blog-tabella-piatti tbody th {
+      margin-bottom: 8px;
+      font-size: 17px;
+      line-height: 1.25;
+    }
+    .blog-tabella-schede td + td {
+      margin-top: 8px;
+    }
+    .blog-tabella-schede td::before,
+    .blog-tabella-piatti td[data-label]::before {
+      content: attr(data-label);
+      display: block;
+      margin-bottom: 1px;
+      font-family: var(--font-disp);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--color-ink);
+    }
+
+    /* I piatti: nome e allenamento a tutta riga, poi quattro numeri affiancati. */
+    .blog-tabella-piatti tbody tr {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 4px 8px;
+    }
+    .blog-tabella-piatti tbody th,
+    .blog-tabella-piatti .blog-allenamento {
+      grid-column: 1 / -1;
+    }
+    .blog-tabella-piatti tbody th {
+      margin-bottom: 0;
+    }
+    .blog-tabella-piatti .blog-allenamento {
+      margin-bottom: 8px;
+    }
+    /* Il nome del piatto è un link a sé: area da toccare di 44px senza spostare le righe. */
+    .blog-tabella-piatti tbody th a {
+      display: inline-block;
+      padding-block: 11px;
+      margin-block: -11px;
+    }
+    .blog-tabella-piatti td.blog-numero {
+      text-align: left;
+      font-size: 16px;
+    }
+  }
+
+  /* Il titolo della guida in evidenza sta in una colonna stretta: la scala
+     dei titoli di sezione lo spezzava in sette righe a 1440px. */
+  .blog-titolo-evidenza {
+    font-size: clamp(28px, 3.2vw, 46px);
+    line-height: 1.04;
+  }
+}

@@ -1,11 +1,19 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { leggiLink, linkPiano } from "@/lib/condivisione";
 import { usePiano, type Allenamenti, type Piano } from "@/lib/piano";
 
-export type EsitoLink = "nessuno" | "importato" | "chiede" | "accettato" | "rifiutato" | "rotto";
+export type EsitoLink = "nessuno" | "importato" | "chiede" | "accettato" | "rifiutato" | "rotto" | "vuoto";
+
+/* L'indirizzo letto dal browser, non da useSearchParams: quell'hook costringe la
+   pagina a mostrare un guscio vuoto fino all'idratazione (niente titolo, niente
+   compositore nell'HTML). Cosi' il server disegna la pagina intera, senza link, e
+   il browser vi aggiunge quello che trova dopo l'idratazione. */
+const ascoltaIndirizzo = (f: () => void) => {
+  window.addEventListener("popstate", f);
+  return () => window.removeEventListener("popstate", f);
+};
 
 /**
  * Il link della settimana: in arrivo (?p=&a=) e in uscita (copia negli appunti).
@@ -19,8 +27,9 @@ export type EsitoLink = "nessuno" | "importato" | "chiede" | "accettato" | "rifi
  * domanda.
  */
 export function useLinkCondiviso() {
-  const { piano, allenamenti, pronto, pasti, sostituisciPiano, impostaAllenamento, svuotaAllenamenti } = usePiano();
-  const params = useSearchParams();
+  const { piano, allenamenti, pronto, pasti, sostituisciPiano, sostituisciAllenamenti } = usePiano();
+  const ricerca = useSyncExternalStore(ascoltaIndirizzo, () => window.location.search, () => "");
+  const params = useMemo(() => new URLSearchParams(ricerca), [ricerca]);
   const haLink = params.get("p") !== null;
   const dalLink = useMemo(() => (haLink ? leggiLink(params) : null), [haLink, params]);
   const [esito, setEsito] = useState<EsitoLink>("nessuno");
@@ -29,10 +38,7 @@ export function useLinkCondiviso() {
 
   function applica(p: Piano, a: Allenamenti) {
     sostituisciPiano(p);
-    if (Object.keys(a).length) {
-      svuotaAllenamenti();
-      for (const [g, t] of Object.entries(a)) impostaAllenamento(g as keyof Allenamenti, t ?? null);
-    }
+    if (Object.keys(a).length) sostituisciAllenamenti(a);
   }
   const pulisci = () => window.history.replaceState(null, "", window.location.pathname);
 
@@ -40,12 +46,14 @@ export function useLinkCondiviso() {
   // che dipende da un ingresso cambiato: niente giro in piu' sullo schermo.
   if (pronto && dalLink && !deciso) {
     setDeciso(true);
-    setEsito(!dalLink.piano ? "rotto" : pasti === 0 ? "importato" : "chiede");
+    // un link senza pasti ne' allenamenti non ha niente da caricare e, a settimana piena, non deve chiedere di buttarla via
+    const senzaNiente = !!dalLink.piano && Object.keys(dalLink.piano).length === 0 && Object.keys(dalLink.allenamenti).length === 0;
+    setEsito(!dalLink.piano ? "rotto" : senzaNiente ? "vuoto" : pasti === 0 ? "importato" : "chiede");
   }
 
   // Gli effetti fanno solo cio' che tocca il mondo fuori da React: lo store e l'indirizzo.
   useEffect(() => {
-    if (esito === "rotto") pulisci();
+    if (esito === "rotto" || esito === "vuoto") pulisci();
     if (esito !== "importato" || applicato.current || !dalLink?.piano) return;
     applicato.current = true;
     applica(dalLink.piano, dalLink.allenamenti);
@@ -64,19 +72,32 @@ export function useLinkCondiviso() {
   };
 
   /* ---- in uscita ---- */
-  const [copiato, setCopiato] = useState<"no" | "si" | "manuale">("no");
-  const [url, setUrl] = useState("");
-  async function copia() {
+  // Il link copiato vale per la settimana di quel momento: se poi la si cambia, "Link
+  // copiato" smette di essere vero. Per questo si tiene a quale settimana si riferisce.
+  const [ultimaCopia, setCopia] = useState<{ url: string; esito: "si" | "manuale"; di: string } | null>(null);
+  const attuale = useMemo(() => linkPiano(piano, "", allenamenti), [piano, allenamenti]);
+  const valido = ultimaCopia && ultimaCopia.di === attuale ? ultimaCopia : null;
+
+  async function copia(): Promise<"si" | "manuale"> {
     const u = linkPiano(piano, window.location.origin, allenamenti);
-    setUrl(u);
     try {
       await navigator.clipboard.writeText(u);
-      setCopiato("si");
+      setCopia({ url: u, esito: "si", di: attuale });
+      return "si";
     } catch {
       // fuori da https o permessi negati: il link si mostra e si copia a mano
-      setCopiato("manuale");
+      setCopia({ url: u, esito: "manuale", di: attuale });
+      return "manuale";
     }
   }
 
-  return { esito, accetta, rifiuta, chiudi: () => setEsito("nessuno"), copia, copiato, url };
+  return {
+    esito,
+    accetta,
+    rifiuta,
+    chiudi: () => setEsito("nessuno"),
+    copia,
+    copiato: valido?.esito ?? "no",
+    url: valido?.url ?? "",
+  };
 }

@@ -181,7 +181,7 @@ export default async function SchedaFormulaPage({ params }: Props) {
 
       <section className="sezione">
         <div className="wrap">
-          <ScontiEProva />
+          <ScontiEProva formula={id} />
         </div>
       </section>
 
