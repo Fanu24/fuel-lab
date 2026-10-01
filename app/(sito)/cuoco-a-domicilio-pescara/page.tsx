@@ -234,11 +234,11 @@ export default function CuocoADomicilioPescara() {
               <div key={r.voce} className="border-b py-5" style={{ borderColor: "var(--line)" }}>
                 <dt className="font-disp text-sm font-semibold tracking-[.08em] uppercase">{r.voce}</dt>
                 <dd className="mt-3">
-                  <span className="block font-disp text-[11px] font-semibold tracking-[.16em] text-steel uppercase">Meal prep FUEL LAB</span>
+                  <span className="block font-disp text-[12px] font-semibold tracking-[.16em] text-steel uppercase">Meal prep FUEL LAB</span>
                   <span style={{ color: "rgb(243 239 230 / .88)" }}>{r.mealPrep}</span>
                 </dd>
                 <dd className="mt-3">
-                  <span className="block font-disp text-[11px] font-semibold tracking-[.16em] text-steel uppercase">Home cooking</span>
+                  <span className="block font-disp text-[12px] font-semibold tracking-[.16em] text-steel uppercase">Home cooking</span>
                   <span className="text-lime">{r.casa}</span>
                 </dd>
               </div>
@@ -248,7 +248,7 @@ export default function CuocoADomicilioPescara() {
             <table className="w-full border-collapse text-left">
               <caption className="sr-only">Differenze fra meal prep FUEL LAB e home cooking</caption>
               <thead>
-                <tr className="font-disp text-[11px] font-semibold tracking-[.16em] text-steel uppercase">
+                <tr className="font-disp text-[12px] font-semibold tracking-[.16em] text-steel uppercase">
                   <td className="w-[22%] py-4 pr-6" />
                   <th scope="col" className="py-4 pr-6">Meal prep FUEL LAB</th>
                   <th scope="col" className="py-4">Home cooking</th>

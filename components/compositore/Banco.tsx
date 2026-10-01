@@ -102,7 +102,7 @@ export default function Banco({
                       <span className="piatto-banco-nd">Non disponibile</span>
                     ) : (
                       <>
-                        <TagAllenamento tipo={p.allenamento} breve className="!h-5 !px-1.5 !text-[11px] !tracking-[.06em]" />
+                        <TagAllenamento tipo={p.allenamento} breve className="!h-5 !px-1.5 !text-[12px] !tracking-[.06em]" />
                         <span className="num whitespace-nowrap text-xs text-muted">{p.kcal} kcal</span>
                       </>
                     )}

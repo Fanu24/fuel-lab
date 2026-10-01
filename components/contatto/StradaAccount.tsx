@@ -22,7 +22,7 @@ export default function StradaAccount() {
   return (
     <article className="notte smusso relative flex flex-col p-6 md:p-8" aria-labelledby="strada-account">
       {/* Il cartellino sta sull'angolo e non nella riga del titolino: cosi' le tre schede hanno il titolo alla stessa altezza a ogni larghezza. */}
-      <span className="absolute top-0 right-0 bg-lime px-2.5 py-1.5 font-disp text-[11px] font-bold tracking-[.16em] text-ink uppercase">
+      <span className="absolute top-0 right-0 bg-lime px-2.5 py-1.5 font-disp text-[12px] font-bold tracking-[.16em] text-ink uppercase">
         La strada migliore
       </span>
       <p className="occhiello">

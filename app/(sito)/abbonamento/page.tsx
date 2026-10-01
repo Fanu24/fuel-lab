@@ -270,11 +270,11 @@ export default function AbbonamentoPage() {
               <div key={r.voce} className="border-b border-ink/15 py-5">
                 <dt className="font-disp text-sm font-semibold tracking-[.08em] uppercase">{r.voce}</dt>
                 <dd className="mt-3 text-muted">
-                  <span className="block font-disp text-[11px] font-semibold tracking-[.16em] uppercase">Menu della settimana</span>
+                  <span className="block font-disp text-[12px] font-semibold tracking-[.16em] uppercase">Menu della settimana</span>
                   {r.menu}
                 </dd>
                 <dd className="mt-3">
-                  <span className="block font-disp text-[11px] font-semibold tracking-[.16em] text-muted uppercase">Abbonamento</span>
+                  <span className="block font-disp text-[12px] font-semibold tracking-[.16em] text-muted uppercase">Abbonamento</span>
                   <span className="font-semibold">{r.abbonamento}</span>
                 </dd>
               </div>
@@ -286,7 +286,7 @@ export default function AbbonamentoPage() {
             <table className="w-full border-collapse text-left">
               <caption className="sr-only">Differenze fra il menu della settimana e l&apos;abbonamento</caption>
               <thead>
-                <tr className="font-disp text-[11px] font-semibold tracking-[.16em] text-muted uppercase">
+                <tr className="font-disp text-[12px] font-semibold tracking-[.16em] text-muted uppercase">
                   <th scope="col" className="w-[22%] py-4 pr-6">
                     <span className="sr-only">Voce</span>
                   </th>

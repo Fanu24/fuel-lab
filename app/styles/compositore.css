@@ -303,7 +303,7 @@
   .slot-pasto {
     font-family: var(--font-disp);
     font-weight: 700;
-    font-size: 11px;
+    font-size: 12px;
     letter-spacing: 0.16em;
     text-transform: uppercase;
     color: var(--color-muted);
@@ -324,7 +324,7 @@
     }
   }
   .slot-macro {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--color-muted);
   }
 
@@ -510,7 +510,7 @@
     padding: 0 10px;
     font-family: var(--font-disp);
     font-weight: 700;
-    font-size: 11px;
+    font-size: 12px;
     letter-spacing: 0.1em;
     text-transform: uppercase;
     text-decoration: underline;

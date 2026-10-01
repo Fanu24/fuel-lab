@@ -390,7 +390,7 @@ export default function ModuloContatto({
                 <label className="flex min-h-11 cursor-pointer items-center gap-3 font-semibold has-[:disabled]:cursor-default">
                   <input
                     type="checkbox"
-                    className="h-5 w-5 shrink-0 accent-[#121412]"
+                    className="h-6 w-6 shrink-0 accent-[#121412]"
                     checked={allega && haSettimana}
                     disabled={!haSettimana}
                     onChange={(e) => setAllega(e.target.checked)}

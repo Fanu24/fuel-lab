@@ -175,7 +175,7 @@ export default function PrivacyConsent() {
         <p className="occhiello consenso-occhiello">Privacy · FUEL LAB</p>
         <p id="privacy-consent-description">
           Usiamo Google Analytics solo se scegli “Accetta Analytics”, per misurare le visite. Se rifiuti, nessun tag
-          Analytics viene caricato. Puoi cambiare scelta in qualsiasi momento dal footer.{" "}
+          Analytics viene caricato. <span className="consenso-extra">Puoi cambiare scelta in qualsiasi momento dal footer.</span>{" "}
           <Link href="/privacy" className="link font-semibold">Informativa completa</Link>.
           {scelta !== null ? (
             <>

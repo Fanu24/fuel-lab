@@ -23,7 +23,7 @@ export default function Hero() {
           <Image src={FOTO.ciotola.src} alt={FOTO.ciotola.alt} fill sizes="260px" className="object-cover" />
         </div>
         {/* La foto e' di repertorio, come quelle dei piatti: lo dice, invece di far credere che sia il piatto di stamattina. */}
-        <figcaption className="grid gap-0.5 px-4 py-3 font-disp text-[11px] font-semibold tracking-[.16em] uppercase">
+        <figcaption className="grid gap-0.5 px-4 py-3 font-disp text-[12px] font-semibold tracking-[.16em] uppercase">
           <span>Cucinato in giornata</span>
           <span className="font-medium text-steel normal-case tracking-normal">Foto illustrativa</span>
         </figcaption>

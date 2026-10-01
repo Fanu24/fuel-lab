@@ -143,7 +143,7 @@ export default function PastiProteiciPescara() {
             {PER_PROTEINE.map((p) => (
               <li key={p.id} className="border-b border-ink/15 py-5">
                 <div className="flex items-start justify-between gap-4">
-                  <Link href={`/menu/${p.id}`} className="font-semibold underline-offset-4 hover:underline">
+                  <Link href={`/menu/${p.id}`} className="-my-2.5 inline-block py-2.5 font-semibold underline-offset-4 hover:underline">
                     {p.nome}
                   </Link>
                   <TagAllenamento tipo={p.allenamento} breve className="shrink-0" />
@@ -164,7 +164,7 @@ export default function PastiProteiciPescara() {
                     ["Kcal da prot.", `${quotaProteine(p)}%`],
                   ].map(([voce, valore]) => (
                     <div key={voce}>
-                      <dt className="font-disp text-[11px] font-semibold tracking-[.08em] whitespace-nowrap text-muted uppercase">{voce}</dt>
+                      <dt className="font-disp text-[12px] font-semibold tracking-[.08em] whitespace-nowrap text-muted uppercase">{voce}</dt>
                       <dd className="num mt-1 text-[15px]">{valore}</dd>
                     </div>
                   ))}
@@ -178,7 +178,7 @@ export default function PastiProteiciPescara() {
                 Valori nutrizionali per porzione intera dei piatti FUEL LAB, ordinati per proteine
               </caption>
               <thead>
-                <tr className="font-disp text-[11px] font-semibold tracking-[.16em] text-muted uppercase">
+                <tr className="font-disp text-[12px] font-semibold tracking-[.16em] text-muted uppercase">
                   <th scope="col" className="py-4 pr-4">Piatto</th>
                   <th scope="col" className="py-4 pr-4">Per</th>
                   <th scope="col" className="py-4 pr-4 text-right">Porzione</th>
@@ -194,7 +194,7 @@ export default function PastiProteiciPescara() {
                 {PER_PROTEINE.map((p) => (
                   <tr key={p.id} className="border-t border-ink/15 align-top">
                     <th scope="row" className="py-4 pr-4 font-normal">
-                      <Link href={`/menu/${p.id}`} className="font-semibold underline-offset-4 hover:underline">
+                      <Link href={`/menu/${p.id}`} className="-my-2.5 inline-block py-2.5 font-semibold underline-offset-4 hover:underline">
                         {p.nome}
                       </Link>
                     </th>
@@ -278,7 +278,7 @@ export default function PastiProteiciPescara() {
           <ul className="border-t-[3px] border-ink">
             {PER_PROTEINE.map((p) => (
               <li key={p.id} className="grid gap-1 border-b border-ink/15 py-5 sm:grid-cols-[1fr_1.1fr] sm:gap-6">
-                <Link href={`/menu/${p.id}`} className="font-semibold underline-offset-4 hover:underline">
+                <Link href={`/menu/${p.id}`} className="-my-2.5 inline-block py-2.5 font-semibold underline-offset-4 hover:underline">
                   {p.nome}
                 </Link>
                 <span className="text-muted">{elenco(fontiProteiche(p))}</span>

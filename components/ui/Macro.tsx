@@ -49,10 +49,10 @@ export function NumeriMacro({
     <dl className={`grid grid-cols-4 gap-2 ${className}`}>
       {voci.map((x) => (
         <div key={x.k}>
-          <dt className="font-disp text-[11px] font-semibold tracking-[.16em] text-muted uppercase">{x.k}</dt>
+          <dt className="font-disp text-[12px] font-semibold tracking-[.16em] text-muted uppercase">{x.k}</dt>
           <dd className={`num ${compatti ? "text-base" : "text-xl md:text-2xl"} font-medium`}>
             {Math.round(x.v)}
-            <span className="text-[0.6em] text-muted">{x.u}</span>
+            <span className="text-[0.75em] text-muted">{x.u}</span>
           </dd>
         </div>
       ))}

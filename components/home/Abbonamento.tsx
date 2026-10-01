@@ -47,7 +47,7 @@ export default function Abbonamento() {
                   <span>
                     <span className="abb-mini-nome">
                       {f.nome}
-                      {f.consigliato ? <span className="ml-3 align-middle text-[11px] tracking-[.16em] text-lime">Consigliato</span> : null}
+                      {f.consigliato ? <span className="ml-3 align-middle text-[12px] tracking-[.16em] text-lime">Consigliato</span> : null}
                     </span>
                     <span className="mt-1 block text-sm text-steel">{f.pastiSettimana} pasti a settimana</span>
                   </span>

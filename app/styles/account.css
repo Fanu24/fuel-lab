@@ -3,6 +3,10 @@
    stesso di .campo .errore (6,6:1 sulla carta); il lime resta superficie. */
 
 @layer components {
+  /* Il titolo della sezione prende il fuoco da script quando si cambia scheda (per i lettori di
+     schermo): il riquadro nero attorno al titolo, sul telefono, e' solo rumore. */
+  [data-titolo-sezione]:focus-visible { outline: none; box-shadow: none; }
+
   /* ---- impaginazione ---- */
   .acc-testata { padding-top: calc(var(--nav-h) + 40px); padding-bottom: 32px; }
   .acc-corpo { padding-top: 40px; padding-bottom: var(--sezione); }
@@ -53,7 +57,7 @@
   .acc-conta {
     display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 6px;
     border-radius: 999px; background: var(--color-ink); color: var(--color-paper);
-    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0;
+    font-family: var(--font-mono); font-size: 12px; letter-spacing: 0;
   }
   .acc-sottonav a[aria-current="page"] .acc-conta { background: var(--color-lime); color: var(--color-ink); }
   .acc-sottonav-finta { height: 62px; border-block: 1px solid var(--line); }
@@ -140,7 +144,7 @@
   .acc-scelta-tag {
     display: inline-block; margin-left: 10px; padding: 3px 8px; vertical-align: middle;
     background: var(--color-lime); color: var(--color-ink);
-    font-size: 10px; line-height: 1.2; letter-spacing: 0.14em;
+    font-size: 12px; line-height: 1.2; letter-spacing: 0.14em;
   }
   /* Pasti a settimana e prezzi di una formula su una riga, che va a capo per intero (mai un prezzo spezzato). */
   .acc-scelta-riga { display: flex; flex-wrap: wrap; gap: 0 16px; }
@@ -309,7 +313,7 @@
   .acc-macro > div { padding: 14px 16px; background: var(--color-paper); }
   .acc-macro > div:first-child { grid-column: 1 / -1; }
   .acc-macro dt, .acc-fatti dt, .acc-tabella thead th {
-    font-family: var(--font-disp); font-weight: 600; font-size: 11px;
+    font-family: var(--font-disp); font-weight: 600; font-size: 12px;
     letter-spacing: 0.18em; text-transform: uppercase; color: var(--color-muted);
   }
   .acc-macro dd { margin-top: 4px; font-size: 22px; }
@@ -333,7 +337,7 @@
     .acc-tabella tbody th { width: 100%; }
     .acc-tabella td::before {
       content: attr(data-pasto); display: block; color: var(--color-muted);
-      font-family: var(--font-disp); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+      font-family: var(--font-disp); font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase;
     }
   }
 

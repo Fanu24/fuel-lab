@@ -19,7 +19,7 @@ export function Briciole({ voci }: { voci: VoceBriciole[] }) {
               {indice > 0 ? <span aria-hidden="true">/</span> : null}
               {/* py-3: l’area da toccare arriva a 44px senza spostare le righe (su un inline il padding non le muove) */}
               {voce.href && !ultima ? (
-                <Link href={voce.href} className="py-3 font-semibold text-ink underline decoration-2 underline-offset-4 hover:decoration-lime">
+                <Link href={voce.href} className="px-1.5 py-3 font-semibold text-ink underline decoration-2 underline-offset-4 hover:decoration-lime">
                   {voce.nome}
                 </Link>
               ) : (

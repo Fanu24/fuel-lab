@@ -73,9 +73,9 @@ export default function MenuClient() {
         {/* i titoli delle carte sono h3: sotto l'h1 della pagina serve il livello di mezzo */}
         <h2 className="sr-only">I piatti</h2>
         <ul className="mt-10 grid gap-x-8 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
-          {piatti.map((p) => (
+          {piatti.map((p, i) => (
             <li key={p.id} className="flex flex-col">
-              <CartaPiatto piatto={p} grande />
+              <CartaPiatto piatto={p} grande priorita={i === 0} />
               {/* il bottone in fondo alla carta: nella riga i sei bottoni stanno alla stessa altezza anche se i titoli vanno a capo in modo diverso */}
               <div className="mt-auto pt-5">
                 <AggiungiAllaSettimana piattoId={p.id} />

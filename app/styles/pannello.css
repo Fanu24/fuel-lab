@@ -226,7 +226,7 @@
     color: var(--color-ink);
     padding: 4px 8px;
     font-family: var(--font-disp);
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.16em;
     text-transform: uppercase;
@@ -252,7 +252,7 @@
     }
     .pn-matteo {
       padding: 3px 6px;
-      font-size: 10px;
+      font-size: 12px;
       letter-spacing: 0.12em;
     }
   }
@@ -352,7 +352,7 @@
   @media (max-width: 359px) {
     .pn-barra-voce {
       padding-inline: 0;
-      font-size: 11px;
+      font-size: 12px;
     }
   }
   .pn-barra-voce .pn-badge {
@@ -361,7 +361,7 @@
     left: calc(50% + 5px);
     min-width: 20px;
     height: 20px;
-    font-size: 11px;
+    font-size: 12px;
     box-shadow: 0 0 0 2px var(--color-night);
   }
 
@@ -766,7 +766,7 @@
     background: var(--color-lime);
     color: var(--color-ink);
     font-family: var(--font-disp);
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.12em;
     text-transform: uppercase;
@@ -1442,7 +1442,7 @@
   }
   .pn-consegna-tag {
     font-family: var(--font-disp);
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.12em;
     text-transform: uppercase;

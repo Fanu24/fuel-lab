@@ -97,7 +97,7 @@ export default function BarraSettimana({
 
       <div className="wrap py-3">
         {/* telefono: i macro medi (o l'invito a cominciare) su una riga propria */}
-        <p className="num mb-2 text-[11px] text-steel md:hidden">
+        <p className="num mb-2 text-[12px] text-steel md:hidden">
           {vuota ? (
             <span className="min-[400px]:hidden">{suggerimento}</span>
           ) : (
@@ -124,7 +124,7 @@ export default function BarraSettimana({
                 { k: "Grassi", v: m.grassi, u: "g" },
               ].map((x) => (
                 <div key={x.k}>
-                  <dt className="font-disp text-[11px] font-semibold tracking-[.12em] whitespace-nowrap text-steel uppercase">
+                  <dt className="font-disp text-[12px] font-semibold tracking-[.12em] whitespace-nowrap text-steel uppercase">
                     {/* tra 768 e 1024 la colonna e' stretta: "kcal / giorno" arriva solo dove c'e' posto */}
                     {x.lungo ? (
                       <>
@@ -169,21 +169,21 @@ export default function BarraSettimana({
               <button
                 type="button"
                 onClick={onRiempi}
-                className="btn btn-lime !min-h-11 !gap-2 !px-3 !text-[10px] sm:!min-h-12 sm:!px-4 sm:!text-xs"
+                className="btn btn-lime !min-h-11 !gap-2 !px-3 !text-[12px] sm:!min-h-12 sm:!px-4 sm:!text-xs"
               >
                 Riempi la settimana <span aria-hidden="true" className="freccia">→</span>
               </button>
             ) : vuota ? (
               <span
                 aria-disabled="true"
-                className="btn btn-lime pointer-events-none !min-h-11 !gap-2 !px-3 !text-[10px] opacity-40 sm:!min-h-12 sm:!px-4 sm:!text-xs"
+                className="btn btn-lime pointer-events-none !min-h-11 !gap-2 !px-3 !text-[12px] opacity-40 sm:!min-h-12 sm:!px-4 sm:!text-xs"
               >
                 Invia a Matteo <span aria-hidden="true" className="freccia">→</span>
               </span>
             ) : (
               <Link
                 href="/account?sezione=richiesta"
-                className="btn btn-lime !min-h-11 !gap-2 !px-3 !text-[10px] sm:!min-h-12 sm:!px-4 sm:!text-xs"
+                className="btn btn-lime !min-h-11 !gap-2 !px-3 !text-[12px] sm:!min-h-12 sm:!px-4 sm:!text-xs"
               >
                 Invia a Matteo <span aria-hidden="true" className="freccia">→</span>
               </Link>

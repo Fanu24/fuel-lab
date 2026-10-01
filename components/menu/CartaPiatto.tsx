@@ -9,7 +9,7 @@ import BollinoNonDisponibile from "@/components/impostazioni/BollinoNonDisponibi
  * Tutto il resto (ingredienti, perche' funziona, allergeni) sta nella scheda
  * del piatto: la carta deve far venire voglia di aprirla, non sostituirla.
  */
-export default function CartaPiatto({ piatto, grande = false }: { piatto: Piatto; grande?: boolean }) {
+export default function CartaPiatto({ piatto, grande = false, priorita = false }: { piatto: Piatto; grande?: boolean; priorita?: boolean }) {
   return (
     <Link href={`/menu/${piatto.id}`} className="group block">
       <div className={`foto-piatto smusso relative overflow-hidden bg-paper-2 ${grande ? "aspect-[4/5]" : "aspect-[4/3]"}`}>
@@ -17,6 +17,7 @@ export default function CartaPiatto({ piatto, grande = false }: { piatto: Piatto
           src={piatto.img}
           alt=""
           fill
+          priority={priorita}
           sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 85vw"
           className="object-cover transition-transform duration-[1.2s] ease-[var(--e-out)] group-hover:scale-[1.04]"
         />
@@ -29,7 +30,8 @@ export default function CartaPiatto({ piatto, grande = false }: { piatto: Piatto
         {piatto.nome}
       </h3>
       <p className="num mt-2 text-sm text-muted">
-        {piatto.kcal} kcal · {piatto.proteine} g proteine · {piatto.carboidrati} g carbo
+        <span className="whitespace-nowrap">{piatto.kcal} kcal</span> · <span className="whitespace-nowrap">{piatto.proteine} g proteine</span> ·{" "}
+        <span className="whitespace-nowrap">{piatto.carboidrati} g carbo</span>
       </p>
     </Link>
   );

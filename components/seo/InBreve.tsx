@@ -21,7 +21,7 @@ export default function InBreve({ className = "" }: { className?: string }) {
       <dl className="grid gap-x-8 border-t-[3px] border-ink sm:grid-cols-2 lg:grid-cols-3">
         {righe.map((r) => (
           <div key={r.k} className="border-b border-ink/15 py-5">
-            <dt className="font-disp text-[11px] font-semibold tracking-[.16em] text-muted uppercase">{r.k}</dt>
+            <dt className="font-disp text-[12px] font-semibold tracking-[.16em] text-muted uppercase">{r.k}</dt>
             <dd className="mt-2 text-lg leading-snug">{r.v}</dd>
           </div>
         ))}

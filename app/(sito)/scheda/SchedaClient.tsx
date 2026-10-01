@@ -180,7 +180,7 @@ export default function SchedaClient() {
               <dl className="mt-6 grid grid-cols-4 gap-2">
                 {CAMPI.map((c) => (
                   <div key={c.k}>
-                    <dt className="font-disp text-[11px] font-semibold tracking-[.16em] text-muted uppercase">
+                    <dt className="font-disp text-[12px] font-semibold tracking-[.16em] text-muted uppercase">
                       {c.label}
                     </dt>
                     <dd className="num text-lg">

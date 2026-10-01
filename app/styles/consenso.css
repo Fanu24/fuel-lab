@@ -59,6 +59,30 @@
     grid-column: 1 / -1;
   }
 
+  /* Telefono: i due bottoni stanno affiancati e la frase sul footer sparisce, cosi il banner
+     lascia in vista la hero. */
+  @media (max-width: 767px) {
+    .consenso {
+      gap: 10px;
+      padding: 12px;
+    }
+    .consenso-testo {
+      font-size: 12px;
+    }
+    .consenso-extra {
+      display: none;
+    }
+    .consenso-azioni {
+      grid-template-columns: 1fr 1fr;
+    }
+    .consenso-azioni .btn {
+      min-height: 46px;
+      padding-inline: 6px;
+      font-size: 12px;
+      letter-spacing: 0.04em;
+    }
+  }
+
   @media (min-width: 768px) {
     .consenso {
       inset: auto auto 24px 24px;

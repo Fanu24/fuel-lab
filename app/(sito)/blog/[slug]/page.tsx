@@ -159,7 +159,7 @@ export default async function ArticoloPage({ params }: Props) {
             <Briciole voci={briciole} />
             {categoria ? (
               <p className="mt-8">
-                <Link href={`/blog/categoria/${categoria.id}`} className="occhiello -my-3 py-3 hover:underline">
+                <Link href={`/blog/categoria/${categoria.id}`} className="occhiello -my-4 py-4 hover:underline">
                   {categoria.nome}
                 </Link>
               </p>

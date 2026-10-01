@@ -199,7 +199,7 @@ export default function ConsegnaPastiPescara() {
             {ZONE_SERVITE.map((z, i) => (
               <Reveal as="li" key={z.nome} delay={(i % 3) * 70} className="border-t-[3px] border-ink pt-5">
                 <h3 className="titolo-s">{z.nome}</h3>
-                <p className="mt-2 font-disp text-[11px] font-semibold tracking-[.16em] text-muted uppercase">
+                <p className="mt-2 font-disp text-[12px] font-semibold tracking-[.16em] text-muted uppercase">
                   {provincia(z)}
                 </p>
                 {DOVE[z.nome] ? <p className="mt-3 text-muted">{DOVE[z.nome]}</p> : null}
