@@ -6,6 +6,7 @@
 
 import { forwardRef, useEffect, type ReactNode, type Ref } from "react";
 import type { Impostazioni } from "@/lib/api";
+import { bozzaDaTesto, testoBozza } from "@/lib/impostazioni";
 
 /** Salva una o piu' parti e restituisce tutte le impostazioni come le ha scritte il server. */
 export type Salva = (modifica: Partial<Impostazioni>) => Promise<Impostazioni>;
@@ -79,4 +80,41 @@ export function useAvvisoUscita(nonSalvato: boolean) {
     window.addEventListener("beforeunload", ferma);
     return () => window.removeEventListener("beforeunload", ferma);
   }, [nonSalvato]);
+}
+
+/* ---------- La bozza non salvata ---------- */
+
+const chiaveBozza = (nome: string) => `fuellab:impostazioni:bozza:${nome}`;
+
+/** La bozza lasciata a meta' in questa scheda del browser (cambiando pagina del pannello il riquadro si smonta), se e' ancora valida. */
+export function leggiBozza<T>(nome: string, salvato: unknown): T | null {
+  try {
+    return bozzaDaTesto<T>(window.sessionStorage.getItem(chiaveBozza(nome)), salvato);
+  } catch {
+    return null;
+  }
+}
+
+/** Finche' ci sono modifiche non salvate le tiene nella sessione della scheda; salvate o annullate, le toglie. */
+export function useConservaBozza(nome: string, salvato: unknown, bozza: unknown, nonSalvato: boolean) {
+  useEffect(() => {
+    try {
+      if (nonSalvato) window.sessionStorage.setItem(chiaveBozza(nome), testoBozza(salvato, bozza));
+      else window.sessionStorage.removeItem(chiaveBozza(nome));
+    } catch {
+      // Spazio non disponibile (navigazione privata): resta il solo avviso di uscita.
+    }
+  }, [nome, salvato, bozza, nonSalvato]);
+}
+
+/** "Ho ripreso la bozza": dice che il testo che si vede non e' ancora sul sito, e permette di scartarlo. */
+export function BozzaRipresa({ onScarta }: { onScarta: () => void }) {
+  return (
+    <p className="pn-avviso pn-avviso-info" role="status">
+      Avevi lasciato questa bozza a metà: l’ho ripresa. Non è ancora salvata.{" "}
+      <button type="button" className="min-h-11 font-bold underline underline-offset-4" onClick={onScarta}>
+        Scarta la bozza
+      </button>
+    </p>
+  );
 }

@@ -249,6 +249,7 @@ export const ARTICOLI: Articolo[] = [
     parolaChiave: "abbinare i pasti all’allenamento",
     foto: "schiscette",
     data: DATA_BLOG,
+    aggiornato: "2026-10-01",
     piatti: ["riso-julien-pollo-teriyaki", "maiale-senape-spinaci", "uova-purgatorio-peperoni"],
     correlati: ["cosa-mangiare-prima-di-correre", "cosa-mangiare-dopo-allenamento-pesi", "settimana-tipo-allenamento-alimentazione"],
     introduzione:
@@ -341,6 +342,7 @@ export const ARTICOLI: Articolo[] = [
     parolaChiave: "cosa mangiare dopo l’allenamento con i pesi",
     foto: "pesi",
     data: DATA_BLOG,
+    aggiornato: "2026-10-01",
     piatti: ["maiale-senape-spinaci", "uova-purgatorio-peperoni", "pallotte-cacio-ovo"],
     correlati: ["cosa-mangiare-sera-dopo-allenamento", "quante-proteine-per-pasto", "abbinare-pasti-tipo-allenamento"],
     introduzione:
@@ -509,6 +511,7 @@ export const ARTICOLI: Articolo[] = [
     parolaChiave: "pallotte cacio e ova",
     foto: "polpette",
     data: DATA_BLOG,
+    aggiornato: "2026-10-01",
     piatti: ["pallotte-cacio-ovo", "uova-purgatorio-peperoni", "gnocchetti-sugo-ricotta"],
     correlati: ["cucina-di-stagione-abruzzo-pescara", "cosa-mangiare-dopo-allenamento-pesi", "piatti-gia-composti-cosa-sono"],
     introduzione:
@@ -581,6 +584,7 @@ export const ARTICOLI: Articolo[] = [
     parolaChiave: "cosa mangiare prima del calcetto",
     foto: "distensione",
     data: DATA_BLOG,
+    aggiornato: "2026-10-01",
     piatti: ["riso-julien-pollo-teriyaki", "noodles-sesamo-maiale", "maiale-senape-spinaci"],
     correlati: ["cosa-mangiare-sera-dopo-allenamento", "cosa-mangiare-prima-di-correre", "idratazione-allenamento-caldo-pescara"],
     introduzione:
@@ -661,6 +665,7 @@ export const ARTICOLI: Articolo[] = [
     parolaChiave: "allenarsi con il caldo",
     foto: "spremuta",
     data: DATA_BLOG,
+    aggiornato: "2026-10-01",
     piatti: ["uova-purgatorio-peperoni", "riso-julien-pollo-teriyaki", "gnocchetti-sugo-ricotta"],
     correlati: ["conservare-pasti-preparati-frigorifero", "cosa-mangiare-prima-di-correre", "cosa-mangiare-calcetto-crossfit-pescara"],
     introduzione:
@@ -847,7 +852,7 @@ export const ARTICOLI: Articolo[] = [
     parolaChiave: "piatti già composti",
     foto: "cuoco",
     data: DATA_BLOG,
-    aggiornato: "2026-09-30",
+    aggiornato: "2026-10-01",
     piatti: ["riso-julien-pollo-teriyaki", "gnocchetti-sugo-ricotta", "maiale-senape-spinaci"],
     correlati: ["meal-prep-pescara-cosa-significa", "leggere-etichetta-nutrizionale-piatti-pronti", "abbinare-pasti-tipo-allenamento"],
     introduzione:
@@ -1019,6 +1024,7 @@ export const ARTICOLI: Articolo[] = [
     parolaChiave: "meal prep studenti Pescara",
     foto: "cucina",
     data: DATA_BLOG,
+    aggiornato: "2026-10-01",
     piatti: ["riso-julien-pollo-teriyaki", "gnocchetti-sugo-ricotta", "uova-purgatorio-peperoni"],
     correlati: ["spesa-settimanale-meal-prep-zero-sprechi", "conservare-pasti-preparati-frigorifero", "settimana-tipo-allenamento-alimentazione"],
     introduzione:
@@ -1171,6 +1177,7 @@ export const ARTICOLI: Articolo[] = [
     parolaChiave: "cosa mangiare la sera dopo l’allenamento",
     foto: "uova",
     data: DATA_BLOG,
+    aggiornato: "2026-10-01",
     piatti: ["uova-purgatorio-peperoni", "maiale-senape-spinaci", "riso-julien-pollo-teriyaki"],
     correlati: ["cosa-mangiare-dopo-allenamento-pesi", "cosa-mangiare-calcetto-crossfit-pescara", "pranzo-dopo-allenamento-pescara"],
     introduzione:
@@ -1519,7 +1526,7 @@ export const ARTICOLI: Articolo[] = [
     parolaChiave: "piatto equilibrato",
     foto: "bowl",
     data: DATA_BLOG,
-    aggiornato: "2026-09-27",
+    aggiornato: "2026-10-01",
     piatti: ["riso-julien-pollo-teriyaki", "maiale-senape-spinaci", "uova-purgatorio-peperoni"],
     correlati: ["macro-cosa-sono-come-leggerli", "pasti-con-proteine-menu-settimanale", "abbinare-pasti-tipo-allenamento"],
     introduzione:
@@ -2069,7 +2076,7 @@ export const ARTICOLI: Articolo[] = [
     parolaChiave: "fonti proteiche menu settimanale",
     foto: "maiale",
     data: DATA_BLOG,
-    aggiornato: "2026-09-27",
+    aggiornato: "2026-10-01",
     piatti: ["maiale-senape-spinaci", "riso-julien-pollo-teriyaki", "pallotte-cacio-ovo"],
     correlati: ["quante-proteine-per-pasto", "piatto-equilibrato-ingredienti-varieta", "pranzo-proteico-ufficio"],
     introduzione:

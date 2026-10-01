@@ -4,7 +4,7 @@ import { leggiImpostazioniDb } from "../_lib/impostazioni";
 import { accodaEmail, emailMatteo } from "../_lib/mail";
 import { ORDER_SELECT } from "../_lib/ordini";
 import { oggiRoma } from "../../lib/server/date";
-import { emailNuovaRichiesta } from "../../lib/server/email";
+import { emailNuovaRichiesta, emailRichiestaRicevuta } from "../../lib/server/email";
 import { controllaDataPreferita } from "../../lib/server/impostazioni";
 import { leggiNuovoOrdine, ordineDaRiga, type NuovoOrdineValido, type RigaOrdine } from "../../lib/server/ordini";
 
@@ -41,7 +41,7 @@ export const onRequestGet = async ({ env, request }: Context) => {
 };
 
 export const onRequestPost = async ({ env, request, waitUntil }: Context) => {
-  if (!sameOrigin(request)) return json({ error: "Origine non valida" }, 403);
+  if (!sameOrigin(request)) return json({ error: "Non riesco a verificare da dove arriva la richiesta: ricarica la pagina e riprova." }, 403);
   const user = await currentUser(env, request);
   if (!user) return json({ error: "Accedi prima di inviare una richiesta" }, 401);
   const body = await bodyJson(request, 30000);
@@ -106,25 +106,24 @@ export const onRequestPost = async ({ env, request, waitUntil }: Context) => {
     return json({ error: "Hai già inviato diverse richieste oggi. Scrivici a info@fuelchef.it." }, 429);
   }
 
-  await accodaEmail({ env, waitUntil }, {
-    to: [emailMatteo(env)],
-    replyTo: user.email,
-    ...emailNuovaRichiesta({
-      id,
-      customer_name: o.name,
-      email: user.email,
-      phone: o.phone,
-      comune: o.comune,
-      address: o.address,
-      fulfillment: o.fulfillment,
-      service: o.service,
-      requested_date: o.requestedDate,
-      notes: o.notes,
-      meals: o.items.length,
-      items: o.items,
-      price_cents: o.priceCents,
-      subscription: o.subscription,
-    }),
-  });
+  const perEmail = {
+    id,
+    customer_name: o.name,
+    email: user.email,
+    phone: o.phone,
+    comune: o.comune,
+    address: o.address,
+    fulfillment: o.fulfillment,
+    service: o.service,
+    requested_date: o.requestedDate,
+    notes: o.notes,
+    meals: o.items.length,
+    items: o.items,
+    price_cents: o.priceCents,
+    subscription: o.subscription,
+  };
+  await accodaEmail({ env, waitUntil }, { to: [emailMatteo(env)], replyTo: user.email, ...emailNuovaRichiesta(perEmail) });
+  // La ricevuta al cliente: rispondere a quest'email scrive a Matteo, non a una casella che nessuno legge.
+  await accodaEmail({ env, waitUntil }, { to: [user.email], replyTo: emailMatteo(env), ...emailRichiestaRicevuta(perEmail) });
   return json({ id, status: "requested" }, 201);
 };

@@ -18,7 +18,13 @@
  *   (il testo e' inglese: le pagine lo traducono dal `code`, vedi lib/account.ts);
  * - `POST /api/orders` e' idempotente sui doppioni: se la stessa richiesta dello
  *   stesso cliente e' partita negli ultimi 10 minuti (e non e' annullata) il
- *   server risponde 200 con l'id di quella, invece di crearne un'altra.
+ *   server risponde 200 con l'id di quella, invece di crearne un'altra: dopo un
+ *   tempo scaduto si puo' riprovare senza paura di farne due;
+ * - ogni chiamata ha un tempo massimo (ATTESA_MASSIMA_MS, 20 secondi; 60 per
+ *   l'esportazione dei dati e le statistiche): scaduto, ApiError con status 0,
+ *   `scaduto` vero e un messaggio in italiano. Lo stesso status 0 di una rete
+ *   assente, quindi chi gia' lo gestisce non cambia. Chi passa un `signal` e lo
+ *   annulla riceve invece l'AbortError, non un errore da mostrare.
  */
 
 import type { Fascia, FormulaId, Nucleo } from "@/lib/abbonamento";
@@ -282,41 +288,74 @@ export const impostazioniVuote = (): Impostazioni => ({
 /* ---------- Trasporto ---------- */
 
 export class ApiError extends Error {
-  constructor(message: string, readonly status: number) {
+  /**
+   * `status` e' 0 quando il server non ha risposto (rete assente o troppo lenta);
+   * `scaduto` dice che e' stato il tempo massimo, non la rete caduta del tutto.
+   */
+  constructor(message: string, readonly status: number, readonly scaduto = false) {
     super(message);
     this.name = "ApiError";
   }
 }
 
-async function chiama<T>(url: string, init?: RequestInit & { json?: unknown }): Promise<T> {
-  const { json, ...resto } = init ?? {};
-  let response: Response;
+/** Quanto si aspetta una risposta prima di arrendersi: senza, una rete bloccata lascia i pulsanti in "Invio…" per sempre. */
+export const ATTESA_MASSIMA_MS = 20_000;
+/** Per le risposte che il server costruisce in piu' tempo (l'esportazione di tutti i dati, le statistiche). */
+export const ATTESA_LUNGA_MS = 60_000;
+
+export const MESSAGGIO_RETE_LENTA = "La connessione è lenta o assente. Riprova.";
+
+async function chiama<T>(url: string, init?: RequestInit & { json?: unknown; attesaMs?: number }): Promise<T> {
+  const { json, attesaMs = ATTESA_MASSIMA_MS, signal: dalChiamante, ...resto } = init ?? {};
+  // Il tempo copre anche la lettura del corpo. Se e' scaduto lo dice `scaduto`; un annullamento volontario
+  // (il signal di chi chiama) invece si rilancia com'e': chi annulla non vuole un messaggio d'errore.
+  const interruttore = new AbortController();
+  let scaduto = false;
+  const timer = setTimeout(() => {
+    scaduto = true;
+    interruttore.abort();
+  }, attesaMs);
+  const alAnnullo = () => interruttore.abort(dalChiamante?.reason);
+  if (dalChiamante?.aborted) alAnnullo();
+  else dalChiamante?.addEventListener("abort", alAnnullo, { once: true });
   try {
-    response = await fetch(url, {
-      credentials: "same-origin",
-      cache: "no-store",
-      ...resto,
-      headers: json === undefined ? resto.headers : { "Content-Type": "application/json", ...resto.headers },
-      body: json === undefined ? resto.body : JSON.stringify(json),
-    });
-  } catch {
-    throw new ApiError("Connessione assente. Controlla la rete e riprova.", 0);
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        credentials: "same-origin",
+        cache: "no-store",
+        ...resto,
+        signal: interruttore.signal,
+        headers: json === undefined ? resto.headers : { "Content-Type": "application/json", ...resto.headers },
+        body: json === undefined ? resto.body : JSON.stringify(json),
+      });
+    } catch (errore) {
+      if (!scaduto && dalChiamante?.aborted) throw errore;
+      if (scaduto) throw new ApiError(MESSAGGIO_RETE_LENTA, 0, true);
+      throw new ApiError("Connessione assente. Controlla la rete e riprova.", 0);
+    }
+    let body: unknown = null;
+    try {
+      body = await response.json();
+    } catch (errore) {
+      // Il tempo e' finito mentre arrivava il corpo: una risposta a meta' non e' una risposta vuota.
+      if (!scaduto && dalChiamante?.aborted) throw errore;
+      if (scaduto) throw new ApiError(MESSAGGIO_RETE_LENTA, 0, true);
+      // Risposta senza JSON (es. 502 del proxy): resta null.
+    }
+    if (!response.ok) {
+      const messaggio = body && typeof body === "object" && "error" in body && typeof body.error === "string"
+        ? body.error
+        : response.status === 401 ? "Accedi per continuare."
+        : response.status === 403 ? "Non hai i permessi per questa operazione."
+        : "Servizio non disponibile. Riprova tra poco.";
+      throw new ApiError(messaggio, response.status);
+    }
+    return body as T;
+  } finally {
+    clearTimeout(timer);
+    dalChiamante?.removeEventListener("abort", alAnnullo);
   }
-  let body: unknown = null;
-  try {
-    body = await response.json();
-  } catch {
-    // Risposta senza JSON (es. 502 del proxy): resta null.
-  }
-  if (!response.ok) {
-    const messaggio = body && typeof body === "object" && "error" in body && typeof body.error === "string"
-      ? body.error
-      : response.status === 401 ? "Accedi per continuare."
-      : response.status === 403 ? "Non hai i permessi per questa operazione."
-      : "Servizio non disponibile. Riprova tra poco.";
-    throw new ApiError(messaggio, response.status);
-  }
-  return body as T;
 }
 
 /* ---------- Account e cliente ---------- */
@@ -354,7 +393,7 @@ export const api = {
     chiama<{ order: Ordine }>(`/api/orders/${encodeURIComponent(id)}`, { method: "PATCH", json: modifica }),
 
   /** Tutti i dati dell'utente (GDPR). */
-  esportaDati: () => chiama<Record<string, unknown>>("/api/account/export"),
+  esportaDati: () => chiama<Record<string, unknown>>("/api/account/export", { attesaMs: ATTESA_LUNGA_MS }),
 
   /** Pubblico: modulo contatti, anche senza account. */
   inviaMessaggio: (messaggio: NuovoMessaggio) => chiama<{ id: string }>("/api/contact", { method: "POST", json: messaggio }),
@@ -364,8 +403,8 @@ export const api = {
    * browser di tenerle 60 secondi; `fresche` va comunque in rete e rinfresca
    * la copia del browser (il pannello, dopo un salvataggio).
    */
-  impostazioni: (fresche = false) =>
-    chiama<{ settings: Impostazioni }>("/api/settings", { cache: fresche ? "reload" : "default" }),
+  impostazioni: (fresche = false, signal?: AbortSignal) =>
+    chiama<{ settings: Impostazioni }>("/api/settings", { cache: fresche ? "reload" : "default", signal }),
 };
 
 /* ---------- Solo Matteo ---------- */
@@ -376,7 +415,7 @@ export const adminApi = {
   ordiniCliente: (userId: string) => chiama<{ orders: Ordine[] }>(`/api/orders?user=${encodeURIComponent(userId)}`),
   /** Ordine inserito a mano: nessuna email parte, ne' al cliente ne' a Matteo. */
   nuovoOrdine: (ordine: NuovoOrdineManuale) => chiama<{ order: Ordine }>("/api/admin/orders", { method: "POST", json: ordine }),
-  metriche: (days = 30) => chiama<Metriche>(`/api/admin/metrics?days=${days}`),
+  metriche: (days = 30) => chiama<Metriche>(`/api/admin/metrics?days=${days}`, { attesaMs: ATTESA_LUNGA_MS }),
   messaggi: () => chiama<{ messages: MessaggioContatto[] }>("/api/admin/messages"),
   modificaMessaggio: (id: string, status: StatoMessaggio) =>
     chiama<{ message: MessaggioContatto }>(`/api/admin/messages/${encodeURIComponent(id)}`, { method: "PATCH", json: { status } }),

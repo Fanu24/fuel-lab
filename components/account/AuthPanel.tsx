@@ -462,6 +462,7 @@ export default function AuthPanel() {
                   <input
                     id="acc-nome"
                     autoComplete="name"
+                    autoCapitalize="words"
                     maxLength={100}
                     value={nome}
                     onChange={(e) => scrivi("nome", setNome, e.target.value)}

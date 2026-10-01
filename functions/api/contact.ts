@@ -20,7 +20,7 @@ async function limiteSuperato(env: Context["env"], ipHash: string): Promise<stri
 
 /** POST /api/contact — pubblico: il modulo contatti, anche senza account. */
 export const onRequestPost = async ({ env, request, waitUntil }: Context) => {
-  if (!sameOrigin(request)) return json({ error: "Origine non valida" }, 403);
+  if (!sameOrigin(request)) return json({ error: "Non riesco a verificare da dove arriva la richiesta: ricarica la pagina e riprova." }, 403);
   const body = await bodyJson(request, 10000);
   if (!body) return json({ error: "Dati non validi" }, 400);
 

@@ -18,6 +18,7 @@ import {
   sezioneDa,
   STATI_IN_CORSO,
 } from "@/lib/account";
+import { eFascia, eFormulaId } from "@/lib/abbonamento";
 import { api, type Profilo, type Providers, type Utente } from "@/lib/api";
 import { Addio, Invito } from "./Invito";
 import { caricaUtente, impostaUtente, useSessione } from "./sessione";
@@ -57,11 +58,15 @@ export default function CustomerDashboard() {
     const q = new URLSearchParams(parametri.toString());
     q.delete("error");
     const qui = q.toString() ? `/account?${q}` : "/account";
+    const formula = parametri.get("formula");
+    const fascia = parametri.get("fascia");
     return (
       <Invito
         qui={qui}
         sezione={sezioneDa(parametri.get("sezione"))}
         servizio={servizioDa(parametri.get("servizio"))}
+        formula={eFormulaId(formula) ? formula : undefined}
+        fascia={eFascia(fascia) ? fascia : undefined}
         errore={erroreDiRitorno(parametri.get("error"))}
         scaduta={eraDentro}
       />

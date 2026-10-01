@@ -74,7 +74,7 @@ export default function Servizi() {
         <div className="wrap">
           <h1>
             <span className="occhiello">Servizi di meal prep a Pescara</span>
-            <span className="titolo-xl mt-6 block max-w-[11ch]">{QUANTI[SERVIZI.length] ?? SERVIZI.length} modi di mangiare bene.</span>
+            <span className="titolo-pagina mt-6 block max-w-[11ch]">{QUANTI[SERVIZI.length] ?? SERVIZI.length} modi di mangiare bene.</span>
           </h1>
           <p className="lead mt-6">
             Matteo cucina ogni giorno. Il menu si ritira in Via del Santuario 214 o arriva a Pescara e dintorni ogni
@@ -84,6 +84,18 @@ export default function Servizi() {
               Zone e ritiro
             </Link>
           </p>
+          {/* L'indice dei servizi con il prezzo: chi arriva dal telefono vede in un colpo d'occhio cosa c'e' e quanto
+              costa, e va dritto al servizio che gli interessa. */}
+          <ul className="mt-10 max-w-[720px] border-b" style={{ borderColor: "var(--line)" }}>
+            {SERVIZI.map((s) => (
+              <li key={s.id}>
+                <a href={`#${s.id}`} className="abb-mini">
+                  <span className="abb-mini-nome">{s.nome}</span>
+                  <span className="text-right text-sm font-semibold">{testoPrezzo(s.prezzo)}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 
@@ -95,7 +107,7 @@ export default function Servizi() {
               key={s.id}
               className={`grid items-center gap-8 md:grid-cols-2 md:gap-16 ${i % 2 ? "md:[&>*:first-child]:order-2" : ""}`}
             >
-              <div className="smusso relative aspect-[4/3] overflow-hidden bg-paper-2">
+              <div id={s.id} className="smusso relative aspect-[4/3] overflow-hidden bg-paper-2">
                 <Image src={s.img} alt="" fill sizes="(min-width: 768px) 50vw, 100vw" className="object-cover" />
               </div>
               <div>

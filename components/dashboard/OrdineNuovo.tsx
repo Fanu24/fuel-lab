@@ -27,6 +27,7 @@ import { leggiEuro, plurale, scorciatoieDate } from "@/lib/operazioni";
 import { calendarioAbbonamento, isData } from "@/lib/produzione";
 import { useImpostazioni } from "@/components/impostazioni/useImpostazioni";
 import {
+  bozzaOrdineDaTesto,
   campiVuoti,
   conCliente,
   conInizio,
@@ -39,11 +40,12 @@ import {
   ORDINE_CAMPI,
   porzioniOrdine,
   riepilogoPiatti,
+  testoBozzaOrdine,
   type CampiNuovoOrdine,
   type CampoNuovoOrdine,
   type ModoCliente,
 } from "@/lib/ordine-manuale";
-import { CalendarioConsegne, PrezzoProposto, ScelteAbbonamento } from "./OrdineAbbonamento";
+import { AvvisoChiusura, CalendarioConsegne, PrezzoProposto, ScelteAbbonamento } from "./OrdineAbbonamento";
 import { Icona } from "./PannelloIcone";
 import { usePannello } from "./PannelloDati";
 import OrdineNuovoCliente from "./OrdineNuovoCliente";
@@ -133,12 +135,33 @@ const NOME_CAMPO: Record<CampoNuovoOrdine, string> = {
   prezzo: "prezzo",
 };
 
+/* La bozza sta nella sessione del browser: ricaricando la pagina o col tasto Indietro del telefono il modulo
+   si chiude senza chiedere nulla, e a riaprirlo ritrova quello che c'era. Si toglie solo salvando o scartando. */
+const CHIAVE_BOZZA = "fuellab:ordine-nuovo:bozza";
+
+function leggiBozzaOrdine(): CampiNuovoOrdine | null {
+  try {
+    return bozzaOrdineDaTesto(window.sessionStorage.getItem(CHIAVE_BOZZA));
+  } catch {
+    return null;
+  }
+}
+
+function togliBozzaOrdine() {
+  try {
+    window.sessionStorage.removeItem(CHIAVE_BOZZA);
+  } catch {
+    // Spazio non disponibile (navigazione privata): resta la sola conferma alla chiusura.
+  }
+}
+
 export default function OrdineNuovo({ onChiudi, onSalvato }: { onChiudi: () => void; onSalvato: (id: string) => void }) {
   const { oggi, sostituisciOrdine, aggiorna } = usePannello();
   const dialogo = useRef<HTMLDialogElement>(null);
   const titolo = useRef<HTMLHeadingElement>(null);
   const chiusaDaNoi = useRef(false);
-  const [campi, setCampi] = useState<CampiNuovoOrdine>(() => campiVuoti());
+  const [ripresa, setRipresa] = useState(leggiBozzaOrdine);
+  const [campi, setCampi] = useState<CampiNuovoOrdine>(() => ripresa ?? campiVuoti());
   const [tentato, setTentato] = useState(false);
   const [erroreServer, setErroreServer] = useState("");
   const [salvo, setSalvo] = useState(false);
@@ -174,8 +197,23 @@ export default function OrdineNuovo({ onChiudi, onSalvato }: { onChiudi: () => v
     };
   }, []);
 
+  // Finche' c'e' qualcosa nel modulo lo si conserva; un modulo svuotato a mano non lascia bozza.
+  const chiusoDaNoi = useRef(false);
+  useEffect(() => {
+    if (chiusoDaNoi.current) return;
+    try {
+      if (moduloToccato(campi)) window.sessionStorage.setItem(CHIAVE_BOZZA, testoBozzaOrdine(campi));
+      else window.sessionStorage.removeItem(CHIAVE_BOZZA);
+    } catch {
+      // Spazio non disponibile: vale la conferma alla chiusura.
+    }
+  }, [campi]);
+
   const chiudi = useCallback(() => {
     if (moduloToccato(campi) && !window.confirm("L’ordine non è ancora salvato. Chiudere e perdere quello che hai scritto?")) return;
+    // Chiuso apposta: la bozza non serve piu' (col tasto Indietro, invece, resta).
+    chiusoDaNoi.current = true;
+    togliBozzaOrdine();
     onChiudi();
   }, [campi, onChiudi]);
 
@@ -233,6 +271,8 @@ export default function OrdineNuovo({ onChiudi, onSalvato }: { onChiudi: () => v
     setSalvo(true);
     try {
       const { order } = await adminApi.nuovoOrdine(corpoNuovoOrdine(campi));
+      chiusoDaNoi.current = true;
+      togliBozzaOrdine();
       sostituisciOrdine(order);
       void aggiorna();
       onSalvato(order.id);
@@ -262,6 +302,25 @@ export default function OrdineNuovo({ onChiudi, onSalvato }: { onChiudi: () => v
 
         <form onSubmit={salva} noValidate className="flex min-h-0 flex-1 flex-col">
           <div className="pn-scheda-scorre">
+            {ripresa ? (
+              <p className="pn-avviso pn-avviso-info" role="status">
+                Avevi lasciato questo ordine a metà: l’ho ripreso. Non è ancora salvato.{" "}
+                <button
+                  type="button"
+                  className="min-h-11 font-bold underline underline-offset-4"
+                  onClick={() => {
+                    if (!window.confirm("Scartare quello che avevi scritto e ricominciare da capo?")) return;
+                    togliBozzaOrdine();
+                    setRipresa(null);
+                    setCampi(campiVuoti());
+                    setTentato(false);
+                    setErroreServer("");
+                  }}
+                >
+                  Ricomincia da capo
+                </button>
+              </p>
+            ) : null}
             <OrdineNuovoCliente
               campi={campi}
               errori={errori}
@@ -406,7 +465,7 @@ export default function OrdineNuovo({ onChiudi, onSalvato }: { onChiudi: () => v
                       />
                     </div>
                     {inizioValido ? (
-                      <CalendarioConsegne id="nuovo-periodo" formula={campi.formula} inizio={inizioValido} oggi={oggi} />
+                      <CalendarioConsegne id="nuovo-periodo" formula={campi.formula} inizio={inizioValido} oggi={oggi} chiusure={chiusure} />
                     ) : (
                       <p id="nuovo-periodo" className="text-[16px]" aria-live="polite">
                         Scegli l’inizio: il periodo e le consegne si calcolano da soli.
@@ -440,6 +499,7 @@ export default function OrdineNuovo({ onChiudi, onSalvato }: { onChiudi: () => v
                   </div>
                 )}
                 {errori.date ? <p id="nuovo-date-errore" className="pn-errore-campo">{errori.date}</p> : null}
+                {abbonamento ? null : <AvvisoChiusura giorni={[campi.produzione, campi.uscita]} chiusure={chiusure} />}
               </fieldset>
             </section>
 

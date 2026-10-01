@@ -285,10 +285,11 @@ export function SceltaVersione({
       </p>
       <p className="text-sm">
         Nell’account: {nAccount} {nAccount === 1 ? "pasto" : "pasti"}. Qui: {nQui} {nQui === 1 ? "pasto" : "pasti"}.
-        «Usa quella dell’account» sostituisce questa; «Tieni questa» sostituisce quella nell’account.
-        Finché non scegli, questa non viene salvata.
+        {/* Il riquadro che galleggia sulla pagina resta corto: lo spazio sotto e' poco, specie sul telefono. */}
+        {fluttuante ? "" : " «Usa quella dell’account» sostituisce questa; «Tieni questa» sostituisce quella nell’account."}
+        {" "}Finché non scegli, questa non viene salvata.
       </p>
-      {nAccount > 0 ? (
+      {nAccount > 0 && !fluttuante ? (
         <details className="acc-dettagli-piatti text-sm">
           <summary>Vedi cosa c’è nell’account</summary>
           <ul className="mt-2 grid gap-2">

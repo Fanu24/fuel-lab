@@ -133,6 +133,7 @@ function Modulo({ utente, iniziale, onSalvato }: { utente: Utente; iniziale: Tip
           <input
             id="pr-nome"
             autoComplete="name"
+            autoCapitalize="words"
             maxLength={100}
             value={nome}
             onChange={(e) => { setNome(e.target.value); modifica("nome"); }}
@@ -149,7 +150,7 @@ function Modulo({ utente, iniziale, onSalvato }: { utente: Utente; iniziale: Tip
           </p>
         </div>
         {input("phone", "Telefono", { type: "tel", inputMode: "tel", autoComplete: "tel", maxLength: 40 })}
-        {input("comune", "Comune", { autoComplete: "address-level2", maxLength: 100, placeholder: "Pescara, Montesilvano…" })}
+        {input("comune", "Comune", { autoComplete: "address-level2", autoCapitalize: "words", maxLength: 100, placeholder: "Pescara, Montesilvano…" })}
         <div className="sm:col-span-2">
           {input("address", "Indirizzo per la consegna", { autoComplete: "street-address", maxLength: 240 })}
         </div>

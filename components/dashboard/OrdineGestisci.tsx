@@ -33,7 +33,7 @@ import {
 } from "@/lib/operazioni";
 import { eAbbonamento, isData } from "@/lib/produzione";
 import { useImpostazioni } from "@/components/impostazioni/useImpostazioni";
-import { AggiornaTotale, CalendarioConsegne, ScelteAbbonamento, type SceltaAbbonamentoCampi } from "./OrdineAbbonamento";
+import { AggiornaTotale, AvvisoChiusura, CalendarioConsegne, ScelteAbbonamento, type SceltaAbbonamentoCampi } from "./OrdineAbbonamento";
 import { fraseAvviso, usePannello } from "./PannelloDati";
 import { Icona } from "./PannelloIcone";
 import { Avviso, giorno, giornoLungo } from "./ui";
@@ -167,7 +167,8 @@ function Scorciatoie({
   );
 }
 
-type Esito = { tipo: "ok" | "errore"; testo: string } | null;
+/** `sessione`: la sessione e' scaduta, l'esito offre il modo di rientrare senza chiudere la scheda. */
+type Esito = { tipo: "ok" | "errore"; testo: string; sessione?: boolean } | null;
 type Proposta = { stato: StatoOrdine; produzione: string; uscita: string } | null;
 
 export default function OrdineGestisci({
@@ -309,7 +310,11 @@ export default function OrdineGestisci({
                 : "Modifiche salvate.";
       setEsito({ tipo: "ok", testo: `${testo}${email && avvisaDavvero ? ` ${fraseAvviso(emailAttiva, iniziale(nome))}` : ""}` });
     } catch (e) {
-      setEsito({ tipo: "errore", testo: e instanceof ApiError ? e.message : "Modifica non salvata. Riprova." });
+      setEsito({
+        tipo: "errore",
+        testo: e instanceof ApiError ? e.message : "Modifica non salvata. Riprova.",
+        sessione: e instanceof ApiError && e.status === 401,
+      });
       // 409: l'ordine e' cambiato nel frattempo (es. il cliente l'ha annullato). Si ricarica la scheda.
       if (e instanceof ApiError && e.status === 409) {
         try {
@@ -342,6 +347,9 @@ export default function OrdineGestisci({
   }
 
   const etichettaUscita = base.fulfillment === "pickup" ? "Ritiro il" : "Consegna il";
+  // Il giorno chiesto dal cliente e' diventato di chiusura (o lo era gia'): la proposta salta avanti, e si dice perche'.
+  const richiestaChiusa = base.requested_date && base.requested_date >= oggi && chiusuraDi(base.requested_date, chiusure) ? base.requested_date : null;
+  const notaChiusa = richiestaChiusa ? <> Il cliente chiedeva {giornoLungo(richiestaChiusa)}, ma sei chiuso.</> : null;
 
   return (
     <form onSubmit={inviaModulo} noValidate className="flex min-h-0 flex-1 flex-col">
@@ -397,7 +405,7 @@ export default function OrdineGestisci({
                   />
                 </div>
                 {inizioValido ? (
-                  <CalendarioConsegne id="scheda-periodo" formula={campi.formula} inizio={inizioValido} oggi={oggi} elenco />
+                  <CalendarioConsegne id="scheda-periodo" formula={campi.formula} inizio={inizioValido} oggi={oggi} elenco chiusure={chiusure} />
                 ) : (
                   <p id="scheda-periodo" className="text-[16px]" aria-live="polite">
                     Scegli l’inizio: il periodo e le consegne si calcolano da soli.
@@ -444,6 +452,8 @@ export default function OrdineGestisci({
                 </div>
               </div>
               {erroreDate ? <p id="scheda-errore-date" className="pn-errore-campo" role="alert">{erroreDate}</p> : null}
+              {/* Un ordine gia' chiuso o annullato non ha piu' niente da spostare. */}
+              {base.status === "completed" || base.status === "cancelled" ? null : <AvvisoChiusura giorni={[campi.produzione, campi.uscita]} chiusure={chiusure} />}
             </fieldset>
           )}
 
@@ -562,7 +572,21 @@ export default function OrdineGestisci({
 
       <div className="pn-scheda-piede">
         <div ref={areaEsito} tabIndex={-1} className="outline-none">
-          {esito ? <Avviso tipo={esito.tipo}>{esito.testo}</Avviso> : null}
+          {esito ? (
+            <Avviso tipo={esito.tipo}>
+              {esito.sessione ? (
+                <>
+                  La sessione è scaduta, ma qui non hai perso niente.{" "}
+                  <a href="/accedi?next=/dashboard" target="_blank" rel="noopener" className="underline">
+                    Accedi di nuovo
+                  </a>{" "}
+                  (si apre in un’altra scheda), poi torna qui e riprova.
+                </>
+              ) : (
+                esito.testo
+              )}
+            </Avviso>
+          ) : null}
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-x-4">
@@ -595,7 +619,7 @@ export default function OrdineGestisci({
             {abbonamento ? (
               <p className="text-[16px]">
                 <strong>Serve l’inizio.</strong> Ti propongo: inizio <strong>{giornoLungo(proposta.uscita)}</strong>, fino a{" "}
-                <strong>{giornoLungo(fineAbbonamento(proposta.uscita))}</strong>.
+                <strong>{giornoLungo(fineAbbonamento(proposta.uscita))}</strong>.{notaChiusa}
               </p>
             ) : (
               <p className="text-[16px]">
@@ -610,6 +634,7 @@ export default function OrdineGestisci({
                     <strong>{giornoLungo(proposta.uscita)}</strong>.
                   </>
                 )}
+                {notaChiusa}
               </p>
             )}
             <div className="pn-bottoni">

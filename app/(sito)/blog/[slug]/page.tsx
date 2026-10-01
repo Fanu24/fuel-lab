@@ -357,7 +357,7 @@ export default async function ArticoloPage({ params }: Props) {
             </p>
             <div className="mt-6 grid gap-3">
               <Link href="/settimana" className="btn btn-ink w-full !px-4">
-                Componi la settimana <span className="freccia">→</span>
+                Componi la settimana <span aria-hidden="true" className="freccia">→</span>
               </Link>
               <Link href="/menu" className="btn btn-linea w-full">
                 Apri il menu

@@ -102,7 +102,7 @@ export default function Footer() {
                   <li key={v.href}>
                     <Link
                       href={v.href}
-                      className="inline-flex min-h-11 items-center font-disp text-lg font-semibold uppercase tracking-[.06em] hover:text-lime md:text-sm lg:text-lg"
+                      className="inline-flex min-h-11 min-w-11 items-center font-disp text-lg font-semibold uppercase tracking-[.06em] hover:text-lime md:text-sm lg:text-lg"
                     >
                       {v.label}
                     </Link>

@@ -3,12 +3,14 @@ import Reveal from "@/components/Reveal";
 import ChiusuraCta from "@/components/home/ChiusuraCta";
 import Faq from "@/components/come-funziona/Faq";
 import FotoPiena from "@/components/ui/FotoPiena";
+import Fatti, { FATTO_RITIRO } from "@/components/ui/Fatti";
 import Aggiornato from "@/components/seo/Aggiornato";
 import Briciole from "@/components/seo/Briciole";
 import JsonLd from "@/components/seo/JsonLd";
 import LinkBlog from "@/components/seo/LinkBlog";
 import { AGGIORNAMENTO, PAGINE, metadatiPagina } from "@/components/seo/pagine";
 import { idServizio, nodiPagina, nodoServizio, type DomandaTesto } from "@/components/seo/schema";
+import { ZONA_A_PAROLE } from "@/components/abbonamento/righe";
 import { CONSEGNA_OGNI_GIORNI, PREZZO_DA_TESTO, RAGGIO_CONSEGNA_KM, SCONTI } from "@/lib/abbonamento";
 import { EMAIL, INDIRIZZO_RIGA, LINK_MAPPA, ZONE_SERVITE, elencoZone, type Zona } from "@/lib/sito";
 
@@ -126,7 +128,7 @@ export default function ConsegnaPastiPescara() {
         <div className="wrap">
           <Briciole voci={briciole} />
           <p className="occhiello mt-10">Ritiro e consegna</p>
-          <h1 className="titolo-xl mt-6 max-w-[13ch]">Consegna pasti a Pescara e dintorni.</h1>
+          <h1 className="titolo-pagina mt-6 max-w-[13ch]">Consegna pasti a Pescara e dintorni.</h1>
           <p className="lead mt-6">
             I piatti di FUEL LAB si ritirano in Via del Santuario 214 oppure arrivano al tuo indirizzo, a Pescara e nei
             comuni vicini, tutti i giorni. La copertura della tua via te la conferma Matteo prima
@@ -140,6 +142,7 @@ export default function ConsegnaPastiPescara() {
               Guarda il menu
             </Link>
           </div>
+          <Fatti className="mt-10" voci={[ZONA_A_PAROLE, "Consegna gratis dai dieci pasti in su", FATTO_RITIRO]} />
         </div>
       </section>
 

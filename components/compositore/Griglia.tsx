@@ -6,10 +6,11 @@ import { macroCasella } from "@/lib/settimana";
 import Slot from "./Slot";
 import type { Presa, Stato } from "./useTrascina";
 
-/* Una sola struttura per tutte le larghezze: sette colonne da lg in su, una
-   riga per giorno sotto. La versione precedente aveva due componenti diversi
-   (griglia e colonne) montati insieme e nascosti a turno: ogni casella esisteva
-   due volte nel DOM, e il fuoco doveva cercare il "gemello visibile". */
+/* Una sola struttura per tutte le larghezze: sette colonne da lg in su, due
+   colonne di giorni da 768px, una colonna sotto (il CSS decide, vedi compositore.css).
+   La versione precedente aveva due componenti diversi (griglia e colonne) montati
+   insieme e nascosti a turno: ogni casella esisteva due volte nel DOM, e il fuoco
+   doveva cercare il "gemello visibile". */
 
 const BREVE: Record<string, string> = { pranzo: "Pranzo", cena: "Cena" };
 
@@ -39,7 +40,7 @@ export default function Griglia({
   const pasti = PASTI.filter((m) => pastiAlGiorno === 2 || m === "pranzo" || GIORNI.some((g) => piano[g]?.[m]));
 
   return (
-    <div className="griglia" style={{ ["--pasti" as string]: pasti.length }}>
+    <div className="griglia">
       {GIORNI.map((g) => {
         const tipo = allenamenti[g];
         const kcal = pasti.reduce((a, m) => a + macroCasella(piano[g]?.[m]).kcal, 0);

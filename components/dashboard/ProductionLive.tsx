@@ -183,9 +183,10 @@ export default function ProductionLive() {
                   onClick={() => scegliGiorno(s.data)}
                 >
                   <span className="cu-scorciatoia-nome">{s.nome}</span>
+                  {/* "chiuso" va a capo da solo: nella casella stretta di un telefono "ven 2 ott · chiuso" uscirebbe dal bordo. */}
                   <span className="cu-scorciatoia-data">
-                    {giornoCorto(s.data)}
-                    {chiusuraDi(s.data, chiusure) ? " · chiuso" : ""}
+                    <span className="whitespace-nowrap">{giornoCorto(s.data)}</span>
+                    {chiusuraDi(s.data, chiusure) ? <span className="cu-scorciatoia-chiuso"> · chiuso</span> : null}
                   </span>
                 </button>
               ))}

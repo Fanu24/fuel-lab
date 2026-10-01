@@ -6,6 +6,7 @@ import {
   calendario,
   centesimiInTesto,
   codeOperative,
+  consegneInChiusura,
   contaPerStato,
   contaVoci,
   corrisponde,
@@ -16,10 +17,12 @@ import {
   etichettaStatoOrdine,
   filtraOrdini,
   filtriNelIndirizzo,
+  fraseLavoroInChiusura,
   inRitardo,
   leggiEuro,
   leggiFiltroSpeciale,
   leggiFiltroStato,
+  lavoroInChiusura,
   oggiRoma,
   ordiniCsv,
   periodoDi,
@@ -630,5 +633,50 @@ describe("da incassare", () => {
     expect(daIncassare(ordine("c", { status: "completed", price_cents: 6450, paid: 1 }))).toBe(false);
     expect(daIncassare(ordine("d", { status: "confirmed", price_cents: null }))).toBe(false);
     expect(daIncassare(ordine("e", { status: "completed", price_cents: 6450 }))).toBe(true);
+  });
+});
+
+describe("lavoro gia' preso nei giorni di chiusura", () => {
+  const confermato = (id: string, giorno: string, extra: Partial<Ordine> = {}) =>
+    ordine(id, { status: "confirmed", production_date: giorno, fulfillment_date: giorno, ...extra });
+
+  it("trova ordini confermati, consegne di abbonamento e richieste che cadono nei giorni chiusi", () => {
+    const lista = [
+      confermato("roberta", "2026-09-28"),
+      confermato("fuori", "2026-09-30"),
+      abbonamento("verna", "2026-09-28"),
+      ordine("elena", { requested_date: "2026-09-29" }),
+    ];
+    const c = lavoroInChiusura(lista, CHIUSO, OGGI);
+    expect(c.map((g) => g.giorno)).toEqual(["2026-09-28", "2026-09-29"]);
+    expect(c[0].ordini.map((o) => o.id)).toEqual(["roberta"]);
+    expect(c[0].abbonamenti.map((o) => o.id)).toEqual(["verna"]);
+    expect(c[1].richieste.map((o) => o.id)).toEqual(["elena"]);
+  });
+
+  it("ignora annullati, consegnati, i giorni passati e le righe di bozza incomplete", () => {
+    const lista = [
+      confermato("a", "2026-09-28", { status: "cancelled" }),
+      confermato("b", "2026-09-28", { status: "completed" }),
+      confermato("c", "2026-09-20"),
+    ];
+    expect(lavoroInChiusura(lista, CHIUSO, OGGI)).toEqual([]);
+    expect(lavoroInChiusura(lista, [{ dal: "2026-09-20", al: "2026-09-20", motivo: "" }], OGGI)).toEqual([]);
+    expect(lavoroInChiusura([confermato("d", "2026-09-28")], [{ dal: "", al: "", motivo: "" }, { dal: "2026-09-29", al: "2026-09-28", motivo: "" }], OGGI)).toEqual([]);
+  });
+
+  it("dice i giorni e i nomi una volta sola, anche se cucina e uscita cadono in giorni chiusi diversi", () => {
+    const lista = [confermato("roberta", "2026-09-28", { fulfillment_date: "2026-09-29" }), abbonamento("verna", "2026-09-28")];
+    const frase = fraseLavoroInChiusura(lavoroInChiusura(lista, CHIUSO, OGGI));
+    expect(frase?.primoGiorno).toBe("2026-09-28");
+    expect(frase?.testo).toContain("1 ordine già confermato e 1 abbonamento con una consegna");
+    expect(frase?.testo).toContain("roberta e verna");
+    expect(fraseLavoroInChiusura([])).toBeNull();
+  });
+
+  it("segnala le consegne di un abbonamento che cadono in una chiusura", () => {
+    // Pranzo che parte lunedi' 28: la prima consegna e' proprio nel giorno chiuso, le altre no.
+    expect(consegneInChiusura("pranzo", "2026-09-28", CHIUSO)).toEqual(["2026-09-28"]);
+    expect(consegneInChiusura("pranzo", "2026-09-28", [])).toEqual([]);
   });
 });

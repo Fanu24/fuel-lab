@@ -1,0 +1,46 @@
+/* Le pagine informative: i pochi pattern che servono a piu' di una pagina e non
+   stanno in sezioni.css. Prefisso: nessuno per .fatti (e' una riga di testo). */
+
+@layer components {
+  /* La riga dei fatti sotto il titolo: due o tre cose vere e corte (prezzo, dove,
+     come si paga), cosi' chi arriva da Google le legge nel primo schermo senza
+     cercare. Il quadratino e' scuro sulla carta e lime sulla notte, come il resto
+     dei segni del sito (il lime sulla carta sparirebbe). */
+  .fatti {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 28px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-family: var(--font-disp);
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    line-height: 1.25;
+    text-transform: uppercase;
+  }
+  .fatti li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .fatti li::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    flex: none;
+    background: var(--color-ink);
+  }
+  .notte .fatti li::before {
+    background: var(--color-lime);
+  }
+
+  /* Il titolo di una pagina informativa: piu' basso di titolo-xl (che e' quello della
+     home) di una taglia a computer, perche' a 1440x900 quattro righe da 128px
+     spingevano il bottone sul bordo del primo schermo. Sul telefono e' identico. */
+  .titolo-pagina {
+    font-size: clamp(40px, min(7.4vw, 12svh), 104px);
+    line-height: 0.88;
+  }
+}

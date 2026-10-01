@@ -4,7 +4,7 @@ import { bodyJson, json, sameOrigin } from "../../../_lib/http";
 
 /** PATCH /api/admin/messages/:id { status } — segna un messaggio come gestito o archiviato (o di nuovo nuovo). */
 export const onRequestPatch = async ({ env, request, params }: Context<{ id: string }>) => {
-  if (!sameOrigin(request)) return json({ error: "Origine non valida" }, 403);
+  if (!sameOrigin(request)) return json({ error: "Non riesco a verificare da dove arriva la richiesta: ricarica la pagina e riprova." }, 403);
   const user = await currentUser(env, request);
   const vietato = soloAdmin(user);
   if (vietato) return vietato;

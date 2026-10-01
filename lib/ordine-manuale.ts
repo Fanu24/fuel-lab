@@ -343,3 +343,27 @@ export function moduloToccato(c: CampiNuovoOrdine): boolean {
     c.pagato
   );
 }
+
+/* ---------- La bozza del modulo ---------- */
+
+/** Il testo con cui si conserva il modulo a meta' (sessione del browser). */
+export const testoBozzaOrdine = (c: CampiNuovoOrdine) => JSON.stringify(c);
+
+/**
+ * La bozza conservata, rimessa sui campi di oggi: il tasto Indietro del telefono
+ * o una ricarica chiudono il modulo senza chiedere nulla, e un ordine scritto in
+ * due minuti di telefonata non deve andare perso. null se manca, e' rovinata,
+ * non somiglia al modulo o non ha niente dentro.
+ */
+export function bozzaOrdineDaTesto(grezzo: string | null): CampiNuovoOrdine | null {
+  if (!grezzo) return null;
+  try {
+    const letto = JSON.parse(grezzo) as Partial<CampiNuovoOrdine> | null;
+    if (!letto || typeof letto !== "object" || typeof letto.servizio !== "string" || typeof letto.nome !== "string") return null;
+    const unito: CampiNuovoOrdine = { ...campiVuoti(letto.modo === "senza-account" ? "senza-account" : "registrato"), ...letto };
+    if (!unito.piano || typeof unito.piano !== "object") unito.piano = {};
+    return moduloToccato(unito) ? unito : null;
+  } catch {
+    return null;
+  }
+}

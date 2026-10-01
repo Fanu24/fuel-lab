@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { hrefAccedi, type SezioneAccount } from "@/lib/account";
-import { LINK_SCRIVI_ABBONAMENTO } from "@/lib/abbonamento";
+import { linkScriviAbbonamento, type Fascia, type FormulaId } from "@/lib/abbonamento";
 import type { Servizio } from "@/lib/api";
 import Vantaggi from "./Vantaggi";
 
@@ -17,10 +17,15 @@ export function Invito({
   servizio,
   errore,
   scaduta = false,
+  formula,
+  fascia,
 }: {
   qui: string;
   sezione: SezioneAccount;
   servizio: Servizio;
+  /** Cio' che l'indirizzo gia' sceglie (?formula=, ?fascia=): la strada senza account non deve perderlo. */
+  formula?: FormulaId;
+  fascia?: Fascia;
   errore: string | null;
   /** Era collegato e non lo e' piu': la sessione e' finita mentre usava la pagina. */
   scaduta?: boolean;
@@ -66,7 +71,7 @@ export function Invito({
       {abbonamento ? (
         <p className="mt-6 max-w-[62ch] text-muted">
           Preferisci scrivere prima a Matteo? Puoi farlo anche senza account.{" "}
-          <Link href={LINK_SCRIVI_ABBONAMENTO} className="link text-ink">Scrivi a Matteo</Link>
+          <Link href={linkScriviAbbonamento({ formula, fascia })} className="link text-ink">Scrivi a Matteo</Link>
         </p>
       ) : (
         <p className="mt-6 max-w-[62ch] text-muted">

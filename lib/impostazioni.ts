@@ -204,3 +204,29 @@ export function potaAvviso(v: unknown): AvvisoSito {
   const link = typeof a.link === "string" && linkInterno(a.link.trim()) ? a.link.trim() : "";
   return { attivo: a.attivo === true && !!testo, testo, link };
 }
+
+/* ---------- Bozze non salvate ---------- */
+
+/**
+ * Il testo da conservare per una bozza di Impostazioni: la bozza e il salvato su
+ * cui e' stata scritta, cosi' si sa se e' ancora valida quando si riapre la pagina.
+ */
+export function testoBozza(salvato: unknown, bozza: unknown): string {
+  return JSON.stringify({ base: JSON.stringify(salvato), bozza });
+}
+
+/**
+ * La bozza conservata, se esiste ed e' fatta sul salvato di adesso. Se le
+ * impostazioni sono cambiate altrove nel frattempo (altro telefono) riprenderla
+ * le sovrascriverebbe senza che Matteo lo sappia: allora e' come se non ci fosse.
+ */
+export function bozzaDaTesto<T>(grezzo: string | null, salvato: unknown): T | null {
+  if (!grezzo) return null;
+  try {
+    const letto = JSON.parse(grezzo) as { base?: unknown; bozza?: T } | null;
+    if (!letto || typeof letto !== "object" || letto.base !== JSON.stringify(salvato) || letto.bozza === undefined) return null;
+    return letto.bozza;
+  } catch {
+    return null;
+  }
+}

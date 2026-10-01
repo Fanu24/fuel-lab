@@ -117,7 +117,7 @@ export default function BlogPage() {
               </h2>
               <p className="lead mt-6">{inEvidenza.descrizione}</p>
               <Link href={`/blog/${inEvidenza.slug}`} className="btn btn-ink mt-8">
-                Leggi la guida <span className="freccia">→</span>
+                Leggi la guida <span aria-hidden="true" className="freccia">→</span>
               </Link>
             </div>
           </article>

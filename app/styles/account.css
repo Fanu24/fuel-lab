@@ -99,6 +99,11 @@
   }
 
   /* ---- campi ---- */
+  .acc-campo-password { grid-template-columns: minmax(0, 1fr) auto; column-gap: 12px; align-items: baseline; }
+  .acc-campo-password > label { grid-area: 1 / 1; }
+  .acc-campo-password > .acc-password { grid-area: 2 / 1 / 3 / -1; }
+  .acc-campo-password > .acc-campo-nota { grid-area: 1 / 2; }
+  .acc-campo-password > .errore { grid-column: 1 / -1; }
   .acc-password { position: relative; display: grid; }
   .acc-password input { width: 100%; padding-right: 56px; }
   .acc-occhio {

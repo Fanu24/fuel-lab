@@ -2,6 +2,7 @@ import Link from "next/link";
 import Reveal from "@/components/Reveal";
 import ChiusuraCta from "@/components/home/ChiusuraCta";
 import Faq from "@/components/come-funziona/Faq";
+import Fatti, { FATTO_PREZZO, FATTO_RITIRO } from "@/components/ui/Fatti";
 import TagAllenamento from "@/components/ui/TagAllenamento";
 import Aggiornato from "@/components/seo/Aggiornato";
 import Briciole from "@/components/seo/Briciole";
@@ -115,7 +116,7 @@ export default function PastiProteiciPescara() {
         <div className="wrap">
           <Briciole voci={briciole} />
           <p className="occhiello mt-10">Per chi va in palestra</p>
-          <h1 className="titolo-xl mt-6 max-w-[13ch]">Pasti proteici a Pescara, con i numeri veri.</h1>
+          <h1 className="titolo-pagina mt-6 max-w-[13ch]">Pasti proteici a Pescara, con i numeri veri.</h1>
           <p className="lead mt-6">
             {PIATTI.length} piatti cucinati da Matteo a Pescara, da {MIN} a {MAX} g di proteine a porzione. Per ognuno
             trovi calorie, proteine, carboidrati e grassi della porzione intera: gli stessi numeri della scheda del
@@ -129,15 +130,50 @@ export default function PastiProteiciPescara() {
               Parti dai tuoi macro
             </Link>
           </div>
+          <Fatti className="mt-10" voci={[`${PIATTI.length} piatti con i macro scritti`, FATTO_PREZZO, FATTO_RITIRO]} />
         </div>
       </section>
 
       <section className="pb-[var(--sezione)]">
         <div className="wrap">
           <h2 className="titolo-s">I piatti, ordinati per proteine.</h2>
-          {/* La tabella scorre dentro il suo riquadro sul telefono: la pagina no. */}
-          <div className="mt-8 overflow-x-auto border-t-[3px] border-ink" role="region" tabIndex={0} aria-label="Tabella dei valori per piatto">
-            <table className="w-full min-w-[760px] border-collapse text-left">
+          {/* Sotto i 1024px una tabella da nove colonne obbligherebbe a scorrere di lato per leggere un solo piatto:
+              ogni piatto diventa una scheda con gli stessi numeri. Dal computer resta la tabella, da confrontare per colonna. */}
+          <ul className="mt-8 border-t-[3px] border-ink md:grid md:grid-cols-2 md:gap-x-12 lg:hidden">
+            {PER_PROTEINE.map((p) => (
+              <li key={p.id} className="border-b border-ink/15 py-5">
+                <div className="flex items-start justify-between gap-4">
+                  <Link href={`/menu/${p.id}`} className="font-semibold underline-offset-4 hover:underline">
+                    {p.nome}
+                  </Link>
+                  <TagAllenamento tipo={p.allenamento} breve className="shrink-0" />
+                </div>
+                <p className="mt-3 flex items-baseline gap-3">
+                  <span className="num text-2xl font-semibold">
+                    <span className="evidenzia">{p.proteine} g</span>
+                  </span>
+                  <span className="font-disp text-xs font-semibold tracking-[.14em] text-muted uppercase">di proteine</span>
+                </p>
+                <dl className="mt-4 grid grid-cols-3 gap-x-4 gap-y-3">
+                  {[
+                    ["Porzione", `${p.grammi} g`],
+                    ["Kcal", `${p.kcal}`],
+                    ["Carbo", `${p.carboidrati} g`],
+                    ["Grassi", `${p.grassi} g`],
+                    ["Prot. / 100 g", `${proteineEtto(p)} g`],
+                    ["Kcal da prot.", `${quotaProteine(p)}%`],
+                  ].map(([voce, valore]) => (
+                    <div key={voce}>
+                      <dt className="font-disp text-[11px] font-semibold tracking-[.08em] whitespace-nowrap text-muted uppercase">{voce}</dt>
+                      <dd className="num mt-1 text-[15px]">{valore}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </li>
+            ))}
+          </ul>
+          <div className="mt-8 hidden border-t-[3px] border-ink lg:block">
+            <table className="w-full border-collapse text-left">
               <caption className="sr-only">
                 Valori nutrizionali per porzione intera dei piatti FUEL LAB, ordinati per proteine
               </caption>
@@ -165,21 +201,20 @@ export default function PastiProteiciPescara() {
                     <td className="py-4 pr-4">
                       <TagAllenamento tipo={p.allenamento} breve />
                     </td>
-                    <td className="num py-4 pr-4 text-right">{p.grammi} g</td>
-                    <td className="num py-4 pr-4 text-right">{p.kcal}</td>
-                    <td className="num py-4 pr-4 text-right font-semibold">
+                    <td className="num whitespace-nowrap py-4 pr-4 text-right">{p.grammi} g</td>
+                    <td className="num whitespace-nowrap py-4 pr-4 text-right">{p.kcal}</td>
+                    <td className="num whitespace-nowrap py-4 pr-4 text-right font-semibold">
                       <span className="evidenzia">{p.proteine} g</span>
                     </td>
-                    <td className="num py-4 pr-4 text-right">{p.carboidrati} g</td>
-                    <td className="num py-4 pr-4 text-right">{p.grassi} g</td>
-                    <td className="num py-4 pr-4 text-right">{proteineEtto(p)} g</td>
-                    <td className="num py-4 text-right">{quotaProteine(p)}%</td>
+                    <td className="num whitespace-nowrap py-4 pr-4 text-right">{p.carboidrati} g</td>
+                    <td className="num whitespace-nowrap py-4 pr-4 text-right">{p.grassi} g</td>
+                    <td className="num whitespace-nowrap py-4 pr-4 text-right">{proteineEtto(p)} g</td>
+                    <td className="num whitespace-nowrap py-4 text-right">{quotaProteine(p)}%</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <p className="mt-3 text-sm font-semibold lg:hidden">Scorri la tabella di lato per vedere tutte le colonne.</p>
           <p className="mt-5 max-w-[70ch] text-sm text-muted">
             Valori per porzione intera, dal menu di FUEL LAB. Le calorie sono proteine × 4 + carboidrati × 4 + grassi ×
             9. I numeri descrivono i piatti, non sono un piano alimentare: quantità e obiettivi li decide il

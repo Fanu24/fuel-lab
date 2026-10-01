@@ -74,7 +74,8 @@
       scroll-margin-top: calc(var(--nav-h) + 16px);
     }
   }
-  @media (min-width: 1024px) and (max-height: 720px) {
+  /* Su desktop il banco intero (circa 600px) piu' la barra, e la riga di "Annulla", deve stare nello schermo: sotto gli 820px di altezza scorre con la pagina. */
+  @media (min-width: 1024px) and (max-height: 820px) {
     .banco {
       position: static;
     }
@@ -412,6 +413,21 @@
   .slot-azioni button:hover {
     background: var(--color-lime);
     color: var(--color-ink);
+  }
+  /* Tra 1024 e 1280 le sette colonne sono strette (circa 90px): i due bottoni sopra la
+     foto la coprirebbero tutta. Stanno in basso, a destra, e il testo gli lascia posto. */
+  @media (min-width: 1024px) and (max-width: 1279px) {
+    .slot-azioni {
+      top: auto;
+      bottom: 6px;
+      right: 6px;
+    }
+    .slot-testo {
+      padding-bottom: 34px;
+    }
+    .slot {
+      min-height: 200px;
+    }
   }
 
   /* ---- passo 1: gli allenamenti ---- */

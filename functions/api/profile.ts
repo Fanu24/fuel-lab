@@ -19,7 +19,7 @@ export const onRequestGet = async ({ env, request }: Context) => {
  * Telefono, comune e indirizzo stanno su una riga, le preferenze possono andare a capo.
  */
 export const onRequestPut = async ({ env, request }: Context) => {
-  if (!sameOrigin(request)) return json({ error: "Origine non valida" }, 403);
+  if (!sameOrigin(request)) return json({ error: "Non riesco a verificare da dove arriva la richiesta: ricarica la pagina e riprova." }, 403);
   const user = await currentUser(env, request);
   if (!user) return json({ error: "Accesso richiesto" }, 401);
   const body = await bodyJson(request, 4000);

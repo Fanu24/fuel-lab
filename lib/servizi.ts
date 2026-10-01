@@ -92,9 +92,9 @@ export const SERVIZI: Servizio[] = [
       "Matteo viene a casa tua: fa la spesa, cucina e porziona nella tua cucina. Non è produzione in serie, è il suo tempo dedicato solo a te, e per questo ha un'economia sua.",
     prezzo: { tipo: "preventivo" },
     img: "/foto/photo-1556910103-1c02745aae4d.webp",
-    // non e' una pagina che spiega il servizio (non esiste ancora): e' un posizionamento
-    // deliberato, "conosci Matteo prima di farlo entrare in casa tua". Vedi il commento
-    // di LinkServizio in components/servizi/SezioneServizi.tsx per il dettaglio.
+    // Il bottone porta a "Chi siamo": e' un posizionamento deliberato, "conosci Matteo prima
+    // di farlo entrare in casa tua". La pagina del servizio (/cuoco-a-domicilio-pescara) e' il
+    // secondo link, "Come funziona a casa tua" (vedi app/(sito)/servizi/page.tsx).
     href: "/chi-siamo",
   },
 ];

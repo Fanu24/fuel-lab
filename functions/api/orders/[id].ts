@@ -70,7 +70,7 @@ const DESCRIZIONE_EMAIL: Record<EsitoEmail, (to: string) => string> = {
  * - Cliente: solo { status: "cancelled" } sulla propria richiesta ancora da confermare.
  */
 export const onRequestPatch = async ({ env, request, params, waitUntil }: Context<{ id: string }>) => {
-  if (!sameOrigin(request)) return json({ error: "Origine non valida" }, 403);
+  if (!sameOrigin(request)) return json({ error: "Non riesco a verificare da dove arriva la richiesta: ricarica la pagina e riprova." }, 403);
   const user = await currentUser(env, request);
   if (!user) return json({ error: "Accedi per continuare" }, 401);
   const id = String(params.id);

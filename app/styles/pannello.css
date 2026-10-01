@@ -244,6 +244,18 @@
   .pn-link-testata:hover {
     color: var(--color-paper);
   }
+  /* Sotto i 360px (320 e' il telefono piu' stretto che esista) logo, "Matteo" e i tre link non starebbero in fila: si stringono. */
+  @media (max-width: 359px) {
+    .pn-link-testata {
+      gap: 6px;
+      padding: 0 6px;
+    }
+    .pn-matteo {
+      padding: 3px 6px;
+      font-size: 10px;
+      letter-spacing: 0.12em;
+    }
+  }
 
   .pn-schede {
     display: flex;
@@ -335,6 +347,13 @@
     right: 22%;
     height: 3px;
     background: var(--color-lime);
+  }
+  /* A 320px ogni voce e' larga 53px: "Messaggi" a 12px non ci sta, a 11px e senza margini si'. */
+  @media (max-width: 359px) {
+    .pn-barra-voce {
+      padding-inline: 0;
+      font-size: 11px;
+    }
   }
   .pn-barra-voce .pn-badge {
     position: absolute;
@@ -561,7 +580,7 @@
 
   /* Un importo in euro e' piu' lungo di un conteggio: a 360px deve stare nella casella. */
   .pn-kpi-valore-lungo {
-    font-size: clamp(20px, 5.2vw, 36px);
+    font-size: clamp(16px, 5.2vw, 36px);
     white-space: nowrap;
   }
 
@@ -1415,6 +1434,12 @@
     color: var(--color-muted);
     background: transparent;
   }
+  /* Una consegna che cade in un giorno di chiusura: rosso, come il resto del pannello. */
+  .pn-consegna-chiusa {
+    border: 2px solid #8f1b12;
+    background: #fbe3df;
+    color: #8f1b12;
+  }
   .pn-consegna-tag {
     font-family: var(--font-disp);
     font-size: 11px;
@@ -1466,7 +1491,10 @@
     font-weight: 600;
     box-shadow: 0 10px 30px rgba(14, 16, 15, 0.3);
   }
-  .pn-toast button {
+  .pn-toast button,
+  .pn-toast a {
+    display: inline-flex;
+    align-items: center;
     min-height: 44px;
     padding: 0 12px;
     color: var(--color-lime);

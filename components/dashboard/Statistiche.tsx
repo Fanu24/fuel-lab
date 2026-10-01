@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import { STATI_ORDINE, adminApi, euro, type Metriche } from "@/lib/api";
 import { FORMULE } from "@/lib/abbonamento";
 import { getPiatto } from "@/lib/catalogo";
-import { euroTondo, somma } from "@/lib/produzione";
+import { somma } from "@/lib/produzione";
 import { ErroreCaricamento, eSessioneScaduta } from "./ClientiErrore";
 import GraficoBarre from "./GraficoBarre";
 import GraficoGiorni from "./GraficoGiorni";
@@ -150,13 +150,13 @@ function Cruscotto({ dati, caricando }: { dati: Metriche; caricando: boolean }) 
         <Kpi label="Visite" valore={numero(visite)} nota="solo chi accetta Analytics" />
         <Kpi
           label="Incassato"
-          valore={<span className="cu-kpi-soldi">{euroTondo(dati.revenue.paidCents)}</span>}
+          valore={<span className="cu-kpi-soldi">{euro(dati.revenue.paidCents)}</span>}
           nota={`su ${euro(dati.revenue.agreedCents)} concordati`}
           tono="ok"
         />
         <Kpi
           label="Da incassare"
-          valore={<span className="cu-kpi-soldi">{euroTondo(dati.revenue.unpaidCents)}</span>}
+          valore={<span className="cu-kpi-soldi">{euro(dati.revenue.unpaidCents)}</span>}
           nota="ordini del periodo non ancora pagati"
           tono={dati.revenue.unpaidCents > 0 ? "attenzione" : "neutro"}
         />

@@ -9,6 +9,7 @@ import { RiquadroPrezzi } from "@/components/abbonamento/RiquadroPrezzi";
 import ScontiEProva from "@/components/abbonamento/ScontiEProva";
 import {
   CONSEGNA_A_PAROLE,
+  CIRCA_A_PASTO,
   ZONA_A_PAROLE,
   coperturaAParole,
   esempioConsegna,
@@ -25,6 +26,7 @@ import {
   NOTE_FASCIA,
   eFormulaId,
   getFormula,
+  linkRichiediAbbonamento,
   linkScriviAbbonamento,
   percorsoFormula,
   type FormulaId,
@@ -124,9 +126,26 @@ export default async function SchedaFormulaPage({ params }: Props) {
               </h1>
               {f.consigliato ? <span className="abb-consigliato mt-5">Consigliato</span> : null}
               <p className="titolo-s mt-5 text-muted">{f.slogan}</p>
+              {/* Sul telefono il riquadro dei prezzi sta sotto il testo, fuori dal primo schermo: prezzo e bottone si
+                  leggono qui, come in cima a /abbonamento. Dal computer il riquadro e' accanto e questa parte non serve. */}
+              <p className="mt-6 lg:hidden">
+                <span className="evidenzia font-disp text-xl font-bold tracking-[.06em] uppercase">
+                  {f.prezzo.standard}&nbsp;€ al mese
+                </span>
+                <span className="mt-2 block text-sm text-muted">
+                  Fascia Standard, {CIRCA_A_PASTO}. In Plus {f.prezzo.plus}&nbsp;€. La prima settimana è di prova, senza
+                  impegno.
+                </span>
+              </p>
               <p className="lead mt-6">{f.descrizione}</p>
               <p className="mt-6 font-disp text-lg font-semibold tracking-[.06em] uppercase">{coperturaAParole(f)}</p>
               <div className="mt-9 flex flex-wrap items-center gap-x-8 gap-y-4">
+                <Link
+                  href={linkRichiediAbbonamento({ formula: id, ritiro: false })}
+                  className="btn btn-ink whitespace-normal py-3 text-left lg:hidden"
+                >
+                  Prenota la prova <span aria-hidden="true" className="freccia">→</span>
+                </Link>
                 <Link href={`${PAGINE.abbonamento.percorso}#formule`} className="link">
                   Confronta le formule
                 </Link>

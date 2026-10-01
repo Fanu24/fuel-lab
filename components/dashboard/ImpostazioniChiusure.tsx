@@ -5,19 +5,25 @@
    "Salva le chiusure": una data a meta' non deve arrivare sul sito. Il sito
    non fa scegliere quei giorni ai clienti, e anche il server li rifiuta. */
 
-import { useRef, useState } from "react";
+import Link from "next/link";
+import { useMemo, useRef, useState } from "react";
 import type { Chiusura } from "@/lib/api";
 import { durata, GIORNI_CHIUSURA_LUNGA, MAX_CHIUSURE, MAX_MOTIVO, periodo, settimanaProssima, sovrapposizioni } from "@/lib/impostazioni";
+import { fraseLavoroInChiusura, lavoroInChiusura } from "@/lib/operazioni";
 import {
   alle,
+  BozzaRipresa,
   EsitoSalvataggio,
+  leggiBozza,
   messaggio,
   Riquadro,
   useAvvisoUscita,
+  useConservaBozza,
   useFuocoSullEsito,
   type Esito,
   type Salva,
 } from "./ImpostazioniParti";
+import { usePannello } from "./PannelloDati";
 
 type Riga = Chiusura & { chiave: number };
 
@@ -35,8 +41,11 @@ function erroreRiga(r: Riga): string {
 }
 
 export default function ImpostazioniChiusure({ chiusure, oggi, salva }: { chiusure: Chiusura[]; oggi: string; salva: Salva }) {
+  const { ordini } = usePannello();
   const [salvate, setSalvate] = useState<Chiusura[]>(chiusure);
-  const [righe, setRighe] = useState<Riga[]>(() => chiusure.map(conChiave));
+  // Se Matteo e' uscito dalla pagina a meta', la bozza torna com'era.
+  const [ripresa, setRipresa] = useState(() => leggiBozza<Chiusura[]>("chiusure", chiusure));
+  const [righe, setRighe] = useState<Riga[]>(() => (ripresa ?? chiusure).map(conChiave));
   const [provato, setProvato] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const [esito, setEsito] = useState<Esito>(null);
@@ -44,8 +53,12 @@ export default function ImpostazioniChiusure({ chiusure, oggi, salva }: { chiusu
   const lista = useRef<HTMLUListElement>(null);
   useFuocoSullEsito(esito, areaEsito);
 
-  const nonSalvato = JSON.stringify(senzaChiave(righe)) !== JSON.stringify(salvate);
+  const bozza = useMemo(() => senzaChiave(righe), [righe]);
+  const nonSalvato = JSON.stringify(bozza) !== JSON.stringify(salvate);
   useAvvisoUscita(nonSalvato);
+  useConservaBozza("chiusure", salvate, bozza, nonSalvato);
+  // Gli ordini restano dove stavano: si dice quanto lavoro cade nei giorni che si stanno chiudendo (anche prima di salvare).
+  const lavoro = useMemo(() => (ordini ? fraseLavoroInChiusura(lavoroInChiusura(ordini, bozza, oggi)) : null), [ordini, bozza, oggi]);
   const piena = righe.length >= MAX_CHIUSURE;
   const passate = righe.filter((r) => r.al && r.al < oggi);
   const sovrapposte = sovrapposizioni(righe);
@@ -114,6 +127,7 @@ export default function ImpostazioniChiusure({ chiusure, oggi, salva }: { chiusu
     try {
       const nuove = (await salva({ chiusure: senzaChiave(righe) })).chiusure;
       setSalvate(nuove);
+      setRipresa(null);
       setRighe(nuove.map(conChiave));
       setProvato(false);
       setEsito({
@@ -146,6 +160,15 @@ export default function ImpostazioniChiusure({ chiusure, oggi, salva }: { chiusu
         </>
       }
     >
+      {ripresa ? (
+        <BozzaRipresa
+          onScarta={() => {
+            setRipresa(null);
+            setRighe(salvate.map(conChiave));
+            setEsito(null);
+          }}
+        />
+      ) : null}
       <div className="pn-imp-scorciatoie">
         <button type="button" className="pn-tasto pn-tasto-lime" onClick={chiudiProssimaSettimana} disabled={piena}>
           Chiudi la prossima settimana
@@ -252,6 +275,15 @@ export default function ImpostazioniChiusure({ chiusure, oggi, salva }: { chiusu
       ) : (
         <p className="pn-vuoto">Nessuna chiusura in programma: i clienti possono chiedere qualunque giorno.</p>
       )}
+      {lavoro ? (
+        <p className="pn-avviso pn-avviso-errore" role="note">
+          {lavoro.testo}{" "}
+          <Link href={`/dashboard/produzione?giorno=${lavoro.primoGiorno}`} className="underline underline-offset-4">
+            Guarda la cucina di quel giorno
+          </Link>
+          {nonSalvato ? <span className="block text-[15px] font-normal">Le modifiche non sono ancora salvate: lo sono solo quando premi «Salva le chiusure».</span> : null}
+        </p>
+      ) : null}
       <EsitoSalvataggio ref={areaEsito} esito={esito} />
     </Riquadro>
   );

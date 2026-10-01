@@ -198,7 +198,9 @@ function DaDoveCominciare({ profiloCompleto, piatti }: { profiloCompleto: boolea
                 : "Telefono e comune: Matteo ti ricontatta lì per confermare. Li scrivi qui una volta, o direttamente nella richiesta."}
             </p>
             {profilo.fatto ? null : (
-              <Link href={hrefSezione("profilo")} scroll={false} className="link mt-1 self-start text-sm text-lime">Completa il profilo</Link>
+              <div className="mt-1">
+                <Link href={hrefSezione("profilo")} scroll={false} className="link text-sm text-lime">Completa il profilo</Link>
+              </div>
             )}
           </>
         ))}

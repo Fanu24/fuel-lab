@@ -24,7 +24,8 @@ import { usePiattiNonDisponibili } from "@/components/impostazioni/useImpostazio
 /** Quanto resta in barra la riga con "Annulla" dopo un cambiamento grosso. */
 const SECONDI_ANNULLA = 12;
 
-type Fotografia = { testo: string; piano: Piano; allenamenti: Allenamenti };
+/** `piano` assente: solo un avviso nella riga, senza niente da annullare. */
+type Fotografia = { testo: string; piano?: Piano; allenamenti?: Allenamenti; vai?: boolean };
 
 export default function SettimanaClient() {
   const p = usePiano();
@@ -33,14 +34,14 @@ export default function SettimanaClient() {
   const [giro, setGiro] = useState(0);
   const [extraDi, setExtraDi] = useState<Slot | null>(null);
   const [annuncio, setAnnuncio] = useState("");
-  const [foto, setFoto] = useState<(Fotografia & { vai?: boolean }) | null>(null);
+  const [foto, setFoto] = useState<Fotografia | null>(null);
   const link = useLinkCondiviso();
   // I piatti che Matteo questa settimana non cucina (impostazioni del pannello).
   const esclusi = usePiattiNonDisponibili();
 
   /* Lo stesso annuncio due volte di fila non cambia il testo, e un lettore di schermo
      non rilegge cio' che non cambia: si alterna con uno spazio che non si vede. */
-  const annuncia = (testo: string) => setAnnuncio((prima) => (prima === testo ? `${testo} ` : testo));
+  const annuncia = (testo: string) => setAnnuncio((prima) => (prima === testo ? `${testo}\u00a0` : testo));
 
   const nomeSlot = (s: Slot) => `${NOMI_GIORNO[s.g].toLowerCase()}, ${s.m}`;
   const nomePresa = (x: Presa) =>
@@ -63,9 +64,9 @@ export default function SettimanaClient() {
   }, [foto]);
 
   function annullaUltimo() {
-    if (!foto) return;
+    if (!foto?.piano) return;
     p.sostituisciPiano(foto.piano);
-    p.sostituisciAllenamenti(foto.allenamenti);
+    p.sostituisciAllenamenti(foto.allenamenti ?? {});
     setFoto(null);
     annuncia("Annullato: la settimana è tornata com'era.");
   }
@@ -73,7 +74,7 @@ export default function SettimanaClient() {
   const annullabile: Annullabile | null = foto
     ? {
         testo: foto.testo,
-        annulla: annullaUltimo,
+        annulla: foto.piano ? annullaUltimo : undefined,
         vai: foto.vai ? () => document.querySelector(".griglia")?.scrollIntoView({ block: "start" }) : undefined,
         chiudi: () => setFoto(null),
       }
@@ -107,6 +108,11 @@ export default function SettimanaClient() {
   function riempi(sovrascrivi: boolean, rimescola = giro, altra = false) {
     const proposta = riempiSettimana(piano, allenamenti, { pastiAlGiorno, sovrascrivi, rimescola, esclusi });
     const n = riepilogoSettimana(proposta).pasti;
+    if (n === 0) {
+      // tutti i piatti sono segnati non disponibili: non c'e' niente da mettere, e non si deve far credere il contrario
+      setFoto({ testo: "Nessun piatto è disponibile questa settimana: Matteo non li sta cucinando." });
+      return;
+    }
     const testo = altra ? "Altra proposta pronta" : pasti > 0 ? "Settimana rifatta" : "Settimana riempita";
     // anche da vuota, dove non c'e' niente da perdere, si dice cosa e' successo e dov'e': il risultato sta sotto lo schermo
     ricorda(`${testo}: ${n} ${n === 1 ? "pasto" : "pasti"}.`, true);
@@ -175,7 +181,15 @@ export default function SettimanaClient() {
               ) : null}
               <p className="text-sm text-muted">
                 {giorniScelti === 0
-                  ? "Scegli almeno un giorno, oppure componi la settimana a mano."
+                  ? (
+                    <>
+                      Scegli almeno un giorno, oppure{" "}
+                      <a href="#passo-2" className="link">
+                        componi la settimana a mano
+                      </a>
+                      .
+                    </>
+                  )
                   : pasti > 0
                     ? "Riempi di nuovo rifà i giorni con un allenamento: puoi sempre annullare."
                     : "Cardio: più carboidrati. Pesi: proteine e carboidrati misurati. Riposo: più leggero."}
@@ -188,7 +202,7 @@ export default function SettimanaClient() {
       <section className="pb-16">
         <div className="wrap">
           <div className="mb-6 flex flex-wrap items-end justify-between gap-4 border-t-[3px] border-ink pt-8">
-            <div>
+            <div id="passo-2">
               <p className="occhiello">Passo 2</p>
               <h2 className="titolo-s mt-3">Sistemala come vuoi.</h2>
             </div>

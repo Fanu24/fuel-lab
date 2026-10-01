@@ -228,11 +228,10 @@ export function CampoPassword({
   const idErrore = `${id}-errore`;
   const descrizione = [descrittaDa, errore ? idErrore : null].filter(Boolean).join(" ") || undefined;
   return (
-    <div className="campo">
-      <div className="flex items-baseline justify-between gap-3">
-        <label htmlFor={id}>{etichetta}</label>
-        {nota}
-      </div>
+    // La nota ("Password dimenticata?") sta nel DOM dopo il campo e si vede accanto all'etichetta (account.css):
+    // chi usa la tastiera passa dall'email alla password, non da un link in mezzo.
+    <div className="campo acc-campo-password">
+      <label htmlFor={id}>{etichetta}</label>
       <div className="acc-password">
         <input
           id={id}
@@ -259,6 +258,7 @@ export function CampoPassword({
           <span className="sr-only">Mostra password</span>
         </button>
       </div>
+      {nota ? <div className="acc-campo-nota">{nota}</div> : null}
       {errore ? (
         <p id={idErrore} className="errore">
           {errore}

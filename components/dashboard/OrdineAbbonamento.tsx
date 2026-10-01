@@ -21,9 +21,10 @@ import {
   type FormulaId,
   type Nucleo,
 } from "@/lib/abbonamento";
-import { euro } from "@/lib/api";
+import { euro, type Chiusura } from "@/lib/api";
+import { chiusuraDi } from "@/lib/impostazioni";
 import { centesimiInTesto } from "@/lib/operazioni";
-import { calendarioAbbonamento } from "@/lib/produzione";
+import { calendarioAbbonamento, isData } from "@/lib/produzione";
 import { Scelte } from "./OrdineNuovoParti";
 import { giorno, giornoLungo } from "./ui";
 
@@ -175,15 +176,19 @@ export function CalendarioConsegne({
   inizio,
   oggi,
   elenco = false,
+  chiusure = [],
 }: {
   id?: string;
   formula: FormulaId;
   inizio: string;
   oggi: string;
   elenco?: boolean;
+  /** I giorni di chiusura: le consegne che ci cadono dentro si segnalano. */
+  chiusure?: readonly Chiusura[];
 }) {
   const c = calendarioAbbonamento(formula, inizio);
   const prossima = prossimaConsegna(formula, inizio, oggi);
+  const chiuse = c.consegne.filter((d) => chiusuraDi(d, chiusure));
   return (
     <div className="grid gap-3" id={id} aria-live="polite">
       <p className="text-[16px]">
@@ -196,17 +201,37 @@ export function CalendarioConsegne({
         ) : null}
         .
       </p>
+      <AvvisoChiusura giorni={chiuse} chiusure={chiusure} consegne />
       {elenco && c.consegne.length ? (
         <ol className="pn-consegne" aria-label="Giorni di consegna">
           {c.consegne.map((d) => (
-            <li key={d} className={`pn-consegna ${d === prossima ? "pn-consegna-prossima" : d < oggi ? "pn-consegna-passata" : ""}`} aria-current={d === prossima ? "date" : undefined}>
+            <li key={d} className={`pn-consegna ${chiuse.includes(d) ? "pn-consegna-chiusa" : d === prossima ? "pn-consegna-prossima" : d < oggi ? "pn-consegna-passata" : ""}`} aria-current={d === prossima ? "date" : undefined}>
               <strong>{giorno(d)}</strong>
               <span>{pastiDelBlocco(formula, inizio, d).length} pasti</span>
-              {d === prossima ? <span className="pn-consegna-tag">Prossima</span> : null}
+              {chiuse.includes(d) ? <span className="pn-consegna-tag">Chiuso</span> : d === prossima ? <span className="pn-consegna-tag">Prossima</span> : null}
             </li>
           ))}
         </ol>
       ) : null}
     </div>
+  );
+}
+
+/**
+ * Un avviso, non un blocco: Matteo puo' salvare lo stesso (un abbonamento lo
+ * concorda lui col cliente), ma non deve scoprire dopo che la data scelta cade
+ * in un giorno di chiusura.
+ */
+export function AvvisoChiusura({ giorni, chiusure, consegne = false }: { giorni: string[]; chiusure: readonly Chiusura[]; consegne?: boolean }) {
+  const chiusi = [...new Set(giorni)].filter((d) => isData(d) && chiusuraDi(d, chiusure)).sort();
+  if (!chiusi.length) return null;
+  const motivi = [...new Set(chiusi.map((d) => chiusuraDi(d, chiusure)?.motivo.trim()).filter(Boolean))];
+  const dove = `${chiusi.map((d) => giorno(d)).join(", ")}${motivi.length ? ` (${motivi.join(", ")})` : ""}`;
+  return (
+    <p className="pn-avviso pn-avviso-errore" role="note">
+      {consegne
+        ? `${chiusi.length === 1 ? "Una consegna cade" : `${chiusi.length} consegne cadono`} in ${chiusi.length === 1 ? "un giorno" : "giorni"} in cui sei chiuso: ${dove}. Puoi lasciarla così, ma dovrai anticiparla, spostarla o avvisare il cliente.`
+        : `${chiusi.length === 1 ? "Questo giorno è" : "Questi giorni sono"} di chiusura: ${dove}. Puoi salvare lo stesso, ma avvisa il cliente.`}
+    </p>
   );
 }

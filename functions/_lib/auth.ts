@@ -3,9 +3,9 @@ import { APIError, createAuthMiddleware, getSessionFromCtx } from "better-auth/a
 import { importPKCS8, SignJWT } from "jose";
 import type { D1Database } from "@cloudflare/workers-types";
 import { datiUtentePuliti } from "../../lib/server/account";
-import { emailAccesso } from "../../lib/server/email";
+import { emailReimpostaPassword, emailVerificaEmail } from "../../lib/server/email";
 import { json } from "./http";
-import { inviaEmail } from "./mail";
+import { emailMatteo, inviaEmail } from "./mail";
 
 export interface Env {
   DB: D1Database;
@@ -49,9 +49,13 @@ async function appleSecret(env: Env) {
     .sign(key);
 }
 
-async function sendAuthEmail(env: Env, to: string, subject: string, url: string) {
+async function sendAuthEmail(env: Env, to: string, tipo: "verifica" | "reset", url: string) {
   if (!env.RESEND_API_KEY) throw new Error("EMAIL_NOT_CONFIGURED");
-  await inviaEmail(env, { to: [to], ...emailAccesso(subject, url) });
+  const contenuto = tipo === "verifica"
+    ? emailVerificaEmail("Verifica la tua email FUEL LAB", url)
+    : emailReimpostaPassword("Reimposta la password FUEL LAB", url);
+  // Chi risponde a un'email di accesso scrive a Matteo: la casella accesso@ non e' letta da nessuno.
+  await inviaEmail(env, { to: [to], replyTo: emailMatteo(env), ...contenuto });
 }
 
 /**
@@ -75,8 +79,8 @@ export function createAuth(env: Env, request: Request, waitUntil?: Context["wait
   if (!env.DB || !env.BETTER_AUTH_SECRET) throw new Error("AUTH_NOT_CONFIGURED");
   const appleReady = !!(env.APPLE_CLIENT_ID && env.APPLE_TEAM_ID && env.APPLE_KEY_ID && env.APPLE_PRIVATE_KEY);
   const mailReady = !!env.RESEND_API_KEY;
-  const deliver = async (to: string, subject: string, url: string) => {
-    const task = sendAuthEmail(env, to, subject, url);
+  const deliver = async (to: string, tipo: "verifica" | "reset", url: string) => {
+    const task = sendAuthEmail(env, to, tipo, url);
     if (waitUntil) waitUntil(task.catch((error) => console.error("Auth email failed", error)));
     else await task;
   };
@@ -94,7 +98,7 @@ export function createAuth(env: Env, request: Request, waitUntil?: Context["wait
       autoSignIn: true,
       revokeSessionsOnPasswordReset: true,
       ...(mailReady ? { sendResetPassword: async ({ user, url }: { user: { email: string }; url: string }) => {
-        await deliver(user.email, "Reimposta la password FUEL LAB", url);
+        await deliver(user.email, "reset", url);
       } } : {}),
     },
     ...(mailReady ? { emailVerification: {
@@ -102,7 +106,7 @@ export function createAuth(env: Env, request: Request, waitUntil?: Context["wait
       sendOnSignIn: true,
       autoSignInAfterVerification: true,
       sendVerificationEmail: async ({ user, url }: { user: { email: string }; url: string }) => {
-        await deliver(user.email, "Verifica la tua email FUEL LAB", url);
+        await deliver(user.email, "verifica", url);
       },
     } } : {}),
     // Il limite di richieste e le sessioni si riconoscono dall'indirizzo del visitatore. Su Cloudflare l'unico che

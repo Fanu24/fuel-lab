@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   avvisoVisibile,
+  bozzaDaTesto,
   caselleEscluse,
   chiusuraDi,
   chiusureVicine,
@@ -14,6 +15,7 @@ import {
   potaImpostazioni,
   settimanaProssima,
   sovrapposizioni,
+  testoBozza,
 } from "./impostazioni";
 import { impostazioniVuote, type Chiusura, type Ordine } from "./api";
 
@@ -184,5 +186,26 @@ describe("ordiniApertiConPiatto", () => {
     expect(ordiniApertiConPiatto(ordini, "noodles-sesamo-maiale")).toEqual({ ordini: 2, porzioni: 3 });
     expect(ordiniApertiConPiatto(ordini, "uova-purgatorio-peperoni")).toEqual({ ordini: 0, porzioni: 0 });
     expect(ordiniApertiConPiatto([], "noodles-sesamo-maiale")).toEqual({ ordini: 0, porzioni: 0 });
+  });
+});
+
+describe("bozze non salvate di Impostazioni", () => {
+  const salvato: Chiusura[] = [{ dal: "2026-10-05", al: "2026-10-07", motivo: "ferie" }];
+  const bozza: Chiusura[] = [...salvato, { dal: "2026-10-12", al: "", motivo: "fiera" }];
+
+  it("la bozza torna com'era se il salvato e' lo stesso", () => {
+    expect(bozzaDaTesto<Chiusura[]>(testoBozza(salvato, bozza), salvato)).toEqual(bozza);
+  });
+
+  it("non torna se le impostazioni sono cambiate altrove nel frattempo", () => {
+    expect(bozzaDaTesto(testoBozza(salvato, bozza), [])).toBeNull();
+  });
+
+  it("niente, testo rovinato o forma sbagliata: nessuna bozza", () => {
+    expect(bozzaDaTesto(null, salvato)).toBeNull();
+    expect(bozzaDaTesto("", salvato)).toBeNull();
+    expect(bozzaDaTesto("{non json", salvato)).toBeNull();
+    expect(bozzaDaTesto("null", salvato)).toBeNull();
+    expect(bozzaDaTesto(JSON.stringify({ base: JSON.stringify(salvato) }), salvato)).toBeNull();
   });
 });

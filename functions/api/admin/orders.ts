@@ -3,7 +3,16 @@ import { leggiIdCliente, leggiOrdineManuale, type ClienteRegistrato } from "../.
 import { ordineDaRiga } from "../../../lib/server/ordini";
 import { currentUser, soloAdmin, type Context } from "../../_lib/auth";
 import { bodyJson, json, sameOrigin } from "../../_lib/http";
-import { eventoStmt, leggiOrdine } from "../../_lib/ordini";
+import { leggiOrdine } from "../../_lib/ordini";
+
+/**
+ * Lo stesso ordine a mano, per lo stesso cliente, inserito da meno di due minuti: e' un doppio tocco o un nuovo
+ * tentativo dopo una rete che non rispondeva (la prima volta era gia' entrato). Si risponde con quello.
+ */
+const GIA_INSERITO = `SELECT id FROM orders WHERE source='manual' AND user_id=? AND service=? AND customer_name=? AND phone=?
+  AND COALESCE(requested_date,'')=? AND COALESCE(fulfillment_date,'')=? AND notes=? AND items_json=? AND COALESCE(price_cents,-1)=?
+  AND COALESCE(sub_plan,'')=? AND COALESCE(sub_tier,'')=? AND COALESCE(sub_household,'')=? AND sub_trial=?
+  AND created_at > datetime('now','-2 minutes')`;
 
 /**
  * POST /api/admin/orders — Matteo inserisce un ordine preso per telefono,
@@ -13,7 +22,7 @@ import { eventoStmt, leggiOrdine } from "../../_lib/ordini";
  * Alla creazione non parte nessuna email: il cliente l'ha appena sentito.
  */
 export const onRequestPost = async ({ env, request }: Context) => {
-  if (!sameOrigin(request)) return json({ error: "Origine non valida" }, 403);
+  if (!sameOrigin(request)) return json({ error: "Non riesco a verificare da dove arriva la richiesta: ricarica la pagina e riprova." }, 403);
   const user = await currentUser(env, request);
   const vietato = soloAdmin(user);
   if (vietato || !user) return vietato ?? json({ error: "Accedi per continuare" }, 401);
@@ -46,20 +55,37 @@ export const onRequestPost = async ({ env, request }: Context) => {
   if (!letto.ok) return json({ error: letto.error }, letto.status);
   const o = letto.value;
 
+  const proprietario = o.customerId ?? user.id;
+  const uguale = [
+    proprietario, o.service, o.name, o.phone, o.requestedDate ?? "", o.fulfillmentDate ?? "", o.notes, JSON.stringify(o.items), o.priceCents ?? -1,
+    o.subscription?.plan ?? "", o.subscription?.tier ?? "", o.subscription?.household ?? "", o.subscription?.trial ? 1 : 0,
+  ];
   const id = crypto.randomUUID();
-  await env.DB.batch([
+  // Il controllo dei doppioni sta dentro l'INSERT: due invii nello stesso istante non lo passerebbero entrambi.
+  const [inserito] = await env.DB.batch([
     env.DB.prepare(`INSERT INTO orders (id,user_id,status,service,fulfillment,requested_date,production_date,fulfillment_date,
         customer_name,phone,comune,address,notes,plan_json,training_json,items_json,meals,internal_note,price_cents,paid,source,
         sub_plan,sub_tier,sub_household,sub_trial)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'manual',?,?,?,?)`)
+      SELECT ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'manual',?,?,?,?
+      WHERE NOT EXISTS (${GIA_INSERITO})`)
       .bind(
         id, o.customerId ?? user.id, o.status, o.service, o.fulfillment, o.requestedDate, o.productionDate, o.fulfillmentDate,
         o.name, o.phone, o.comune, o.address, o.notes, JSON.stringify(o.plan), "{}", JSON.stringify(o.items), o.meals,
         o.internalNote, o.priceCents, o.paid,
         o.subscription?.plan ?? null, o.subscription?.tier ?? null, o.subscription?.household ?? null, o.subscription?.trial ? 1 : 0,
+        ...uguale,
       ),
-    eventoStmt(env, id, "admin", { type: "created", from_status: null, to_status: o.status, detail: "Inserito a mano da Matteo" }),
+    // L'evento si scrive solo se l'ordine e' entrato davvero.
+    env.DB.prepare(`INSERT INTO order_events (order_id,actor,type,from_status,to_status,detail)
+      SELECT ?, 'admin', 'created', NULL, ?, 'Inserito a mano da Matteo' WHERE EXISTS (SELECT 1 FROM orders WHERE id = ?)`)
+      .bind(id, o.status, id),
   ]);
+  if (!inserito.meta.changes) {
+    const prima = await env.DB.prepare(`${GIA_INSERITO} ORDER BY created_at DESC LIMIT 1`).bind(...uguale).first<{ id: string }>();
+    const esistente = prima ? await leggiOrdine(env, prima.id) : null;
+    if (esistente) return json({ order: ordineDaRiga(esistente, true) });
+    return json({ error: "Ordine non salvato. Riprova." }, 500);
+  }
 
   const row = await leggiOrdine(env, id);
   if (!row) return json({ error: "Ordine salvato, ma non riesco a rileggerlo: aggiorna la pagina." }, 500);

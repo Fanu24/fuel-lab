@@ -16,6 +16,6 @@ export const onRequestGet = async ({ env, request }: Context) => {
     } : null });
   } catch (error) {
     console.error("Me error", error);
-    return json({ error: "Servizio non disponibile" }, 503);
+    return json({ error: "Servizio non disponibile. Riprova tra poco." }, 503);
   }
 };

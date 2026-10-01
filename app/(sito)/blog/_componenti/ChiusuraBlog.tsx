@@ -20,7 +20,7 @@ export default function ChiusuraBlog({
         <p className="lead mt-6 max-w-[58ch]">{testo}</p>
         <div className="mt-10 flex flex-wrap gap-3">
           <Link href="/settimana" className="btn btn-lime">
-            Componi la settimana <span className="freccia">→</span>
+            Componi la settimana <span aria-hidden="true" className="freccia">→</span>
           </Link>
           <Link href="/menu" className="btn btn-linea">
             Guarda il menu

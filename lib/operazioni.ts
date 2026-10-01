@@ -11,7 +11,7 @@
    fa mai saltare o ripetere una data.
    ========================================================================= */
 
-import { NOMI_FASCIA, fineAbbonamento, formulaDi, frasePeriodo, getFormula, periodoAbbonamento } from "@/lib/abbonamento";
+import { NOMI_FASCIA, consegneAbbonamento, fineAbbonamento, formulaDi, frasePeriodo, getFormula, periodoAbbonamento, type FormulaId } from "@/lib/abbonamento";
 import { etichettaStato, ETICHETTE_SERVIZIO, type Chiusura, type Ordine, type Servizio, type StatoOrdine, type VoceOrdine } from "@/lib/api";
 import { chiusuraDi } from "@/lib/impostazioni";
 import { abbonamentiDelGiorno, contaPastiAbbonamenti, dettaglioAbbonamento, eAbbonamento, isData, nomeAbbonamento, pastiDelPeriodo } from "@/lib/produzione";
@@ -430,6 +430,72 @@ export function calendario(ordini: Ordine[], oggi: string, giorni = 7, chiusure:
       richieste: ordini.filter((o) => o.status === "requested" && o.requested_date === data).length,
     };
   });
+}
+
+/* ---------- Chiusure e lavoro gia' preso ---------- */
+
+export type LavoroInChiusura = {
+  giorno: string;
+  /** Ordini gia' confermati con cucina o uscita in quel giorno (abbonamenti esclusi). */
+  ordini: Ordine[];
+  /** Abbonamenti in corso che in quel giorno hanno una consegna o un ritiro. */
+  abbonamenti: Ordine[];
+  /** Richieste ancora da confermare che chiedono proprio quel giorno. */
+  richieste: Ordine[];
+};
+
+/**
+ * Cio' che Matteo ha gia' preso nei giorni di chiusura (da oggi, per `orizzonte`
+ * giorni): le chiusure si decidono in Impostazioni, ma gli ordini restano dove
+ * stavano. Serve a dirglielo mentre chiude, invece di fargli trovare la cucina
+ * piena nel giorno di ferie. Le righe incomplete (una bozza a meta') si saltano.
+ */
+export function lavoroInChiusura(ordini: Ordine[], chiusure: readonly Chiusura[], oggi: string, orizzonte = 90): LavoroInChiusura[] {
+  const fine = spostaGiorni(oggi, orizzonte);
+  const giorni = new Set<string>();
+  for (const c of chiusure) {
+    if (!isData(c.dal) || !isData(c.al) || c.dal > c.al) continue;
+    for (let d = c.dal < oggi ? oggi : c.dal; d <= c.al && d <= fine; d = spostaGiorni(d, 1)) giorni.add(d);
+  }
+  return [...giorni].sort().flatMap((giorno) => {
+    const confermati = ordini.filter(
+      (o) => !eAbbonamento(o) && aperto(o) && o.status !== "requested" && (o.production_date === giorno || o.fulfillment_date === giorno),
+    );
+    const abbonamenti = abbonamentiDelGiorno(ordini, giorno);
+    const richieste = ordini.filter((o) => o.status === "requested" && o.requested_date === giorno);
+    return confermati.length || abbonamenti.length || richieste.length ? [{ giorno, ordini: confermati, abbonamenti, richieste }] : [];
+  });
+}
+
+const giornoBreve = (d: string) =>
+  new Intl.DateTimeFormat("it-IT", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" }).format(new Date(`${d}T12:00:00Z`));
+
+/**
+ * La frase che avvisa del lavoro in chiusura, con i giorni e i nomi (un cliente
+ * una volta sola), e il primo giorno da guardare in Cucina. null se non c'e' niente.
+ */
+export function fraseLavoroInChiusura(conflitti: LavoroInChiusura[]): { testo: string; primoGiorno: string } | null {
+  if (!conflitti.length) return null;
+  const unici = (liste: Ordine[][]) => [...new Map(liste.flat().map((o) => [o.id, o])).values()];
+  const ordini = unici(conflitti.map((c) => c.ordini));
+  const abbonamenti = unici(conflitti.map((c) => c.abbonamenti));
+  const richieste = unici(conflitti.map((c) => c.richieste));
+  const cose = [
+    ordini.length ? plurale(ordini.length, "ordine già confermato", "ordini già confermati") : "",
+    abbonamenti.length ? plurale(abbonamenti.length, "abbonamento con una consegna", "abbonamenti con una consegna") : "",
+    richieste.length ? plurale(richieste.length, "richiesta da confermare che chiede", "richieste da confermare che chiedono") + " quei giorni" : "",
+  ].filter(Boolean);
+  const giorni = conflitti.map((c) => giornoBreve(c.giorno));
+  const elenco = giorni.length > 4 ? `${giorni.slice(0, 4).join(", ")}…` : giorni.join(", ");
+  return {
+    testo: `Attenzione: nei giorni di chiusura hai ${cose.join(", ").replace(/, ([^,]*)$/, " e $1")} (${elenco}): ${elencoNomi([...ordini, ...abbonamenti, ...richieste], 3)}. Sposta le date o avvisa i clienti.`,
+    primoGiorno: conflitti[0].giorno,
+  };
+}
+
+/** I giorni di consegna di un abbonamento che cadono in una chiusura (inizio e formula alla mano). */
+export function consegneInChiusura(formula: FormulaId, inizio: string, chiusure: readonly Chiusura[]): string[] {
+  return consegneAbbonamento(formula, inizio).filter((d) => chiusuraDi(d, chiusure));
 }
 
 /* ---------- Piatti ---------- */

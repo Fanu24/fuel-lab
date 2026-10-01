@@ -10,10 +10,13 @@ import type { AvvisoSito } from "@/lib/api";
 import { linkInterno, MAX_LINK, MAX_TESTO_AVVISO } from "@/lib/impostazioni";
 import {
   alle,
+  BozzaRipresa,
   EsitoSalvataggio,
+  leggiBozza,
   messaggio,
   Riquadro,
   useAvvisoUscita,
+  useConservaBozza,
   useFuocoSullEsito,
   type Esito,
   type Salva,
@@ -24,7 +27,9 @@ const pulito = (a: AvvisoSito): AvvisoSito => ({ attivo: a.attivo, testo: a.test
 
 export default function ImpostazioniAvviso({ avviso, salva }: { avviso: AvvisoSito; salva: Salva }) {
   const [salvato, setSalvato] = useState<AvvisoSito>(avviso);
-  const [bozza, setBozza] = useState<AvvisoSito>(avviso);
+  // Se Matteo e' uscito dalla pagina a meta', la bozza torna com'era.
+  const [ripresa, setRipresa] = useState(() => leggiBozza<AvvisoSito>("avviso", avviso));
+  const [bozza, setBozza] = useState<AvvisoSito>(ripresa ?? avviso);
   const [provato, setProvato] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const [esito, setEsito] = useState<Esito>(null);
@@ -34,6 +39,7 @@ export default function ImpostazioniAvviso({ avviso, salva }: { avviso: AvvisoSi
   const pronto = pulito(bozza);
   const nonSalvato = JSON.stringify(pronto) !== JSON.stringify(pulito(salvato));
   useAvvisoUscita(nonSalvato);
+  useConservaBozza("avviso", salvato, bozza, nonSalvato);
 
   const erroreTesto = pronto.attivo && !pronto.testo ? "Scrivi il testo prima di accendere l’avviso." : "";
   const erroreLink = pronto.link && !linkInterno(pronto.link)
@@ -57,6 +63,7 @@ export default function ImpostazioniAvviso({ avviso, salva }: { avviso: AvvisoSi
     try {
       const nuovo = (await salva({ avviso: pronto })).avviso;
       setSalvato(nuovo);
+      setRipresa(null);
       setBozza(nuovo);
       setProvato(false);
       setEsito({
@@ -89,6 +96,16 @@ export default function ImpostazioniAvviso({ avviso, salva }: { avviso: AvvisoSi
         </>
       }
     >
+      {ripresa ? (
+        <BozzaRipresa
+          onScarta={() => {
+            setRipresa(null);
+            setBozza(salvato);
+            setProvato(false);
+            setEsito(null);
+          }}
+        />
+      ) : null}
       <button
         type="button"
         role="switch"

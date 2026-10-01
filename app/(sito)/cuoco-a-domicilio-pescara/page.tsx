@@ -3,6 +3,8 @@ import Link from "next/link";
 import Reveal from "@/components/Reveal";
 import ChiusuraCta from "@/components/home/ChiusuraCta";
 import Faq from "@/components/come-funziona/Faq";
+import { ZONA_A_PAROLE } from "@/components/abbonamento/righe";
+import Fatti, { FATTO_PAGAMENTO } from "@/components/ui/Fatti";
 import Aggiornato from "@/components/seo/Aggiornato";
 import Briciole from "@/components/seo/Briciole";
 import JsonLd from "@/components/seo/JsonLd";
@@ -120,7 +122,7 @@ export default function CuocoADomicilioPescara() {
           <div>
             <Briciole voci={briciole} />
             <p className="occhiello mt-10">Home cooking · su preventivo</p>
-            <h1 className="titolo-xl mt-6 max-w-[13ch]">Cuoco a domicilio a Pescara.</h1>
+            <h1 className="titolo-pagina mt-6 max-w-[13ch]">Cuoco a domicilio a Pescara.</h1>
             <p className="titolo-s mt-4 text-muted">Il meal prep, nella tua cucina.</p>
             <p className="lead mt-8">
               Matteo fa la spesa, cucina e porziona i pasti a casa tua. Non è produzione in serie: è il suo tempo
@@ -134,6 +136,7 @@ export default function CuocoADomicilioPescara() {
                 Conosci Matteo
               </Link>
             </div>
+            <Fatti className="mt-10" voci={["Su preventivo", ZONA_A_PAROLE, FATTO_PAGAMENTO]} />
           </div>
           <figure className="smusso relative aspect-[4/3] overflow-hidden bg-paper-2">
             <Image
@@ -224,8 +227,25 @@ export default function CuocoADomicilioPescara() {
             <p className="occhiello">A confronto</p>
             <h2 className="titolo mt-5 max-w-[16ch]">Home cooking o meal prep consegnato?</h2>
           </Reveal>
-          <div className="mt-12 overflow-x-auto" role="region" tabIndex={0} aria-label="Confronto fra i due servizi">
-            <table className="w-full min-w-[620px] border-collapse text-left">
+          {/* Sul telefono ogni voce ha le due risposte una sotto l'altra, come nel confronto di /abbonamento: in una tabella
+              da tre colonne la seconda restava fuori dallo schermo. Da 768px c'e' la tabella. */}
+          <dl className="mt-10 border-t-[3px] border-lime md:hidden">
+            {CONFRONTO.map((r) => (
+              <div key={r.voce} className="border-b py-5" style={{ borderColor: "var(--line)" }}>
+                <dt className="font-disp text-sm font-semibold tracking-[.08em] uppercase">{r.voce}</dt>
+                <dd className="mt-3">
+                  <span className="block font-disp text-[11px] font-semibold tracking-[.16em] text-steel uppercase">Meal prep FUEL LAB</span>
+                  <span style={{ color: "rgb(243 239 230 / .88)" }}>{r.mealPrep}</span>
+                </dd>
+                <dd className="mt-3">
+                  <span className="block font-disp text-[11px] font-semibold tracking-[.16em] text-steel uppercase">Home cooking</span>
+                  <span className="text-lime">{r.casa}</span>
+                </dd>
+              </div>
+            ))}
+          </dl>
+          <div className="mt-12 hidden md:block">
+            <table className="w-full border-collapse text-left">
               <caption className="sr-only">Differenze fra meal prep FUEL LAB e home cooking</caption>
               <thead>
                 <tr className="font-disp text-[11px] font-semibold tracking-[.16em] text-steel uppercase">
@@ -249,7 +269,6 @@ export default function CuocoADomicilioPescara() {
               </tbody>
             </table>
           </div>
-          <p className="mt-4 text-sm font-semibold text-steel md:hidden">Scorri la tabella di lato per vedere tutte le colonne.</p>
           <p className="mt-10 max-w-[60ch] text-steel">
             Ti basta ricevere i piatti già pronti?{" "}
             <Link href={PAGINE.mealPrep.percorso} className="link">

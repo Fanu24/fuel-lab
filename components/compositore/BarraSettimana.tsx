@@ -9,10 +9,10 @@ import Link from "next/link";
 import { MarchioWhatsApp } from "@/components/ui/WhatsAppCta";
 import { linkWhatsApp, numeroConfigurato } from "@/lib/whatsapp";
 
-/** Un cambiamento grosso appena fatto, con la strada per tornare indietro. */
+/** Un cambiamento grosso appena fatto, con la strada per tornare indietro (o un semplice avviso, se non c'e' niente da annullare). */
 export type Annullabile = {
   testo: string;
-  annulla: () => void;
+  annulla?: () => void;
   /** per le azioni che cambiano la griglia lontano dallo schermo: porta a vederla */
   vai?: () => void;
   chiudi: () => void;
@@ -81,9 +81,11 @@ export default function BarraSettimana({
                     Guarda
                   </button>
                 ) : null}
-                <button type="button" id="annulla-azione" className="barra-annulla-bottone" onClick={annulla.annulla}>
-                  Annulla
-                </button>
+                {annulla.annulla ? (
+                  <button type="button" id="annulla-azione" className="barra-annulla-bottone" onClick={annulla.annulla}>
+                    Annulla
+                  </button>
+                ) : null}
                 <button type="button" className="barra-annulla-bottone !min-w-11 !px-0" onClick={annulla.chiudi} aria-label="Chiudi">
                   ×
                 </button>

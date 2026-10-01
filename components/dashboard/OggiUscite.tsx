@@ -10,6 +10,7 @@
    questo dispositivo, come le spunte della cucina, e si puo' togliere. */
 
 import Link from "next/link";
+import { useRef } from "react";
 import { euro, type Ordine } from "@/lib/api";
 import { daIncassare, linkMappa, nomeProprio, testoWhatsApp, type CodeOperative } from "@/lib/operazioni";
 import { consegnaDelGiorno, eAbbonamento, frasePasti, nomeAbbonamento } from "@/lib/produzione";
@@ -87,6 +88,17 @@ export default function OggiUscite({
   );
 }
 
+/**
+ * Il tocco su "Segna consegnato" fa sparire il bottone premuto e il fuoco cadrebbe
+ * sul body: chi usa la tastiera ripartirebbe dall'inizio della pagina. Torna sul
+ * nome del cliente, senza far scorrere la pagina (la riga si sposta fra i fatti).
+ */
+function fuocoSulNome(riga: HTMLElement | null) {
+  const attivo = document.activeElement;
+  if (attivo && attivo !== document.body) return;
+  riga?.querySelector<HTMLElement>(".pn-nome")?.focus({ preventScroll: true });
+}
+
 /** Come si arriva dal cliente o dove lo si aspetta: "Ritiro in Via..." oppure l'indirizzo con la mappa. */
 function Dove({ ordine: o }: { ordine: Ordine }) {
   const ritiro = o.fulfillment === "pickup";
@@ -146,8 +158,13 @@ function UscitaAbbonamento({
 }) {
   const ritiro = o.fulfillment === "pickup";
   const c = consegnaDelGiorno(o, oggi);
+  const riga = useRef<HTMLLIElement>(null);
+  const segna = (fatta: boolean) => {
+    onConsegnata(o.id, fatta);
+    requestAnimationFrame(() => fuocoSulNome(riga.current));
+  };
   return (
-    <li>
+    <li ref={riga}>
       <div className="pn-uscita-testa">
         <button type="button" className="pn-nome" onClick={() => apri(o.id)}>
           {o.customer_name || "Cliente senza nome"}
@@ -184,12 +201,12 @@ function UscitaAbbonamento({
               <Icona nome="spunta" className="size-5" />
               {ritiro ? "Ritirato" : "Consegnato"}
             </span>
-            <button type="button" className="pn-tasto" onClick={() => onConsegnata(o.id, false)}>
+            <button type="button" className="pn-tasto" onClick={() => segna(false)}>
               Togli la spunta
             </button>
           </>
         ) : (
-          <button type="button" className="pn-tasto pn-tasto-pieno" onClick={() => onConsegnata(o.id, true)}>
+          <button type="button" className="pn-tasto pn-tasto-pieno" onClick={() => segna(true)}>
             <Icona nome="spunta" className="size-5" />
             {ritiro ? "Segna ritirato" : "Segna consegnato"}
           </button>
@@ -205,9 +222,10 @@ function Uscita({ ordine: o, apri, veloci }: { ordine: Ordine; apri: (id: string
   const ritiro = o.fulfillment === "pickup";
   const nome = nomeProprio(o.customer_name) || "Cliente";
   const occupato = veloci.inCorso === o.id;
+  const riga = useRef<HTMLLIElement>(null);
 
   return (
-    <li>
+    <li ref={riga}>
       <div className="pn-uscita-testa">
         <button type="button" className="pn-nome" onClick={() => apri(o.id)}>
           {o.customer_name || "Cliente senza nome"}
@@ -243,7 +261,9 @@ function Uscita({ ordine: o, apri, veloci }: { ordine: Ordine; apri: (id: string
             className="pn-tasto pn-tasto-pieno"
             disabled={occupato}
             onClick={() =>
-              void veloci.modifica(o, { status: "completed", notify: true }, `${nome}: segnato ${ritiro ? "ritirato" : "consegnato"}. ${fraseAvviso(emailAttiva)}`)
+              void veloci
+                .modifica(o, { status: "completed", notify: true }, `${nome}: segnato ${ritiro ? "ritirato" : "consegnato"}. ${fraseAvviso(emailAttiva)}`)
+                .then(() => fuocoSulNome(riga.current))
             }
           >
             <Icona nome="spunta" className="size-5" />
@@ -255,7 +275,7 @@ function Uscita({ ordine: o, apri, veloci }: { ordine: Ordine; apri: (id: string
             type="button"
             className="pn-tasto"
             disabled={occupato}
-            onClick={() => void veloci.modifica(o, { paid: true }, `${nome}: segnato pagato.`)}
+            onClick={() => void veloci.modifica(o, { paid: true }, `${nome}: segnato pagato.`).then(() => fuocoSulNome(riga.current))}
           >
             Segna pagato
           </button>

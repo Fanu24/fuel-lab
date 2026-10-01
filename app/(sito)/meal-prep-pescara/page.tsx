@@ -152,7 +152,7 @@ export default function MealPrepPescara() {
         <div className="wrap">
           <Briciole voci={briciole} />
           <p className="occhiello mt-10">Pescara · Via del Santuario 214</p>
-          <h1 className="titolo-xl mt-6 max-w-[13ch]">Meal prep a Pescara, cucinato da Matteo.</h1>
+          <h1 className="titolo-pagina mt-6 max-w-[13ch]">Meal prep a Pescara, cucinato da Matteo.</h1>
           <p className="lead mt-6">
             FUEL LAB è il meal prep fresco di Matteo Pattanè a Pescara: piatti già composti, mai surgelati, con
             ingredienti e macro scritti su ogni porzione. Matteo cucina ogni giorno: tu scegli, ritiri in sede o

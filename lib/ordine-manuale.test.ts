@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { ClienteAdmin } from "./api";
 import { PIATTI } from "./catalogo";
 import {
+  bozzaOrdineDaTesto,
   campiVuoti,
   cercaClienti,
   conCliente,
@@ -19,6 +20,7 @@ import {
   porzioniOrdine,
   riempiCaselle,
   riepilogoPiatti,
+  testoBozzaOrdine,
   type CampiNuovoOrdine,
 } from "./ordine-manuale";
 import type { Piano } from "./settimana";
@@ -278,5 +280,30 @@ describe("abbonamento a mano", () => {
     expect(moduloToccato({ ...vuoto(), prezzo: "200" })).toBe(true);
     expect(moduloToccato({ ...vuoto(), prezzo: "468" })).toBe(false); // e' ancora la proposta
     expect(moduloToccato({ ...vuoto(), prezzo: "" })).toBe(true); // l'ha cancellato lui
+  });
+});
+
+describe("bozza del modulo", () => {
+  it("un modulo a meta' torna com'era", () => {
+    const campi: CampiNuovoOrdine = { ...campiVuoti(), nome: "Franco", telefono: "333 123 4567", servizio: "home-cooking", porzioni: "6", nota: "cena di compleanno" };
+    expect(bozzaOrdineDaTesto(testoBozzaOrdine(campi))).toEqual(campi);
+  });
+
+  it("un modulo vuoto non e' una bozza", () => {
+    expect(bozzaOrdineDaTesto(testoBozzaOrdine(campiVuoti()))).toBeNull();
+  });
+
+  it("completa i campi che una versione vecchia non aveva", () => {
+    const vecchio = JSON.stringify({ nome: "Anna", servizio: "menu-settimana" });
+    expect(bozzaOrdineDaTesto(vecchio)).toEqual({ ...campiVuoti(), nome: "Anna" });
+  });
+
+  it("niente, testo rovinato o forma sbagliata: nessuna bozza", () => {
+    expect(bozzaOrdineDaTesto(null)).toBeNull();
+    expect(bozzaOrdineDaTesto("")).toBeNull();
+    expect(bozzaOrdineDaTesto("{non json")).toBeNull();
+    expect(bozzaOrdineDaTesto("null")).toBeNull();
+    expect(bozzaOrdineDaTesto(JSON.stringify({ servizio: 3, nome: "x" }))).toBeNull();
+    expect(bozzaOrdineDaTesto(JSON.stringify({ servizio: "menu-settimana", nome: 5 }))).toBeNull();
   });
 });

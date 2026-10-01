@@ -3,6 +3,7 @@ import Reveal from "@/components/Reveal";
 import TrePassi from "@/components/home/TrePassi";
 import ChiusuraCta from "@/components/home/ChiusuraCta";
 import FotoPiena from "@/components/ui/FotoPiena";
+import Fatti, { FATTO_PAGAMENTO, FATTO_PREZZO, FATTO_RITIRO } from "@/components/ui/Fatti";
 import Passi from "@/components/abbonamento/Passi";
 import Faq from "@/components/come-funziona/Faq";
 import JsonLd from "@/components/seo/JsonLd";
@@ -61,8 +62,21 @@ export default function ComeFunziona() {
         <div className="wrap">
           <h1>
             <span className="occhiello">Come funziona il meal prep a Pescara</span>
-            <span className="titolo-xl mt-6 block max-w-[12ch]">Dal tuo allenamento al tuo frigo.</span>
+            <span className="titolo-pagina mt-6 block max-w-[12ch]">Dal tuo allenamento al tuo frigo.</span>
           </h1>
+          <p className="lead mt-6">
+            Dici come ti alleni e la settimana si riempie con i piatti giusti. Matteo li cucina ogni giorno a Pescara:
+            li ritiri in laboratorio o arrivano a casa tua, già pronti da scaldare.
+          </p>
+          <div className="mt-9 flex flex-wrap items-center gap-x-8 gap-y-4">
+            <Link href="/settimana" className="btn btn-ink">
+              Componi la settimana <span aria-hidden="true" className="freccia">→</span>
+            </Link>
+            <Link href="/menu" className="link">
+              Guarda il menu
+            </Link>
+          </div>
+          <Fatti className="mt-10" voci={[FATTO_PREZZO, FATTO_RITIRO, FATTO_PAGAMENTO]} />
         </div>
       </section>
 

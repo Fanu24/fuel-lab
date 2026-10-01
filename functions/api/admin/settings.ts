@@ -9,7 +9,7 @@ import { leggiImpostazioniDb, senzaTabella } from "../../_lib/impostazioni";
  * salvate, le altre restano. Risponde { settings } con tutto, riletto dal database.
  */
 export const onRequestPut = async ({ env, request }: Context) => {
-  if (!sameOrigin(request)) return json({ error: "Origine non valida" }, 403);
+  if (!sameOrigin(request)) return json({ error: "Non riesco a verificare da dove arriva la richiesta: ricarica la pagina e riprova." }, 403);
   const user = await currentUser(env, request);
   const vietato = soloAdmin(user);
   if (vietato) return vietato;

@@ -1,7 +1,7 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "../../functions/_lib/auth";
 import { bodyJson, conCorpoLimitato, json, leggiCorpo, MAX_CORPO_API, sameOrigin } from "../../functions/_lib/http";
-import { accodaEmail, inviaEmail, type Email } from "../../functions/_lib/mail";
+import { accodaEmail, inviaEmail, RIPROVA, type Email } from "../../functions/_lib/mail";
 import { onRequest } from "../../functions/api/_middleware";
 
 const post = (corpo: BodyInit | null, headers: Record<string, string> = {}) =>
@@ -115,7 +115,11 @@ describe("rete di sicurezza delle API", () => {
 });
 
 describe("invio delle email", () => {
+  const pausaOriginale = RIPROVA.pausaMs;
+  // Niente attesa vera fra un tentativo e l'altro: i test restano veloci.
+  beforeEach(() => { RIPROVA.pausaMs = 0; });
   afterEach(() => {
+    RIPROVA.pausaMs = pausaOriginale;
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
@@ -166,6 +170,37 @@ describe("invio delle email", () => {
     // anche se a fallire e' la registrazione dell'esito
     vi.stubGlobal("fetch", vi.fn(async () => new Response("{}", { status: 200 })));
     await expect(accodaEmail({ env: env("chiave") }, email, async () => { throw new Error("D1 giu"); })).resolves.toBeUndefined();
+  });
+
+  it("un guasto passeggero di Resend (rete, tempo scaduto, 429, 5xx) si riprova una volta, con la stessa chiave contro i doppioni", async () => {
+    for (const guasto of [
+      () => { throw new TypeError("fetch failed"); },
+      () => { throw new DOMException("timeout", "TimeoutError"); },
+      () => new Response("{}", { status: 503 }),
+      () => new Response("{}", { status: 429 }),
+    ]) {
+      const fetchFinto = vi.fn()
+        .mockImplementationOnce(async () => guasto())
+        .mockImplementationOnce(async () => new Response("{}", { status: 200 }));
+      vi.stubGlobal("fetch", fetchFinto);
+      expect(await inviaEmail(env("chiave"), email)).toBe(true);
+      expect(fetchFinto).toHaveBeenCalledTimes(2);
+      const chiavi = fetchFinto.mock.calls.map(([, init]) => (init as RequestInit).headers as Record<string, string>).map((h) => h["Idempotency-Key"]);
+      expect(chiavi[0]).toMatch(/^[0-9a-f-]{36}$/);
+      expect(chiavi[1]).toBe(chiavi[0]);
+    }
+    // Due guasti di fila: si arrende (una sola ripresa) e l'errore e' l'ultimo.
+    const sempre = vi.fn(async () => new Response("giu", { status: 502 }));
+    vi.stubGlobal("fetch", sempre);
+    await expect(inviaEmail(env("chiave"), email)).rejects.toThrow(/EMAIL_SEND_FAILED_502/);
+    expect(sempre).toHaveBeenCalledTimes(2);
+  });
+
+  it("un rifiuto vero di Resend (dominio non verificato, destinatario non valido) non si riprova", async () => {
+    const rifiuta = vi.fn(async () => new Response('{"message":"invalid"}', { status: 422 }));
+    vi.stubGlobal("fetch", rifiuta);
+    await expect(inviaEmail(env("chiave"), email)).rejects.toThrow(/EMAIL_SEND_FAILED_422/);
+    expect(rifiuta).toHaveBeenCalledTimes(1);
   });
 
   it("con waitUntil la notifica non si aspetta e la richiesta risponde subito", async () => {

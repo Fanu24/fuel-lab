@@ -2,6 +2,7 @@
    cosi' uno stato ha sempre lo stesso colore e un numero sempre la stessa
    forma. Le classi .pn-* stanno in app/styles/pannello.css. */
 
+import Link from "next/link";
 import type { ReactNode } from "react";
 import { daSqlite, etichettaStato, type Ordine, type StatoOrdine } from "@/lib/api";
 import { nomeAbbonamento } from "@/lib/produzione";
@@ -109,7 +110,7 @@ export function Kpi({
     </>
   );
   return href ? (
-    <a href={href} className={`pn-kpi pn-kpi-${tono} pn-kpi-link`}>{corpo}</a>
+    <Link href={href} className={`pn-kpi pn-kpi-${tono} pn-kpi-link`}>{corpo}</Link>
   ) : (
     <div className={`pn-kpi pn-kpi-${tono}`}>{corpo}</div>
   );

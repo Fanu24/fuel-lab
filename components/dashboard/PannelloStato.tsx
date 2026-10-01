@@ -59,7 +59,20 @@ export function ErroreDati() {
 
 /* ---------- Azioni veloci ---------- */
 
-type Avvisino = { testo: string; errore?: boolean; annulla?: () => void };
+type Avvisino = { testo: string; errore?: boolean; annulla?: () => void; accedi?: boolean };
+
+/** L'indirizzo per rientrare e tornare dov'era (filtri e scheda compresi). */
+const indirizzoAccesso = () => `/accedi?next=${encodeURIComponent(`${window.location.pathname}${window.location.search}`)}`;
+
+/**
+ * Il testo di un tocco veloce andato male. Il server, quando l'ordine e' cambiato in un'altra scheda, parla di "scheda"
+ * ricaricata: qui non c'e' nessuna scheda aperta, c'e' l'elenco, ed e' quello che si aggiorna.
+ */
+function testoErrore(e: unknown, ripiego: string) {
+  if (!(e instanceof ApiError)) return ripiego;
+  if (e.status === 409) return e.message.replace(/Ho ricaricato la scheda, controlla e riprova\./, "Ho aggiornato l’elenco: controlla e riprova.");
+  return e.message;
+}
 
 /** La modifica che rimette le cose come prima (senza email). */
 function inverso(prima: Ordine, modifica: ModificaOrdine): ModificaOrdine | null {
@@ -73,7 +86,7 @@ function inverso(prima: Ordine, modifica: ModificaOrdine): ModificaOrdine | null
  * e in basso compare l'avviso con "Annulla" per 8 secondi.
  */
 export function useAzioniVeloci() {
-  const { sostituisciOrdine } = usePannello();
+  const { sostituisciOrdine, aggiorna } = usePannello();
   const [avviso, setAvviso] = useState<Avvisino | null>(null);
   const [inCorso, setInCorso] = useState<string | null>(null);
   const timer = useRef<number | undefined>(undefined);
@@ -108,18 +121,20 @@ export function useAzioniVeloci() {
                     sostituisciOrdine(ripristinato);
                     mostra({ testo: "Fatto: modifica annullata." });
                   })
-                  .catch((e) => mostra({ testo: e instanceof ApiError ? e.message : "Non riesco ad annullare.", errore: true }));
+                  .catch((e) => mostra({ testo: testoErrore(e, "Non riesco ad annullare."), errore: true, accedi: e instanceof ApiError && e.status === 401 }));
               }
             : undefined,
         });
       } catch (e) {
-        mostra({ testo: e instanceof ApiError ? e.message : "Modifica non salvata. Riprova.", errore: true });
+        mostra({ testo: testoErrore(e, "Modifica non salvata. Riprova."), errore: true, accedi: e instanceof ApiError && e.status === 401 });
+        // L'ordine e' cambiato altrove (409) o la sessione e' scaduta (401): la riga sullo schermo e' vecchia, si rifa il giro subito.
+        if (e instanceof ApiError && (e.status === 409 || e.status === 401)) void aggiorna();
       } finally {
         occupato.current = false;
         setInCorso(null);
       }
     },
-    [mostra, sostituisciOrdine],
+    [aggiorna, mostra, sostituisciOrdine],
   );
 
   const avvisoInBasso = (
@@ -127,6 +142,7 @@ export function useAzioniVeloci() {
       {avviso ? (
         <div className={`pn-toast ${avviso.errore ? "pn-toast-errore" : ""}`}>
           <span>{avviso.testo}</span>
+          {avviso.accedi ? <a href={indirizzoAccesso()}>Accedi</a> : null}
           {avviso.annulla ? <button type="button" onClick={avviso.annulla}>Annulla</button> : null}
           <button type="button" aria-label="Chiudi l’avviso" onClick={() => setAvviso(null)}>
             <Icona nome="chiudi" className="size-5" />

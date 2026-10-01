@@ -536,10 +536,10 @@ function Modulo({
         <Gruppo legenda="I tuoi recapiti">
           <div className="grid gap-5 sm:grid-cols-2">
             <div className="sm:col-span-2">
-              {campo("nome", "Nome per la richiesta", { autoComplete: "name", maxLength: 100 })}
+              {campo("nome", "Nome per la richiesta", { autoComplete: "name", autoCapitalize: "words", maxLength: 100 })}
             </div>
             {campo("telefono", "Telefono", { type: "tel", inputMode: "tel", autoComplete: "tel", maxLength: 40 })}
-            {campo("comune", "Comune", { autoComplete: "address-level2", maxLength: 100, placeholder: "Pescara, Montesilvano…" })}
+            {campo("comune", "Comune", { autoComplete: "address-level2", autoCapitalize: "words", maxLength: 100, placeholder: "Pescara, Montesilvano…" })}
           </div>
         </Gruppo>
 
