@@ -19,9 +19,20 @@ import { ordineDaRiga, type Esito, type RigaOrdine } from "./ordini";
 export const MAX_PREZZO_PASTO_CENTS = 100_000;
 /** Il pannello mostra al massimo 31 giorni: da ... a ... compresi, cioe' a - da <= 30. */
 const GIORNI_MASSIMI_TRA_DA_E_A = 30;
-/** Quanti piatti recenti per cliente, e su quanti giorni indietro. */
+/** Quanti piatti recenti per cliente, e fin dove si guarda indietro. */
 const MAX_RECENTI = 12;
 const GIORNI_RECENTI = 60;
+/** Il tetto del prezzo di un singolo pasto (centesimi), come il CHECK di pasti. */
+const MAX_PREZZO_RIGA_CENTS = 1_000_000;
+/** Il tetto del testo di un piatto, come il CHECK di pasti. */
+const MAX_PIATTO_CARATTERI = 200;
+const PIATTO_SEGNAPOSTO = "Piatto da definire";
+
+/** Il prezzo di un pasto scritto nel database: null resta null, il resto si ferma al tetto del CHECK. */
+const prezzoRiga = (prezzo: number | null): number | null => (prezzo === null ? null : Math.min(prezzo, MAX_PREZZO_RIGA_CENTS));
+
+/** Il testo di un piatto scritto nel database: mai vuoto, mai oltre il tetto del CHECK. */
+const piattoRiga = (piatto: string): string => riga(piatto, MAX_PIATTO_CARATTERI) || PIATTO_SEGNAPOSTO;
 
 type RigaSql = Record<string, unknown>;
 
@@ -147,16 +158,17 @@ async function leggiPastiSettimana(db: D1Database, clienteId: string, lunedi: st
 }
 
 /**
- * Fino a 12 piatti distinti per cliente, dai pasti dei 60 giorni prima di oggi
- * (pranzo e cena, niente cuoco a domicilio), dal più recente. Ogni cliente c'e' nella mappa, anche vuoto.
+ * Fino a 12 piatti distinti per cliente, dai pasti da 60 giorni prima di oggi in poi
+ * (pranzo e cena, niente cuoco a domicilio; anche oggi e i giorni futuri, che sono quelli
+ * che Matteo riusa), il più recente in cima. Ogni cliente c'e' nella mappa, anche vuoto.
  */
 async function leggiRecenti(db: D1Database, idClienti: string[], oggi: string): Promise<Record<string, string[]>> {
   const recenti: Record<string, string[]> = Object.fromEntries(idClienti.map((id) => [id, []]));
   const { results } = await db.prepare(`SELECT cliente_id, piatto FROM pasti
-      WHERE pasto <> 'evento' AND data >= ? AND data < ?
+      WHERE pasto <> 'evento' AND data >= ?
       GROUP BY cliente_id, piatto
-      ORDER BY cliente_id, MAX(data) DESC, piatto`)
-    .bind(spostaGiorno(oggi, -GIORNI_RECENTI), oggi)
+      ORDER BY cliente_id, MAX(data) DESC, MAX(updated_at) DESC, piatto`)
+    .bind(spostaGiorno(oggi, -GIORNI_RECENTI))
     .all<RigaSql>();
   for (const r of results) {
     const lista = recenti[String(r.cliente_id)];
@@ -218,7 +230,7 @@ export async function salvaPasto(db: D1Database, p: NuovoPasto): Promise<Esito<P
         porzioni = excluded.porzioni,
         prezzo_cents = COALESCE(pasti.prezzo_cents, excluded.prezzo_cents),
         updated_at = CURRENT_TIMESTAMP`)
-    .bind(crypto.randomUUID(), p.clienteId, p.data, p.pasto, p.piatto, p.piattoId, p.porzioni, cliente.prezzoPastoCents)
+    .bind(crypto.randomUUID(), p.clienteId, p.data, p.pasto, piattoRiga(p.piatto), p.piattoId, p.porzioni, prezzoRiga(cliente.prezzoPastoCents))
     .run();
   const riga = await db.prepare(`${SELECT_PASTO} WHERE cliente_id = ? AND data = ? AND pasto = ?`)
     .bind(p.clienteId, p.data, p.pasto)
@@ -247,7 +259,7 @@ export async function copiaSettimanaPrecedente(db: D1Database, clienteId: string
     const risultati = await db.batch(fonte.map((p) => db.prepare(`INSERT INTO pasti (id, cliente_id, data, pasto, piatto, piatto_id, porzioni, prezzo_cents, ordine_id)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL)
         ON CONFLICT(cliente_id, data, pasto) DO NOTHING`)
-      .bind(crypto.randomUUID(), clienteId, spostaGiorno(p.data, 7), p.pasto, p.piatto, p.piattoId, p.porzioni, cliente.prezzoPastoCents)));
+      .bind(crypto.randomUUID(), clienteId, spostaGiorno(p.data, 7), p.pasto, p.piatto, p.piattoId, p.porzioni, prezzoRiga(cliente.prezzoPastoCents))));
     copiati = risultati.reduce((n, r) => n + r.meta.changes, 0);
   }
   return { pasti: await leggiPastiSettimana(db, clienteId, lunedi), copiati };
@@ -296,13 +308,13 @@ export async function mettiInSettimana(db: D1Database, ordine: Ordine, inizio: s
     statements.push(db.prepare(`INSERT INTO pasti (id, cliente_id, data, pasto, piatto, piatto_id, porzioni, prezzo_cents, ordine_id)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(cliente_id, data, pasto) DO NOTHING`)
-      .bind(crypto.randomUUID(), clienteId, p.data, p.pasto, p.piatto, p.piattoId, p.porzioni, p.prezzoCents, ordine.id));
+      .bind(crypto.randomUUID(), clienteId, p.data, p.pasto, piattoRiga(p.piatto), p.piattoId, p.porzioni, prezzoRiga(p.prezzoCents), ordine.id));
   }
 
   // I pasti gia' entrati senza prezzo (convertiti dal caricamento) prendono il prezzo accettato.
   if (prezzoPastoCents !== null) {
     statements.push(db.prepare("UPDATE pasti SET prezzo_cents = ? WHERE ordine_id = ? AND prezzo_cents IS NULL")
-      .bind(prezzoDelPasto(ordine, prezzoPastoCents), ordine.id));
+      .bind(prezzoRiga(prezzoDelPasto(ordine, prezzoPastoCents)), ordine.id));
   }
   statements.push(db.prepare("UPDATE orders SET in_settimana = 1 WHERE id = ?").bind(ordine.id));
 
@@ -320,10 +332,17 @@ export async function mettiInSettimana(db: D1Database, ordine: Ordine, inizio: s
 export async function convertiOrdiniAperti(db: D1Database, oggi: string): Promise<number> {
   const { results } = await db.prepare(`${ORDER_SELECT} WHERE o.status IN ('confirmed', 'preparing', 'ready') AND o.in_settimana = 0 ORDER BY o.created_at, o.id`)
     .all<RigaOrdine>();
+  let convertiti = 0;
+  // Un ordine che non si converte non deve fermare il pannello: si registra e si va avanti.
   for (const row of results) {
-    const ordine = ordineDaRiga(row, true);
-    const inizio = ordine.fulfillment_date ?? ordine.production_date ?? ordine.requested_date ?? oggi;
-    await mettiInSettimana(db, ordine, inizio, null, oggi);
+    try {
+      const ordine = ordineDaRiga(row, true);
+      const inizio = ordine.fulfillment_date ?? ordine.production_date ?? ordine.requested_date ?? oggi;
+      await mettiInSettimana(db, ordine, inizio, null, oggi);
+      convertiti++;
+    } catch (error) {
+      console.error(`Ordine ${String(row.id)} non convertito nella settimana`, error);
+    }
   }
-  return results.length;
+  return convertiti;
 }

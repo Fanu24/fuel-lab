@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { creaD1Prova } from "./d1-prova";
 import { oggiRoma, spostaGiorno } from "./date";
 import {
@@ -161,21 +161,23 @@ describe("rubrica e pasti", () => {
     ]);
   });
 
-  it("recenti: fino a 12 piatti distinti dei 60 giorni prima di oggi, dal più recente, senza eventi", async () => {
+  it("recenti: fino a 12 piatti distinti dal più recente, dai 60 giorni indietro in poi, senza eventi", async () => {
     const { env } = bench;
     const paolo = await creaCliente(env.DB, cliente("Paolo"));
     for (let k = 1; k <= 14; k++) {
       await salvaPasto(env.DB, { clienteId: paolo.id, data: spostaGiorno(oggi, -k), pasto: "pranzo", piatto: `Piatto ${k}`, piattoId: null, porzioni: 1 });
     }
-    // Un duplicato, un pasto di oggi, uno di 61 giorni fa e un cuoco a domicilio: fuori dall'elenco.
+    // Un duplicato, uno di 61 giorni fa e un cuoco a domicilio: fuori dall'elenco. Oggi e domani ci sono.
     await salvaPasto(env.DB, { clienteId: paolo.id, data: spostaGiorno(oggi, -3), pasto: "cena", piatto: "Piatto 1", piattoId: null, porzioni: 1 });
     await salvaPasto(env.DB, { clienteId: paolo.id, data: oggi, pasto: "pranzo", piatto: "Di oggi", piattoId: null, porzioni: 1 });
+    await salvaPasto(env.DB, { clienteId: paolo.id, data: spostaGiorno(oggi, 1), pasto: "pranzo", piatto: "Domani", piattoId: null, porzioni: 1 });
     await salvaPasto(env.DB, { clienteId: paolo.id, data: spostaGiorno(oggi, -61), pasto: "pranzo", piatto: "Vecchio", piattoId: null, porzioni: 1 });
     bench.sqlite.prepare("INSERT INTO pasti (id,cliente_id,data,pasto,piatto) VALUES ('ev1',?,?,'evento','Cuoco a domicilio')").run(paolo.id, spostaGiorno(oggi, -2));
 
     const dati = await leggiPannello(env.DB, oggi, oggi);
 
-    expect(dati.recenti[paolo.id]).toEqual(Array.from({ length: 12 }, (_, i) => `Piatto ${i + 1}`));
+    // Oggi e i giorni futuri contano (sono i piatti che Matteo riusa); il piu' recente in cima; 12 al massimo.
+    expect(dati.recenti[paolo.id]).toEqual(["Domani", "Di oggi", ...Array.from({ length: 10 }, (_, i) => `Piatto ${i + 1}`)]);
   });
 
   it("leggiPannello include da e a, esclude il giorno prima e il giorno dopo, e dà l'ultimo pasto del cliente", async () => {
@@ -197,6 +199,44 @@ describe("rubrica e pasti", () => {
 });
 
 describe("ordini accettati nella settimana", () => {
+  it("un piatto più lungo di 200 caratteri entra tagliato, e un piatto vuoto prende un nome segnaposto", async () => {
+    const { env } = bench;
+    inserisciOrdine({ id: "lungo", uscita: lunedi, voci: [voce("lun", "pranzo", "A".repeat(250))] });
+    inserisciOrdine({ id: "vuoto", uscita: lunedi, voci: [{ id: "x", name: "   ", day: "mar", meal: "pranzo", extras: [] }] });
+
+    expect(await convertiOrdiniAperti(env.DB, oggi)).toBe(2);
+
+    expect(bench.sqlite.prepare("SELECT length(piatto) AS n FROM pasti WHERE ordine_id = 'lungo'").get()?.n).toBe(200);
+    expect(bench.sqlite.prepare("SELECT piatto FROM pasti WHERE ordine_id = 'vuoto'").get()?.piatto).toBe("Piatto da definire");
+  });
+
+  it("un ordine che non si converte non ferma gli altri: si registra l'errore e la conversione va avanti", async () => {
+    const { env } = bench;
+    inserisciOrdine({ id: "rotto", uscita: lunedi, creato: "2026-10-01 10:00:00", voci: [voce("lun", "pranzo", "Riso")] });
+    inserisciOrdine({ id: "buono", uscita: lunedi, creato: "2026-10-02 10:00:00", voci: [voce("lun", "pranzo", "Pollo")] });
+    // Il primo batch (quello di "rotto", il piu' vecchio) fallisce; il secondo va come sempre.
+    const batchVero = env.DB.batch.bind(env.DB);
+    let chiamate = 0;
+    const db = {
+      prepare: env.DB.prepare.bind(env.DB),
+      batch: async (statements: Parameters<typeof batchVero>[0]) => {
+        chiamate++;
+        if (chiamate === 1) throw new Error("vincolo di prova");
+        return batchVero(statements);
+      },
+    } as unknown as typeof env.DB;
+    const errori = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const convertiti = await convertiOrdiniAperti(db, oggi);
+
+    expect(convertiti).toBe(1);
+    expect(errori).toHaveBeenCalledWith(expect.stringContaining("rotto"), expect.anything());
+    errori.mockRestore();
+    expect(bench.sqlite.prepare("SELECT in_settimana FROM orders WHERE id = 'buono'").get()?.in_settimana).toBe(1);
+    expect(bench.sqlite.prepare("SELECT in_settimana FROM orders WHERE id = 'rotto'").get()?.in_settimana).toBe(0);
+    expect(bench.sqlite.prepare("SELECT COUNT(*) AS n FROM pasti WHERE ordine_id = 'rotto'").get()?.n).toBe(0);
+  });
+
   it("un ordine a mano senza account entra nella rubrica senza user_id e non si duplica", async () => {
     const { env } = bench;
     inserisciOrdine({ id: "m1", utente: "matteo", stato: "confirmed", origine: "manual", nome: "Anna Verdi", telefono: "3331112222", uscita: lunedi, voci: [voce("lun", "pranzo", "Riso")] });
@@ -257,6 +297,20 @@ describe("ordini accettati nella settimana", () => {
     const pasti = await mettiInSettimana(env.DB, ordine, lunedi, 800, oggi);
 
     expect(pasti).toEqual([expect.objectContaining({ pasto: "evento", prezzoCents: 8000 })]);
+  });
+
+  it("un prezzo di pasto oltre 1.000.000 centesimi si ferma a 1.000.000: il batch non fallisce", async () => {
+    const { env } = bench;
+    inserisciOrdine({ id: "h2", servizio: "home-cooking", uscita: lunedi, porzioni: 20 });
+    const diretto = await mettiInSettimana(env.DB, await ordineDelDatabase("h2"), lunedi, 100000, oggi);
+    expect(diretto.map((p) => p.prezzoCents)).toEqual([1000000]);
+
+    // Un giorno diverso: due cuochi a domicilio dello stesso cliente nello stesso giorno collidono sulla casella (cliente, data, pasto).
+    const martedi = spostaGiorno(lunedi, 1);
+    inserisciOrdine({ id: "h3", servizio: "home-cooking", uscita: martedi, porzioni: 20 });
+    await convertiOrdiniAperti(env.DB, oggi);
+    const accettato = await mettiInSettimana(env.DB, await ordineDelDatabase("h3"), martedi, 100000, oggi);
+    expect(accettato.map((p) => p.prezzoCents)).toEqual([1000000]);
   });
 
   it("l'abbonamento entra nella rubrica senza pasti, da mettere dal calendario", async () => {
