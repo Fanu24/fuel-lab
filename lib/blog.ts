@@ -574,7 +574,7 @@ export const ARTICOLI: Articolo[] = [
       { domanda: "Pallotte cacio e ova o cace e ove: qual è il nome giusto?", risposta: "Sono lo stesso piatto: cace e ove, o cac’e ove, è la forma dialettale di cacio e uova. Le trovi scritte in più modi, anche sui menu dei ristoranti; nel menu FUEL LAB si chiamano ‘pallotte cacio e ovo’." },
       { domanda: "Le pallotte vanno bene se ho un’allergia o un’intolleranza?", risposta: "Contengono glutine, uova e latte. Se hai allergie o intolleranze, leggi la scheda del piatto e chiedi conferma a Matteo prima di ordinarle." },
       { domanda: "Sono un piatto da giorno di pesi o di cardio?", risposta: "Nel menu sono indicate per i giorni di pesi, e il compositore le propone in quelle giornate. Puoi comunque spostarle dove preferisci." },
-      { domanda: "Quando si possono avere le pallotte di FUEL LAB?", risposta: "Matteo cucina ogni giorno e consegna ogni giorno: chiedi a lui la disponibilità nel giorno che ti serve. Ritiro in Via del Santuario 214 o consegna in zona vanno confermati con Matteo." },
+      { domanda: "Quando si possono avere le pallotte di FUEL LAB?", risposta: "Matteo cucina ogni giorno: chiedi a lui la disponibilità nel giorno che ti serve. Ritiro in Via del Santuario 214 o consegna in zona vanno confermati con Matteo." },
     ],
     fonti: [FONTI.abruzzoPallotte],
   },
@@ -823,7 +823,7 @@ export const ARTICOLI: Articolo[] = [
       {
         titolo: "Quando cucinare, ritirare e conservare",
         paragrafi: [
-          "La cucina FUEL LAB lavora ogni giorno e consegna ogni giorno: puoi ricevere o ritirare i piatti a ridosso del giorno in cui li mangi, così nessun piatto resta a lungo in frigorifero. Se cucini a casa, il ritmo più comodo è di due sessioni a settimana, per esempio domenica e mercoledì sera, per la stessa ragione.",
+          "La cucina FUEL LAB lavora ogni giorno: puoi ricevere o ritirare i piatti, con giorno e orario concordati, a ridosso del giorno in cui li mangi, così nessun piatto resta a lungo in frigorifero. Se cucini a casa, il ritmo più comodo è di due sessioni a settimana, per esempio domenica e mercoledì sera, per la stessa ragione.",
           "Qualche regola di conservazione dalle linee guida CREA: frigorifero intorno ai +4 °C, cibi cotti raffreddati e messi in frigorifero entro due ore, porzioni piccole in contenitori chiusi, riscaldamento fino a quando il cibo è molto caldo anche all’interno. Per il resto c’è la guida su [come conservare i pasti preparati](/blog/conservare-pasti-preparati-frigorifero).",
         ],
       },
@@ -1316,7 +1316,7 @@ export const ARTICOLI: Articolo[] = [
         titolo: "Il meal prep a Pescara con FUEL LAB",
         paragrafi: [
           "Se cucinare in blocco non fa per te, o non sempre, puoi affidare una parte della settimana a una cucina. Con il [meal prep di FUEL LAB a Pescara](/meal-prep-pescara) Matteo, che è un cuoco, prepara piatti freschi ogni giorno: il [riso con carote, zucchine e pollo teriyaki](/menu/riso-julien-pollo-teriyaki), le [pallotte cacio e ova](/menu/pallotte-cacio-ovo), le [uova alla purgatorio](/menu/uova-purgatorio-peperoni) e gli altri piatti del [menu](/menu), ciascuno con ingredienti e allergeni; le stime sono indicate solo dove disponibili.",
-          "Scegli i pasti nel [compositore della settimana](/settimana), anche solo due o tre, e manda la richiesta: Matteo conferma disponibilità, ritiro in Via del Santuario 214 o [consegna a Pescara e dintorni](/consegna-pasti-pescara). Se vuoi i pasti di tutta la settimana senza pensarci, ci sono gli [abbonamenti mensili](/abbonamento): Matteo cucina il piano del tuo nutrizionista e lo porta ogni 3 giorni; se preferisci che la preparazione avvenga nella tua cucina, c’è il servizio di [cuoco a domicilio](/cuoco-a-domicilio-pescara).",
+          "Scegli i pasti nel [compositore della settimana](/settimana), anche solo due o tre, e manda la richiesta: Matteo conferma disponibilità, ritiro in Via del Santuario 214 o [consegna a Pescara e dintorni](/consegna-pasti-pescara). Se vuoi i pasti di tutta la settimana senza pensarci, ci sono gli [abbonamenti mensili](/abbonamento): Matteo cucina il piano del tuo nutrizionista e lo porta con giorno e orario concordati; se preferisci che la preparazione avvenga nella tua cucina, c’è il servizio di [cuoco a domicilio](/cuoco-a-domicilio-pescara).",
         ],
       },
     ],
@@ -1324,7 +1324,7 @@ export const ARTICOLI: Articolo[] = [
       { domanda: "Meal prep vuol dire seguire una dieta?", risposta: "No. È un metodo per organizzare i pasti in anticipo: decide quando e che cosa mangerai, non stabilisce quantità o obiettivi nutrizionali. Se segui un piano, il meal prep serve a rispettarlo con meno fatica." },
       { domanda: "Devo preparare tutti i pasti della settimana?", risposta: "No. Conviene partire da due o tre pasti, quelli che rischi di saltare, e aggiungerne altri solo se ti accorgi che servono. Lasciare caselle libere evita sprechi." },
       { domanda: "Quanti giorni si conservano i pasti preparati?", risposta: "Per i cibi cotti le linee guida CREA indicano in genere due o tre giorni in frigorifero, intorno ai +4 °C. Per questo conviene cucinare due volte a settimana; se il piatto riporta istruzioni o una data, valgono quelle." },
-      { domanda: "Posso fare meal prep a Pescara senza cucinare?", risposta: "Sì, affidando i pasti a una cucina. FUEL LAB cucina ogni giorno e consegna ogni giorno, con ritiro in Via del Santuario 214 o consegna in zona da confermare per il tuo indirizzo." },
+      { domanda: "Posso fare meal prep a Pescara senza cucinare?", risposta: "Sì, affidando i pasti a una cucina. FUEL LAB cucina ogni giorno: ritiro in Via del Santuario 214 o consegna in zona, giorno, orario e indirizzo si confermano con Matteo." },
     ],
     fonti: [FONTI.creaLineeGuida],
   },
@@ -1412,7 +1412,7 @@ export const ARTICOLI: Articolo[] = [
       { domanda: "Cosa vuol dire cucina salutare d’asporto?", risposta: "È una descrizione ampia, non una categoria definita. Per capire se un piatto fa per te guarda ingredienti, allergeni, porzione, cottura e condimenti, e confrontali con la tua giornata e con le indicazioni del tuo professionista, se ne hai." },
       { domanda: "I piatti d’asporto devono avere la tabella nutrizionale?", risposta: "Per i cibi venduti senza preimballaggio il Regolamento UE 1169/2011 rende obbligatoria l’informazione sugli allergeni, non la dichiarazione nutrizionale, salvo disposizioni nazionali. Quando un locale pubblica i valori, verifica se sono per 100 grammi o per porzione." },
       { domanda: "Quanto può restare fuori dal frigo un pasto d’asporto?", risposta: "Il meno possibile. Le linee guida CREA indicano di mettere in frigorifero una pietanza cotta entro due ore, un’ora d’estate; per un piatto ritirato per il giorno dopo segui le istruzioni di chi l’ha preparato." },
-      { domanda: "FUEL LAB consegna in tutta Pescara?", risposta: "Le consegne sono tutti i giorni a Pescara e nei comuni vicini, ma la copertura del singolo indirizzo va confermata prima dell’ordine. In alternativa c’è il ritiro in Via del Santuario 214." },
+      { domanda: "FUEL LAB consegna in tutta Pescara?", risposta: "Le consegne si concordano con giorno e orario a Pescara e nei comuni vicini, ma la copertura del singolo indirizzo va confermata prima dell’ordine. In alternativa c’è il ritiro in Via del Santuario 214." },
     ],
     fonti: [FONTI.ue1169, FONTI.creaEtichette, FONTI.creaLineeGuida, FONTI.saluteSicurezza],
   },
@@ -1507,7 +1507,7 @@ export const ARTICOLI: Articolo[] = [
       {
         titolo: "Il pranzo al lavoro con FUEL LAB",
         paragrafi: [
-          "Se lavori a Pescara, a Montesilvano, a Spoltore o negli altri comuni della zona, puoi chiedere che i piatti arrivino in ufficio nei giorni che ti servono, oppure ritirarli in Via del Santuario 214. La copertura del singolo indirizzo si conferma prima dell’ordine: i dettagli sono nella pagina sulla [consegna pasti a Pescara](/consegna-pasti-pescara). Se vuoi il pranzo pronto dal lunedì al venerdì, ci sono gli [abbonamenti mensili](/abbonamento): Matteo cucina il piano del tuo nutrizionista e lo porta ogni 3 giorni.",
+          "Se lavori a Pescara, a Montesilvano, a Spoltore o negli altri comuni della zona, puoi chiedere che i piatti arrivino in ufficio nei giorni che ti servono, oppure ritirarli in Via del Santuario 214. La copertura del singolo indirizzo si conferma prima dell’ordine: i dettagli sono nella pagina sulla [consegna pasti a Pescara](/consegna-pasti-pescara). Se vuoi il pranzo pronto dal lunedì al venerdì, ci sono gli [abbonamenti mensili](/abbonamento): Matteo cucina il piano del tuo nutrizionista e lo porta con giorno e orario concordati.",
           "Prima di chiedere, verifica in ufficio dove terrai i piatti: sono piatti da frigorifero, da riporre appena arrivano. Per sapere che cosa domandare a qualunque servizio c’è la guida su [cosa chiedere prima di scegliere una consegna pasti](/blog/consegna-pasti-pescara-cosa-chiedere).",
         ],
       },
@@ -1516,7 +1516,7 @@ export const ARTICOLI: Articolo[] = [
       { domanda: "Come porto il pranzo in ufficio in sicurezza?", risposta: "Usa contenitori puliti e chiusi, tieni i cibi deperibili al fresco con frigorifero o borsa termica e siberini, e riponi il pasto in frigo appena arrivi. Se il piatto ha istruzioni di conservazione, seguile." },
       { domanda: "Posso comporre un menu solo per i pranzi?", risposta: "Sì. Nel compositore puoi scegliere un pasto al giorno e lasciare vuote le cene o i giorni in cui mangi fuori." },
       { domanda: "Cosa scelgo alla tavola calda se ho poco tempo?", risposta: "Le linee guida CREA suggeriscono una sola pietanza, un primo o un secondo, con un contorno di verdure e un frutto, senza eccedere con pane e sostituti e preferendo piatti non troppo ricchi di sale e condimenti." },
-      { domanda: "FUEL LAB consegna in ufficio?", risposta: "Puoi indicare l’indirizzo del lavoro nella richiesta: le consegne sono tutti i giorni a Pescara e nei comuni vicini, e la copertura si conferma prima dell’ordine." },
+      { domanda: "FUEL LAB consegna in ufficio?", risposta: "Puoi indicare l’indirizzo del lavoro nella richiesta: le consegne si concordano con giorno e orario a Pescara e nei comuni vicini, e la copertura si conferma prima dell’ordine." },
     ],
     fonti: [FONTI.creaLineeGuida, FONTI.saluteSicurezza],
   },
@@ -1856,7 +1856,7 @@ export const ARTICOLI: Articolo[] = [
       {
         titolo: "Un pranzo pronto dopo la palestra, a Pescara",
         paragrafi: [
-          "Se ti alleni al mattino e lavori a Pescara o nei comuni vicini, puoi avere il pranzo già pronto in frigorifero. FUEL LAB cucina ogni giorno e consegna ogni giorno: scegli i piatti nel [compositore](/settimana), segnando i giorni di allenamento come cardio o pesi, e ricevili a casa o in ufficio con la [consegna in zona](/consegna-pasti-pescara), oppure ritirali in Via del Santuario 214.",
+          "Se ti alleni al mattino e lavori a Pescara o nei comuni vicini, puoi avere il pranzo già pronto in frigorifero. FUEL LAB cucina ogni giorno: scegli i piatti nel [compositore](/settimana), segnando i giorni di allenamento come cardio o pesi, e ricevili a casa o in ufficio con la [consegna in zona](/consegna-pasti-pescara), con giorno e orario concordati, oppure ritirali in Via del Santuario 214.",
           "Nel [menu](/menu) ogni piatto riporta ingredienti, allergeni ed eventuali stime: gli [gnocchetti al sugo con ricotta fresca](/menu/gnocchetti-sugo-ricotta), per esempio, sono tra i piatti indicati per i giorni di cardio. Chi cerca piatti con le proteine in primo piano trova una selezione nella pagina sui [pasti proteici a Pescara](/pasti-proteici-pescara).",
         ],
       },
@@ -2279,7 +2279,7 @@ export const ARTICOLI: Articolo[] = [
           "Posso ordinare solo per qualche giorno, senza impegni fissi?",
         ],
         dopo: [
-          "Per il menu della settimana la consegna è tutti i giorni: Matteo cucina ogni giorno e consegna ogni giorno, ed è gratuita dai dieci pasti in su, come indicato nella pagina [Servizi e prezzi](/servizi); sotto quella soglia il costo per il tuo indirizzo te lo conferma Matteo. Chi vuole i pasti pronti senza ordinare ogni volta trova anche gli [abbonamenti mensili](/abbonamento), con consegna o ritiro ogni 3 giorni. Non c’è pagamento online: la richiesta diventa un ordine quando Matteo conferma piatti, giorno e modalità.",
+          "Per il menu della settimana ritiro e consegna si concordano con giorno e orario: Matteo cucina ogni giorno, e la consegna è gratuita dai dieci pasti in su, come indicato nella pagina [Servizi e prezzi](/servizi); sotto quella soglia il costo per il tuo indirizzo te lo conferma Matteo. Chi vuole i pasti pronti senza ordinare ogni volta trova anche gli [abbonamenti mensili](/abbonamento), con giorno e orario di ritiro o consegna concordati. Non c’è pagamento online: la richiesta diventa un ordine quando Matteo conferma piatti, giorno e modalità.",
         ],
       },
       {
@@ -2328,7 +2328,7 @@ export const ARTICOLI: Articolo[] = [
     ],
     faq: [
       { domanda: "FUEL LAB consegna al mio indirizzo a Pescara?", risposta: "La zona comprende Pescara e i comuni vicini, ma la copertura del singolo indirizzo si conferma prima dell’ordine. Scrivi comune, via e numero civico; se la consegna non è possibile, resta il ritiro in Via del Santuario 214." },
-      { domanda: "Quali giorni sono indicati per la consegna?", risposta: "Tutti i giorni: Matteo cucina ogni giorno e consegna ogni giorno. Il giorno per il tuo indirizzo si conferma con la richiesta, insieme alla copertura." },
+      { domanda: "Quali giorni sono indicati per la consegna?", risposta: "Matteo cucina ogni giorno. Il giorno e l’orario per il tuo indirizzo si concordano con la richiesta, insieme alla copertura." },
       { domanda: "Quanto costa la consegna?", risposta: "Secondo la pagina Servizi e prezzi la consegna è gratuita dai dieci pasti in su. Sotto quella soglia, il costo per il tuo indirizzo te lo conferma Matteo insieme alla copertura." },
       { domanda: "I piatti arrivano caldi?", risposta: "No: sono piatti freschi, da conservare al fresco. Appena arrivano vanno in frigorifero e si scaldano quando li mangi, seguendo le istruzioni del piatto e del contenitore." },
     ],
@@ -2480,7 +2480,7 @@ export const ARTICOLI: Articolo[] = [
         titolo: "Dal menu alla spesa e alla cucina",
         paragrafi: [
           "Con la griglia in mano la lista della spesa si scrive quasi da sola: solo gli ingredienti dei pasti da cucinare, con le quantità. Il metodo completo è nella guida sulla [spesa settimanale senza sprechi](/blog/spesa-settimanale-meal-prep-zero-sprechi).",
-          "Per i tempi vale la regola della conservazione: le linee guida CREA indicano che i cibi cotti si tengono in frigorifero per breve tempo, in genere due o tre giorni. Per questo il menu funziona meglio con due momenti di cucina, per esempio la domenica e il mercoledì, oppure con piatti che arrivano a ridosso del giorno in cui li mangi: FUEL LAB cucina e consegna ogni giorno.",
+          "Per i tempi vale la regola della conservazione: le linee guida CREA indicano che i cibi cotti si tengono in frigorifero per breve tempo, in genere due o tre giorni. Per questo il menu funziona meglio con due momenti di cucina, per esempio la domenica e il mercoledì, oppure con piatti che arrivano a ridosso del giorno in cui li mangi: FUEL LAB cucina ogni giorno e concorda con te giorno e orario di ritiro o consegna.",
         ],
       },
       {

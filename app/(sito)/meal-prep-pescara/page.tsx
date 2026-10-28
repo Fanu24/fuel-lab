@@ -52,7 +52,7 @@ const PASSI = [
     n: "04",
     titolo: "Ritiri o ricevi",
     testo:
-      "Matteo cucina ogni giorno e consegna ogni giorno: ritiri in Via del Santuario 214 oppure i piatti arrivano al tuo indirizzo, se è in zona.",
+      "Matteo cucina ogni giorno: ritiri in Via del Santuario 214 oppure i piatti arrivano al tuo indirizzo, se è in zona, con giorno e orario concordati.",
     link: { href: PAGINE.consegna.percorso, label: "Ritiro e consegna" },
   },
 ];
@@ -88,7 +88,7 @@ const DOMANDE: DomandaTesto[] = [
   },
   {
     q: "Quando cucina Matteo?",
-    a: "Ogni giorno, e ogni giorno consegna. Il giorno del ritiro o della consegna si concorda con lui quando confermi la richiesta.",
+    a: "Matteo cucina ogni giorno. Il giorno e l'orario del ritiro o della consegna si concordano con lui quando confermi la richiesta.",
   },
   {
     q: "Posso scegliere io i piatti?",
@@ -316,7 +316,7 @@ export default function MealPrepPescara() {
             <Reveal delay={80} className="border-t-[3px] border-ink pt-6">
               <h3 className="titolo-s">Consegna</h3>
               <p className="mt-3 text-muted">
-                Ogni giorno, a Pescara e dintorni, fino a {RAGGIO_CONSEGNA_KM} km. La copertura del tuo indirizzo si
+                A Pescara e dintorni, fino a {RAGGIO_CONSEGNA_KM} km, con giorno e orario concordati. La copertura del tuo indirizzo si
                 conferma prima dell&apos;ordine.
               </p>
               <Link href={PAGINE.consegna.percorso} className="link mt-5 inline-block">

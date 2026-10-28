@@ -56,7 +56,7 @@ const DA_CHIARIRE = [
 
 const CONFRONTO = [
   { voce: "Dove si cucina", mealPrep: `Nella sede di FUEL LAB, ${INDIRIZZO_RIGA}`, casa: "Nella tua cucina" },
-  { voce: "Quando", mealPrep: "Ogni giorno, con ritiro o consegna", casa: "Nel giorno che concordate" },
+  { voce: "Quando", mealPrep: "Cucina ogni giorno; ritiro o consegna concordati", casa: "Nel giorno che concordate" },
   { voce: "Il menu", mealPrep: "I piatti del menu, con i macro pubblicati", casa: "Dal menu o su misura, da concordare" },
   { voce: "La spesa", mealPrep: "La fa Matteo", casa: "La fa Matteo, e si decide insieme" },
   { voce: "Come arriva", mealPrep: "Ritiro in sede o consegna in zona", casa: "Resta a casa tua, già porzionato" },

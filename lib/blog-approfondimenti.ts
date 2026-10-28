@@ -74,7 +74,7 @@ export const APPROFONDIMENTI: Record<string, Approfondimento> = {
   },
   "pallotte-cacio-e-ova-versione-fit": {
     risposta: "Le pallotte cacio e ova sono polpette abruzzesi di formaggio, uova e pane, tradizionalmente fritte e poi cotte nel sugo. La ricetta FUEL LAB usa pane raffermo, uova, ricotta e parmigiano con pomodorini. Ingredienti e allergeni sono in scheda; il calcolo nutrizionale richiede ancora le dosi di olio e parmigiano.",
-    scenario: "Il giovedì ti alleni con i pesi alle 18. Le pallotte le ritiri o le ricevi quel giorno stesso, perché Matteo cucina e consegna ogni giorno: le conservi come indicato e la sera le mangi con un contorno di verdure. Il venerdì a pranzo scegli un piatto diverso, per non ripetere lo stesso sapore due volte di fila.",
+    scenario: "Il giovedì ti alleni con i pesi alle 18. Le pallotte le ritiri o le ricevi quel giorno stesso, perché Matteo cucina ogni giorno e il giorno del ritiro o della consegna si concorda con lui: le conservi come indicato e la sera le mangi con un contorno di verdure. Il venerdì a pranzo scegli un piatto diverso, per non ripetere lo stesso sapore due volte di fila.",
     passi: [
       "Apri la scheda delle pallotte e controlla ingredienti e allergeni.",
       "Mettile in un giorno di pesi della tua settimana, a pranzo o a cena.",
@@ -159,7 +159,7 @@ export const APPROFONDIMENTI: Record<string, Approfondimento> = {
       "Prevedi dove conserverai il pasto e per quanti giorni: meglio due preparazioni a settimana.",
       "Prova il [compositore](/settimana) e chiedi a Matteo disponibilità e zona di consegna.",
     ],
-    daSapere: "FUEL LAB cucina ogni giorno e consegna ogni giorno. Per un indirizzo specifico a Pescara o nei dintorni chiedi conferma prima di contare sulla consegna; per le quantità personali fai riferimento al tuo professionista.",
+    daSapere: "FUEL LAB cucina ogni giorno: ritiro e consegna si concordano con giorno e orario. Per un indirizzo specifico a Pescara o nei dintorni chiedi conferma prima di contare sulla consegna; per le quantità personali fai riferimento al tuo professionista.",
     correlati: ["menu-settimanale-pescara-come-pianificarlo", "conservare-pasti-preparati-frigorifero"],
   },
   "cucina-salutare-asporto-pescara": {

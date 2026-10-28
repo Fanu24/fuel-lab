@@ -65,11 +65,12 @@ export const LINK_MAPPA = `https://www.google.com/maps/search/?api=1&query=${enc
 )}`;
 
 /**
- * Quando Matteo cucina e consegna: ogni giorno (decisione del committente, che
- * ha superato i due giorni fissi di prima). Le pagine pubbliche lo scrivono con
- * queste parole e non promettono orari: il ritiro in sede si concorda con lui.
+ * Quando Matteo cucina: ogni giorno (decisione del committente, che ha superato
+ * i due giorni fissi di prima). Ritiro e consegna non hanno giorni fissi: il
+ * giorno e l'orario si concordano con lui. Le pagine pubbliche lo scrivono con
+ * queste parole e non promettono orari.
  */
-export const QUANDO_CUCINA = "Matteo cucina ogni giorno e consegna ogni giorno";
+export const QUANDO_CUCINA = "Matteo cucina ogni giorno; ritiro o consegna con giorno e orario concordati";
 
 export interface Zona {
   nome: string;

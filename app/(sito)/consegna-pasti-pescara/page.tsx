@@ -40,8 +40,8 @@ function provincia(z: Zona): string {
 
 const DA_SAPERE = [
   {
-    titolo: "Si consegna ogni giorno",
-    testo: "Matteo cucina ogni giorno e consegna ogni giorno. Nella richiesta indica il giorno che preferisci: te lo conferma insieme alla copertura.",
+    titolo: "Giorno e orario concordati",
+    testo: "Matteo cucina ogni giorno. Ritiro e consegna si concordano con lui: nella richiesta indica il giorno che preferisci, e te lo conferma insieme alla copertura.",
   },
   {
     titolo: "L'indirizzo si conferma prima",
@@ -64,7 +64,7 @@ const DA_SAPERE = [
 const DOMANDE: DomandaTesto[] = [
   {
     q: "Consegnate a Montesilvano?",
-    a: "Sì, Montesilvano è tra i comuni in cui puoi chiedere la consegna, tutti i giorni. Come per ogni indirizzo, Matteo conferma la copertura prima dell'ordine.",
+    a: "Sì, Montesilvano è tra i comuni in cui puoi chiedere la consegna. Come per ogni indirizzo, Matteo conferma la copertura prima dell'ordine.",
   },
   {
     q: "E a Francavilla al Mare, San Giovanni Teatino o Chieti Scalo?",
@@ -78,7 +78,7 @@ const DOMANDE: DomandaTesto[] = [
   },
   {
     q: "In che giorni fate le consegne?",
-    a: "Tutti i giorni: Matteo cucina ogni giorno e consegna ogni giorno. Il giorno per il tuo indirizzo si conferma con la richiesta.",
+    a: "Matteo cucina ogni giorno. Il giorno e l'orario della consegna per il tuo indirizzo si concordano con la richiesta.",
   },
   {
     q: "Consegnate anche al lavoro o in palestra?",
@@ -118,7 +118,7 @@ export default function ConsegnaPastiPescara() {
             id: "consegna",
             percorso: PAGINA.percorso,
             nome: "Ritiro e consegna dei pasti a Pescara e dintorni",
-            descrizione: `Ritiro in ${INDIRIZZO_RIGA} o consegna ogni giorno a ${elencoZone()} (Pescara e dintorni, fino a ${RAGGIO_CONSEGNA_KM} km), con copertura dell'indirizzo confermata prima dell'ordine.`,
+            descrizione: `Ritiro in ${INDIRIZZO_RIGA} o consegna a ${elencoZone()} (Pescara e dintorni, fino a ${RAGGIO_CONSEGNA_KM} km), con giorno e orario concordati e copertura dell'indirizzo confermata prima dell'ordine.`,
             tipoServizio: "Consegna pasti",
           }),
         ]}
@@ -131,7 +131,7 @@ export default function ConsegnaPastiPescara() {
           <h1 className="titolo-pagina mt-6 max-w-[13ch]">Consegna pasti a Pescara e dintorni.</h1>
           <p className="lead mt-6">
             I piatti di FUEL LAB si ritirano in Via del Santuario 214 oppure arrivano al tuo indirizzo, a Pescara e nei
-            comuni vicini, tutti i giorni. La copertura della tua via te la conferma Matteo prima
+            comuni vicini, con giorno e orario concordati. La copertura della tua via te la conferma Matteo prima
             dell&apos;ordine, non dopo.
           </p>
           <div className="mt-9 flex flex-wrap items-center gap-x-8 gap-y-4">
@@ -165,7 +165,7 @@ export default function ConsegnaPastiPescara() {
               <span className="num text-sm text-muted">02</span>
               <h3 className="titolo mt-3">Consegna in zona</h3>
               <p className="mt-5 max-w-[46ch] text-lg text-muted">
-                Ogni giorno, a casa o al lavoro, nei comuni qui sotto. Scrivi l&apos;indirizzo nella
+                A casa o al lavoro, nei comuni qui sotto, con giorno e orario concordati. Scrivi l&apos;indirizzo nella
                 richiesta e Matteo ti dice se e quando può arrivare. Le condizioni di consegna sono in{" "}
                 <Link href="/servizi" className="link">
                   Servizi e prezzi

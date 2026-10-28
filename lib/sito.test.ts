@@ -457,6 +457,15 @@ describe("pagine locali e contatti", () => {
     expect(scritti.filter((f) => !/^lib\/(abbonamento|produzione|operazioni)\.ts$/.test(f))).toEqual([]);
   });
 
+  it("nessun testo per i clienti promette ritiro o consegna ogni giorno o a cadenza fissa: si cucina ogni giorno, il resto si concorda", () => {
+    // Il menu e i pasti "tutti i giorni" di una formula (cosa copre) restano; la consegna o il ritiro no.
+    const CADENZA = /consegn[a-z]* (è |sono )?(ogni giorno|tutti i giorni)|ritir[a-z]* (è |sono )?(ogni giorno|tutti i giorni)|ogni giorno[,;]? (a casa|si consegna|con ritiro|a pescara)|tutti i giorni[:.]? matteo cucina|ogni (3|tre) giorni|consegna o ritiro ogni/i;
+    const file = [...sorgenti("app/(sito)"), ...sorgenti("components"), ...sorgenti("lib"), "public/llms.txt"]
+      .filter((f) => !/(^|[\\/])dashboard[\\/]/.test(f) && !/^lib[\\/](produzione|operazioni)\.ts$/.test(f));
+    const colpevoli = file.filter((f) => CADENZA.test(readFileSync(path.join(RADICE, f), "utf8")));
+    expect(colpevoli).toEqual([]);
+  });
+
   it("/richiesta e' una pagina della mappa, con titolo e descrizione nei limiti, e dice chi siamo e dove senza una seconda copia dei dati", () => {
     expect(PAGINE.richiesta.percorso).toBe("/richiesta");
     expect(sitemap().filter((v) => v.url === assoluto("/richiesta"))).toHaveLength(1);

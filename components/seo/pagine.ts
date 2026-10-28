@@ -75,7 +75,7 @@ export const PAGINE = {
     percorso: "/meal-prep-pescara",
     titolo: "Meal prep a Pescara: pasti freschi e pronti",
     descrizione:
-      "Meal prep a Pescara: piatti freschi, mai surgelati, cucinati ogni giorno da Matteo. Ritiro in sede o consegna in zona ogni giorno, da 8,90 € a pasto.",
+      "Meal prep a Pescara: piatti freschi, mai surgelati, cucinati ogni giorno da Matteo. Da 8,90 € a pasto; ritiro o consegna, giorno e orario concordati.",
     breve: "Meal prep a Pescara",
     priorita: 0.9,
     frequenza: "monthly",
@@ -84,7 +84,7 @@ export const PAGINE = {
     percorso: "/consegna-pasti-pescara",
     titolo: "Consegna pasti a Pescara, Montesilvano e dintorni",
     descrizione:
-      "Consegna pasti ogni giorno a Pescara, Montesilvano, Spoltore, Francavilla al Mare, San Giovanni Teatino e Chieti Scalo. Oppure ritiro in sede.",
+      "Consegna pasti a Pescara, Montesilvano, Spoltore, Francavilla al Mare, San Giovanni Teatino e Chieti Scalo, con giorno e orario concordati. Ritiro in sede.",
     breve: "Consegna pasti a Pescara",
     priorita: 0.9,
     frequenza: "monthly",

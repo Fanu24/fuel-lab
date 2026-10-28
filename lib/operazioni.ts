@@ -82,7 +82,7 @@ export function spostaGiorni(data: string, giorni: number) {
 export const giornoDellaSettimana = (data: string) => new Date(`${data}T12:00:00Z`).getUTCDay();
 
 /**
- * Matteo cucina ogni giorno e consegna ogni giorno: restano fuori solo i
+ * Matteo cucina ogni giorno: restano fuori solo i
  * periodi di chiusura che segna in Impostazioni (`chiusure`, da GET /api/settings).
  */
 export const eGiornoDiCucina = (data: string, chiusure: readonly Chiusura[] = []) => !chiusuraDi(data, chiusure);

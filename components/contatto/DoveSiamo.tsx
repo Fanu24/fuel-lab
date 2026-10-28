@@ -4,8 +4,8 @@ import { EMAIL_CONTATTI, INDIRIZZO, linkMappa } from "@/lib/contatto";
 import { elencoZone } from "@/lib/sito";
 
 /* Dove siamo e le domande che arrivano sempre prima del primo ordine. Niente
-   orari inventati: il ritiro si concorda con Matteo, e si cucina e si consegna
-   ogni giorno, come il sito dichiara ovunque (lib/sito.ts). Il raggio e' quello
+   orari inventati: ritiro e consegna si concordano con Matteo, e si cucina ogni
+   giorno, come il sito dichiara ovunque (lib/sito.ts). Il raggio e' quello
    del volantino (lib/abbonamento.ts), le zone sono quelle di lib/sito.ts. */
 
 const DOMANDE_CONTATTI: { domanda: string; risposta: React.ReactNode }[] = [
@@ -40,7 +40,7 @@ const DOMANDE_CONTATTI: { domanda: string; risposta: React.ReactNode }[] = [
     domanda: "Consegnate a casa mia?",
     risposta: (
       <>
-        Sì, a Pescara e dintorni, fino a {RAGGIO_CONSEGNA_KM} km, tutti i giorni. Scrivi il tuo comune: Matteo ti
+        Sì, a Pescara e dintorni, fino a {RAGGIO_CONSEGNA_KM} km, con giorno e orario concordati. Scrivi il tuo comune: Matteo ti
         conferma se il tuo indirizzo è coperto e in quale giorno può arrivare. I comuni, uno per uno, sono in{" "}
         <Link href="/consegna-pasti-pescara" className="link">
           Consegna pasti a Pescara
@@ -99,7 +99,7 @@ export default function DoveSiamo() {
             </div>
             <div>
               <dt className="font-disp text-xs font-semibold tracking-[.18em] uppercase">Si cucina</dt>
-              <dd className="mt-1 text-muted">Ogni giorno, fresco e mai surgelato. Si consegna ogni giorno.</dd>
+              <dd className="mt-1 text-muted">Ogni giorno, fresco e mai surgelato. Ritiro o consegna con giorno e orario concordati.</dd>
             </div>
             <div>
               <dt className="font-disp text-xs font-semibold tracking-[.18em] uppercase">Consegna a casa</dt>

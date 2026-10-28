@@ -497,7 +497,7 @@ export const ARTICOLI_LOCALI = [
         "risposta": "Puoi valutare il ritiro presso la sede in Via del Santuario 214, concordando disponibilità e orario con Matteo. Organizza anche il percorso successivo e segui le istruzioni ricevute per trasporto e conservazione."
       },
       {
-        "domanda": "L’abbonamento prevede consegne tutti i giorni?",
+        "domanda": "Come si concordano i giorni di consegna dell’abbonamento?",
         "risposta": "Per gli abbonamenti giorno e orario di ritiro o consegna si concordano con Matteo. La distribuzione dei pasti va confermata con lui; cucina fresca quotidiana non significa consegna quotidiana."
       },
       {
