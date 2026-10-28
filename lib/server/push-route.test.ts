@@ -112,6 +112,28 @@ describe("POST, GET e DELETE /api/admin/push", () => {
     expect(righeIscrizioni()).toEqual([]);
   });
 
+  it("POST rifiuta ogni iscrizione che il browser non potrebbe usare, e non salva niente", async () => {
+    const env = conVapid();
+    const valida = iscrizioneDi(ENDPOINT_A);
+    // 65 byte: 0x04 seguito da zeri, un punto che non sta sulla curva P-256.
+    const puntoFuori = b64urlDaBytes(Uint8Array.from([4, ...new Array<number>(64).fill(0)]));
+    const casi: { nome: string; corpo: unknown }[] = [
+      { nome: "endpoint che non e' un URL", corpo: { endpoint: "https://[non-valido", keys: valida.keys } },
+      { nome: "endpoint http", corpo: { endpoint: "http://esempio.it/push/abc", keys: valida.keys } },
+      { nome: "chiave con caratteri fuori da base64url", corpo: { endpoint: ENDPOINT_A, keys: { p256dh: `${p256dh.slice(0, -1)}+`, auth: valida.keys.auth } } },
+      { nome: "p256dh che non e' un punto P-256", corpo: { endpoint: ENDPOINT_A, keys: { p256dh: puntoFuori, auth: valida.keys.auth } } },
+      { nome: "auth che non fa 16 byte", corpo: { endpoint: ENDPOINT_A, keys: { p256dh, auth: "C".repeat(21) } } },
+    ];
+    for (const caso of casi) {
+      const risposta = await onRequestPost({ env, request: richiesta("POST", caso.corpo), params: {} });
+      expect(risposta.status, caso.nome).toBe(400);
+      expect(await risposta.json(), caso.nome).toEqual({ error: "Iscrizione alle notifiche non valida." });
+    }
+    expect(righeIscrizioni()).toEqual([]);
+    expect((await onRequestPost({ env, request: richiesta("POST", valida), params: {} })).status).toBe(200);
+    expect(righeIscrizioni()).toEqual([ENDPOINT_A]);
+  });
+
   it("un cliente non puo' iscriversi né leggere la chiave", async () => {
     sessione.utente = { id: "cliente1", role: "customer" };
     const env = conVapid();
