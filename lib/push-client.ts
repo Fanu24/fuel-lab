@@ -58,13 +58,13 @@ function chiaveBytes(base64url: string): Uint8Array<ArrayBuffer> {
  * il server o il browser non riescono.
  */
 export async function attivaNotifiche(): Promise<StatoNotifiche> {
-  const registrazione = await navigator.serviceWorker.register("/admin-sw.js", { scope: "/admin" });
+  // Il permesso si chiede per primo, prima di qualsiasi `await`: su iPhone il tocco vale solo subito.
   const permesso = await Notification.requestPermission();
-  if (permesso === "granted") {
-    const { publicKey } = await pannelloApi.chiavePush();
-    if (!publicKey) throw new Error("Le notifiche non sono ancora pronte sul sito. Riprova più tardi.");
-    const iscrizione = await registrazione.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: chiaveBytes(publicKey) });
-    await pannelloApi.iscriviPush(iscrizione.toJSON());
-  }
+  if (permesso !== "granted") return statoNotifiche();
+  const registrazione = await navigator.serviceWorker.register("/admin-sw.js", { scope: "/admin" });
+  const { publicKey } = await pannelloApi.chiavePush();
+  if (!publicKey) throw new Error("Le notifiche non sono ancora pronte sul sito. Riprova più tardi.");
+  const iscrizione = await registrazione.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: chiaveBytes(publicKey) });
+  await pannelloApi.iscriviPush(iscrizione.toJSON());
   return statoNotifiche();
 }

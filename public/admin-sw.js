@@ -28,7 +28,12 @@ self.addEventListener("notificationclick", (event) => {
       const finestre = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
       const aperta = finestre.find((c) => c.url.startsWith(self.registration.scope));
       if (aperta) {
-        if ("navigate" in aperta) await aperta.navigate(url);
+        try {
+          if ("navigate" in aperta) await aperta.navigate(url);
+        } catch {
+          // Il browser non naviga la finestra aperta: se ne apre una nuova.
+          return self.clients.openWindow(url);
+        }
         return aperta.focus();
       }
       return self.clients.openWindow(url);

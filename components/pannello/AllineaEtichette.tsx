@@ -29,14 +29,22 @@ export default function AllineaEtichette() {
   const [lavoro, setLavoro] = useState(false);
   const [errore, setErrore] = useState("");
   const [linkPdf, setLinkPdf] = useState<string | null>(null);
+  // La correzione salvata si è letta? Finché non si legge, o se la lettura fallisce, i tasti sono spenti:
+  // altrimenti si salverebbe uno spostamento zero sopra quello vero.
+  const [letta, setLetta] = useState(false);
+  const [erroreLettura, setErroreLettura] = useState(false);
 
   useEffect(() => {
     let vivo = true;
-    void import("@/lib/etichette-pdf").then((m) => { if (vivo) setSposta(m.leggiSposta()); }, () => {});
+    import("@/lib/etichette-pdf").then(
+      (m) => { if (vivo) { setSposta(m.leggiSposta()); setLetta(true); } },
+      () => { if (vivo) setErroreLettura(true); },
+    );
     return () => { vivo = false; };
   }, []);
 
   async function muovi(asse: keyof Sposta, passo: number) {
+    if (!letta) return;
     const prossimo = { ...sposta, [asse]: pulisciSposta(Math.round((sposta[asse] + passo) * 10) / 10) };
     setSposta(prossimo);
     const { salvaSposta } = await import("@/lib/etichette-pdf");
@@ -75,11 +83,12 @@ export default function AllineaEtichette() {
       </Bottone>
       {errore && <p className="pm-errore" role="alert">{errore}</p>}
       {linkPdf && <a className="pm-bottone pm-bottone-verde pm-pieno" href={linkPdf} target="_blank" rel="noopener">Apri il PDF</a>}
+      {erroreLettura && <p className="pm-errore" role="alert">Non riesco a leggere la correzione salvata.</p>}
       <div className="pm-spostamenti" role="group" aria-label="Sposta le etichette">
-        <Bottone variante="tenue" onClick={() => void muovi("y", -PASSO_MM)}><span aria-hidden="true">↑ </span>Su</Bottone>
-        <Bottone variante="tenue" onClick={() => void muovi("y", PASSO_MM)}><span aria-hidden="true">↓ </span>Giù</Bottone>
-        <Bottone variante="tenue" onClick={() => void muovi("x", -PASSO_MM)}><span aria-hidden="true">← </span>Sinistra</Bottone>
-        <Bottone variante="tenue" onClick={() => void muovi("x", PASSO_MM)}><span aria-hidden="true">→ </span>Destra</Bottone>
+        <Bottone variante="tenue" disabled={!letta} onClick={() => void muovi("y", -PASSO_MM)}><span aria-hidden="true">↑ </span>Su</Bottone>
+        <Bottone variante="tenue" disabled={!letta} onClick={() => void muovi("y", PASSO_MM)}><span aria-hidden="true">↓ </span>Giù</Bottone>
+        <Bottone variante="tenue" disabled={!letta} onClick={() => void muovi("x", -PASSO_MM)}><span aria-hidden="true">← </span>Sinistra</Bottone>
+        <Bottone variante="tenue" disabled={!letta} onClick={() => void muovi("x", PASSO_MM)}><span aria-hidden="true">→ </span>Destra</Bottone>
       </div>
       <p className="pm-muto" role="status">{descrivi(sposta)}</p>
     </section>

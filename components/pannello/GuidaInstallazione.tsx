@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import { ApiError } from "@/lib/api";
 import { ambienteDispositivo, attivaNotifiche, statoNotifiche, type StatoNotifiche } from "@/lib/push-client";
 import { Avviso, Bottone } from "./ui";
 
@@ -66,7 +65,7 @@ export default function GuidaInstallazione() {
     try {
       setStato(await attivaNotifiche());
     } catch (e) {
-      setErrore(e instanceof ApiError ? e.message : "Non riesco ad attivare le notifiche. Riprova.");
+      setErrore(e instanceof Error ? e.message : "Non riesco ad attivare le notifiche. Riprova.");
     } finally {
       setOccupato(false);
     }
