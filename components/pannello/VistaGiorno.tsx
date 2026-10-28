@@ -1,14 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { etichetteDelGiorno, giorniDellaSettimana, lunediDi, nomeGiorno, nomeGiornoCorto, pastiDelGiorno, type RigaGiorno } from "@/lib/pannello";
+import type { Vista } from "@/lib/pannello-navigazione";
 import { giornoDelPiano, spostaGiorni } from "@/lib/produzione";
 import { NOMI_GIORNO } from "@/lib/settimana";
-import type { Condiviso, Vista } from "./PannelloMatteo";
+import type { Condiviso } from "./PannelloMatteo";
 import { Avviso, Bottone, Foglio } from "./ui";
 
-/* La schermata del giorno (mockup A): il riquadro degli ordini nuovi, la settimana,
-   i pasti di oggi a pranzo e a cena, e in fondo le due azioni da fare. */
+/* La schermata del giorno (mockup A): la settimana, i pasti del giorno scelto a pranzo e a cena,
+   e in fondo le due azioni da fare. Il riquadro degli ordini nuovi e l'errore arrivano da fuori
+   (`sopra`), così restano visibili anche mentre una settimana si carica o fallisce. */
 
 /** "2026-10-26" -> "26 ott". */
 function dataCorta(data: string): string {
@@ -18,34 +20,24 @@ function dataCorta(data: string): string {
     .replace(/\.$/, "");
 }
 
-export default function VistaGiorno({ pannello }: { pannello: Condiviso }) {
+export default function VistaGiorno({ pannello, sopra, senzaDati }: {
+  pannello: Condiviso;
+  sopra: ReactNode;
+  /** Cosa mostrare al posto dei pasti finché la settimana manca. */
+  senzaDati: ReactNode;
+}) {
   const { giorno, dati, vai, cambiaGiorno } = pannello;
   const [stampa, setStampa] = useState(false);
 
   const giorni = giorniDellaSettimana(lunediDi(giorno));
-  const { pranzo, cena, evento } = pastiDelGiorno(dati.pasti, dati.clienti, giorno);
-  const etichette = etichetteDelGiorno(dati.pasti, dati.clienti, giorno);
-  const nuovi = dati.nuovi.length;
-  const vuoto = pranzo.length + cena.length + evento.length === 0;
+  const pasti = dati ? pastiDelGiorno(dati.pasti, dati.clienti, giorno) : null;
+  const etichette = dati ? etichetteDelGiorno(dati.pasti, dati.clienti, giorno) : [];
   const nomeDelGiorno = NOMI_GIORNO[giornoDelPiano(giorno)].toLowerCase();
 
   return (
     <>
-      <header className="pm-testa">
-        <div>
-          <h1>Ciao Matteo</h1>
-          <p>FUEL LAB</p>
-        </div>
-        <Bottone onClick={() => vai({ tipo: "altro" })}>Altro</Bottone>
-      </header>
-
       <main className="pm-corpo">
-        {nuovi > 0 && (
-          <button type="button" className="pm-nuovi" onClick={() => vai({ tipo: "nuovi" })}>
-            <span>{nuovi === 1 ? "1 ordine nuovo dal sito" : `${nuovi} ordini nuovi dal sito`}</span>
-            <span>Apri →</span>
-          </button>
-        )}
+        {sopra}
 
         <nav aria-label="Settimana" className="pm-settimana">
           <div className="pm-settimana-testa">
@@ -67,13 +59,15 @@ export default function VistaGiorno({ pannello }: { pannello: Condiviso }) {
           </div>
         </nav>
 
-        {vuoto ? (
+        {!pasti ? (
+          senzaDati
+        ) : pasti.pranzo.length + pasti.cena.length + pasti.evento.length === 0 ? (
           <Avviso>Niente da cucinare per questo giorno.</Avviso>
         ) : (
           <>
-            <Sezione titolo="Pranzo" righe={pranzo} vai={vai} />
-            <Sezione titolo="Cena" righe={cena} vai={vai} />
-            <Sezione titolo="Altro" righe={evento} vai={vai} />
+            <Sezione titolo="Pranzo" righe={pasti.pranzo} vai={vai} />
+            <Sezione titolo="Cena" righe={pasti.cena} vai={vai} />
+            <Sezione titolo="Altro" righe={pasti.evento} vai={vai} />
           </>
         )}
       </main>

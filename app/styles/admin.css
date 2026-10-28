@@ -64,15 +64,6 @@
 .pm-icona { width: 48px; min-width: 48px; padding: 0; font-size: 28px; line-height: 1; }
 .pm-testa .pm-bottone { min-width: 96px; }
 
-.pm-indietro {
-  min-height: 48px;
-  padding: 0 12px;
-  border: 0;
-  background: none;
-  font-size: 17px;
-  font-weight: 800;
-}
-
 /* Riquadro degli ordini nuovi: rosso, tutta la riga si tocca. */
 .pm-nuovi {
   display: flex;
