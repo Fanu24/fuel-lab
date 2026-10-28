@@ -106,7 +106,7 @@ export default function FoglioPiatto({ cliente, data, pasto, attuale, recenti, n
         ))}
       </section>
 
-      {attuale &&<Bottone variante="rosso" onClick={() => void togli()}>Togli</Bottone>}
+      {attuale && <Bottone variante="rosso" onClick={() => void togli()}>Togli</Bottone>}
     </Foglio>
   );
 }

@@ -28,8 +28,8 @@ export function unFoglioAperto(): boolean {
  */
 /* Un foglio aperto è una voce della storia (stesso indirizzo, con `foglio: true`): il gesto "indietro"
    del telefono lo chiude e lascia la pagina com'è. Quando si chiude in altro modo, la voce si toglie con
-   history.back(). Quei popstate li contiamo qui, perché non chiudano un altro foglio. */
-let indietroNostri = 0;
+   history.back(); il foglio toglie il proprio listener prima di quel back, quindi il popstate che ne
+   segue non arriva a nessun foglio. */
 
 export function Foglio({ titolo, chiudi, children }: { titolo: string; chiudi: () => void; children: ReactNode }) {
   const ref = useRef<HTMLElement>(null);
@@ -43,13 +43,7 @@ export function Foglio({ titolo, chiudi, children }: { titolo: string; chiudi: (
     const overflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     window.history.pushState({ ...window.history.state, foglio: true }, "");
-    const alIndietro = () => {
-      if (indietroNostri > 0) {
-        indietroNostri--;
-        return;
-      }
-      chiudiRef.current();
-    };
+    const alIndietro = () => chiudiRef.current();
     window.addEventListener("popstate", alIndietro);
     ref.current?.querySelector<HTMLElement>("button, input, select, textarea, a[href]")?.focus();
     return () => {
@@ -58,10 +52,7 @@ export function Foglio({ titolo, chiudi, children }: { titolo: string; chiudi: (
       document.body.style.overflow = overflow;
       // Se la voce attuale è ancora quella del foglio (chiuso da Chiudi, Escape, un salvataggio), la si toglie.
       // Se è già tornata indietro col gesto, non si fa niente.
-      if (window.history.state?.foglio === true) {
-        indietroNostri++;
-        window.history.back();
-      }
+      if (window.history.state?.foglio === true) window.history.back();
       if (precedente instanceof HTMLElement) precedente.focus();
     };
   }, []);
