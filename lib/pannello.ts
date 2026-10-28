@@ -420,9 +420,12 @@ export function conPasto(pasti: PastoSettimana[], nuovo: PastoSettimana): PastoS
   return [...pasti.filter((p) => !(p.data === nuovo.data && p.pasto === nuovo.pasto)), nuovo];
 }
 
-/** Il testo che compare dopo "Copia la settimana scorsa". */
-export function testoCopia(copiati: number, settimanaPiena: boolean): string {
-  if (copiati === 1) return "Copiato 1 pasto.";
-  if (copiati > 1) return `Copiati ${copiati} pasti.`;
-  return settimanaPiena ? "Tutte le caselle sono già piene." : "La settimana scorsa era vuota.";
+/**
+ * Il testo che compare dopo "Copia la settimana scorsa". `fonte` sono i pasti che aveva la settimana prima,
+ * `copiati` quanti ne sono entrati nelle caselle vuote.
+ */
+export function testoCopia(copiati: number, fonte: number): string {
+  if (fonte === 0) return "La settimana scorsa era vuota.";
+  if (copiati === 0) return "Le caselle erano già piene: non ho copiato niente.";
+  return copiati === 1 ? "Copiato 1 pasto." : `Copiati ${copiati} pasti.`;
 }

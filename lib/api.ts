@@ -449,7 +449,7 @@ export const pannelloApi = {
   salvaCliente: (dati: DatiCliente, id?: string) => chiama<{ cliente: ClienteMatteo }>("/api/admin/rubrica", { method: id ? "PATCH" : "POST", json: id ? { id, ...dati } : dati }),
   salvaPasto: (p: NuovoPasto) => chiama<{ pasto: PastoSettimana }>("/api/admin/pasti", { method: "PUT", json: p }),
   togliPasto: (id: string) => chiama<{ ok: true }>("/api/admin/pasti", { method: "DELETE", json: { id } }),
-  copiaSettimana: (clienteId: string, lunedi: string) => chiama<{ pasti: PastoSettimana[]; copiati: number }>("/api/admin/pasti/copia", { method: "POST", json: { clienteId, lunedi } }),
+  copiaSettimana: (clienteId: string, lunedi: string) => chiama<{ pasti: PastoSettimana[]; copiati: number; fonte: number }>("/api/admin/pasti/copia", { method: "POST", json: { clienteId, lunedi } }),
   mettiInSettimana: (ordineId: string, inizio: string, prezzoPastoCents: number | null) => chiama<{ pasti: PastoSettimana[] }>(`/api/admin/in-settimana/${encodeURIComponent(ordineId)}`, { method: "POST", json: { inizio, prezzoPastoCents } }),
   guadagni: (mese: string) => chiama<{ mese: Guadagni; precedente: Guadagni }>(`/api/admin/guadagni?mese=${mese}`),
   chiavePush: () => chiama<{ publicKey: string | null }>("/api/admin/push"),

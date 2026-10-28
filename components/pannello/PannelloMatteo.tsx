@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { ApiError, api, impostazioniVuote, pannelloApi, type Impostazioni, type Ordine } from "@/lib/api";
-import { giorniDellaSettimana, lunediDi, type DatiPannello } from "@/lib/pannello";
-import { indietroDisponibile, profonditaDopoVai, urlDiVista, vistaDaUrl, type Vista } from "@/lib/pannello-navigazione";
+import { giorniDellaSettimana, lunediDi, type ClienteMatteo, type DatiPannello } from "@/lib/pannello";
+import { indietroDisponibile, statoDopoVai, urlDiVista, vistaDaUrl, type Vista } from "@/lib/pannello-navigazione";
 import { oggiRoma } from "@/lib/produzione";
 import ModuloCliente from "./ModuloCliente";
 import OrdiniNuovi from "./OrdiniNuovi";
@@ -32,7 +32,10 @@ export type Condiviso = {
   impostazioni: Impostazioni;
   /** Ricarica la settimana; risolve con i dati appena arrivati, o null se non sono arrivati. */
   ricarica: () => Promise<DatiPannello | null>;
-  vai: (v: Vista) => void;
+  /** Va a un'altra vista. Con `sostituisci` la voce attuale cambia indirizzo invece di aggiungerne una (dopo un salvataggio). */
+  vai: (v: Vista, opzioni?: { sostituisci?: boolean }) => void;
+  /** Un cliente appena salvato: resta nella rubrica anche se la ricarica che segue non arriva. */
+  ricordaCliente: (cliente: ClienteMatteo) => void;
   cambiaGiorno: (giorno: string) => void;
   /** Un avviso in cima alla schermata, che resta finche' Matteo non lo chiude. */
   avvisa: (testo: string) => void;
@@ -149,11 +152,13 @@ export default function PannelloMatteo() {
     };
   }, [ricarica]);
 
-  const vai = useCallback((v: Vista) => {
+  const vai = useCallback((v: Vista, opzioni?: { sostituisci?: boolean }) => {
     const { pathname, search: attuale } = window.location;
     const url = urlDiVista(v, pathname);
     if (url === `${pathname}${attuale}`) return;
-    window.history.pushState({ pannello: true, profondita: profonditaDopoVai(window.history.state, true) }, "", url);
+    const stato = statoDopoVai(window.history.state, opzioni?.sostituisci === true);
+    if (opzioni?.sostituisci) window.history.replaceState(stato, "", url);
+    else window.history.pushState(stato, "", url);
     avvisaIndirizzo();
   }, []);
 
@@ -177,6 +182,15 @@ export default function PannelloMatteo() {
 
   const avvisa = useCallback((testo: string) => setAvviso(testo), []);
 
+  // Il cliente appena salvato vale solo sulla settimana in cui è stato salvato: la ricarica, quando arriva, lo sostituisce.
+  const [appenaSalvato, setAppenaSalvato] = useState<{ base: DatiPannello | null; cliente: ClienteMatteo } | null>(null);
+  const ricordaCliente = useCallback((cliente: ClienteMatteo) => setAppenaSalvato({ base: datiDelGiorno, cliente }), [datiDelGiorno]);
+  const datiVisti = useMemo<DatiPannello | null>(() => {
+    if (!datiDelGiorno || !appenaSalvato || appenaSalvato.base !== datiDelGiorno) return datiDelGiorno;
+    const altri = datiDelGiorno.clienti.filter((c) => c.id !== appenaSalvato.cliente.id);
+    return { ...datiDelGiorno, clienti: [...altri, appenaSalvato.cliente] };
+  }, [datiDelGiorno, appenaSalvato]);
+
   const avvisoAperto = avviso && (
     <div className="pm-avviso-fatto" role="status">
       <p>{avviso}</p>
@@ -186,7 +200,7 @@ export default function PannelloMatteo() {
 
   const condiviso: Condiviso = {
     giorno,
-    dati: datiDelGiorno,
+    dati: datiVisti,
     nuovi: settimana ? settimana.dati.nuovi : null,
     erroreCaricamento: erroreDelGiorno,
     togliNuovo,
@@ -195,6 +209,7 @@ export default function PannelloMatteo() {
     vai,
     cambiaGiorno,
     avvisa,
+    ricordaCliente,
   };
 
   const testa = (

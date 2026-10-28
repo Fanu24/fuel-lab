@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { indietroDisponibile, profonditaDi, profonditaDopoVai, urlDiVista, vistaDaUrl } from "./pannello-navigazione";
+import { indietroDisponibile, profonditaDi, profonditaDopoVai, statoDopoVai, urlDiVista, vistaDaUrl } from "./pannello-navigazione";
 
 describe("vistaDaUrl e urlDiVista", () => {
   it("legge le viste dall'indirizzo, con la schermata del giorno come ripiego", () => {
@@ -41,6 +41,14 @@ describe("profondità nella storia", () => {
     expect(profonditaDopoVai(null, true)).toBe(1);
     expect(profonditaDopoVai({ pannello: true, profondita: 1 }, true)).toBe(2);
     expect(profonditaDopoVai({ pannello: true, profondita: 1 }, false)).toBe(1);
+  });
+
+  it("vai con sostituisci lascia la voce al suo livello; senza, la voce nuova sta sopra", () => {
+    expect(statoDopoVai(null, false)).toEqual({ pannello: true, profondita: 1 });
+    expect(statoDopoVai({ pannello: true, profondita: 2 }, false)).toEqual({ pannello: true, profondita: 3 });
+    expect(statoDopoVai({ pannello: true, profondita: 2 }, true)).toEqual({ pannello: true, profondita: 2 });
+    // una voce che non e' del pannello, sostituita, resta a profondita' zero
+    expect(statoDopoVai(null, true)).toEqual({ pannello: true, profondita: 0 });
   });
 
   it("indietro torna nella storia solo se ci sono voci del pannello sotto", () => {

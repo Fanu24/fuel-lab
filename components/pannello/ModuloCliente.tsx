@@ -21,7 +21,7 @@ export default function ModuloCliente({ pannello, clienteId }: { pannello: Condi
 }
 
 function Modulo({ pannello, cliente }: { pannello: Condiviso; cliente?: ClienteMatteo }) {
-  const { ricarica, vai } = pannello;
+  const { ricarica, ricordaCliente, vai } = pannello;
   const [nome, setNome] = useState(cliente?.nome ?? "");
   const [telefono, setTelefono] = useState(cliente?.telefono ?? "");
   const [indirizzo, setIndirizzo] = useState(cliente?.indirizzo ?? "");
@@ -52,9 +52,11 @@ function Modulo({ pannello, cliente }: { pannello: Condiviso; cliente?: ClienteM
         { nome: nomePulito, telefono: telefono.trim(), indirizzo: indirizzo.trim(), prezzoPastoCents: centesimi },
         cliente?.id,
       );
-      // Prima la rubrica aggiornata, così la settimana del cliente lo trova già.
+      // Il cliente resta in rubrica anche se la ricarica che segue non arriva: niente doppioni da riscrivere.
+      ricordaCliente(salvato);
       await ricarica();
-      vai({ tipo: "cliente", clienteId: salvato.id });
+      // Sostituisce il modulo nella storia: "Indietro" dalla settimana non torna al modulo.
+      vai({ tipo: "cliente", clienteId: salvato.id }, { sostituisci: true });
     } catch (err) {
       setErrore(messaggioDiErrore(err));
     } finally {

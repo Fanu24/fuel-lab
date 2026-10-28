@@ -64,6 +64,15 @@ export function profonditaDopoVai(statoAttuale: unknown, indirizzoCambiato: bool
   return indirizzoCambiato ? attuale + 1 : attuale;
 }
 
+/**
+ * Lo stato della voce che `vai` scrive. Di norma una voce nuova sta un gradino sopra; con `sostituisci`
+ * la voce attuale cambia indirizzo restando al suo livello (per esempio dopo "Salva" nel modulo del
+ * cliente, così "Indietro" non torna al modulo).
+ */
+export function statoDopoVai(statoAttuale: unknown, sostituisci: boolean): { pannello: true; profondita: number } {
+  return { pannello: true, profondita: profonditaDopoVai(statoAttuale, !sostituisci) };
+}
+
 /** Il bottone "Indietro" può tornare indietro nella storia solo se ci sono voci del pannello sotto. */
 export function indietroDisponibile(statoAttuale: unknown): boolean {
   return profonditaDi(statoAttuale) > 0;

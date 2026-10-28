@@ -258,7 +258,7 @@ function Scheda({ ordine: o, occupato, errore, accetta, rifiuta }: {
             </label>
           )}
           <label className="pm-campo">
-            <span>Quanto paga a pasto (facoltativo)</span>
+            <span>Quanto paga a pasto (€) — facoltativo</span>
             <input type="text" inputMode="decimal" placeholder="12,50" value={prezzo} onChange={(e) => setPrezzo(e.target.value)} />
           </label>
           <div className="pm-bottoni">

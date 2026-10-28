@@ -268,9 +268,9 @@ it("un pasto messo in una casella sostituisce quello che c'era, senza toccare gl
   expect(risultato.find((p) => p.pasto === "cena")?.piatto).toBe("Frittata");
 });
 
-it("il testo dopo la copia", () => {
-  expect(testoCopia(1, false)).toBe("Copiato 1 pasto.");
-  expect(testoCopia(4, false)).toBe("Copiati 4 pasti.");
-  expect(testoCopia(0, false)).toBe("La settimana scorsa era vuota.");
-  expect(testoCopia(0, true)).toBe("Tutte le caselle sono già piene.");
+it("il testo dopo la copia distingue settimana vuota e caselle già piene", () => {
+  expect(testoCopia(1, 1)).toBe("Copiato 1 pasto.");
+  expect(testoCopia(4, 6)).toBe("Copiati 4 pasti.");
+  expect(testoCopia(0, 0)).toBe("La settimana scorsa era vuota.");
+  expect(testoCopia(0, 3)).toBe("Le caselle erano già piene: non ho copiato niente.");
 });

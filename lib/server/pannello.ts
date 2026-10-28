@@ -265,10 +265,12 @@ export async function togliPasto(db: D1Database, id: string): Promise<boolean> {
 /**
  * Copia pranzi e cene della settimana prima (lunedi-7 ... lunedi-1) sulle stesse
  * caselle della settimana di `lunedi`, dove sono vuote. Il prezzo e' quello attuale del cliente.
+ * `fonte` e' quanti pranzi e cene aveva la settimana prima: dice se era vuota davvero, o se
+ * `copiati` e' zero solo perche' le caselle erano gia' piene.
  */
-export async function copiaSettimanaPrecedente(db: D1Database, clienteId: string, lunedi: string): Promise<{ pasti: PastoSettimana[]; copiati: number }> {
+export async function copiaSettimanaPrecedente(db: D1Database, clienteId: string, lunedi: string): Promise<{ pasti: PastoSettimana[]; copiati: number; fonte: number }> {
   const cliente = await leggiCliente(db, clienteId);
-  if (!cliente) return { pasti: [], copiati: 0 };
+  if (!cliente) return { pasti: [], copiati: 0, fonte: 0 };
   const { results } = await db.prepare(`${SELECT_PASTO} WHERE cliente_id = ? AND pasto IN ('pranzo', 'cena') AND data BETWEEN ? AND ?`)
     .bind(clienteId, spostaGiorno(lunedi, -7), spostaGiorno(lunedi, -1))
     .all<RigaSql>();
@@ -281,7 +283,7 @@ export async function copiaSettimanaPrecedente(db: D1Database, clienteId: string
       .bind(crypto.randomUUID(), clienteId, spostaGiorno(p.data, 7), p.pasto, p.piatto, p.piattoId, p.porzioni, prezzoRiga(cliente.prezzoPastoCents))));
     copiati = risultati.reduce((n, r) => n + r.meta.changes, 0);
   }
-  return { pasti: await leggiPastiSettimana(db, clienteId, lunedi), copiati };
+  return { pasti: await leggiPastiSettimana(db, clienteId, lunedi), copiati, fonte: fonte.length };
 }
 
 /* =========================================================================

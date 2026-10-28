@@ -118,11 +118,10 @@ export default function SettimanaCliente({ pannello, clienteId, sopra }: {
     setCopiaInCorso(true);
     setErrore(null);
     setCopia(null);
-    const settimanaPiena = griglia.every((c) => c.pranzo !== null && c.cena !== null);
     try {
       const r = await pannelloApi.copiaSettimana(clienteId, lunedi);
       setRitocco({ chiave, dati: settimana, pasti: r.pasti });
-      setCopia({ testo: testoCopia(r.copiati, settimanaPiena) });
+      setCopia({ testo: testoCopia(r.copiati, r.fonte) });
       void ricarica();
     } catch (e) {
       setErrore(messaggioDiErrore(e));

@@ -156,7 +156,7 @@ describe("pasti", () => {
 
     const copiata = await copiaPost({ env: env(), request: richiesta("POST", "/api/admin/pasti/copia", { clienteId: paolo.id, lunedi: "2026-11-02" }), params: {} });
     expect(copiata.status).toBe(200);
-    expect(await corpoJson(copiata)).toMatchObject({ copiati: 1, pasti: [expect.objectContaining({ data: "2026-11-02", piatto: "Riso", pasto: "cena" })] });
+    expect(await corpoJson(copiata)).toMatchObject({ copiati: 1, fonte: 1, pasti: [expect.objectContaining({ data: "2026-11-02", piatto: "Riso", pasto: "cena" })] });
   });
 });
 

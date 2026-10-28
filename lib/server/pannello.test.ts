@@ -156,10 +156,24 @@ describe("rubrica e pasti", () => {
     const copia = await copiaSettimanaPrecedente(env.DB, paolo.id, lun);
 
     expect(copia.copiati).toBe(1);
+    // La settimana prima aveva due pasti (Riso e Pollo): `fonte` li conta, anche quello che non entra.
+    expect(copia.fonte).toBe(2);
     expect(copia.pasti.map((p) => [p.data, p.piatto, p.prezzoCents, p.ordineId])).toEqual([
       ["2026-11-02", "Riso", 900, null],
       ["2026-11-04", "Insalata", 900, null],
     ]);
+  });
+
+  it("copia la settimana scorsa: fonte zero se era vuota, copiati zero se le caselle erano già piene", async () => {
+    const { env } = bench;
+    const paolo = await creaCliente(env.DB, cliente("Paolo"));
+    const vuota = await copiaSettimanaPrecedente(env.DB, paolo.id, "2026-11-02");
+    expect(vuota).toMatchObject({ copiati: 0, fonte: 0 });
+
+    await salvaPasto(env.DB, { clienteId: paolo.id, data: "2026-10-27", pasto: "cena", piatto: "Frittata", piattoId: null, porzioni: 1 });
+    await salvaPasto(env.DB, { clienteId: paolo.id, data: "2026-11-03", pasto: "cena", piatto: "Pollo", piattoId: null, porzioni: 1 });
+    const piene = await copiaSettimanaPrecedente(env.DB, paolo.id, "2026-11-02");
+    expect(piene).toMatchObject({ copiati: 0, fonte: 1 });
   });
 
   it("recenti: fino a 12 piatti distinti dal più recente, dai 60 giorni indietro in poi, senza eventi", async () => {

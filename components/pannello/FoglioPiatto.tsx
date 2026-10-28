@@ -74,6 +74,16 @@ export default function FoglioPiatto({ cliente, data, pasto, attuale, recenti, n
         <Bottone type="submit" variante="verde" disabled={!testo.trim()}>OK</Bottone>
       </form>
 
+      {/* Le porzioni prima dei piatti: un tocco su un suggerito salva subito con questo numero. */}
+      <div className="pm-cs-porzioni">
+        <span>Porzioni</span>
+        <div>
+          <Bottone className="pm-icona" aria-label="Una porzione in meno" disabled={porzioni <= PORZIONI_MIN} onClick={() => setPorzioni((n) => Math.max(PORZIONI_MIN, n - 1))}>−</Bottone>
+          <output aria-live="polite">{porzioni}</output>
+          <Bottone className="pm-icona" aria-label="Una porzione in più" disabled={porzioni >= PORZIONI_MAX} onClick={() => setPorzioni((n) => Math.min(PORZIONI_MAX, n + 1))}>+</Bottone>
+        </div>
+      </div>
+
       {errore && <Errore messaggio={errore} />}
 
       {recenti.length > 0 && (
@@ -96,16 +106,7 @@ export default function FoglioPiatto({ cliente, data, pasto, attuale, recenti, n
         ))}
       </section>
 
-      <div className="pm-cs-porzioni">
-        <span>Porzioni</span>
-        <div>
-          <Bottone className="pm-icona" aria-label="Una porzione in meno" disabled={porzioni <= PORZIONI_MIN} onClick={() => setPorzioni((n) => Math.max(PORZIONI_MIN, n - 1))}>−</Bottone>
-          <output aria-live="polite">{porzioni}</output>
-          <Bottone className="pm-icona" aria-label="Una porzione in più" disabled={porzioni >= PORZIONI_MAX} onClick={() => setPorzioni((n) => Math.min(PORZIONI_MAX, n + 1))}>+</Bottone>
-        </div>
-      </div>
-
-      {attuale && <Bottone variante="rosso" onClick={() => void togli()}>Togli</Bottone>}
+      {attuale &&<Bottone variante="rosso" onClick={() => void togli()}>Togli</Bottone>}
     </Foglio>
   );
 }
