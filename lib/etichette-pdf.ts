@@ -4,7 +4,7 @@
 
 import { PDFDocument } from "pdf-lib";
 import type { EtichettaPannello } from "./pannello";
-import { ETICHETTA_MM, adattaNome, dataEtichetta, posizioneEtichetta, vaACapo } from "./etichette-layout";
+import { ETICHETTA_MM, adattaNome, dataEtichetta, posizioneEtichetta, pulisciSposta, vaACapo } from "./etichette-layout";
 
 /* A4 a 300 dpi: 2480 × 3508 px, cioè 11,811 px per mm. */
 const PX_PER_MM = 300 / 25.4;
@@ -12,6 +12,9 @@ const PAGINA_PX = { larghezza: 2480, altezza: 3508 };
 /* A4 in punti PDF. */
 const PAGINA_PT = { larghezza: 595.28, altezza: 841.89 };
 const PER_FOGLIO = 21;
+/* Quanto resta valido il PDF in una scheda aperta e quanto il link "Apri il PDF" (nessuna scheda). */
+const ATTESA_SCHEDA_MS = 60_000;
+const ATTESA_LINK_MS = 10 * 60_000;
 
 /* Le proporzioni del mockup approvato (etichetta-a-e-altro.html). */
 const INTERLINEA_TESTATA = 1.3;
@@ -20,7 +23,6 @@ const SPAZIO_NOME_TESTATA = 2; // mm, come margin-top: 10px nel mockup
 const SPAZIO_PIATTO_NOME = 1.2; // mm, come margin-top: 6px nel mockup
 const SPESSORE_REGOLA = 0.3; // mm
 const SPAZIO_REGOLA_TESTO = 1.2; // mm, padding-top della regola nel mockup
-const SPOSTA_MAX = 5;
 const CHIAVE_SPOSTA = "fuellab-etichette-sposta";
 
 type Famiglie = { disp: string; ui: string; mono: string };
@@ -67,25 +69,37 @@ export async function creaPdfEtichette(
 }
 
 /**
- * Consegna il PDF: il foglio di condivisione del telefono (su iPhone c'è "Stampa"), altrimenti
- * una nuova scheda con il PDF. Annullare la condivisione non è un errore.
+ * Consegna il PDF, nell'ordine: il foglio di condivisione (su iPhone c'è "Stampa"); altrimenti la
+ * scheda segnaposto `finestra` (aperta dal chiamante nel gesto del tocco); se manca anche quella,
+ * restituisce un URL da aprire con un tocco. Annullare la condivisione non è un errore. Non cambia mai la pagina del pannello.
  */
-export async function consegnaPdf(blob: Blob, nomeFile: string): Promise<void> {
+export async function consegnaPdf(blob: Blob, nomeFile: string, finestra: Window | null): Promise<string | null> {
   const file = new File([blob], nomeFile, { type: "application/pdf" });
   if (navigator.canShare?.({ files: [file] })) {
     try {
       await navigator.share({ files: [file], title: nomeFile });
-      return;
+      finestra?.close();
+      return null;
     } catch (e) {
-      if (e instanceof DOMException && e.name === "AbortError") return;
-      // Condivisione non riuscita (per esempio il gesto dell'utente è scaduto mentre si generava il PDF): si apre come sotto.
+      if (e instanceof DOMException && e.name === "AbortError") {
+        finestra?.close();
+        return null;
+      }
+      // Condivisione non riuscita (su iPhone il gesto è scaduto durante la generazione): si va avanti.
     }
   }
   const url = URL.createObjectURL(blob);
-  const finestra = window.open(url, "_blank");
-  // Se il browser ha bloccato la scheda, il PDF si apre nella pagina stessa.
-  if (!finestra) window.location.href = url;
-  setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  if (finestra) {
+    try {
+      finestra.location.href = url;
+      setTimeout(() => URL.revokeObjectURL(url), ATTESA_SCHEDA_MS);
+      return null;
+    } catch {
+      // La scheda è stata chiusa o non risponde: si passa al link.
+    }
+  }
+  setTimeout(() => URL.revokeObjectURL(url), ATTESA_LINK_MS);
+  return url;
 }
 
 /** La correzione di stampa salvata sul telefono. Senza storage (modalità privata) è zero. */
@@ -106,11 +120,6 @@ export function salvaSposta(sposta: { x: number; y: number }): void {
   } catch {
     // Storage non disponibile: la correzione vale per questa sola volta.
   }
-}
-
-function pulisciSposta(valore: unknown): number {
-  const n = typeof valore === "number" && Number.isFinite(valore) ? valore : 0;
-  return Math.min(SPOSTA_MAX, Math.max(-SPOSTA_MAX, n));
 }
 
 /* ---------- Font e immagini ---------- */

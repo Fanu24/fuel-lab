@@ -21,6 +21,13 @@ export const ETICHETTA_MM = {
 export const MARGINE_FOGLIO_ALTO_MM = 0.45;
 
 const COLONNE = 3;
+const SPOSTA_MAX_MM = 5;
+
+/** Una correzione di stampa in mm: da −5 a 5; un valore che non è un numero diventa 0. */
+export function pulisciSposta(valore: unknown): number {
+  const n = typeof valore === "number" && Number.isFinite(valore) ? valore : 0;
+  return Math.min(SPOSTA_MAX_MM, Math.max(-SPOSTA_MAX_MM, n));
+}
 
 /**
  * Dove sta l'etichetta `indice` (da 0 a 20) sul foglio, in mm, angolo in alto a sinistra.

@@ -20,24 +20,34 @@ export default function VistaGiorno({ pannello, sopra, senzaDati }: {
 }) {
   const { giorno, dati, vai, cambiaGiorno } = pannello;
   const [lavoro, setLavoro] = useState(false);
-  const [errore, setErrore] = useState<string | null>(null);
+  /* Errore e link tengono il giorno a cui si riferiscono: cambiando giorno non compaiono più. */
+  const [errore, setErrore] = useState<{ giorno: string; testo: string } | null>(null);
+  const [linkPdf, setLinkPdf] = useState<{ giorno: string; url: string } | null>(null);
 
   const giorni = giorniDellaSettimana(lunediDi(giorno));
   const pasti = dati ? pastiDelGiorno(dati.pasti, dati.clienti, giorno) : null;
   const etichette = dati ? etichetteDelGiorno(dati.pasti, dati.clienti, giorno) : [];
   const nomeDelGiorno = NOMI_GIORNO[giornoDelPiano(giorno)].toLowerCase();
 
-  /* Il PDF si prepara solo quando serve: il codice per le etichette si carica al primo click. */
+  /* Il PDF si prepara solo quando serve: il codice per le etichette si carica al primo click.
+     La scheda per il PDF si apre prima di ogni `await`, nel gesto del tocco: su iPhone e in molti
+     browser una scheda aperta dopo viene bloccata. Il pannello non cambia pagina in nessun caso. */
   async function stampaEtichette() {
     if (!dati || lavoro) return;
     setLavoro(true);
     setErrore(null);
+    setLinkPdf(null);
+    // Scheda segnaposto: null se il browser la blocca comunque (si ricade sul link "Apri il PDF").
+    const finestra = window.open("", "_blank");
     try {
       const { creaPdfEtichette, consegnaPdf, leggiSposta } = await import("@/lib/etichette-pdf");
       const pdf = await creaPdfEtichette(etichette, { preparatoIl: oggiRoma(), sposta: leggiSposta() });
-      await consegnaPdf(pdf, `etichette-${giorno}.pdf`);
-    } catch {
-      setErrore("Non riesco a preparare le etichette. Riprova.");
+      const url = await consegnaPdf(pdf, `etichette-${giorno}.pdf`, finestra);
+      if (url) setLinkPdf({ giorno, url });
+    } catch (e) {
+      finestra?.close();
+      console.error("Etichette in PDF: preparazione o consegna non riuscita", e);
+      setErrore({ giorno, testo: "Non riesco a preparare le etichette. Riprova." });
     } finally {
       setLavoro(false);
     }
@@ -82,7 +92,10 @@ export default function VistaGiorno({ pannello, sopra, senzaDati }: {
       </main>
 
       <footer className="pm-basso">
-        {errore && <Errore messaggio={errore} riprova={stampaEtichette} />}
+        {errore?.giorno === giorno && <Errore messaggio={errore.testo} riprova={stampaEtichette} />}
+        {linkPdf?.giorno === giorno && (
+          <a className="pm-bottone pm-bottone-verde" href={linkPdf.url} target="_blank" rel="noopener">Apri il PDF</a>
+        )}
         <Bottone variante="verde" onClick={() => vai({ tipo: "scegli-cliente" })}>+ Aggiungi</Bottone>
         <Bottone variante="chiaro" disabled={etichette.length === 0 || lavoro} onClick={stampaEtichette}>
           {lavoro ? "Preparo le etichette…" : `Stampa etichette di ${nomeDelGiorno}`}
