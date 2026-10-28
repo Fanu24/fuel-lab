@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { dataCorta, etichetteDelGiorno, giorniDellaSettimana, lunediDi, nomeGiorno, nomeGiornoCorto, pastiDelGiorno, type RigaGiorno } from "@/lib/pannello";
+import { dataCorta, etichetteDelGiorno, giorniDellaSettimana, lunediDi, nomeGiornoCorto, pastiDelGiorno, type RigaGiorno } from "@/lib/pannello";
 import type { Vista } from "@/lib/pannello-navigazione";
-import { giornoDelPiano, spostaGiorni } from "@/lib/produzione";
+import { giornoDelPiano, oggiRoma, spostaGiorni } from "@/lib/produzione";
 import { NOMI_GIORNO } from "@/lib/settimana";
 import type { Condiviso } from "./PannelloMatteo";
-import { Avviso, Bottone, Foglio } from "./ui";
+import { Avviso, Bottone, Errore } from "./ui";
 
 /* La schermata del giorno (mockup A): la settimana, i pasti del giorno scelto a pranzo e a cena,
    e in fondo le due azioni da fare. Il riquadro degli ordini nuovi e l'errore arrivano da fuori
@@ -19,12 +19,29 @@ export default function VistaGiorno({ pannello, sopra, senzaDati }: {
   senzaDati: ReactNode;
 }) {
   const { giorno, dati, vai, cambiaGiorno } = pannello;
-  const [stampa, setStampa] = useState(false);
+  const [lavoro, setLavoro] = useState(false);
+  const [errore, setErrore] = useState<string | null>(null);
 
   const giorni = giorniDellaSettimana(lunediDi(giorno));
   const pasti = dati ? pastiDelGiorno(dati.pasti, dati.clienti, giorno) : null;
   const etichette = dati ? etichetteDelGiorno(dati.pasti, dati.clienti, giorno) : [];
   const nomeDelGiorno = NOMI_GIORNO[giornoDelPiano(giorno)].toLowerCase();
+
+  /* Il PDF si prepara solo quando serve: il codice per le etichette si carica al primo click. */
+  async function stampaEtichette() {
+    if (!dati || lavoro) return;
+    setLavoro(true);
+    setErrore(null);
+    try {
+      const { creaPdfEtichette, consegnaPdf, leggiSposta } = await import("@/lib/etichette-pdf");
+      const pdf = await creaPdfEtichette(etichette, { preparatoIl: oggiRoma(), sposta: leggiSposta() });
+      await consegnaPdf(pdf, `etichette-${giorno}.pdf`);
+    } catch {
+      setErrore("Non riesco a preparare le etichette. Riprova.");
+    } finally {
+      setLavoro(false);
+    }
+  }
 
   return (
     <>
@@ -65,17 +82,12 @@ export default function VistaGiorno({ pannello, sopra, senzaDati }: {
       </main>
 
       <footer className="pm-basso">
+        {errore && <Errore messaggio={errore} riprova={stampaEtichette} />}
         <Bottone variante="verde" onClick={() => vai({ tipo: "scegli-cliente" })}>+ Aggiungi</Bottone>
-        <Bottone variante="chiaro" disabled={etichette.length === 0} onClick={() => setStampa(true)}>
-          Stampa etichette di {nomeDelGiorno}
+        <Bottone variante="chiaro" disabled={etichette.length === 0 || lavoro} onClick={stampaEtichette}>
+          {lavoro ? "Preparo le etichette…" : `Stampa etichette di ${nomeDelGiorno}`}
         </Bottone>
       </footer>
-
-      {stampa && (
-        <Foglio titolo={`Etichette · ${nomeGiorno(giorno)}`} chiudi={() => setStampa(false)}>
-          <Avviso>In arrivo.</Avviso>
-        </Foglio>
-      )}
     </>
   );
 }
