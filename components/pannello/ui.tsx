@@ -28,8 +28,15 @@ export function unFoglioAperto(): boolean {
  */
 /* Un foglio aperto è una voce della storia (stesso indirizzo, con `foglio: true`): il gesto "indietro"
    del telefono lo chiude e lascia la pagina com'è. Quando si chiude in altro modo, la voce si toglie con
-   history.back(); il foglio toglie il proprio listener prima di quel back, quindi il popstate che ne
-   segue non arriva a nessun foglio. */
+   history.back(); il foglio toglie il proprio listener prima, quindi il popstate che ne segue non arriva
+   a nessun foglio.
+
+   Il back non è immediato ma rinviato di un giro (setTimeout). Motivo: in sviluppo React (StrictMode)
+   monta, smonta e rimonta l'effetto di ogni foglio. Il primo smontaggio vedrebbe la voce del foglio e
+   tornerebbe indietro, chiudendo il foglio appena rimontato. Così il rimontaggio, che arriva prima del
+   timer, annulla il back e riusa la voce. Lo stesso vale per un foglio aperto subito dopo un altro:
+   riusa la voce ancora attiva invece di aggiungerne una e poi tornare indietro sotto i suoi piedi. */
+let indietroInSospeso: ReturnType<typeof setTimeout> | null = null;
 
 export function Foglio({ titolo, chiudi, children }: { titolo: string; chiudi: () => void; children: ReactNode }) {
   const ref = useRef<HTMLElement>(null);
@@ -42,7 +49,14 @@ export function Foglio({ titolo, chiudi, children }: { titolo: string; chiudi: (
     const precedente = document.activeElement;
     const overflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    window.history.pushState({ ...window.history.state, foglio: true }, "");
+    if (indietroInSospeso !== null) {
+      // La voce del foglio è ancora quella attuale: si riusa, senza aggiungerne un'altra.
+      clearTimeout(indietroInSospeso);
+      indietroInSospeso = null;
+      if (window.history.state?.foglio !== true) window.history.pushState({ ...window.history.state, foglio: true }, "");
+    } else {
+      window.history.pushState({ ...window.history.state, foglio: true }, "");
+    }
     const alIndietro = () => chiudiRef.current();
     window.addEventListener("popstate", alIndietro);
     ref.current?.querySelector<HTMLElement>("button, input, select, textarea, a[href]")?.focus();
@@ -50,9 +64,14 @@ export function Foglio({ titolo, chiudi, children }: { titolo: string; chiudi: (
       window.removeEventListener("popstate", alIndietro);
       fogliAperti--;
       document.body.style.overflow = overflow;
-      // Se la voce attuale è ancora quella del foglio (chiuso da Chiudi, Escape, un salvataggio), la si toglie.
-      // Se è già tornata indietro col gesto, non si fa niente.
-      if (window.history.state?.foglio === true) window.history.back();
+      // Se la voce attuale è ancora quella del foglio (chiuso da Chiudi, Escape, un salvataggio), la si toglie
+      // dopo un giro, se nel frattempo non è arrivato un altro foglio (vedi sopra). Se è già tornata indietro col gesto, non si fa niente.
+      if (window.history.state?.foglio === true) {
+        indietroInSospeso = setTimeout(() => {
+          indietroInSospeso = null;
+          window.history.back();
+        }, 0);
+      }
       if (precedente instanceof HTMLElement) precedente.focus();
     };
   }, []);
