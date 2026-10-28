@@ -252,13 +252,16 @@ export function etichetteDelGiorno(
 
 /**
  * "+39 347 123 4567" -> "393471234567"; "085 4212345" -> "390854212345".
- * Solo cifre, senza il "00" iniziale. Un numero che comincia con 0 (fisso) o con
+ * Solo cifre, senza il "00" iniziale; uno 0 in piu' davanti a un cellulare (11 cifre
+ * che cominciano con 03) si toglie. Un numero che comincia con 0 (fisso) o con
  * 3 e ha 9 o 10 cifre (cellulare) prende il 39 davanti; il resto e' gia' internazionale.
  * Null se ci sono meno di sei cifre.
  */
 export function numeroInternazionale(telefono: string): string | null {
   let cifre = telefono.replace(/\D/g, "");
   if (cifre.startsWith("00")) cifre = cifre.slice(2);
+  // cellulare scritto con uno 0 in piu' davanti: 0347 1234567 -> 3471234567
+  if (cifre.length === 11 && cifre.startsWith("03")) cifre = cifre.slice(1);
   if (cifre.length < 6) return null;
   if (cifre.startsWith("0")) return `39${cifre}`;
   if (cifre.startsWith("3") && (cifre.length === 9 || cifre.length === 10)) return `39${cifre}`;

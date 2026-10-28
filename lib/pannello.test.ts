@@ -109,6 +109,8 @@ it("i numeri di telefono diventano link giusti, o nessun link", () => {
   expect(numeroInternazionale("393 1234567")).toBe("393931234567");
   expect(numeroInternazionale("+39 085 4212345")).toBe("390854212345");
   expect(numeroInternazionale("12345")).toBeNull();
+  // cellulare scritto con uno 0 davanti in piu'
+  expect(numeroInternazionale("0347 1234567")).toBe("393471234567");
   expect(linkChiama("085 4212345")).toBe("tel:+390854212345");
   expect(linkWhatsAppCliente("347 1234567", "Paolo")).toBe(`https://wa.me/393471234567?text=${encodeURIComponent("Ciao Paolo, sono Matteo di FUEL LAB.")}`);
   expect(linkWhatsAppCliente("", "Paolo")).toBeNull();
