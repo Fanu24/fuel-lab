@@ -583,6 +583,16 @@ export const fineRichiesta = (o: Pick<Ordine, "service" | "fulfillment_date">) =
   o.service === "abbonamento" && o.fulfillment_date && dataValida(o.fulfillment_date) ? fineAbbonamento(o.fulfillment_date) : null;
 
 /**
+ * Un abbonamento e' concluso quando il suo periodo e' finito (l'ultimo giorno
+ * e' ancora in corso). Finche' il periodo dura e l'inizio e' passato non ha una
+ * data futura: il giorno e l'orario si concordano con Matteo.
+ */
+export function abbonamentoConcluso(o: Pick<Ordine, "service" | "fulfillment_date">, oggi: string): boolean {
+  const fine = fineRichiesta(o);
+  return fine !== null && fine < oggi;
+}
+
+/**
  * La riga "quando" di una richiesta: il periodo di un abbonamento confermato,
  * il giorno di ritiro o consegna, oppure quello che il cliente ha chiesto (da
  * confermare). Una richiesta annullata non ha un quando: il giorno che Matteo

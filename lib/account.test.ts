@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  abbonamentoConcluso,
   campiMancanti,
   CHIAVE_BOZZA_RICHIESTA,
   confermaEliminazione,
@@ -310,6 +311,19 @@ describe("stato degli ordini", () => {
     expect(passiOrdine("preparing", "pickup", "abbonamento")?.map((p) => p.stato)).toEqual(["fatto", "attuale", "da-fare"]);
     expect(passiOrdine("completed", "pickup", "abbonamento")?.every((p) => p.stato === "fatto")).toBe(true);
     expect(passiOrdine("cancelled", "pickup", "abbonamento")).toBeNull();
+  });
+
+  it("un abbonamento e' concluso solo dopo l'ultimo giorno del suo periodo: in corso non lo e', con l'inizio futuro la data e' l'inizio", () => {
+    // dal 14 settembre al 13 ottobre
+    const abb = { service: "abbonamento" as const, fulfillment_date: "2026-09-14" };
+    expect(abbonamentoConcluso(abb, "2026-09-10")).toBe(false); // non ancora iniziato
+    expect(prossimaUscitaDi(abb, "2026-09-10")).toBe("2026-09-14");
+    expect(abbonamentoConcluso(abb, "2026-09-27")).toBe(false); // in corso: nessuna data futura, da concordare
+    expect(prossimaUscitaDi(abb, "2026-09-27")).toBeNull();
+    expect(abbonamentoConcluso(abb, "2026-10-13")).toBe(false); // ultimo giorno del periodo
+    expect(abbonamentoConcluso(abb, "2026-10-14")).toBe(true); // periodo finito
+    expect(abbonamentoConcluso({ ...abb, service: "menu-settimana" }, "2026-10-20")).toBe(false);
+    expect(abbonamentoConcluso({ ...abb, fulfillment_date: null }, "2026-10-20")).toBe(false);
   });
 
   it("per un abbonamento la prossima uscita è solo l'inizio, se non è passato", () => {

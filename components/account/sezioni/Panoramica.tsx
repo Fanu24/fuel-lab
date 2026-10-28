@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import {
+  abbonamentoConcluso,
   campiMancanti,
   contaPiatti,
   formattaGiorno,
@@ -208,7 +209,10 @@ function ProssimaConsegna({ ordini, oggi }: Pick<PropsArea, "ordini" | "oggi">) 
   // Per un abbonamento conta l'inizio, se non e' passato: le consegne dopo si concordano con Matteo.
   const uscita = prossimaUscitaDi(prossima, oggi);
   const data = uscita ?? (scheda ? null : prossima.fulfillment_date);
-  const quando = !data ? (scheda && prossima.fulfillment_date ? "Giorno e orario da concordare con Matteo." : "Giorno da definire")
+  // Senza data futura: un abbonamento il cui periodo e' finito e' concluso; uno in corso ha giorno e orario da concordare.
+  const quando = !data ? (scheda && prossima.fulfillment_date
+      ? (abbonamentoConcluso(prossima, oggi) ? "Consegne concluse" : "Giorno e orario da concordare con Matteo.")
+      : "Giorno da definire")
     : data === oggi ? `Oggi, ${formattaGiorno(data, oggi)}`
     : data === spostaGiorni(oggi, 1) ? `Domani, ${formattaGiorno(data, oggi)}`
     : formattaGiorno(data, oggi);

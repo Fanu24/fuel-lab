@@ -27,7 +27,7 @@ export const TITOLARE = { nome: "Matteo Pattanè", ruolo: "Cuoco" } as const;
 export const EMAIL = "info@fuelchef.it";
 export const EMAIL_PRIVACY = "privacy@fuelchef.it";
 
-/** Numero e orari di ritiro confermati dal titolare. */
+/** Numero e orari di apertura del laboratorio, confermati dal titolare. */
 export const TELEFONO: string | null = "+39 340 454 7019";
 export const ORARI_RITIRO = {
   testo: "Lun–ven · 9:30–19:00",
