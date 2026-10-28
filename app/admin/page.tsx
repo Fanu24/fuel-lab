@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import AdminAccess from "@/components/admin/AdminAccess";
-import SimpleAdmin from "@/components/admin/SimpleAdmin";
+import PannelloMatteo from "@/components/pannello/PannelloMatteo";
 import "../styles/admin.css";
 
 export const metadata: Metadata = {
@@ -16,5 +16,5 @@ export const viewport: Viewport = {
 };
 
 export default function AdminPage() {
-  return <AdminAccess><SimpleAdmin /></AdminAccess>;
+  return <AdminAccess><PannelloMatteo /></AdminAccess>;
 }

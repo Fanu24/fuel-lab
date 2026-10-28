@@ -29,6 +29,7 @@
 
 import type { Fascia, FormulaId, Nucleo } from "@/lib/abbonamento";
 import type { Allenamenti, Piano } from "@/lib/settimana";
+import type { ClienteMatteo, DatiCliente, DatiPannello, Guadagni, NuovoPasto, PastoSettimana } from "@/lib/pannello";
 
 /* ---------- Tipi di base ---------- */
 
@@ -439,6 +440,20 @@ export const adminApi = {
    */
   salvaImpostazioni: (modifica: Partial<Impostazioni>) =>
     chiama<{ settings: Impostazioni }>("/api/admin/settings", { method: "PUT", json: modifica }),
+};
+
+/* ---------- Pannello di Matteo ---------- */
+
+export const pannelloApi = {
+  pannello: (da: string, a: string) => chiama<DatiPannello>(`/api/admin/pannello?da=${da}&a=${a}`),
+  salvaCliente: (dati: DatiCliente, id?: string) => chiama<{ cliente: ClienteMatteo }>("/api/admin/rubrica", { method: id ? "PATCH" : "POST", json: id ? { id, ...dati } : dati }),
+  salvaPasto: (p: NuovoPasto) => chiama<{ pasto: PastoSettimana }>("/api/admin/pasti", { method: "PUT", json: p }),
+  togliPasto: (id: string) => chiama<{ ok: true }>("/api/admin/pasti", { method: "DELETE", json: { id } }),
+  copiaSettimana: (clienteId: string, lunedi: string) => chiama<{ pasti: PastoSettimana[]; copiati: number }>("/api/admin/pasti/copia", { method: "POST", json: { clienteId, lunedi } }),
+  mettiInSettimana: (ordineId: string, inizio: string, prezzoPastoCents: number | null) => chiama<{ pasti: PastoSettimana[] }>(`/api/admin/in-settimana/${encodeURIComponent(ordineId)}`, { method: "POST", json: { inizio, prezzoPastoCents } }),
+  guadagni: (mese: string) => chiama<{ mese: Guadagni; precedente: Guadagni }>(`/api/admin/guadagni?mese=${mese}`),
+  chiavePush: () => chiama<{ publicKey: string | null }>("/api/admin/push"),
+  iscriviPush: (s: PushSubscriptionJSON) => chiama<{ ok: true }>("/api/admin/push", { method: "POST", json: s }),
 };
 
 /* ---------- Etichette in italiano ---------- */
