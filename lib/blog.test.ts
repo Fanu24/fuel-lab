@@ -281,17 +281,12 @@ describe("qualità dei testi", () => {
     }
   });
 
-  it("quello che i testi dicono dei piatti del menu è ancora vero", () => {
-    // Se il menu cambia, questi controlli dicono quali frasi riscrivere (cercale per nome del piatto).
-    const piu = (misura: (p: (typeof PIATTI)[number]) => number) => PIATTI.reduce((a, b) => (misura(b) > misura(a) ? b : a)).id;
-    const meno = (misura: (p: (typeof PIATTI)[number]) => number) => PIATTI.reduce((a, b) => (misura(b) < misura(a) ? b : a)).id;
-    expect(PIATTI.length, "le FAQ dicono ‘oggi sono sei’").toBe(6);
-    expect(piu((p) => p.carboidrati), "il piatto con più carboidrati").toBe("riso-julien-pollo-teriyaki");
-    expect(piu((p) => p.proteine / p.carboidrati), "il rapporto più alto tra proteine e carboidrati").toBe("maiale-senape-spinaci");
-    expect(meno((p) => p.kcal), "il piatto con i valori energetici più contenuti").toBe("uova-purgatorio-peperoni");
-    expect(PIATTI.filter((p) => p.proteine > 40).length, "diversi piatti superano i 40 g di proteine").toBeGreaterThanOrEqual(2);
-    expect(PIATTI.filter((p) => p.allenamento === "entrambi").map((p) => p.id), "l’unico piatto ‘cardio e pesi’").toEqual(["riso-julien-pollo-teriyaki"]);
-    for (const p of PIATTI) expect(Math.abs(p.kcal - (p.proteine * 4 + p.carboidrati * 4 + p.grassi * 9)), p.id).toBeLessThanOrEqual(1);
+  it("non classifica nutrizionalmente ricette ancora incomplete", () => {
+    expect(PIATTI.length).toBeGreaterThanOrEqual(6);
+    for (const a of ARTICOLI) {
+      const testo = testiDi(a).join(" ");
+      expect(testo, a.slug).not.toMatch(/è il piatto con più carboidrati|ha il rapporto più alto|con i valori energetici più contenuti|hanno i valori energetici più contenuti|pallotte cacio e ovo fit proteiche/i);
+    }
   });
 });
 

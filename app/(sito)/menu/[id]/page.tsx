@@ -3,9 +3,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PIATTI, getPiatto } from "@/lib/catalogo";
-import { CONSIGLI } from "@/lib/consigli";
-import TagAllenamento from "@/components/ui/TagAllenamento";
-import { BarraComposizione, NumeriMacro } from "@/components/ui/Macro";
+import { NumeriMacro } from "@/components/ui/Macro";
+import { nutrizioneDisponibile, statoNutrizione } from "@/lib/nutrizione";
 import AggiungiAllaSettimana from "@/components/menu/AggiungiAllaSettimana";
 import BollinoNonDisponibile from "@/components/impostazioni/BollinoNonDisponibile";
 import CartaPiatto from "@/components/menu/CartaPiatto";
@@ -36,7 +35,6 @@ export default async function PaginaPiatto({ params }: Props) {
   const piatto = getPiatto((await params).id);
   if (!piatto) notFound();
 
-  const consiglio = piatto.allenamento === "entrambi" ? null : CONSIGLI[piatto.allenamento];
   // I tre piatti che seguono questo nel menu, ricominciando da capo alla fine: ogni scheda ha i suoi vicini
   // (con "i primi tre" l'ultimo piatto rimandava sempre agli stessi).
   const posto = PIATTI.findIndex((p) => p.id === piatto.id);
@@ -68,7 +66,7 @@ export default async function PaginaPiatto({ params }: Props) {
         <div className="wrap">
           <Briciole voci={briciole} />
           <div className="mt-8 grid gap-10 lg:grid-cols-[1.1fr_1fr] lg:gap-16">
-            <div className="foto-piatto smusso relative aspect-[4/5] overflow-hidden bg-paper-2 lg:sticky lg:top-[calc(var(--nav-h)+24px)] lg:self-start">
+            <div className="foto-piatto smusso relative aspect-[4/3] overflow-hidden bg-paper-2 lg:sticky lg:top-[calc(var(--nav-h)+24px)] lg:aspect-[4/5] lg:self-start">
               <Image
                 src={piatto.img}
                 alt={`Foto illustrativa per ${piatto.nome}`}
@@ -84,36 +82,14 @@ export default async function PaginaPiatto({ params }: Props) {
             </div>
 
             <div>
-              <TagAllenamento tipo={piatto.allenamento} />
               <h1 className="titolo mt-5">{piatto.nome}</h1>
               <p className="lead mt-5">{piatto.descrizione}</p>
-
-              <div className="mt-10 border-t-[3px] border-ink pt-6">
-                <NumeriMacro macro={piatto} />
-                <BarraComposizione macro={piatto} className="mt-5" />
-                <p className="mt-3 text-sm text-muted">
-                  Porzione da <span className="num">{piatto.grammi}</span> g · cucinato a Pescara il giorno stesso del
-                  ritiro o della consegna · valori per porzione intera
-                </p>
-              </div>
-
-              <div className="mt-10">
+              <div className="mt-7">
                 <AggiungiAllaSettimana piattoId={piatto.id} />
               </div>
-
-              <section className="mt-14">
-                <h2 className="occhiello">Perché funziona</h2>
-                <p className="mt-4 text-lg leading-relaxed">{piatto.motivo}</p>
-                {consiglio ? (
-                  <p className="mt-4 text-muted">
-                    Ideale nei giorni di <strong className="text-ink">{consiglio.nome.toLowerCase()}</strong>:{" "}
-                    {consiglio.regola.toLowerCase()}
-                  </p>
-                ) : null}
-              </section>
-
-              <section className="mt-12">
-                <h2 className="occhiello">Ingredienti</h2>
+              <p className="mt-6 text-sm"><strong>Allergeni:</strong> {piatto.allergeniDaConfermare ? "da confermare con Matteo prima dell’ordine" : piatto.allergeni.length ? piatto.allergeni.join(", ") : "chiedi conferma a Matteo"}.</p>
+              <details className="mt-7 border-t border-ink/20 py-4">
+                <summary className="min-h-11 cursor-pointer font-semibold">Ingredienti e quantità</summary>
                 <ul className="mt-4">
                   {piatto.ingredienti.map((i) => (
                     <li
@@ -122,18 +98,17 @@ export default async function PaginaPiatto({ params }: Props) {
                       style={{ borderColor: "var(--line)" }}
                     >
                       <span>{i.nome}</span>
-                      <span className="num text-sm text-muted">{i.grammi ? `${i.grammi} g` : i.nota}</span>
+                      <span className="text-right text-sm text-muted">{i.grammi ? `${i.grammi} g${i.nota ? ` · ${i.nota}` : ""}` : i.nota}</span>
                     </li>
                   ))}
                 </ul>
-              </section>
-
-              <section className="mt-12">
-                <h2 className="occhiello">Allergeni</h2>
-                <p className="mt-4">
-                  {piatto.allergeni.length ? piatto.allergeni.join(", ") : "Nessuno dei 14 allergeni principali."}
-                </p>
-              </section>
+                <p className="mt-3 text-sm text-muted">{piatto.notaRicetta ?? "Quantità per una porzione. Riso e pasta pesati cotti; il peso del piatto finito può variare."}</p>
+              </details>
+              <details className="border-y border-ink/20 py-4">
+                <summary className="min-h-11 cursor-pointer font-semibold">Calorie e valori nutrizionali</summary>
+                {nutrizioneDisponibile(piatto.id) ? <NumeriMacro macro={piatto} className="mt-4" /> : null}
+                <p className="mt-4 text-sm text-muted">{statoNutrizione(piatto.id).nota}</p>
+              </details>
             </div>
           </div>
         </div>
@@ -143,9 +118,7 @@ export default async function PaginaPiatto({ params }: Props) {
         <div className="wrap">
           <div className="flex flex-wrap items-end justify-between gap-6">
             <h2 className="titolo-s">Altri piatti</h2>
-            <Link href="/pasti-proteici-pescara" className="link">
-              Tutti i piatti a confronto, per proteine
-            </Link>
+            <Link href="/menu" className="link">Tutto il menu</Link>
           </div>
           <ul className="mt-8 grid gap-8 sm:grid-cols-3">
             {altri.map((p) => (

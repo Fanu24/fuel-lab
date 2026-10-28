@@ -194,7 +194,7 @@ describe("controlli prima di salvare", () => {
 
 describe("abbonamento a mano", () => {
   const base = (): CampiNuovoOrdine => ({ ...campiVuoti("senza-account"), nome: "Anna", telefono: "347 765 4321" });
-  /** Un abbonamento scelto: Completo Standard da solo, con ritiro (sconto 10%: 468 euro). */
+  /** Un abbonamento scelto: Completo Standard da solo, con ritiro (sconto 10%: 520 euro). */
   const abb = () => conServizio(base(), "abbonamento");
 
   it("passando all'abbonamento svuota i piatti, propone la formula consigliata col suo prezzo e usa una data sola", () => {
@@ -202,7 +202,7 @@ describe("abbonamento a mano", () => {
     const a = conServizio(conPiatti, "abbonamento");
     expect(a).toMatchObject({
       servizio: "abbonamento", piano: {}, produzione: "2026-10-05", uscita: "2026-10-05",
-      formula: "completo", fascia: "standard", nucleo: "singolo", prova: false, prezzo: "468,00",
+      formula: "completo", fascia: "standard", nucleo: "singolo", prova: false, prezzo: "520,00",
     });
     // un prezzo gia' scritto resta
     expect(conServizio({ ...base(), prezzo: "200" }, "abbonamento").prezzo).toBe("200");
@@ -213,24 +213,24 @@ describe("abbonamento a mano", () => {
   });
 
   it("il prezzo proposto e' quello di calcolaPrezzo: formula, fascia, ritiro e nucleo", () => {
-    expect(prezzoProposto(abb())).toBe("468,00"); // 520 - 10% (ritiro)
+    expect(prezzoProposto(abb())).toBe("520,00"); // prezzo di listino
     expect(prezzoProposto({ ...abb(), modalita: "delivery" })).toBe("520,00");
-    expect(prezzoProposto({ ...abb(), modalita: "delivery", nucleo: "coppia" })).toBe("478,00"); // 520 - 8%
-    expect(prezzoProposto({ ...abb(), formula: "full7", fascia: "plus" })).toBe("851,00"); // 946 - 10%
+    expect(prezzoProposto({ ...abb(), modalita: "delivery", nucleo: "coppia" })).toBe("520,00"); // prezzo di listino
+    expect(prezzoProposto({ ...abb(), formula: "full7", fascia: "plus" })).toBe("946,00"); // prezzo di listino
   });
 
   it("cambiando formula, fascia, nucleo o modalita' il prezzo si riallinea, finche' Matteo non lo scrive lui", () => {
-    expect(conSceltaAbbonamento(abb(), { formula: "pranzo" }).prezzo).toBe("156,00"); // 173 - 10% = 155,70
-    expect(conSceltaAbbonamento(abb(), { fascia: "plus" }).prezzo).toBe("608,00"); // 676 - 10% = 608,40
-    expect(conSceltaAbbonamento(abb(), { nucleo: "coppia" }).prezzo).toBe("468,00"); // il ritiro (10%) batte la coppia (8%)
+    expect(conSceltaAbbonamento(abb(), { formula: "pranzo" }).prezzo).toBe("173,00"); // prezzo di listino
+    expect(conSceltaAbbonamento(abb(), { fascia: "plus" }).prezzo).toBe("676,00"); // prezzo di listino
+    expect(conSceltaAbbonamento(abb(), { nucleo: "coppia" }).prezzo).toBe("520,00"); // prezzo di listino
     expect(conModalita(abb(), "delivery").prezzo).toBe("520,00");
-    // tutto insieme, e a mano si puo' anche scrivere "468" invece di "468,00": e' ancora la proposta
-    expect(conSceltaAbbonamento({ ...abb(), prezzo: "468" }, { formula: "leggero", fascia: "plus" }).prezzo).toBe("406,00"); // 451 - 10% = 405,90
+    // tutto insieme, e a mano si puo' anche scrivere "520" invece di "520,00": e' ancora la proposta
+    expect(conSceltaAbbonamento({ ...abb(), prezzo: "520" }, { formula: "leggero", fascia: "plus" }).prezzo).toBe("451,00"); // prezzo di listino
     // un prezzo scritto a mano non si tocca, e uno cancellato resta vuoto
     expect(conSceltaAbbonamento({ ...abb(), prezzo: "500" }, { formula: "pranzo" }).prezzo).toBe("500");
     expect(conSceltaAbbonamento({ ...abb(), prezzo: "" }, { formula: "pranzo" }).prezzo).toBe("");
     // la scelta si salva anche se il prezzo non cambia
-    expect(conSceltaAbbonamento(abb(), { prova: true })).toMatchObject({ prova: true, prezzo: "468,00" });
+    expect(conSceltaAbbonamento(abb(), { prova: true })).toMatchObject({ prova: true, prezzo: "520,00" });
   });
 
   it("fuori dall'abbonamento cambiare la modalita' non tocca il prezzo", () => {
@@ -258,7 +258,7 @@ describe("abbonamento a mano", () => {
     expect(corpo).toMatchObject({
       service: "abbonamento", plan: {}, productionDate: "2026-10-05", fulfillmentDate: "2026-10-05",
       subscription: { plan: "full6", tier: "plus", household: "coppia", trial: true },
-      priceCents: 73000, // 811 - 10% (ritiro) = 729,90
+      priceCents: 81100, // prezzo di listino
     });
     expect(corpo).not.toHaveProperty("meals");
     // Matteo puo' scrivere un altro prezzo, e quello parte
@@ -278,7 +278,7 @@ describe("abbonamento a mano", () => {
     expect(moduloToccato(conSceltaAbbonamento(vuoto(), { formula: "full7" }))).toBe(true);
     expect(moduloToccato(conSceltaAbbonamento(vuoto(), { prova: true }))).toBe(true);
     expect(moduloToccato({ ...vuoto(), prezzo: "200" })).toBe(true);
-    expect(moduloToccato({ ...vuoto(), prezzo: "468" })).toBe(false); // e' ancora la proposta
+    expect(moduloToccato({ ...vuoto(), prezzo: "520" })).toBe(false); // e' ancora la proposta
     expect(moduloToccato({ ...vuoto(), prezzo: "" })).toBe(true); // l'ha cancellato lui
   });
 });

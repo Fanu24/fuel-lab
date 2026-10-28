@@ -462,6 +462,7 @@ function SchedaRichiesta({
             <dd>{o.meals}</dd>
           </div>
         ) : null}
+        {o.discount ? <div><dt>Codice sconto</dt><dd>{o.discount.code} · −{o.discount.percent}%{o.discount.appliedPercent > o.discount.percent ? ` (applicato il ${o.discount.appliedPercent}% della promozione migliore)` : ""}<span className="block text-sm font-normal text-muted">{o.discount.baseCents === null ? "Si applicherà quando Matteo conferma il totale." : `Prima dello sconto: ${euro(o.discount.baseCents)}`}</span></dd></div> : null}
         {o.price_cents !== null && o.price_cents !== undefined ? (
           <div>
             <dt>{o.status === "requested" ? "Prezzo proposto" : "Totale concordato"}</dt>

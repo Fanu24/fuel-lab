@@ -60,7 +60,7 @@ export const SERVIZI: Servizio[] = [
     numero: "01",
     nome: "Il menu della settimana",
     descrizione:
-      "Dici come ti alleni giorno per giorno e la settimana si compone con i sei piatti del menu. La ritocchi trascinando i piatti, aggiungi quello che vuoi alla box.",
+      "Scegli come ti alleni e componi la settimana con i piatti del menu. Poi personalizzala con i piatti e gli extra che preferisci.",
     prezzo: { tipo: "soglia", valore: SOGLIA_PREZZO, unita: "a pasto" },
     img: "/foto/photo-1505576399279-565b52d4ac71.webp",
     href: "/settimana",
@@ -79,7 +79,7 @@ export const SERVIZI: Servizio[] = [
     numero: "03",
     nome: "Sui macro della tua scheda",
     descrizione:
-      "Scrivi i numeri della scheda del tuo nutrizionista: il piano si compone sui tuoi target, scegliendo i piatti più vicini ai tuoi macro. Tu confermi.",
+      "Inserisci i valori della scheda del nutrizionista. Ti proponiamo i piatti più vicini ai tuoi macro, che puoi personalizzare.",
     prezzo: { tipo: "soglia", valore: SOGLIA_PREZZO, unita: "a pasto" },
     img: "/foto/photo-1512058564366-18510be2db19.webp",
     href: "/scheda",
@@ -89,7 +89,7 @@ export const SERVIZI: Servizio[] = [
     numero: "04",
     nome: "Home cooking",
     descrizione:
-      "Matteo viene a casa tua: fa la spesa, cucina e porziona nella tua cucina. Non è produzione in serie, è il suo tempo dedicato solo a te, e per questo ha un'economia sua.",
+      "Matteo fa la spesa e cucina a casa tua, poi prepara le porzioni per i giorni successivi. Il servizio si concorda su preventivo.",
     prezzo: { tipo: "preventivo" },
     img: "/foto/photo-1556910103-1c02745aae4d.webp",
     // Il bottone porta a "Chi siamo": e' un posizionamento deliberato, "conosci Matteo prima

@@ -20,7 +20,7 @@ describe("percorso di una visita", () => {
   });
 
   it("il pannello di Matteo e le API non sono traffico del sito: percorso valido, ma da non contare", () => {
-    for (const privato of ["/dashboard", "/dashboard/", "/dashboard/ordini", "/Dashboard/Cucina", "/api/me"]) {
+    for (const privato of ["/admin", "/admin/", "/admin/ordini", "/dashboard", "/dashboard/", "/dashboard/ordini", "/Dashboard/Cucina", "/api/me"]) {
       expect(leggiPercorso(privato)).toEqual({ ok: true, percorso: null });
     }
     // una pagina che comincia con la stessa parola non e' il pannello

@@ -1,14 +1,8 @@
 import Link from "next/link";
 import Reveal from "@/components/Reveal";
 import { linkRichiediAbbonamento, type FormulaId } from "@/lib/abbonamento";
-import { ELENCO_SCONTI, percentuale } from "./righe";
 
-/* Gli sconti e la settimana di prova, dal volantino: "Ritiro in laboratorio
-   -10%. In coppia -8%. In famiglia -10%. La prima settimana la provi senza
-   impegno." Il volantino non dice se gli sconti si sommano, e la pagina non lo
-   dice al posto suo: descrive la stima del simulatore e rimanda a Matteo.
-   Sulla scheda di una formula il bottone della prova porta alla richiesta con
-   quella formula gia' scelta (sulla consegna a casa, il listino della scheda). */
+/* Codici di Matteo e settimana di prova. */
 
 const DOPO_LA_RICHIESTA = [
   { titolo: "Ti risponde Matteo", testo: "Legge la tua richiesta lui, di persona." },
@@ -21,19 +15,8 @@ export default function ScontiEProva({ formula }: { formula?: FormulaId }) {
     <div className="grid gap-14 lg:grid-cols-2 lg:gap-20">
       <Reveal>
         <p className="occhiello">Sconti</p>
-        <h2 className="titolo mt-5 max-w-[12ch]">Ritiro, coppia, famiglia.</h2>
-        <ul className="mt-10 border-t-[3px] border-ink">
-          {ELENCO_SCONTI.map((s) => (
-            <li key={s.chiave} className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b border-ink/15 py-5">
-              <span className="font-disp text-lg font-semibold tracking-[.04em] uppercase md:text-xl">{s.nome}</span>
-              <span className="abb-cifra text-[32px] md:text-[40px]">{percentuale(s.valore)}</span>
-            </li>
-          ))}
-        </ul>
-        <p className="mt-6 max-w-[52ch] text-muted">
-          Se vi abbonate insieme, indicalo nella richiesta: Matteo conferma lo sconto. La stima del simulatore applica
-          lo sconto più alto fra quelli che ti spettano; il prezzo finale lo conferma sempre Matteo.
-        </p>
+        <h2 className="titolo mt-5 max-w-[12ch]">Hai un codice?</h2>
+        <p className="mt-6 max-w-[52ch] text-muted">Applicalo nel riepilogo dell’abbonamento per vedere il prezzo aggiornato. I codici sconto li crea Matteo.</p>
       </Reveal>
 
       <Reveal delay={80}>

@@ -62,7 +62,9 @@ function perPunteggio(lista: Piatto[], punteggio: (p: Piatto) => number): Piatto
   return [...lista].sort((a, b) => punteggio(b) - punteggio(a));
 }
 
-const di = (a: Piatto["allenamento"]) => PIATTI.filter((p) => p.allenamento === a);
+// Le nuove ricette senza stima restano selezionabili a mano, mai valutate come pasti da zero kcal.
+const CON_STIMA = PIATTI.filter((p) => p.kcal > 0);
+const di = (a: Piatto["allenamento"]) => CON_STIMA.filter((p) => p.allenamento === a);
 
 /**
  * I piatti adatti a un tipo di giornata, dal piu' adatto. I piatti "entrambi"
@@ -89,7 +91,7 @@ function preferenze(tipo: TipoGiornata, rimescola: number, esclusi: ReadonlySet<
   const visti = new Set(primi.map((p) => p.id));
   const punteggio = tipo === "pesi" ? rapportoPC : tipo === "cardio" ? quotaCarbo : (p: Piatto) => -p.kcal;
   const ripiego = perPunteggio(
-    PIATTI.filter((p) => !visti.has(p.id) && !esclusi.has(p.id)),
+    CON_STIMA.filter((p) => !visti.has(p.id) && !esclusi.has(p.id)),
     punteggio,
   );
   return [...ruota(primi, rimescola), ...ruota(ripiego, rimescola)].map((p) => p.id);
@@ -149,7 +151,7 @@ export function sostituisciEsclusi(piano: Piano, allenamenti: Allenamenti, esclu
 
 /** Il cuore dell'autoriempimento: un piatto per ogni casella di `daRiempire`, nell'ordine della settimana. */
 function assegna(piano: Piano, daRiempire: DaRiempire, caselle: number, rimescola: number, esclusi: ReadonlySet<string>): Piano {
-  const disponibili = PIATTI.filter((p) => !esclusi.has(p.id)).length;
+  const disponibili = CON_STIMA.filter((p) => !esclusi.has(p.id)).length;
   let prova = assegnaCon(piano, daRiempire, rimescola, esclusi, tetto(caselle, disponibili));
   // Senza esclusi il tetto di tre basta sempre (lo prova il test delle quattordici caselle).
   for (let limite = tetto(caselle, disponibili) + 1; esclusi.size && prova.vuote && disponibili && limite <= caselle; limite += 1) {

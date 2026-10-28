@@ -1,11 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import Reveal from "@/components/Reveal";
-import ChiusuraCta from "@/components/home/ChiusuraCta";
 import JsonLd from "@/components/seo/JsonLd";
 import { AGGIORNAMENTO, PAGINE, metadatiPagina } from "@/components/seo/pagine";
 import { nodiPagina, nodoAbbonamenti, nodoServizio } from "@/components/seo/schema";
-import { CONSEGNA_OGNI_GIORNI, LINK_RICHIEDI_ABBONAMENTO } from "@/lib/abbonamento";
 import { SERVIZI, type Prezzo, type ServizioId } from "@/lib/servizi";
 
 const PAGINA = PAGINE.servizi;
@@ -32,13 +30,13 @@ const SCHEMA_SERVIZIO: Record<Exclude<ServizioId, "abbonamento">, { tipo: string
 };
 
 /* Il titolo conta i servizi dell'elenco qui sotto: se ne arriva uno, cambia da solo. */
-const QUANTI: Record<number, string> = { 2: "Due", 3: "Tre", 4: "Quattro", 5: "Cinque", 6: "Sei" };
+const SERVIZI_ORDINATI = [...SERVIZI].sort((a, b) => Number(b.id === "abbonamento") - Number(a.id === "abbonamento"));
 
 /* Il testo del bottone principale di ogni servizio. */
 const BOTTONE: Record<ServizioId, string> = {
-  "menu-settimana": "Inizia",
+  "menu-settimana": "Componi la tua settimana",
   abbonamento: "Scopri gli abbonamenti",
-  "sui-tuoi-macro": "Inizia",
+  "sui-tuoi-macro": "Porta il tuo piano alimentare",
   "home-cooking": "Conosci Matteo",
 };
 
@@ -74,34 +72,22 @@ export default function Servizi() {
         <div className="wrap">
           <h1>
             <span className="occhiello">Servizi di meal prep a Pescara</span>
-            <span className="titolo-pagina mt-6 block max-w-[11ch]">{QUANTI[SERVIZI.length] ?? SERVIZI.length} modi di mangiare bene.</span>
+            <span className="titolo-pagina mt-6 block max-w-[11ch]">Scegli come mangiare.</span>
           </h1>
           <p className="lead mt-6">
-            Matteo cucina ogni giorno. Il menu si ritira in Via del Santuario 214 o arriva a Pescara e dintorni ogni
-            giorno, con la consegna gratis dai dieci pasti in su; gli abbonamenti hanno una consegna (o un ritiro) ogni{" "}
-            {CONSEGNA_OGNI_GIORNI} giorni.{" "}
+            Abbonamenti, menu settimanale e cucina a domicilio.{" "}
             <Link href={PAGINE.consegna.percorso} className="link">
               Zone e ritiro
             </Link>
           </p>
           {/* L'indice dei servizi con il prezzo: chi arriva dal telefono vede in un colpo d'occhio cosa c'e' e quanto
               costa, e va dritto al servizio che gli interessa. */}
-          <ul className="mt-10 max-w-[720px] border-b" style={{ borderColor: "var(--line)" }}>
-            {SERVIZI.map((s) => (
-              <li key={s.id}>
-                <a href={`#${s.id}`} className="abb-mini">
-                  <span className="abb-mini-nome">{s.nome}</span>
-                  <span className="text-right text-sm font-semibold">{testoPrezzo(s.prezzo)}</span>
-                </a>
-              </li>
-            ))}
-          </ul>
         </div>
       </section>
 
       <section className="pb-[var(--sezione)]">
         <ol className="wrap grid gap-16">
-          {SERVIZI.map((s, i) => (
+          {SERVIZI_ORDINATI.map((s, i) => (
             <Reveal
               as="li"
               key={s.id}
@@ -111,7 +97,6 @@ export default function Servizi() {
                 <Image src={s.img} alt="" fill sizes="(min-width: 768px) 50vw, 100vw" className="object-cover" />
               </div>
               <div>
-                <span className="num text-sm text-muted">{s.numero}</span>
                 <h2 className="titolo mt-3">{s.nome}</h2>
                 <p className="mt-5 max-w-[46ch] text-lg text-muted">{s.descrizione}</p>
                 <p className="mt-6 font-disp text-lg font-semibold tracking-[.1em] uppercase">
@@ -126,11 +111,6 @@ export default function Servizi() {
                       Come funziona a casa tua
                     </Link>
                   ) : null}
-                  {s.id === "abbonamento" ? (
-                    <Link href={LINK_RICHIEDI_ABBONAMENTO} className="link">
-                      Richiedi un abbonamento
-                    </Link>
-                  ) : null}
                 </div>
               </div>
             </Reveal>
@@ -138,7 +118,6 @@ export default function Servizi() {
         </ol>
       </section>
 
-      <ChiusuraCta />
     </>
   );
 }

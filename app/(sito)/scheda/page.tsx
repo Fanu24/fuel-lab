@@ -1,4 +1,4 @@
-import SchedaClient from "./SchedaClient";
+import Link from "next/link";
 import JsonLd from "@/components/seo/JsonLd";
 import { AGGIORNAMENTO, PAGINE, metadatiPagina } from "@/components/seo/pagine";
 import { nodiPagina } from "@/components/seo/schema";
@@ -26,12 +26,14 @@ export default function SchedaPage() {
             <span className="titolo-xl mt-6 block max-w-[12ch]">Hai già una scheda?</span>
           </h1>
           <p className="lead mt-6">
-            Scrivi i quattro numeri del tuo nutrizionista. La settimana si compone da sola con i piatti più vicini ai
-            tuoi macro, e poi la ritocchi come vuoi.
+            Matteo cucina il piano del tuo nutrizionista. Concordate ingredienti e quantità prima di iniziare.
           </p>
+          <div className="mt-8 flex flex-wrap gap-5">
+            <Link href="/abbonamento" className="btn btn-ink">Scegli un abbonamento →</Link>
+            <Link href="/richiesta?servizio=sui-tuoi-macro#scrivi" className="link">Parlane con Matteo</Link>
+          </div>
         </div>
       </section>
-      <SchedaClient />
     </>
   );
 }

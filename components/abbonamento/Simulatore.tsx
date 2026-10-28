@@ -1,172 +1,113 @@
 "use client";
 
 import Link from "next/link";
-import { useId, useState } from "react";
+import { useId, useState, useRef } from "react";
 import {
-  FASCE,
-  FORMULA_CONSIGLIATA,
-  FORMULE,
-  NOMI_FASCIA,
-  NOMI_NUCLEO,
-  NUCLEI,
-  SCONTI,
-  SCONTO_NUCLEO,
-  calcolaPrezzo,
-  etichettaFormula,
-  euroInteri,
-  getFormula,
-  linkRichiediAbbonamento,
-  linkScriviAbbonamento,
-  percorsoFormula,
-  type Fascia,
-  type FormulaId,
-  type Nucleo,
+  FASCE, FORMULA_CONSIGLIATA, FORMULE, NOMI_FASCIA, NOMI_NUCLEO, NUCLEI,
+  calcolaPrezzo, etichettaFormula, getFormula,
+  linkRichiediAbbonamento, linkScriviAbbonamento, percorsoFormula,
+  type Nucleo, type FormulaId,
 } from "@/lib/abbonamento";
 import { useFascia } from "./FasciaScelta";
-import { CIRCA_A_PASTO, MENO, giorniCopertiAParole, motivoSconto, percentuale } from "./righe";
-
-/* Il simulatore di prezzo: formula, fascia, ritiro o consegna, da solo o in
-   compagnia. Tutto il conto lo fa calcolaPrezzo (lib/abbonamento.ts): qui si
-   scelgono i quattro valori e si mostra il risultato. E' una stima, e lo dice:
-   il prezzo finale lo conferma Matteo. */
-
-type Opzione<T extends string> = { valore: T; etichetta: string; nota?: string };
-
-/* Radio veri dentro un fieldset: la tastiera (frecce), il gruppo e lo stato
-   scelto sono quelli del browser, lo stile sta in app/styles/abbonamento.css. */
-function GruppoScelte<T extends string>({
-  legenda,
-  nome,
-  opzioni,
-  valore,
-  onCambia,
-}: {
-  legenda: string;
-  nome: string;
-  opzioni: Opzione<T>[];
-  valore: T;
-  onCambia: (v: T) => void;
-}) {
-  return (
-    <fieldset className="abb-gruppo">
-      <legend className="abb-legenda">{legenda}</legend>
-      <div className="abb-scelte">
-        {opzioni.map((o) => (
-          <label key={o.valore} className="abb-scelta">
-            <input type="radio" name={nome} value={o.valore} checked={valore === o.valore} onChange={() => onCambia(o.valore)} />
-            <span>
-              {o.etichetta}
-              {o.nota ? <small>{o.nota}</small> : null}
-            </span>
-          </label>
-        ))}
-      </div>
-    </fieldset>
-  );
-}
-
-const OPZIONI_FORMULA: Opzione<FormulaId>[] = FORMULE.map((f) => ({ valore: f.id, etichetta: f.nome, nota: f.consigliato ? "Consigliato" : undefined }));
-const OPZIONI_FASCIA: Opzione<Fascia>[] = FASCE.map((f) => ({ valore: f, etichetta: NOMI_FASCIA[f] }));
-const OPZIONI_NUCLEO: Opzione<Nucleo>[] = NUCLEI.map((n) => ({
-  valore: n,
-  etichetta: NOMI_NUCLEO[n],
-  nota: SCONTO_NUCLEO[n] ? percentuale(SCONTO_NUCLEO[n]) : undefined,
-}));
-const OPZIONI_RITIRO: Opzione<"consegna" | "ritiro">[] = [
-  { valore: "consegna", etichetta: "Consegna a casa" },
-  { valore: "ritiro", etichetta: "Ritiro in laboratorio", nota: percentuale(SCONTI.ritiro) },
-];
+import { api } from "@/lib/api";
+import { totaleScontato } from "@/lib/sconti";
 
 export default function Simulatore() {
   const id = useId();
   const [formula, setFormula] = useState<FormulaId>(FORMULA_CONSIGLIATA);
   const [fascia, setFascia] = useFascia();
-  const [modo, setModo] = useState<"consegna" | "ritiro">("consegna");
+  const [ritiro, setRitiro] = useState(false);
   const [nucleo, setNucleo] = useState<Nucleo>("singolo");
-
-  const ritiro = modo === "ritiro";
+  const [codice, setCodice] = useState("");
+  const [sconto, setSconto] = useState<{ code: string; percent: number } | null>(null);
+  const [verifica, setVerifica] = useState(false);
+  const [errore, setErrore] = useState("");
+  const richiesta = useRef(0);
+  async function applicaCodice() {
+    const n = ++richiesta.current;
+    setVerifica(true); setErrore(""); setSconto(null);
+    try {
+      const risultato = await api.verificaSconto(codice);
+      if (n === richiesta.current) { setSconto(risultato); setCodice(risultato.code); }
+    } catch (e) { if (n === richiesta.current) setErrore(e instanceof Error ? e.message : "Non riesco a verificare il codice."); }
+    finally { if (n === richiesta.current) setVerifica(false); }
+  }
   const f = getFormula(formula);
   const prezzo = calcolaPrezzo({ formula, fascia, ritiro, nucleo });
-  const listino = prezzo.listinoCentesimi / 100;
-  const totale = prezzo.totaleCentesimi / 100;
-  const sconto = listino - totale;
+  const totale = (sconto ? totaleScontato(prezzo.listinoCentesimi, sconto.percent)! : prezzo.totaleCentesimi) / 100;
+  const totaleTesto = new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR", minimumFractionDigits: sconto ? 2 : 0 }).format(totale);
+  const continua = linkRichiediAbbonamento({ formula, fascia, ritiro, nucleo, codice: sconto?.code });
+  const daApplicare = !!codice.trim() && !sconto;
 
   return (
-    <div>
-      <div className="grid items-start gap-10 lg:grid-cols-[1.05fr_1fr] lg:gap-16">
-        <div className="grid gap-8">
-          <GruppoScelte legenda="Formula" nome={`${id}-formula`} opzioni={OPZIONI_FORMULA} valore={formula} onCambia={setFormula} />
-          <GruppoScelte legenda="Fascia" nome={`${id}-fascia`} opzioni={OPZIONI_FASCIA} valore={fascia} onCambia={setFascia} />
-          <GruppoScelte legenda="Come li ricevi" nome={`${id}-modo`} opzioni={OPZIONI_RITIRO} valore={modo} onCambia={setModo} />
-          <GruppoScelte legenda="Per chi" nome={`${id}-nucleo`} opzioni={OPZIONI_NUCLEO} valore={nucleo} onCambia={setNucleo} />
-        </div>
-
-        <div className="abb-esito smusso">
-          {/* A ogni scelta lo screen reader sente solo il risultato: se la regione viva fosse l'intero riquadro
-              leggerebbe anche i bottoni e i link. */}
-          <p className="sr-only" role="status">
-            {f.nome}, fascia {NOMI_FASCIA[fascia]}: {totale} € al mese. {motivoSconto(prezzo.scontoPercento, ritiro, nucleo)}.
-          </p>
-          <p className="occhiello">La tua stima</p>
-          <p className="mt-5 font-disp text-xl font-semibold tracking-[.06em] uppercase">{etichettaFormula(formula, fascia)}</p>
-          <p className="mt-1 text-steel">{f.cosaRicevi}</p>
-          <p className="text-steel">{giorniCopertiAParole(f)}.</p>
-
-          <p className="mt-6 flex flex-wrap items-end gap-x-4 gap-y-2">
-            <span className="abb-cifra text-[clamp(56px,10vw,96px)] text-lime">
-              {totale}
-              <span className="ml-[.08em]">€</span>
-            </span>
-            <span className="font-disp text-lg font-semibold tracking-[.12em] uppercase">al mese</span>
-          </p>
-
-          <dl className="abb-conto mt-6">
-            <dt>Listino {NOMI_FASCIA[fascia]}</dt>
-            <dd className="num">{euroInteri(listino)}</dd>
-            <dt>{motivoSconto(prezzo.scontoPercento, ritiro, nucleo)}</dt>
-            <dd className="num">{sconto > 0 ? `${MENO}${euroInteri(sconto)}` : euroInteri(0)}</dd>
-          </dl>
-
-          <div className="mt-6 grid gap-2 text-sm text-steel">
-            {fascia === "standard" ? <p>Il listino Standard viene a {CIRCA_A_PASTO}.</p> : null}
-            <p>La stima applica lo sconto più alto fra quelli che ti spettano. Il prezzo finale lo conferma Matteo.</p>
-            {nucleo !== "singolo" ? (
-              <p>Se vi abbonate insieme, indicalo nella richiesta: Matteo conferma lo sconto.</p>
-            ) : null}
+    <div className="grid items-start gap-8 lg:grid-cols-[1.2fr_1fr] lg:gap-12">
+      <div>
+        <fieldset>
+          <legend className="titolo-s mb-5">1. Quali pasti ti servono?</legend>
+          <div className="grid gap-2">
+            {FORMULE.map((opzione) => (
+              <label key={opzione.id} className={`relative flex min-h-20 cursor-pointer items-center gap-3 border-2 p-4 transition-colors ${formula === opzione.id ? "border-lime bg-lime text-ink" : "border-steel/40 hover:border-steel"}`}>
+                <input type="radio" name={`${id}-formula`} value={opzione.id} checked={formula === opzione.id} onChange={() => setFormula(opzione.id)} className="h-5 w-5 shrink-0 accent-[#121412]" />
+                <span className="min-w-0 flex-1">
+                  <span className="block font-disp text-xl font-bold uppercase">{opzione.nome}{opzione.consigliato ? <span className="ml-2 text-[11px] font-semibold">Consigliato</span> : null}</span>
+                  <span className="mt-1 block text-sm">{opzione.slogan}</span>
+                </span>
+                <span className="shrink-0 text-right"><strong className="num text-xl">{opzione.prezzo[fascia]} €</strong><span className="block text-xs">al mese</span></span>
+              </label>
+            ))}
           </div>
-
-          <div className="mt-8 flex flex-wrap items-center gap-x-8 gap-y-4">
-            <Link
-              href={linkRichiediAbbonamento({ formula, fascia, ritiro, nucleo })}
-              className="btn btn-lime w-full justify-between whitespace-normal py-3 text-left sm:w-auto sm:min-w-[300px]"
-            >
-              <span>Richiedi {etichettaFormula(formula, fascia)}</span>
-              <span aria-hidden="true" className="freccia">→</span>
-            </Link>
-            <Link href={percorsoFormula(formula)} className="link">
-              La scheda del {f.nome}
-            </Link>
-            <Link href={linkScriviAbbonamento({ formula, fascia })} className="link">
-              Scrivi a Matteo
-            </Link>
+        </fieldset>
+        <fieldset className="abb-gruppo mt-7">
+          <legend className="abb-legenda">2. Scegli le porzioni</legend>
+          <div className="abb-scelte">
+            {FASCE.map((opzione) => <label key={opzione} className="abb-scelta"><input type="radio" name={`${id}-fascia`} value={opzione} checked={fascia === opzione} onChange={() => setFascia(opzione)} /><span>{NOMI_FASCIA[opzione]}</span></label>)}
           </div>
-          <p className="mt-5 text-sm text-steel">La prima settimana è di prova, senza impegno.</p>
-        </div>
+          <p className="mt-3 text-sm text-steel">{fascia === "standard" ? "Le porzioni del tuo piano." : "Porzioni e proteine maggiorate, da concordare con Matteo."}</p>
+        </fieldset>
+        <fieldset className="abb-gruppo mt-7">
+          <legend className="abb-legenda">3. Come ricevi i pasti?</legend>
+          <div className="abb-scelte">
+            <label className="abb-scelta"><input type="radio" name={`${id}-ritiro`} checked={!ritiro} onChange={() => setRitiro(false)} /><span>Consegna a casa</span></label>
+            <label className="abb-scelta"><input type="radio" name={`${id}-ritiro`} checked={ritiro} onChange={() => setRitiro(true)} /><span>Ritiro</span></label>
+          </div>
+        </fieldset>
+        <details className="mt-6 border-t border-steel/30 pt-3">
+          <summary className="min-h-11 cursor-pointer py-3 text-sm font-semibold">Vi abbonate in coppia o in famiglia?</summary>
+          <fieldset className="abb-gruppo py-3">
+            <legend className="sr-only">Per chi è l’abbonamento</legend>
+            <div className="abb-scelte">
+              {NUCLEI.map((opzione) => <label key={opzione} className="abb-scelta"><input type="radio" name={`${id}-nucleo`} value={opzione} checked={nucleo === opzione} onChange={() => setNucleo(opzione)} /><span>{NOMI_NUCLEO[opzione]}</span></label>)}
+            </div>
+            <p className="mt-3 text-sm text-steel">Il prezzo mostrato è per persona.</p>
+          </fieldset>
+        </details>
       </div>
 
-      {/* Sul telefono il risultato sta sotto le scelte: questa barra lo tiene in vista mentre si sceglie.
-          E' solo un ripetitore (aria-hidden): a leggerlo con lo screen reader ci pensa il riquadro sopra. */}
-      <p
-        aria-hidden="true"
-        className="sticky bottom-3 mt-6 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 bg-lime px-4 py-3 text-ink shadow-[0_8px_24px_rgb(0_0_0/0.5)] lg:hidden"
-      >
-        <span className="font-disp text-sm font-bold tracking-[.06em] uppercase">{etichettaFormula(formula, fascia)}</span>
-        <span className="abb-cifra shrink-0 whitespace-nowrap text-2xl">
-          {totale}
-          <span className="ml-[.08em]">€</span>
-          <span className="ml-1 font-disp text-xs font-semibold tracking-[.1em] uppercase">al mese</span>
-        </span>
-      </p>
+      <div className="abb-esito smusso lg:sticky lg:top-[calc(var(--nav-h)+20px)]">
+        <p className="occhiello">Il tuo abbonamento</p>
+        <h2 className="titolo-s mt-4">{etichettaFormula(formula, fascia)}</h2>
+        <p className="mt-3 text-steel">{f.cosaRicevi}.</p>
+        {formula === "completo" ? <p className="mt-2 text-sm text-steel">Pranzo e cena per 7 giorni; pasto aggiuntivo da concordare.</p> : null}
+        <p className="mt-2 text-sm text-steel">{ritiro ? "Ritiro in laboratorio" : "Consegna a casa"}{nucleo !== "singolo" ? ` · ${NOMI_NUCLEO[nucleo].toLowerCase()}` : ""}</p>
+        <p role="status" aria-atomic="true" className="mt-6"><span className="abb-cifra text-[clamp(44px,9vw,80px)] text-lime">{totaleTesto}</span><span className="ml-2 text-sm">al mese</span></p>
+        {sconto ? <p className="mt-3 text-sm text-steel">Listino {f.prezzo[fascia]} € · codice {sconto.code}: −{sconto.percent}%.</p> : null}
+        <div className="mt-6 border-t border-steel/30 pt-5">
+          <label htmlFor={`${id}-codice`} className="block text-sm font-semibold">Codice sconto</label>
+          <div className="mt-2 flex gap-2">
+            <input id={`${id}-codice`} value={codice} maxLength={32} autoCapitalize="characters" autoComplete="off" placeholder="Inserisci il codice" aria-describedby={`${id}-codice-esito`} aria-invalid={errore ? true : undefined} className="min-h-12 min-w-0 flex-1 border border-steel/40 bg-paper px-3 text-base text-ink uppercase" onChange={(e) => { richiesta.current++; setCodice(e.target.value); setSconto(null); setErrore(""); setVerifica(false); }} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); if (codice.trim() && !verifica) void applicaCodice(); } }} />
+            <button type="button" className="btn btn-lime !min-h-12 !px-4" disabled={verifica || !codice.trim()} onClick={() => void applicaCodice()}>{verifica ? "…" : "Applica"}</button>
+          </div>
+          <p id={`${id}-codice-esito`} role={errore ? "alert" : "status"} className="mt-2 text-sm text-steel">{errore || (sconto ? `Codice applicato: sconto ${sconto.percent}%.` : "Facoltativo. Se Matteo ti ha dato un codice, inseriscilo qui.")}</p>
+          {codice ? <button type="button" className="link mt-2 min-h-11 text-sm" onClick={() => { richiesta.current++; setCodice(""); setSconto(null); setErrore(""); setVerifica(false); }}>Rimuovi codice</button> : null}
+        </div>
+        <p className="mt-5 text-sm text-steel">Prezzo da confermare con Matteo. La prima settimana è di prova, senza impegno.</p>
+        {daApplicare || verifica ? <button type="button" disabled className="btn btn-lime mt-7 w-full justify-between">{verifica ? "Verifico il codice…" : "Applica o rimuovi il codice"}</button> : <Link href={continua} className="btn btn-lime mt-7 w-full justify-between">Continua <span aria-hidden="true">→</span></Link>}
+        <p className="mt-3 text-center text-sm text-steel">Accedi o crea l’account. Qui non paghi nulla.</p>
+        <div className="mt-6 flex flex-wrap gap-x-6 gap-y-3 text-sm">
+          <Link href={linkScriviAbbonamento({ formula, fascia, codice: sconto?.code })} className="link">Chiedi senza account</Link>
+          <Link href={percorsoFormula(formula)} className="link">Dettagli della formula</Link>
+        </div>
+      </div>
     </div>
   );
 }

@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { contaPiatti, righePiano } from "@/lib/account";
-import { NOMI_GIORNATA, usePiano } from "@/lib/piano";
+import { contaPiatti, hrefSezione, righePiano } from "@/lib/account";
+import { usePiano } from "@/lib/piano";
 import { descrizioneSincronia } from "@/lib/sincronizzaPiano";
 import { SceltaVersione, Segno, useSceltaInPagina, useSincronia } from "../SincronizzaPiano";
 import { Caricamento, LinkAccediDiNuovo, TitoloSezione } from "../ui";
@@ -17,7 +17,7 @@ const NOMI_PASTO = { pranzo: "Pranzo", cena: "Cena" } as const;
 const ID_STATO = "sincronia-account";
 
 export default function Settimana() {
-  const { piano, allenamenti, pronto, macroSettimana } = usePiano();
+  const { piano, pronto } = usePiano();
   const { stato, riprovaOra } = useSincronia();
   // la scelta del conflitto sta qui dentro: quella che galleggia sulla pagina si fa da parte
   useSceltaInPagina();
@@ -32,7 +32,7 @@ export default function Settimana() {
       <div>
         <TitoloSezione id="t-settimana">La mia settimana.</TitoloSezione>
         <p className="lead mt-4">
-          È la settimana che stai componendo. Si salva da sola nel tuo account: la ritrovi su ogni dispositivo in cui accedi.
+          Controlla i piatti e invia la richiesta a Matteo.
         </p>
       </div>
 
@@ -43,20 +43,14 @@ export default function Settimana() {
       ) : (
         <>
           {piatti > 0 ? (
-            <dl className="acc-macro" aria-label="Totali della settimana">
-              <div><dt>Pasti</dt><dd className="num">{piatti}<span className="text-muted">/14</span></dd></div>
-              <div><dt>Kcal</dt><dd className="num">{Math.round(macroSettimana.kcal).toLocaleString("it-IT")}</dd></div>
-              <div><dt>Proteine</dt><dd className="num">{Math.round(macroSettimana.proteine)} g</dd></div>
-              <div><dt>Carboidrati</dt><dd className="num">{Math.round(macroSettimana.carboidrati)} g</dd></div>
-              <div><dt>Grassi</dt><dd className="num">{Math.round(macroSettimana.grassi)} g</dd></div>
-            </dl>
+            <p className="text-lg"><strong className="num">{piatti}</strong> {piatti === 1 ? "pasto scelto" : "pasti scelti"}</p>
           ) : null}
 
           {caselle === 0 ? (
             <div className="acc-card">
               <h3 className="acc-card-titolo">Ancora nessun piatto</h3>
               <p className="mt-3 text-muted">
-                Nel compositore dici come ti alleni e la settimana si riempie da sola; poi la ritocchi.
+                Scegli i piatti che vuoi ricevere. Puoi lasciare liberi i giorni che non ti servono.
               </p>
             </div>
           ) : (
@@ -71,12 +65,10 @@ export default function Settimana() {
               </thead>
               <tbody>
                 {righe.map((r) => {
-                  const tipo = allenamenti[r.giorno];
                   return (
                     <tr key={r.giorno}>
                       <th scope="row">
                         <span className="block">{r.nome}</span>
-                        {tipo ? <span className={`tag tag-${tipo} mt-2`}>{NOMI_GIORNATA[tipo]}</span> : null}
                       </th>
                       {r.pasti.every((p) => !p.piatto && !p.extra.length) ? (
                         <td colSpan={2} className="acc-tabella-vuoto">Nessun pasto</td>
@@ -119,8 +111,9 @@ export default function Settimana() {
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
+              {piatti ? <Link href={hrefSezione("richiesta", { servizio: "menu-settimana" })} scroll={false} className="btn btn-lime btn-sm">Invia la settimana</Link> : null}
               <Link href="/settimana" className="btn btn-ink btn-sm">
-                Modifica nel compositore
+                {piatti ? "Cambia i piatti" : "Scegli i piatti"}
               </Link>
               {stato.fase === "errore" && stato.motivo === "rete" ? (
                 <button type="button" className="btn btn-linea btn-sm" onClick={riprovaOra}>

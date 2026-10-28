@@ -163,11 +163,12 @@ describe("metadata delle pagine", () => {
     }
   });
 
-  it("la descrizione di ogni piatto porta kcal e proteine", () => {
+  it("le descrizioni dei piatti non presentano stime come valori certi", () => {
     for (const p of PIATTI) {
       const d = descrizionePiatto(p);
-      expect(d).toContain(`${p.kcal} kcal`);
-      expect(d).toContain(`${p.proteine} g di proteine`);
+      expect(d).toContain(p.nome);
+      expect(d).toContain("allergeni");
+      expect(d).not.toContain("kcal");
     }
   });
 });
@@ -179,12 +180,18 @@ describe("dati strutturati", () => {
     expect(JSON.parse(testo).name).toBe("</script><script>alert(1)</script>");
   });
 
-  it("nessun dato inventato: niente geo, orari, valutazioni; telefono solo se esiste", () => {
+  it("nessun dato inventato: niente geo o valutazioni; contatti e orari confermati", () => {
     const testo = JSON.stringify(grafoSito());
-    for (const vietato of ["geo", "openingHours", "aggregateRating", "review", "GeoCoordinates"]) {
+    for (const vietato of ["geo", "aggregateRating", "review", "GeoCoordinates"]) {
       expect(testo).not.toContain(`"${vietato}`);
     }
-    if (!TELEFONO) expect(testo).not.toContain("telephone");
+    expect(testo).toContain(TELEFONO);
+    expect(grafoSito().find((n) => n["@id"] === ID.organizzazione)?.openingHoursSpecification).toEqual([{
+      "@type": "OpeningHoursSpecification",
+      dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"].map((g) => `https://schema.org/${g}`),
+      opens: "09:30",
+      closes: "19:00",
+    }]);
   });
 
   it("i riferimenti @id del grafo si risolvono", () => {
@@ -223,10 +230,14 @@ describe("dati strutturati", () => {
     expect(menu["@id"]).toBe(`${URL_SITO}/menu#webpage`);
   });
 
-  it("il menu contiene ogni piatto con i suoi valori per porzione", () => {
+  it("il menu contiene ogni piatto e pubblica solo le stime documentate", () => {
     const menu = JSON.stringify(nodoMenu(PIATTI, "x"));
     for (const p of PIATTI) {
-      expect(menu).toContain(`"calories":"${p.kcal} kcal"`);
+      const nodo = nodoPiatto(p);
+      if (["riso-julien-pollo-teriyaki", "gnocchetti-sugo-ricotta"].includes(p.id)) {
+        expect(nodo.nutrition).toMatchObject({ calories: `${p.kcal} kcal`, servingSize: "1 porzione (stima)" });
+        expect((nodo.nutrition as Nodo).description).toContain("Stima");
+      } else expect(nodo.nutrition).toBeUndefined();
       expect(menu).toContain(`"url":"${URL_SITO}/menu/${p.id}"`);
     }
   });
@@ -343,8 +354,8 @@ describe("sitemap, robots e manifest", () => {
   });
 
   it("la sitemap ha le cinque schede degli abbonamenti, con la data dell'ultima revisione", () => {
-    expect(AGGIORNAMENTO).toBe("2026-10-01");
-    expect(dataLeggibile(AGGIORNAMENTO)).toBe("1 ottobre 2026");
+    expect(AGGIORNAMENTO).toBe("2026-10-15");
+    expect(dataLeggibile(AGGIORNAMENTO)).toBe("15 ottobre 2026");
     expect(dataLeggibile("2026-09-30")).toBe("30 settembre 2026");
     for (const f of FORMULE) {
       const voce = voci.find((v) => v.url === `${URL_SITO}/abbonamento/${f.id}`);
@@ -355,12 +366,17 @@ describe("sitemap, robots e manifest", () => {
     }
   });
 
-  it("niente pagine private in sitemap, e robots le esclude", () => {
+  it("pagine di accesso fuori dalla sitemap ma scansionabili per leggere noindex", () => {
     const private_ = ["/dashboard", "/account", "/accedi", "/reimposta-password", "/api/"];
     for (const u of url) for (const p of private_) expect(u.startsWith(`${URL_SITO}${p}`)).toBe(false);
     const regole = robots().rules;
     const disallow = (Array.isArray(regole) ? regole[0] : regole).disallow;
-    expect(disallow).toEqual(expect.arrayContaining(private_));
+    expect(disallow).toEqual(["/dashboard", "/api/"]);
+    for (const percorso of ["/account", "/accedi", "/reimposta-password"]) {
+      expect(disallow).not.toContain(percorso);
+      const sorgente = readFileSync(path.join(RADICE, "app/(sito)", percorso.slice(1), "page.tsx"), "utf8");
+      expect(sorgente).toContain("index: false");
+    }
   });
 
   it("il manifest usa le icone che esistono in app/", () => {
@@ -377,14 +393,13 @@ describe("pagine locali e contatti", () => {
   const LOCALI = [PAGINE.mealPrep, PAGINE.consegna, PAGINE.proteici, PAGINE.domicilio];
   const sorgente = (p: { percorso: string }) => readFileSync(path.join(RADICE, `app/(sito)${p.percorso}/page.tsx`), "utf8");
 
-  it("ogni pagina locale ha un H1 solo, la sua scheda, le briciole, le domande e le guide del blog", () => {
+  it("ogni pagina locale ha un H1 solo, metadati, briciole e domande coerenti", () => {
     for (const p of LOCALI) {
       const src = sorgente(p);
       expect(src.match(/<h1[\s>]/g), p.percorso).toHaveLength(1);
       expect(src, p.percorso).toContain("metadatiPagina(PAGINA)");
       expect(src, p.percorso).toContain("<Briciole");
       expect(src, p.percorso).toContain("faq: DOMANDE");
-      expect(src, p.percorso).toContain("<LinkBlog");
     }
   });
 
@@ -407,7 +422,7 @@ describe("pagine locali e contatti", () => {
     const regole = readFileSync(path.join(RADICE, "public/_redirects"), "utf8")
       .split(/\r?\n/)
       .map((r) => r.trim().split(/\s+/))
-      .filter((r) => r.length === 3 && !r[0].startsWith("#"));
+      .filter((r) => r.length === 3 && !r[0].startsWith("#") && !r[0].startsWith("/dashboard"));
     const url = sitemap().map((v) => v.url);
     for (const [da, a, codice] of regole) {
       expect(codice, da).toBe("301");
@@ -467,13 +482,11 @@ describe("public/llms.txt", () => {
     for (const z of ZONE_SERVITE) expect(testo).toContain(z.nome);
   });
 
-  it("i piatti e i loro numeri sono quelli del catalogo", () => {
-    const righe = [...testo.matchAll(/\/menu\/([a-z0-9-]+)\): (\d+) kcal, (\d+) g proteine, (\d+) g carboidrati, (\d+) g grassi per porzione da (\d+) g/g)];
-    expect(righe.map((r) => r[1]).sort()).toEqual(PIATTI.map((p) => p.id).sort());
-    for (const r of righe) {
-      const p = PIATTI.find((x) => x.id === r[1])!;
-      expect(r.slice(2).map(Number)).toEqual([p.kcal, p.proteine, p.carboidrati, p.grassi, p.grammi]);
-    }
+  it("i piatti sono collegati alle schede e i vecchi valori non verificati non sono ripubblicati", () => {
+    for (const p of PIATTI) expect(testo).toContain(`https://fuelchef.it/menu/${p.id}`);
+    expect(testo).not.toMatch(/per porzione da \d+ g/);
+    for (const vecchio of ["1173 kcal", "1015 kcal", "917 kcal", "1126 kcal", "587 kcal"]) expect(testo).not.toContain(vecchio);
+    expect(testo).toContain("stim");
   });
 
   it("le pagine locali ci sono tutte", () => {
@@ -505,7 +518,7 @@ describe("public/llms.txt", () => {
     expect(testo).toContain(`ogni ${CONSEGNA_OGNI_GIORNI} giorni`);
     expect(testo).toContain(`fino a ${RAGGIO_CONSEGNA_KM} km`);
     expect(testo).toContain("prima settimana è di prova, senza impegno");
-    expect(testo).toContain("10% con il ritiro in laboratorio, 8% in coppia, 10% in famiglia");
+    expect(testo).toContain("Sconti solo con i codici creati da Matteo");
     expect(testo).toContain(BOX_DEL_GIORNO_TESTO);
     for (const d of DIETE) expect(testo).toContain(d);
     // Nessun pagamento online e nessuna consegna gratuita inventata per gli abbonamenti.

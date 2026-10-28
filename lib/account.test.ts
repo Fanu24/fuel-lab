@@ -534,27 +534,12 @@ describe("nuova richiesta", () => {
     expect(corpoRichiesta({ ...buona, servizio: "home-cooking" }, piano, {})).not.toHaveProperty("subscription");
   });
 
-  it("stima il prezzo al mese con lo sconto piu' alto fra quelli che spettano", () => {
-    // Completo Plus: 676 euro di listino. Senza sconti la frase ricorda quali esistono.
-    const senza = stimaAbbonamento({ formula: "completo", fascia: "plus", nucleo: "singolo", modalita: "delivery" });
-    expect(senza).toMatchObject({ listino: "676 €", totale: "676 €", scontoPercento: 0 });
-    expect(senza.dettaglio).toBe("Prezzo di listino. Sconti: ritiro in laboratorio −10%, in coppia −8%, in famiglia −10%.");
-    expect(stimaAbbonamento({ formula: "completo", fascia: "plus", nucleo: "singolo", modalita: "pickup" })).toEqual({
-      listino: "676 €", totale: "608 €", scontoPercento: 10, dettaglio: "Listino 676 €, sconto 10% per il ritiro in laboratorio.",
-    });
-    expect(stimaAbbonamento({ formula: "pranzo", fascia: "standard", nucleo: "coppia", modalita: "delivery" })).toEqual({
-      listino: "173 €", totale: "159 €", scontoPercento: 8, dettaglio: "Listino 173 €, sconto 8% per l’abbonamento in coppia.",
-    });
-    expect(stimaAbbonamento({ formula: "pranzo", fascia: "standard", nucleo: "famiglia", modalita: "delivery" }).dettaglio).toBe(
-      "Listino 173 €, sconto 10% per l’abbonamento in famiglia.",
-    );
-    // Ritiro e coppia: non si sommano, vale il piu' alto (il ritiro), e la frase lo dice.
-    const doppio = stimaAbbonamento({ formula: "full7", fascia: "standard", nucleo: "coppia", modalita: "pickup" });
-    expect(doppio.scontoPercento).toBe(10);
-    expect(doppio.totale).toBe("655 €");
-    expect(doppio.dettaglio).toBe(
-      "Listino 728 €, sconto 10%: ti spettano il ritiro in laboratorio (−10%) e l’abbonamento in coppia (−8%), si applica il più alto.",
-    );
+  it("ritiro e nucleo non cambiano il listino della richiesta", () => {
+    for (const nucleo of ["singolo", "coppia", "famiglia"] as const) for (const modalita of ["pickup", "delivery"] as const) {
+      const stima = stimaAbbonamento({ formula: "completo", fascia: "plus", nucleo, modalita });
+      expect(stima).toMatchObject({ listino: "676 €", totale: "676 €", scontoPercento: 0 });
+      expect(stima.dettaglio).toBe("Prezzo di listino. Se hai un codice sconto, applicalo alla richiesta.");
+    }
   });
 
   it("la stima del modulo e il prezzo proposto dal server coincidono, per ogni combinazione", () => {

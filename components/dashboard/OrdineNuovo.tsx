@@ -164,6 +164,7 @@ export default function OrdineNuovo({ onChiudi, onSalvato }: { onChiudi: () => v
   const [campi, setCampi] = useState<CampiNuovoOrdine>(() => ripresa ?? campiVuoti());
   const [tentato, setTentato] = useState(false);
   const [erroreServer, setErroreServer] = useState("");
+  const [codiceSconto, setCodiceSconto] = useState("");
   const [salvo, setSalvo] = useState(false);
   // Due invii ravvicinati non devono creare due ordini: lo stato React arriva dopo, questo segnale subito.
   const inCorso = useRef(false);
@@ -270,7 +271,7 @@ export default function OrdineNuovo({ onChiudi, onSalvato }: { onChiudi: () => v
     inCorso.current = true;
     setSalvo(true);
     try {
-      const { order } = await adminApi.nuovoOrdine(corpoNuovoOrdine(campi));
+      const { order } = await adminApi.nuovoOrdine({ ...corpoNuovoOrdine(campi), discountCode: codiceSconto.trim() || undefined });
       chiusoDaNoi.current = true;
       togliBozzaOrdine();
       sostituisciOrdine(order);
@@ -507,7 +508,7 @@ export default function OrdineNuovo({ onChiudi, onSalvato }: { onChiudi: () => v
               <h3 id="nuovo-soldi" className="pn-h3 mb-0">Prezzo</h3>
               <div className="pn-due-campi items-end">
                 <div className="campo min-w-0">
-                  <label htmlFor="nuovo-prezzo">Prezzo concordato</label>
+                  <label htmlFor="nuovo-prezzo">{codiceSconto.trim() ? "Totale prima dello sconto" : "Prezzo concordato"}</label>
                   <div className="pn-euro">
                     <span aria-hidden="true">€</span>
                     <input
@@ -543,6 +544,7 @@ export default function OrdineNuovo({ onChiudi, onSalvato }: { onChiudi: () => v
                   {campi.pagato ? "Già pagato" : "Non ancora pagato"}
                 </button>
               </div>
+              <div className="campo"><label htmlFor="nuovo-sconto">Codice sconto (facoltativo)</label><input id="nuovo-sconto" value={codiceSconto} maxLength={32} autoCapitalize="characters" autoComplete="off" onChange={(e) => setCodiceSconto(e.target.value)} /><p className="pn-aiuto">Si applica una volta al totale scritto sopra. Negli abbonamenti con prezzo proposto si applica al listino. Il server verifica il codice al salvataggio.</p></div>
               {abbonamento ? (
                 <PrezzoProposto scelta={campi} ritiro={ritiro} totaleAttuale={centesimi} onUsa={(testo) => cambia({ prezzo: testo })} />
               ) : null}

@@ -1,0 +1,155 @@
+{
+  "date": "2026-10-15",
+  "source": "C:/Users/dotat/Desktop/AGGIORNAMENTO 15 OTT.pdf",
+  "deployment": "https://e601a5f7.fuelchef.pages.dev",
+  "production": "https://fuelchef.it/menu",
+  "changes": [
+    "Sei nuovi piatti aggiunti ai sei esistenti",
+    "Biscotti avena e mandorle nel menu e nelle aggiunte alla settimana",
+    "Tredici nuove fotografie coordinate, seconda versione dopo il feedback",
+    "Compatibilità dei link condivisi del catalogo precedente"
+  ],
+  "qa": {
+    "tests": 782,
+    "testFiles": 44,
+    "lint": "passed",
+    "build": "passed",
+    "mobileWidth": 390,
+    "desktopWidth": 1440,
+    "horizontalOverflow": false,
+    "remoteImageVariants200": 39,
+    "remoteDishPages200": 12,
+    "sitemapNewPages": true,
+    "localOrderWithNewDishAndSnack": "passed",
+    "localServer": "stopped"
+  },
+  "images": {
+    "tool": "image_gen integrato",
+    "promptSet": "C:/Users/dotat/Desktop/Siti Web/Sito Matteo/docs/fotografie-2026-10-15-v2.json",
+    "assets": [
+      {
+        "id": "uova-purgatorio-peperoni",
+        "path": "C:/Users/dotat/Desktop/Siti Web/Sito Matteo/public/foto/fuel-20261015-v2-uova-purgatorio-peperoni.webp",
+        "variants": [
+          480,
+          828,
+          1200
+        ]
+      },
+      {
+        "id": "pollo-curry-riso-carote",
+        "path": "C:/Users/dotat/Desktop/Siti Web/Sito Matteo/public/foto/fuel-20261015-v2-pollo-curry-riso-carote.webp",
+        "variants": [
+          480,
+          828,
+          1200
+        ]
+      },
+      {
+        "id": "pollo-peperoni-anacardi",
+        "path": "C:/Users/dotat/Desktop/Siti Web/Sito Matteo/public/foto/fuel-20261015-v2-pollo-peperoni-anacardi.webp",
+        "variants": [
+          480,
+          828,
+          1200
+        ]
+      },
+      {
+        "id": "frittata-verdure-campo",
+        "path": "C:/Users/dotat/Desktop/Siti Web/Sito Matteo/public/foto/fuel-20261015-v2-frittata-verdure-campo.webp",
+        "variants": [
+          480,
+          828,
+          1200
+        ]
+      },
+      {
+        "id": "tagliatelle-funghi-ricotta",
+        "path": "C:/Users/dotat/Desktop/Siti Web/Sito Matteo/public/foto/fuel-20261015-v2-tagliatelle-funghi-ricotta.webp",
+        "variants": [
+          480,
+          828,
+          1200
+        ]
+      },
+      {
+        "id": "cotoletta-melanzane-yogurt",
+        "path": "C:/Users/dotat/Desktop/Siti Web/Sito Matteo/public/foto/fuel-20261015-v2-cotoletta-melanzane-yogurt.webp",
+        "variants": [
+          480,
+          828,
+          1200
+        ]
+      },
+      {
+        "id": "piadina-turca",
+        "path": "C:/Users/dotat/Desktop/Siti Web/Sito Matteo/public/foto/fuel-20261015-v2-piadina-turca.webp",
+        "variants": [
+          480,
+          828,
+          1200
+        ]
+      },
+      {
+        "id": "snack-biscotti-avena-mandorle",
+        "path": "C:/Users/dotat/Desktop/Siti Web/Sito Matteo/public/foto/fuel-20261015-v2-snack-biscotti-avena-mandorle.webp",
+        "variants": [
+          480,
+          828,
+          1200
+        ]
+      },
+      {
+        "id": "noodles-sesamo-maiale",
+        "path": "C:/Users/dotat/Desktop/Siti Web/Sito Matteo/public/foto/fuel-20261015-v2-noodles-sesamo-maiale.webp",
+        "variants": [
+          480,
+          828,
+          1200
+        ]
+      },
+      {
+        "id": "gnocchetti-sugo-ricotta",
+        "path": "C:/Users/dotat/Desktop/Siti Web/Sito Matteo/public/foto/fuel-20261015-v2-gnocchetti-sugo-ricotta.webp",
+        "variants": [
+          480,
+          828,
+          1200
+        ]
+      },
+      {
+        "id": "riso-julien-pollo-teriyaki",
+        "path": "C:/Users/dotat/Desktop/Siti Web/Sito Matteo/public/foto/fuel-20261015-v2-riso-julien-pollo-teriyaki.webp",
+        "variants": [
+          480,
+          828,
+          1200
+        ]
+      },
+      {
+        "id": "maiale-senape-spinaci",
+        "path": "C:/Users/dotat/Desktop/Siti Web/Sito Matteo/public/foto/fuel-20261015-v2-maiale-senape-spinaci.webp",
+        "variants": [
+          480,
+          828,
+          1200
+        ]
+      },
+      {
+        "id": "pallotte-cacio-ovo",
+        "path": "C:/Users/dotat/Desktop/Siti Web/Sito Matteo/public/foto/fuel-20261015-v2-pallotte-cacio-ovo.webp",
+        "variants": [
+          480,
+          828,
+          1200
+        ]
+      }
+    ],
+    "proof": "C:/Users/dotat/Documents/ChatGPT/Sito matteo/site-review/menu-20261015-online.png"
+  },
+  "pendingRecipeData": [
+    "Porzione, numero di biscotti e prezzo da concordare con Matteo",
+    "Miscela di curry e relativi allergeni da confermare",
+    "Valori nutrizionali delle nuove ricette non pubblicati finché incompleti"
+  ]
+}

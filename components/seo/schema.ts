@@ -3,6 +3,7 @@ import {
   EMAIL,
   INDIRIZZO,
   NOME_ATTIVITA,
+  ORARI_RITIRO,
   PROFILI_SOCIAL,
   TELEFONO,
   TITOLARE,
@@ -10,6 +11,7 @@ import {
   ZONE_SERVITE,
 } from "@/lib/sito";
 import { getServizio } from "@/lib/servizi";
+import { RITRATTO_MATTEO } from "@/lib/immagini";
 import {
   FASCE,
   FORMULE,
@@ -24,6 +26,7 @@ import {
   type FormulaId,
 } from "@/lib/abbonamento";
 import type { Allenamento, Piatto } from "@/lib/catalogo";
+import { nutrizioneDisponibile, statoNutrizione } from "@/lib/nutrizione";
 
 /* =========================================================================
    I dati strutturati schema.org del sito, costruiti da una parte sola.
@@ -152,6 +155,12 @@ export function grafoSito(): Nodo[] {
     areaServed: areaServita(),
     hasMenu: assoluto("/menu"),
     servesCuisine: ["Meal prep", "Cucina italiana"],
+    openingHoursSpecification: [{
+      "@type": "OpeningHoursSpecification",
+      dayOfWeek: ORARI_RITIRO.giorni.map((giorno) => `https://schema.org/${giorno}`),
+      opens: ORARI_RITIRO.apertura,
+      closes: ORARI_RITIRO.chiusura,
+    }],
     currenciesAccepted: "EUR",
     founder: rif(ID.matteo),
     knowsLanguage: "it",
@@ -176,13 +185,13 @@ export function grafoSito(): Nodo[] {
     publisher: rif(ID.organizzazione),
   };
 
-  // Nessuna immagine: la foto di "Chi siamo" e' ancora di repertorio, e
-  // attaccarla a una persona vera sarebbe falso.
+  // Il ritratto originale e' visibile nella pagina "Chi siamo".
   const matteo: Nodo = {
     "@type": "Person",
     "@id": ID.matteo,
     name: TITOLARE.nome,
     jobTitle: TITOLARE.ruolo,
+    image: assoluto(RITRATTO_MATTEO.src),
     url: assoluto("/chi-siamo"),
     worksFor: rif(ID.organizzazione),
   };
@@ -266,7 +275,8 @@ export function nodiPagina(o: OpzioniPagina): Nodo[] {
 export function nutrizione(p: Piatto): Nodo {
   return {
     "@type": "NutritionInformation",
-    servingSize: `${p.grammi} g`,
+    servingSize: "1 porzione (stima)",
+    description: statoNutrizione(p.id).nota,
     calories: `${p.kcal} kcal`,
     proteinContent: `${p.proteine} g`,
     carbohydrateContent: `${p.carboidrati} g`,
@@ -282,8 +292,8 @@ export function descrizioneEstesa(p: Piatto): string {
   const ingredienti = p.ingredienti
     .map((i) => (i.grammi ? `${i.nome.toLowerCase()} (${i.grammi} g)` : i.nome.toLowerCase()))
     .join(", ");
-  const allergeni = p.allergeni.length ? p.allergeni.join(", ") : "nessuno dei 14 allergeni principali";
-  return `${p.descrizione} Porzione da ${p.grammi} g, cucinata fresca. Ingredienti: ${ingredienti}. Allergeni: ${allergeni}.`;
+  const allergeni = p.allergeniDaConfermare ? "da confermare con Matteo" : p.allergeni.length ? p.allergeni.join(", ") : "chiedere conferma a Matteo";
+  return `${p.descrizione} Ingredienti della ricetta: ${ingredienti}. ${p.notaRicetta ?? "Quantità per una porzione. Riso e pasta pesati cotti."} Allergeni: ${allergeni}.`;
 }
 
 /**
@@ -300,7 +310,7 @@ export function nodoPiatto(p: Piatto, esteso = false): Nodo {
     description: esteso ? descrizioneEstesa(p) : p.descrizione,
     url: assoluto(`/menu/${p.id}`),
     image: assoluto(p.img),
-    nutrition: nutrizione(p),
+    ...(nutrizioneDisponibile(p.id) ? { nutrition: nutrizione(p) } : {}),
   };
 }
 

@@ -111,9 +111,9 @@ describe("nuova richiesta", () => {
     };
     expect(prezzo({ plan: "pranzo" })).toBe(17300); // Standard, da solo: i valori di partenza
     expect(prezzo({ plan: "full7", tier: "plus" })).toBe(94600);
-    expect(prezzo({ plan: "completo" }, "pickup")).toBe(46800); // ritiro -10%
-    expect(prezzo({ plan: "completo", household: "coppia" })).toBe(47800); // coppia -8%
-    expect(prezzo({ plan: "completo", household: "coppia" }, "pickup")).toBe(46800); // non si sommano: il piu' alto
+    expect(prezzo({ plan: "completo" }, "pickup")).toBe(52000); // solo listino
+    expect(prezzo({ plan: "completo", household: "coppia" })).toBe(52000); // solo listino
+    expect(prezzo({ plan: "completo", household: "coppia" }, "pickup")).toBe(52000); // solo listino
   });
 
   it("l'abbonamento vuole una formula valida", () => {

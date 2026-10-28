@@ -1,5 +1,7 @@
 import { kcalDa, type Macros, type Tag } from "./types";
 import { EXTRA } from "./catalogo-extra";
+import { calcolaStimaNutrizionale } from "./nutrizione";
+import { PIATTI_OTTOBRE } from "./catalogo-ottobre";
 
 /*
  * kcalDa vive in ./types e EXTRA in ./catalogo-extra per non creare un ciclo di
@@ -11,14 +13,19 @@ export { kcalDa } from "./types";
 export { EXTRA };
 
 /**
- * Il catalogo del cliente: sei piatti gia' composti, piu' gli alimenti della box.
+ * Il catalogo del cliente: piatti gia' composti, piu' gli alimenti della box.
  *
  * Non e' piu' un menu da assemblare a primi e secondi. Ogni schiscetta e' un
  * piatto chiuso, con gli ingredienti, i macro e il motivo dell'abbinamento.
  * Le aggiunte (carboidrati, proteine, condimenti, verdure, snack) si attaccano
  * al piatto, non al contrario: senza piatto non c'e' box da personalizzare.
  *
- * Regola sui numeri: kcal e' SEMPRE uguale a P*4 + C*4 + G*9. Gli allergeni
+ * Regola sui numeri: kcal e' SEMPRE uguale a P*4 + C*4 + G*9. La coerenza
+ * aritmetica non valida una ricetta: lib/nutrizione decide quali stime possono
+ * essere mostrate. Gli altri numeri sono precedenti dati di prova conservati
+ * per compatibilita', non valori nutrizionali pubblicabili. Il peso finito
+ * non e' stato misurato: grammi non va presentato come peso della porzione.
+ * Gli allergeni
  * sono un campo obbligatorio (Reg. UE 1169/2011): array vuoto quando non ce
  * ne sono, mai assente.
  */
@@ -42,6 +49,9 @@ export interface Ingrediente {
 }
 
 export interface Piatto extends Macros {
+  novita?: boolean;
+  notaRicetta?: string;
+  allergeniDaConfermare?: boolean;
   id: string;
   nome: string;
   descrizione: string;
@@ -55,6 +65,9 @@ export interface Piatto extends Macros {
 }
 
 export interface Extra extends Macros {
+  novita?: boolean;
+  ingredienti?: Ingrediente[];
+  notaRicetta?: string;
   id: string;
   nome: string;
   descrizione: string;
@@ -115,10 +128,10 @@ export const PIATTI: Piatto[] = [
     kcal: kcalDa(58, 116, 53),
     tag: ["carne"],
     allergeni: ["glutine", "sesamo", "soia"],
-    img: "/foto/photo-1526318896980-cf78c088247c.webp",
+    img: "/foto/fuel-20261015-v2-noodles-sesamo-maiale.webp",
     allenamento: "cardio",
     ingredienti: [
-      { nome: "Noodles", grammi: 100 },
+      { nome: "Noodles", grammi: 100, nota: "peso cotto" },
       { nome: "Fesa di maiale", grammi: 150 },
       { nome: "Cipolla", grammi: 70 },
       { nome: "Carota", grammi: 70 },
@@ -140,19 +153,16 @@ export const PIATTI: Piatto[] = [
   },
   {
     id: "gnocchetti-sugo-ricotta",
-    nome: "Gnocchetti al sugo con ricotta fresca proteica",
+    nome: "Gnocchetti al sugo con ricotta fresca",
     descrizione: "Gnocchi fatti a mano, sugo di pomodorini e crema di ricotta e parmigiano.",
     grammi: 970,
-    proteine: 46,
-    carboidrati: 73,
-    grassi: 49,
-    kcal: kcalDa(46, 73, 49),
+    ...calcolaStimaNutrizionale("gnocchetti-sugo-ricotta")!,
     tag: ["veg"],
     allergeni: ["glutine", "latte", "uova"],
-    img: "/foto/photo-1601556123240-462c758a50db.webp",
+    img: "/foto/fuel-20261015-v2-gnocchetti-sugo-ricotta.webp",
     allenamento: "cardio",
     ingredienti: [
-      { nome: "Gnocchi fatti a mano", grammi: 200 },
+      { nome: "Gnocchi fatti a mano", grammi: 200, nota: "peso cotto" },
       { nome: "Pomodorini", grammi: 500 },
       { nome: "Cipolla", grammi: 50 },
       { nome: "Aglio", nota: "1 spicchio" },
@@ -169,16 +179,13 @@ export const PIATTI: Piatto[] = [
     nome: "Riso carote e zucchine julien, pollo teriyaki",
     descrizione: "Basmati, petto di pollo e verdure a julienne con olio di sesamo.",
     grammi: 730,
-    proteine: 62,
-    carboidrati: 140,
-    grassi: 23,
-    kcal: kcalDa(62, 140, 23),
-    tag: ["carne", "senza-glutine"],
+    ...calcolaStimaNutrizionale("riso-julien-pollo-teriyaki")!,
+    tag: ["carne"],
     allergeni: ["sesamo", "soia"],
-    img: "/foto/photo-1603133872878-684f208fb84b.webp",
+    img: "/foto/fuel-20261015-v2-riso-julien-pollo-teriyaki.webp",
     allenamento: "entrambi",
     ingredienti: [
-      { nome: "Riso basmati", grammi: 150 },
+      { nome: "Riso basmati", grammi: 150, nota: "peso cotto" },
       { nome: "Petto di pollo", grammi: 200 },
       { nome: "Carote", grammi: 180 },
       { nome: "Zucchine", grammi: 180 },
@@ -197,9 +204,9 @@ export const PIATTI: Piatto[] = [
     carboidrati: 70,
     grassi: 37,
     kcal: kcalDa(71, 70, 37),
-    tag: ["carne", "senza-glutine"],
+    tag: ["carne"],
     allergeni: ["senape", "soia"],
-    img: "/foto/photo-1432139555190-58524dae6a55.webp",
+    img: "/foto/fuel-20261015-v2-maiale-senape-spinaci.webp",
     allenamento: "pesi",
     ingredienti: [
       { nome: "Fesa di maiale", grammi: 250 },
@@ -222,8 +229,8 @@ export const PIATTI: Piatto[] = [
   },
   {
     id: "pallotte-cacio-ovo",
-    nome: "Pallotte cacio e ovo fit proteiche",
-    descrizione: "Pallotte abruzzesi in versione light, con ricotta e sugo di pomodorini.",
+    nome: "Pallotte cacio e ovo",
+    descrizione: "Pallotte abruzzesi con ricotta e sugo di pomodorini.",
     grammi: 840,
     proteine: 53,
     carboidrati: 116,
@@ -231,7 +238,7 @@ export const PIATTI: Piatto[] = [
     kcal: kcalDa(53, 116, 50),
     tag: ["veg"],
     allergeni: ["glutine", "uova", "latte"],
-    img: "/foto/photo-1529042410759-befb1204b468.webp",
+    img: "/foto/fuel-20261015-v2-pallotte-cacio-ovo.webp",
     allenamento: "pesi",
     ingredienti: [
       { nome: "Pane raffermo", grammi: 180 },
@@ -259,7 +266,7 @@ export const PIATTI: Piatto[] = [
     kcal: kcalDa(35, 42, 31),
     tag: ["veg", "senza-glutine"],
     allergeni: ["uova", "latte"],
-    img: "/foto/photo-1590412200988-a436970781fa.webp",
+    img: "/foto/fuel-20261015-v2-uova-purgatorio-peperoni.webp",
     allenamento: "pesi",
     ingredienti: [
       { nome: "Uova", nota: "3" },
@@ -271,7 +278,7 @@ export const PIATTI: Piatto[] = [
       { nome: "Origano", nota: "q.b." },
       { nome: "Sale", nota: "q.b." },
       { nome: "Pepe", nota: "q.b." },
-      { nome: "Formaggio tipo quark", grammi: 80 },
+      { nome: "Formaggio tipo quark", nota: "quantità da confermare" },
     ],
     motivo:
       "Uova, peperoni e quark danno carattere a questo piatto. Puoi confrontarne ingredienti e valori con le altre proposte del menu e scegliere in base a gusto e indicazioni personali.",
@@ -279,6 +286,9 @@ export const PIATTI: Piatto[] = [
 ];
 
 
+// Gli indici esistenti sono usati dai link condivisi: le novità si aggiungono in fondo.
+PIATTI.push(...PIATTI_OTTOBRE);
+export const PIATTI_MENU = [...PIATTI].sort((a, b) => Number(!!b.novita) - Number(!!a.novita));
 const PIATTI_BY_ID: Record<string, Piatto> = Object.fromEntries(PIATTI.map((e) => [e.id, e]));
 
 export function getPiatto(id: string): Piatto | undefined {

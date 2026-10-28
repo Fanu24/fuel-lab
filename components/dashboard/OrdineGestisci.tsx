@@ -58,7 +58,7 @@ const daOrdine = (o: Ordine): Campi => {
     stato: o.status,
     produzione: o.production_date ?? "",
     uscita: o.fulfillment_date ?? "",
-    prezzo: centesimiInTesto(o.price_cents),
+    prezzo: centesimiInTesto(o.discount ? o.discount.baseCents : o.price_cents),
     pagato: !!o.paid,
     messaggio: o.customer_message ?? "",
     nota: o.internal_note ?? "",
@@ -76,7 +76,7 @@ function differenze(o: Ordine, c: Campi): ModificaOrdine {
   if ((c.produzione || null) !== (o.production_date ?? null)) m.productionDate = c.produzione || null;
   if ((c.uscita || null) !== (o.fulfillment_date ?? null)) m.fulfillmentDate = c.uscita || null;
   const centesimi = leggiEuro(c.prezzo);
-  if (centesimi !== undefined && centesimi !== (o.price_cents ?? null)) m.priceCents = centesimi;
+  if (centesimi !== undefined && centesimi !== (o.discount ? o.discount.baseCents : o.price_cents ?? null)) m.priceCents = centesimi;
   if (c.pagato !== !!o.paid) m.paid = c.pagato;
   if (c.messaggio !== (o.customer_message ?? "")) m.customerMessage = c.messaggio;
   if (c.nota !== (o.internal_note ?? "")) m.internalNote = c.nota;
@@ -459,7 +459,7 @@ export default function OrdineGestisci({
 
           <div className="pn-due-campi items-end">
             <div className="campo">
-              <label htmlFor="scheda-prezzo">Prezzo concordato</label>
+              <label htmlFor="scheda-prezzo">{base.discount ? "Totale prima dello sconto" : "Prezzo concordato"}</label>
               <div className="pn-euro">
                 <span aria-hidden="true">€</span>
                 <input
@@ -479,7 +479,7 @@ export default function OrdineGestisci({
                 <p id="scheda-errore-prezzo" className="pn-errore-campo" role="alert">{errorePrezzo}</p>
               ) : (
                 <p id="scheda-aiuto-prezzo" className="pn-aiuto">
-                  {abbonamento ? "Il prezzo del mese, in euro con la virgola. Lo vede anche il cliente." : "In euro, con la virgola. Lo vede anche il cliente."}
+                  {base.discount ? `${base.discount.code}: si applica il ${base.discount.appliedPercent}% una sola volta a questo importo.` : abbonamento ? "Il prezzo del mese, in euro con la virgola. Lo vede anche il cliente." : "In euro, con la virgola. Lo vede anche il cliente."}
                 </p>
               )}
             </div>

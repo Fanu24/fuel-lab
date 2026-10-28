@@ -397,7 +397,7 @@ export function contaPiatti(ordini: Ordine[]): RigaPiatto[] {
       if (riga) riga.porzioni += 1;
       else {
         const piatto = getPiatto(v.id);
-        mappa.set(chiave, { id: chiave, nome: piatto?.nome ?? v.name, porzioni: 1, allergeni: piatto ? [...piatto.allergeni] : null });
+        mappa.set(chiave, { id: chiave, nome: piatto?.nome ?? v.name, porzioni: 1, allergeni: piatto && !piatto.allergeniDaConfermare ? [...piatto.allergeni] : null });
       }
     }
   }
@@ -421,7 +421,7 @@ export function contaExtra(ordini: Ordine[]) {
 /** Allergeni di una porzione: quelli del piatto piu' quelli degli extra. null se il piatto e' sconosciuto. */
 export function allergeniVoce(v: VoceOrdine): string[] | null {
   const piatto = getPiatto(v.id);
-  if (!piatto) return null;
+  if (!piatto || piatto.allergeniDaConfermare) return null;
   const tutti = new Set([...piatto.allergeni, ...v.extras.flatMap(allergeniExtra)]);
   return [...tutti].sort((a, b) => a.localeCompare(b, "it"));
 }

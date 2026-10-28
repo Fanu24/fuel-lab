@@ -29,12 +29,11 @@ export default function SettimanaPage() {
       <section className="testata !pb-8 lg:!pb-6">
         <div className="wrap lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-end lg:gap-12">
           <h1>
-            <span className="occhiello">Componi il meal prep della settimana</span>{" "}
-            <span className="titolo mt-5 block max-w-[14ch]">La tua settimana.</span>
+            <span className="occhiello">Piatti pronti a Pescara</span>{" "}
+            <span className="titolo mt-5 block max-w-[14ch]">Componi la tua settimana.</span>
           </h1>
           <p className="lead mt-6 lg:mt-0">
-            Dicci come ti alleni: i piatti giusti arrivano da soli. Poi li sposti dove vuoi: col mouse li trascini, col
-            dito li tocchi.
+            Scegli il giorno, aggiungi un piatto e continua. Matteo conferma la tua richiesta.
           </p>
         </div>
       </section>
@@ -42,3 +41,4 @@ export default function SettimanaPage() {
     </>
   );
 }
+

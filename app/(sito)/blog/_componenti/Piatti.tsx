@@ -3,6 +3,7 @@ import Link from "next/link";
 import { etichettaAllenamento, getPiatto, type Piatto } from "@/lib/catalogo";
 import TagAllenamento from "@/components/ui/TagAllenamento";
 import { NumeriMacro } from "@/components/ui/Macro";
+import { nutrizioneDisponibile } from "@/lib/nutrizione";
 
 /* I piatti dentro gli articoli. Numeri e foto arrivano sempre dal catalogo:
    se Matteo cambia una ricetta, l’articolo si aggiorna da solo. */
@@ -24,7 +25,7 @@ export function PiattiCollegati({ id }: { id: string[] }) {
             <h2 id="titolo-piatti-collegati" className="titolo-s mt-4">
               Piatti collegati
             </h2>
-            <p className="mt-3 text-muted">Valori della porzione intera, aggiornati dal menu. Foto illustrative.</p>
+            <p className="mt-3 text-muted">Ingredienti e stime disponibili nelle schede. Foto illustrative.</p>
           </div>
           <Link href="/menu" className="link">
             Tutto il menu <span aria-hidden="true">→</span>
@@ -48,9 +49,9 @@ export function PiattiCollegati({ id }: { id: string[] }) {
                   {piatto.nome}
                 </h3>
               </Link>
-              <NumeriMacro macro={piatto} compatti className="mt-4" />
+              {nutrizioneDisponibile(piatto.id) ? <NumeriMacro macro={piatto} compatti className="mt-4" /> : null}
               <p className="mt-2 text-sm text-muted">
-                Porzione da <span className="num">{piatto.grammi}</span> g
+                {nutrizioneDisponibile(piatto.id) ? "Valori stimati per una porzione." : "Valori nutrizionali da completare con Matteo."}
               </p>
             </li>
           ))}
@@ -104,7 +105,7 @@ export function TabellaPiatti({ id }: { id: string[] }) {
                 </td>
                 {numeri.map((numero) => (
                   <td key={numero.nome} role="cell" data-label={numero.nome} className="blog-numero num">
-                    {numero.valore(piatto)}
+                    {nutrizioneDisponibile(piatto.id) ? numero.valore(piatto) : "Da confermare"}
                   </td>
                 ))}
               </tr>
@@ -112,7 +113,7 @@ export function TabellaPiatti({ id }: { id: string[] }) {
           </tbody>
         </table>
       </div>
-      <figcaption className="mt-3 text-sm text-muted">Valori per porzione intera, dal menu FUEL LAB.</figcaption>
+      <figcaption className="mt-3 text-sm text-muted">Stime per una porzione; riso e pasta pesati cotti. Ipotesi e quantità mancanti sono indicate nelle schede.</figcaption>
     </figure>
   );
 }

@@ -1,4 +1,5 @@
 import Image from "next/image";
+import MappaSede from "@/components/ui/MappaSede";
 import Link from "next/link";
 import WhatsAppCta from "@/components/ui/WhatsAppCta";
 import PrivacySettingsButton from "@/components/PrivacySettingsButton";
@@ -10,69 +11,50 @@ import {
   LINK_MAPPA,
   NOME_ATTIVITA,
   PARTITA_IVA,
-  QUANDO_CUCINA,
+  ORARI_RITIRO,
   RAGIONE_SOCIALE,
   TELEFONO,
   TITOLARE,
-  elencoZone,
 } from "@/lib/sito";
 
 /* I link di servizio del footer: sottolineati, alti 44 px (l'area da toccare), lime al passaggio. */
 const LINK_FOOTER = "inline-flex min-h-11 items-center underline underline-offset-4 hover:text-lime";
 
-/* Il footer porta il NAP (nome, indirizzo, contatti) scritto sempre uguale,
-   letto da lib/sito.ts come i dati strutturati: Google confronta le due
-   versioni. La colonna "A Pescara" collega le pagine locali da ogni pagina. */
-const COLONNE = [
-  {
-    titolo: "Mangia",
-    voci: [
-      { href: "/menu", label: "Il menu" },
-      { href: PAGINE.abbonamento.percorso, label: "Abbonamenti" },
-      { href: "/settimana", label: "Componi la settimana" },
-      { href: "/scheda", label: "Dai tuoi macro" },
-      { href: "/servizi", label: "Servizi e prezzi" },
-    ],
-  },
-  {
-    titolo: "A Pescara",
-    voci: [
-      { href: PAGINE.mealPrep.percorso, label: "Meal prep a Pescara" },
-      { href: PAGINE.consegna.percorso, label: "Consegna pasti" },
-      { href: PAGINE.proteici.percorso, label: "Pasti proteici" },
-      { href: PAGINE.domicilio.percorso, label: "Cuoco a domicilio" },
-    ],
-  },
-  {
-    titolo: "Scopri",
-    voci: [
-      { href: "/come-funziona", label: "Come funziona" },
-      { href: PAGINE.chiSiamo.percorso, label: "Chi siamo" },
-      { href: "/blog", label: "Blog" },
-      { href: "/richiesta", label: "Scrivi a Matteo" },
-    ],
-  },
+const PRINCIPALI = [
+  { href: PAGINE.abbonamento.percorso, label: "Abbonamenti" },
+  { href: "/settimana", label: "Componi la settimana" },
+  { href: "/menu", label: "Il menu" },
+  { href: PAGINE.chiSiamo.percorso, label: "Chi siamo" },
+];
+
+/* Restano raggiungibili e indicizzabili, senza allungare ogni pagina sul telefono. */
+const INFORMAZIONI = [
+  { href: "/come-funziona", label: "Come funziona" },
+  { href: "/servizi", label: "Servizi e prezzi" },
+  { href: "/scheda", label: "Cuciniamo il tuo piano alimentare" },
+  { href: PAGINE.mealPrep.percorso, label: "Meal prep a Pescara" },
+  { href: PAGINE.consegna.percorso, label: "Ritiro e consegna" },
+  { href: PAGINE.proteici.percorso, label: "Pasti proteici" },
+  { href: PAGINE.domicilio.percorso, label: "Cuoco a domicilio" },
+  { href: "/blog", label: "Blog" },
+  { href: "/richiesta", label: "Contatti" },
 ];
 
 export default function Footer() {
   return (
-    <footer className="notte pt-20 pb-10 md:pt-28">
+    <footer className="notte pt-14 pb-8 md:pt-20">
       <div className="wrap">
-        <div className="grid gap-12 md:grid-cols-3 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
-          <div className="md:col-span-3 lg:col-span-1">
+        <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-[1.3fr_1fr_1fr]">
+          <div>
             <Link href="/" aria-label="FUEL LAB, home" className="inline-block">
               <Image
                 src="/logo-fuellab.png"
                 alt=""
                 width={1095}
                 height={360}
-                className="h-auto w-[220px] invert md:w-[300px]"
+                className="h-auto w-[200px] invert"
               />
             </Link>
-            <p className="mt-8 max-w-[36ch] text-steel">
-              Meal prep fresco a Pescara per chi si allena. {QUANDO_CUCINA}. Ritiro in sede o consegna in zona: giorno
-              e orario li concordi con lui.
-            </p>
             {/* Una riga per contatto, alta quanto un dito: l'indirizzo e l'email sono i link piu' toccati. */}
             <address className="mt-4 grid not-italic text-steel">
               <p className="py-1">
@@ -90,37 +72,36 @@ export default function Footer() {
                   {TELEFONO}
                 </a>
               ) : null}
+              <p className="py-1">Ritiro: {ORARI_RITIRO.testo}</p>
             </address>
-            <WhatsAppCta className="mt-8" buttonClassName="justify-between" />
+            <WhatsAppCta className="mt-5" label="Scrivi su WhatsApp" buttonClassName="w-full justify-between !px-4 !text-sm" />
+
           </div>
 
-          {COLONNE.map((c) => (
-            <nav key={c.titolo} aria-label={c.titolo}>
-              <p className="occhiello text-steel">{c.titolo}</p>
-              <ul className="mt-6 grid">
-                {c.voci.map((v) => (
+          <nav aria-label="Link nel footer">
+              <ul className="grid">
+                {PRINCIPALI.map((v) => (
                   <li key={v.href}>
                     <Link
                       href={v.href}
-                      className="inline-flex min-h-11 min-w-11 items-center font-disp text-lg font-semibold uppercase tracking-[.06em] hover:text-lime md:text-sm lg:text-lg"
+                      className="inline-flex min-h-11 items-center font-disp text-lg font-semibold uppercase tracking-[.06em] hover:text-lime"
                     >
                       {v.label}
                     </Link>
                   </li>
                 ))}
               </ul>
-            </nav>
-          ))}
+              <details className="mt-4 border-t text-sm text-steel" style={{ borderColor: "var(--line)" }}>
+                <summary className="min-h-12 cursor-pointer py-3 font-semibold hover:text-lime">Altre informazioni</summary>
+                <ul className="grid">
+                  {INFORMAZIONI.map((v) => <li key={v.href}><Link href={v.href} className={LINK_FOOTER}>{v.label}</Link></li>)}
+                </ul>
+              </details>
+          </nav>
+          <div className="max-w-sm md:col-span-2 lg:col-span-1">
+            <MappaSede compatta scura />
+          </div>
         </div>
-
-        <p className="mt-16 max-w-[80ch] text-sm text-steel">
-          <span className="font-semibold text-paper">Zone di consegna:</span> {elencoZone()}. La copertura del tuo
-          indirizzo si conferma con Matteo prima dell&apos;ordine;{" "}
-          <Link href={PAGINE.consegna.percorso} className="underline underline-offset-4 hover:text-lime">
-            come funzionano ritiro e consegna
-          </Link>
-          .
-        </p>
 
         <div className="mt-10 border-t pt-4 text-sm text-steel" style={{ borderColor: "var(--line)" }}>
           <ul className="flex flex-wrap gap-x-6">

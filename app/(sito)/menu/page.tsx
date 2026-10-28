@@ -1,9 +1,6 @@
 import Link from "next/link";
 import { PIATTI } from "@/lib/catalogo";
-import { INDIRIZZO_RIGA } from "@/lib/sito";
 import MenuClient from "./MenuClient";
-import PerLaTuaBox from "@/components/menu/PerLaTuaBox";
-import ChiusuraCta from "@/components/home/ChiusuraCta";
 import JsonLd from "@/components/seo/JsonLd";
 import { AGGIORNAMENTO, PAGINE, metadatiPagina } from "@/components/seo/pagine";
 import { ID, nodiPagina, nodoMenu } from "@/components/seo/schema";
@@ -38,24 +35,13 @@ export default function PaginaMenu() {
             <span className="titolo-xl mt-6 block max-w-[10ch]">Il menu.</span>
           </h1>
           <p className="lead mt-6">
-            Sei piatti già composti. Ognuno ha i suoi grammi, i suoi macro e un motivo per stare nel piatto con gli
-            altri ingredienti.
+            Scegli un piatto e aggiungilo alla tua settimana.
           </p>
-          <p className="mt-4 max-w-[56ch] text-muted">
-            Matteo li cucina ogni giorno, e ogni giorno si ritirano in {INDIRIZZO_RIGA} o arrivano in zona.{" "}
-            <Link href="/consegna-pasti-pescara" className="link">
-              Ritiro e consegna
-            </Link>
-          </p>
+          <div className="mt-5 flex flex-wrap gap-x-7 gap-y-3"><Link href="/settimana" className="link">Vedi la tua settimana →</Link><a href="#snack" className="link">Anche uno snack ↓</a></div>
         </div>
       </section>
-      {/* I sei piatti stanno gia' nell'HTML: il filtro dell'indirizzo lo legge il browser (vedi MenuClient). */}
+      {/* Piatti e snack sono già nell’HTML esportato, comprese le nuove proposte. */}
       <MenuClient />
-      <PerLaTuaBox />
-      <ChiusuraCta
-        titolo="Sai già cosa ti piace?"
-        testo="Nel compositore scegli come ti alleni ogni giorno e i piatti si mettono da soli. Poi li sposti come vuoi."
-      />
     </>
   );
 }

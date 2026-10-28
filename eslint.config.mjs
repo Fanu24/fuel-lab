@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     ".wrangler/**",
+    // Artefatti temporanei delle verifiche manuali, esclusi dal codice applicativo.
+    ".verifica-scatti/**",
     "next-env.d.ts",
   ]),
 ]);

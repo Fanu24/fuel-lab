@@ -78,7 +78,7 @@ export default function BlogPage() {
         <div className="wrap">
           <Briciole voci={[{ nome: "Home", href: "/" }, { nome: "Blog" }]} />
           <p className="occhiello mt-8">Blog FUEL LAB · Pescara</p>
-          <h1 className="titolo-xl mt-6 max-w-[15ch]">Allenati, mangia bene, organizzati.</h1>
+          <h1 className="titolo-xl mt-6 max-w-[15ch]">Meal prep, allenamento e cucina a Pescara.</h1>
           <p className="lead mt-6 max-w-[60ch]">
             Guide pratiche per chi si allena e vuole organizzare i pasti: cosa mangiare prima e dopo cardio e pesi,
             meal prep, pranzo in ufficio, macro ed etichette, cucina abruzzese. Scritte da una cucina, con le fonti in
@@ -98,6 +98,7 @@ export default function BlogPage() {
               <div className="smusso relative aspect-[16/10] overflow-hidden bg-paper-2">
                 <Image
                   src={fotoEvidenza.src}
+                  style={{ objectPosition: fotoEvidenza.fuoco }}
                   alt=""
                   fill
                   sizes="(min-width: 1024px) 55vw, 100vw"
@@ -105,7 +106,7 @@ export default function BlogPage() {
                   fetchPriority="high"
                   className="object-cover transition-transform duration-[1.2s] ease-[var(--e-out)] group-hover:scale-[1.04]"
                 />
-                <span className="absolute right-3 bottom-3 bg-paper px-2 py-1 text-xs text-ink">Foto illustrativa</span>
+                <span className="absolute right-3 bottom-3 bg-paper px-2 py-1 text-xs text-ink">{fotoEvidenza.didascalia ?? "Foto illustrativa"}</span>
               </div>
             </Link>
             <div>

@@ -1,10 +1,10 @@
 /* =========================================================================
    Tutte le foto del sito, in un posto solo.
 
-   Sono foto di repertorio da Unsplash, ora ospitate localmente, in attesa degli scatti veri di Matteo:
-   quando arrivano, si cambia QUESTO file (un percorso in /public al posto
-   dell'id) e nessuna pagina va toccata. Il loader in ./loader.ts riconosce
-   i due casi da solo.
+   Gli scatti di Matteo provengono da DIRETTIVE CLIENTE/Foto reference.zip
+   (WhatsApp, 28 settembre 2026). Sono ottimizzati in WebP, con varianti
+   da 480 e 828 px. Le foto sportive e alcune immagini di contesto restano
+   di repertorio; le foto delle schede menu hanno un registro separato.
 
    L'alt descrive il contenuto visibile nella foto.
    ========================================================================= */
@@ -46,9 +46,44 @@ export const FOTO = {
     alt: "Atleta in spinta sopra la testa con il bilanciere",
   },
   cuoco: {
-    src: "/foto/photo-1577219491135-ce391730fb2c.webp",
-    alt: "Un cuoco impiatta con la pinza sotto le lampade della cucina",
+    src: "/foto/matteo-pattane-in-cucina.webp",
+    alt: "Matteo Pattanè in divisa da cuoco mentre versa una preparazione nelle ciotole",
+    fuoco: "75% 15%",
+  },
+  cuocoNitido: {
+    src: "/foto/matteo-in-cucina-nitida.webp",
+    alt: "Matteo Pattanè in cucina mentre prepara le porzioni",
+    fuoco: "70% 24%",
+  },
+  preparazioniMatteo: {
+    src: "/foto/matteo-preparazioni.webp",
+    alt: "Teglie con verdure tagliate e porzioni in preparazione, fotografate da Matteo",
     fuoco: "50% 35%",
+  },
+  piattoMatteo: {
+    src: "/foto/matteo-piatto-composto.webp",
+    alt: "Un piatto di Matteo con bocconcini dorati, verdure e funghi",
+    fuoco: "50% 50%",
+  },
+  polpetteMatteo: {
+    src: "/foto/matteo-polpette-al-sugo.webp",
+    alt: "Polpette dorate in salsa di pomodoro con foglie di basilico, preparate da Matteo",
+    fuoco: "50% 50%",
+  },
+  tagliataMatteo: {
+    src: "/foto/matteo-tagliata.webp",
+    alt: "Tagliata di carne su un tagliere con patate al forno, foglie verdi e scaglie di formaggio",
+    fuoco: "50% 45%",
+  },
+  dolceMatteo: {
+    src: "/foto/matteo-dolce-forno.webp",
+    alt: "Dolce rotondo cotto al forno da Matteo, con superficie dorata e centro cremoso",
+    fuoco: "50% 50%",
+  },
+  doratoMatteo: {
+    src: "/foto/matteo-piatto-dorato.webp",
+    alt: "Una preparazione soffice e dorata di Matteo, servita con verdure",
+    fuoco: "50% 50%",
   },
   schiscette: {
     src: "/foto/photo-1498837167922-ddd27525d352.webp",
@@ -84,5 +119,9 @@ export type ChiaveFoto = keyof typeof FOTO;
  */
 export const VIDEO_HERO: { src: string; poster: ChiaveFoto } | null = null;
 
-/** Il segnaposto della foto di Matteo: il volto vero va messo qui. */
-export const RITRATTO_MATTEO: Foto | null = null;
+/** Ritratto originale fornito da Matteo; il taglio conserva volto e divisa. */
+export const RITRATTO_MATTEO: Foto = {
+  src: "/foto/matteo-pattane-ritratto.webp",
+  alt: "Matteo Pattanè, cuoco e fondatore di FUEL LAB, in divisa bianca",
+  fuoco: "55% 35%",
+};

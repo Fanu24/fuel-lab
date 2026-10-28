@@ -74,8 +74,7 @@ export default function Formule() {
             </p>
 
             <div className="abb-azioni">
-              {/* "Consegna a casa" e' il listino che la riga mostra: senza, il modulo partirebbe dal ritiro (-10%) e il
-                  prezzo letto qui e quello della richiesta non coinciderebbero. */}
+              {/* Il modulo riprende la formula e la modalità scelta. */}
               <Link
                 href={linkRichiediAbbonamento({ formula: f.id, fascia, ritiro: false })}
                 className="btn btn-ink btn-sm"

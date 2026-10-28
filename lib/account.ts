@@ -37,8 +37,6 @@ import {
   NOMI_NUCLEO,
   periodoAbbonamento,
   prossimaConsegna as prossimaConsegnaAbbonamento,
-  SCONTI,
-  SCONTO_NUCLEO,
   type Fascia,
   type FormulaId,
   type Nucleo,
@@ -902,14 +900,7 @@ export type StimaAbbonamento = {
   dettaglio: string;
 };
 
-/** Gli sconti a parole, con l'articolo: "per il ritiro in laboratorio", "ti spettano l'abbonamento in coppia...". */
-const NOMI_SCONTO_NUCLEO: Record<Nucleo, string> = { singolo: "", coppia: "l’abbonamento in coppia", famiglia: "l’abbonamento in famiglia" };
-
-/**
- * Quanto costa al mese la scelta fatta nel modulo. E' una stima: gli sconti non
- * si sommano (si applica il piu' alto fra quelli che spettano, vedi
- * scontoApplicato) e il prezzo finale lo conferma Matteo.
- */
+/** Il listino di una richiesta, prima di un eventuale codice sconto. */
 export function stimaAbbonamento(d: Pick<DatiRichiesta, "formula" | "fascia" | "nucleo" | "modalita">): StimaAbbonamento {
   const ritiro = d.modalita === "pickup";
   const { listinoCentesimi, scontoPercento, totaleCentesimi } = calcolaPrezzo({
@@ -919,17 +910,7 @@ export function stimaAbbonamento(d: Pick<DatiRichiesta, "formula" | "fascia" | "
     nucleo: d.nucleo,
   });
   const listino = euroInteri(listinoCentesimi / 100);
-  const spettano = [
-    ritiro ? { chi: "il ritiro in laboratorio", percento: SCONTI.ritiro } : null,
-    d.nucleo !== "singolo" ? { chi: NOMI_SCONTO_NUCLEO[d.nucleo], percento: SCONTO_NUCLEO[d.nucleo] } : null,
-  ].filter((x): x is { chi: string; percento: number } => x !== null);
-  const voce = (x: { chi: string; percento: number }) => `${x.chi} (−${x.percento}%)`;
-  const dettaglio =
-    spettano.length === 0
-      ? `Prezzo di listino. Sconti: ritiro in laboratorio −${SCONTI.ritiro}%, in coppia −${SCONTI.coppia}%, in famiglia −${SCONTI.famiglia}%.`
-      : spettano.length === 1
-        ? `Listino ${listino}, sconto ${scontoPercento}% per ${spettano[0].chi}.`
-        : `Listino ${listino}, sconto ${scontoPercento}%: ti spettano ${voce(spettano[0])} e ${voce(spettano[1])}, si applica il più alto.`;
+  const dettaglio = "Prezzo di listino. Se hai un codice sconto, applicalo alla richiesta.";
   return { listino, totale: euroInteri(totaleCentesimi / 100), scontoPercento, dettaglio };
 }
 

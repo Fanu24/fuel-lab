@@ -6,6 +6,7 @@ import { datiUtentePuliti } from "../../lib/server/account";
 import { emailReimpostaPassword, emailVerificaEmail } from "../../lib/server/email";
 import { json } from "./http";
 import { emailMatteo, inviaEmail } from "./mail";
+import { currentAdminSession, supportsAdminSession } from "./admin-access";
 
 export interface Env {
   DB: D1Database;
@@ -173,6 +174,10 @@ export function createAuth(env: Env, request: Request, waitUntil?: Context["wait
 }
 
 export async function currentUser(env: Env, request: Request) {
+  if (supportsAdminSession(request)) {
+    const admin = await currentAdminSession(env, request);
+    if (admin) return admin;
+  }
   const auth = createAuth(env, request);
   const session = await auth.api.getSession({ headers: request.headers });
   if (!session?.user) return null;

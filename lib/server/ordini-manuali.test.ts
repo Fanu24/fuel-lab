@@ -199,9 +199,9 @@ describe("ordine a mano: abbonamento", () => {
     const e = esito(abb({ status: "confirmed", productionDate: "2026-10-05", fulfillmentDate: "2026-10-05" }));
     expect(e.ok).toBe(true);
     if (!e.ok) return;
-    // Completo Plus, ritiro (il corpo di base e' un ritiro): 676 euro meno il 10%, all'euro intero
+    // Completo Plus, ritiro (il corpo di base e' un ritiro): 676 euro di listino
     expect(e.value).toMatchObject({
-      service: "abbonamento", items: [], meals: 0, priceCents: 60800, requestedDate: "2026-10-05",
+      service: "abbonamento", items: [], meals: 0, priceCents: 67600, requestedDate: "2026-10-05",
       subscription: { plan: "completo", tier: "plus", household: "singolo", trial: true },
     });
     expect(e.value.plan).toEqual({});

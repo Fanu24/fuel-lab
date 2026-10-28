@@ -23,6 +23,7 @@ import {
   type DatiModulo,
   type ErroreInvio,
 } from "@/lib/contatto";
+import { normalizzaCodice } from "@/lib/sconti";
 import { usePiano } from "@/lib/piano";
 import { useUtente } from "./useUtente";
 
@@ -495,5 +496,6 @@ export function ModuloContattoDaQuery() {
   const p = useSearchParams();
   const argomento = argomentoDaParam(p.get("argomento") ?? p.get("servizio"));
   const scelta = sceltaAbbonamentoDaParam(p.get("formula"), p.get("fascia"));
-  return <ModuloContatto argomentoIniziale={argomento} messaggioIniziale={messaggioInizialeModulo(argomento, scelta)} />;
+  return <ModuloContatto argomentoIniziale={argomento} messaggioIniziale={messaggioInizialeModulo(argomento, scelta) + (normalizzaCodice(p.get("codice")) ? `
+Codice sconto: ${normalizzaCodice(p.get("codice"))}.` : "")} />;
 }

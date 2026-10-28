@@ -51,7 +51,8 @@ describe("le tabelle non nascondono colonne sul telefono", () => {
 
   it("pasti proteici e cuoco a domicilio hanno la versione a schede per il telefono", () => {
     const proteici = leggi("app/(sito)/pasti-proteici-pescara/page.tsx");
-    expect(proteici).toMatch(/<ul className="[^"]*lg:hidden">/);
+    expect(proteici).toContain("<CartaPiatto");
+    expect(proteici).not.toContain("<table");
     const cuoco = leggi("app/(sito)/cuoco-a-domicilio-pescara/page.tsx");
     expect(cuoco).toMatch(/<dl className="[^"]*md:hidden">/);
   });

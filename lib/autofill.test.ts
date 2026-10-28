@@ -28,11 +28,13 @@ function conteggi(p: Piano): Map<string, number> {
 
 describe("candidatiPer", () => {
   it("cardio: prima i piatti da cardio per quota di carboidrati, poi gli ibridi", () => {
-    expect(candidatiPer("cardio").map((p) => p.id)).toEqual([
-      "noodles-sesamo-maiale",
-      "gnocchetti-sugo-ricotta",
-      "riso-julien-pollo-teriyaki",
-    ]);
+    const candidati = candidatiPer("cardio");
+    const specifici = candidati.filter((p) => p.allenamento === "cardio");
+    expect(specifici).toHaveLength(2);
+    expect(candidati.slice(0, specifici.length)).toEqual(specifici);
+    expect(candidati.at(-1)?.allenamento).toBe("entrambi");
+    const quote = specifici.map((p) => p.carboidrati * 4 / p.kcal);
+    expect(quote[0]).toBeGreaterThanOrEqual(quote[1]);
   });
 
   it("pesi: prima i piatti da pesi per rapporto proteine/carboidrati, poi gli ibridi", () => {

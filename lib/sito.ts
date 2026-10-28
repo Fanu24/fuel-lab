@@ -27,8 +27,14 @@ export const TITOLARE = { nome: "Matteo Pattanè", ruolo: "Cuoco" } as const;
 export const EMAIL = "info@fuelchef.it";
 export const EMAIL_PRIVACY = "privacy@fuelchef.it";
 
-/** Il numero arrivera' con WhatsApp (vedi lib/whatsapp.ts): finche' e' null non compare da nessuna parte. */
-export const TELEFONO: string | null = null;
+/** Numero e orari di ritiro confermati dal titolare. */
+export const TELEFONO: string | null = "+39 340 454 7019";
+export const ORARI_RITIRO = {
+  testo: "Lun–ven · 9:30–19:00",
+  giorni: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+  apertura: "09:30",
+  chiusura: "19:00",
+} as const;
 
 /** In aggiornamento: quando arrivano, il footer li mostra al posto della dicitura provvisoria. */
 export const RAGIONE_SOCIALE: string | null = null;
@@ -97,4 +103,4 @@ export function elencoZone(zone: Zona[] = ZONE_SERVITE): string {
 
 /** La descrizione di una riga: la stessa per footer, dati strutturati e anteprime. */
 export const DESCRIZIONE_ATTIVITA =
-  "Meal prep fresco a Pescara per chi si allena: piatti per il cardio e per i pesi, con i macro su ogni porzione, cucinati ogni giorno da Matteo Pattanè.";
+  "Meal prep fresco a Pescara: abbonamenti e menu settimanali cucinati da Matteo Pattanè, con ritiro in sede o consegna in zona.";

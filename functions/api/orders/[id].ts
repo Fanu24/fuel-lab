@@ -13,6 +13,7 @@ import {
   ordineDaRiga,
   type Cambio,
   type StatoModificabile,
+  pianoDaCorpo, vociDalPiano,
 } from "../../../lib/server/ordini";
 
 /** GET /api/orders/:id — Matteo vede tutto, il proprietario la sua versione. */
@@ -114,19 +115,30 @@ export const onRequestPatch = async ({ env, request, params, waitUntil }: Contex
     price_cents: current.price_cents,
     paid: current.paid,
     subscription: current.subscription ?? null,
+    discount: current.discount,
   };
   const esito = leggiModificaAdmin(body, stato, current.fulfillment, current.service);
   if (!esito.ok) return json({ error: esito.error }, esito.status);
   const { next, cambi, avvisaCliente } = esito.value;
 
+  let piatti: { plan: ReturnType<typeof pianoDaCorpo>; items: ReturnType<typeof vociDalPiano> } | null = null;
+  if (body.plan !== undefined) {
+    if (current.service === "abbonamento" || current.service === "home-cooking") return json({ error: "Modifica i piatti solo per un ordine dal menu." }, 400);
+    const plan = pianoDaCorpo(body.plan);
+    const items = vociDalPiano(plan);
+    if (!items.length) return json({ error: "L'ordine deve avere almeno un piatto. Per rimuoverlo tutto, annullalo." }, 400);
+    piatti = { plan, items };
+    cambi.push({ type: "note", from_status: null, to_status: null, detail: `Piatti aggiornati: ${items.length} pasti` });
+  }
   if (cambi.length) {
     // UPDATE condizionato allo stato appena letto, eventi con la stessa condizione (vedi eventoSeInStato).
     const risultati = await env.DB.batch([
       ...cambi.map((cambio) => eventoSeInStato(env, id, "admin", cambio, current.status)),
-      env.DB.prepare("UPDATE orders SET status=?,production_date=?,fulfillment_date=?,internal_note=?,customer_message=?,price_cents=?,paid=?,sub_plan=?,sub_tier=?,sub_household=?,sub_trial=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND status=?")
+      env.DB.prepare("UPDATE orders SET status=?,production_date=?,fulfillment_date=?,internal_note=?,customer_message=?,price_cents=?,paid=?,sub_plan=?,sub_tier=?,sub_household=?,sub_trial=?,discount_base_cents=?,plan_json=?,items_json=?,meals=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND status=?")
         .bind(
           next.status, next.production_date, next.fulfillment_date, next.internal_note, next.customer_message, next.price_cents, next.paid,
           next.subscription?.plan ?? null, next.subscription?.tier ?? null, next.subscription?.household ?? null, next.subscription?.trial ? 1 : 0,
+          next.discount?.baseCents ?? null, piatti ? JSON.stringify(piatti.plan) : row.plan_json, piatti ? JSON.stringify(piatti.items) : row.items_json, piatti ? piatti.items.length : current.meals,
           id, current.status,
         ),
     ]);

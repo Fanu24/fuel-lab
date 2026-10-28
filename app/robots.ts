@@ -3,18 +3,17 @@ import { URL_SITO } from "@/lib/sito";
 
 export const dynamic = "force-static";
 
-/* Fuori dai motori le pagine private (pannello di Matteo, area cliente,
-   accesso e reset password) e le API. Le pagine hanno anche il meta robots
-   noindex e l'header X-Robots-Tag in public/_headers; le API lo hanno dal
-   middleware delle Functions (functions/api/_middleware.ts), perche' _headers
-   non vale per le Function. Tutto il resto, llms.txt compreso, e' aperto anche
-   ai crawler delle risposte AI. */
+/* Le schermate pubbliche di accesso e account devono essere scansionabili:
+   solo cosi' i motori possono leggere il loro noindex (meta e X-Robots-Tag).
+   I dati dei clienti restano protetti dalle API autenticate. Dashboard e API
+   restano esclusi dalla scansione. Le pagine pubbliche sono aperte anche ai
+   crawler dei motori di ricerca AI. */
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/dashboard", "/account", "/accedi", "/reimposta-password", "/api/"],
+      disallow: ["/dashboard", "/api/"],
     },
     sitemap: `${URL_SITO}/sitemap.xml`,
   };

@@ -1,36 +1,34 @@
+import Image from "next/image";
 import Link from "next/link";
 import Reveal from "@/components/Reveal";
-import CartaPiatto from "@/components/menu/CartaPiatto";
-import { PIATTI } from "@/lib/catalogo";
+import BollinoNonDisponibile from "@/components/impostazioni/BollinoNonDisponibile";
+import { PIATTI_MENU } from "@/lib/catalogo";
 
-/* Il cibo, grande. Sul telefono le carte scorrono di lato invece di impilarsi:
-   sei carte una sotto l'altra erano sei schermate prima del resto della pagina. */
 export default function PiattiScelti() {
   return (
-    <section className="sezione carta-2">
+    <section className="sezione" aria-labelledby="piatti-home-titolo">
       <div className="wrap">
-        <Reveal className="flex flex-wrap items-end justify-between gap-6">
-          <div>
-            <p className="occhiello">Il menu della settimana</p>
-            <h2 className="titolo mt-5 max-w-[14ch]">Sei piatti. Già composti.</h2>
-          </div>
-          <Link href="/menu" className="link">
-            Tutto il menu, con ingredienti e macro
-          </Link>
+        <Reveal className="flex flex-wrap items-end justify-between gap-4">
+          <h2 id="piatti-home-titolo" className="titolo">Dal menu.</h2>
+          <Link href="/menu" className="link">Tutti i piatti <span aria-hidden="true">→</span></Link>
         </Reveal>
+        <ul className="mt-8 grid gap-5 md:grid-cols-3 md:gap-8">
+          {PIATTI_MENU.slice(0, 3).map((piatto, i) => (
+            <Reveal as="li" key={piatto.id} delay={i * 60}>
+              <Link href={`/menu/${piatto.id}`} className="group grid grid-cols-[104px_1fr] items-center gap-4 border-t pt-5 md:block md:border-0 md:pt-0" style={{ borderColor: "var(--line)" }}>
+                <div className="relative aspect-square overflow-hidden bg-paper-2 md:aspect-[4/3]">
+                  <Image src={piatto.img} alt="" fill sizes="(min-width: 768px) 33vw, 104px" className="object-cover" />
+                  <span className="absolute bottom-1 left-1 bg-paper/95 px-1 text-[10px] text-ink">Foto illustrativa</span>
+                </div>
+                <div className="min-w-0 md:mt-4">
+                  <h3 className="titolo-s group-hover:underline group-hover:underline-offset-4">{piatto.nome}</h3>
+                  <BollinoNonDisponibile piattoId={piatto.id} className="mt-2" />
+                </div>
+              </Link>
+            </Reveal>
+          ))}
+        </ul>
       </div>
-      {/* scroll-padding: senza, lo scatto allinea la carta al bordo dello schermo e
-          non al margine della pagina */}
-      <ul
-        style={{ scrollPaddingInline: "var(--gut)" }}
-        className="wrap mt-12 flex snap-x snap-mandatory gap-5 overflow-x-auto pb-4 md:grid md:grid-cols-3 md:gap-8 md:overflow-visible"
-      >
-        {PIATTI.map((p, i) => (
-          <Reveal as="li" key={p.id} delay={(i % 3) * 80} className="w-[82%] shrink-0 snap-start md:w-auto">
-            <CartaPiatto piatto={p} />
-          </Reveal>
-        ))}
-      </ul>
     </section>
   );
 }

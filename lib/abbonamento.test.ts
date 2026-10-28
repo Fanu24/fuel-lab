@@ -108,29 +108,14 @@ describe("il prezzo di un abbonamento", () => {
     expect(calcolaPrezzo({ ...base, formula: "full7", fascia: "plus" }).totaleCentesimi).toBe(94600);
   });
 
-  it("ritiro in laboratorio -10%, in coppia -8%, in famiglia -10%", () => {
-    expect(SCONTI).toEqual({ ritiro: 10, coppia: 8, famiglia: 10 });
-    expect(calcolaPrezzo({ ...base, ritiro: true })).toEqual({ listinoCentesimi: 52000, scontoPercento: 10, totaleCentesimi: 46800 });
-    expect(calcolaPrezzo({ ...base, nucleo: "coppia" })).toEqual({ listinoCentesimi: 52000, scontoPercento: 8, totaleCentesimi: 47800 });
-    expect(calcolaPrezzo({ ...base, nucleo: "famiglia" }).totaleCentesimi).toBe(46800);
-  });
-
-  it("il totale e' un euro intero, arrotondato al piu' vicino (i mezzi euro salgono)", () => {
-    // 173 * 0,9 = 155,70 -> 156; 225 * 0,9 = 202,50 -> 203; 347 * 0,92 = 319,24 -> 319
-    expect(calcolaPrezzo({ ...base, formula: "pranzo", ritiro: true }).totaleCentesimi).toBe(15600);
-    expect(calcolaPrezzo({ ...base, formula: "pranzo", fascia: "plus", ritiro: true }).totaleCentesimi).toBe(20300);
-    expect(calcolaPrezzo({ ...base, formula: "leggero", nucleo: "coppia" }).totaleCentesimi).toBe(31900);
+  it("ritiro, coppia e famiglia mantengono il listino senza sconti automatici", () => {
+    expect(SCONTI).toEqual({ ritiro: 0, coppia: 0, famiglia: 0 });
     for (const formula of FORMULE_ID) for (const fascia of FASCE) for (const nucleo of NUCLEI) for (const ritiro of [false, true]) {
-      expect(calcolaPrezzo({ formula, fascia, nucleo, ritiro }).totaleCentesimi % 100).toBe(0);
+      const p = calcolaPrezzo({ formula, fascia, nucleo, ritiro });
+      expect(scontoApplicato({ ritiro, nucleo })).toBe(0);
+      expect(p.scontoPercento).toBe(0);
+      expect(p.totaleCentesimi).toBe(getFormula(formula).prezzo[fascia] * 100);
     }
-  });
-
-  it("gli sconti non si sommano: vale il piu' alto", () => {
-    expect(scontoApplicato({ ritiro: true, nucleo: "coppia" })).toBe(10);
-    expect(scontoApplicato({ ritiro: true, nucleo: "famiglia" })).toBe(10);
-    expect(scontoApplicato({ ritiro: false, nucleo: "coppia" })).toBe(8);
-    expect(scontoApplicato({ ritiro: false, nucleo: "singolo" })).toBe(0);
-    expect(calcolaPrezzo({ ...base, ritiro: true, nucleo: "famiglia" }).totaleCentesimi).toBe(46800);
   });
 
   it("uno sconto non porta mai il prezzo sotto zero ne' sopra il listino", () => {

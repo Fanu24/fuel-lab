@@ -63,6 +63,11 @@ function corpoDi(s: string): string {
 }
 
 describe("impronta del catalogo", () => {
+  it("rilegge una settimana condivisa prima delle novità del 15 ottobre", () => {
+    const linkDel14Ottobre = "19-1q51ccm~03i9z7if4" + "_00000000".repeat(13);
+    expect(decodificaPiano(linkDel14Ottobre)).toEqual({ lun: { pranzo: { piatto: "noodles-sesamo-maiale", extra: ["snack-centrifugati"] } } });
+  });
+
   it("mette l'impronta in testa a ogni link non vuoto", () => {
     expect(codificaPiano(pieno).startsWith(`${IMPRONTA_CATALOGO}~`)).toBe(true);
   });

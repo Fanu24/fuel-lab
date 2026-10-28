@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { NOME_ATTIVITA } from "@/lib/sito";
-import { PIATTI, type Piatto } from "@/lib/catalogo";
+import type { Piatto } from "@/lib/catalogo";
 import { CONSEGNA_OGNI_GIORNI, FORMULE, PREZZO_DA_TESTO, getFormula, percorsoFormula, type FormulaId } from "@/lib/abbonamento";
 
 /* =========================================================================
@@ -19,7 +19,7 @@ import { CONSEGNA_OGNI_GIORNI, FORMULE, PREZZO_DA_TESTO, getFormula, percorsoFor
 export const TEMPLATE_TITOLO = `%s · ${NOME_ATTIVITA}`;
 
 /** Data dell'ultima revisione dei contenuti: finisce in sitemap, dati strutturati e nella riga "Pagina aggiornata il". */
-export const AGGIORNAMENTO = "2026-10-01";
+export const AGGIORNAMENTO = "2026-10-15";
 
 /** "1 ottobre 2026": una data ISO scritta all'italiana (UTC: e' un giorno, non un istante). */
 export function dataLeggibile(iso: string): string {
@@ -44,6 +44,8 @@ export interface ImmagineOg {
 
 export interface PaginaSeo {
   percorso: string;
+  /** Revisione effettiva della singola pagina, senza ridatare tutto il sito. */
+  aggiornamento?: string;
   /** senza suffisso, a meno che `assoluto` */
   titolo: string;
   assoluto?: boolean;
@@ -56,17 +58,15 @@ export interface PaginaSeo {
   immagine?: ImmagineOg;
 }
 
-const PROTEINE = PIATTI.map((p) => p.proteine);
-const MIN_PROTEINE = Math.min(...PROTEINE);
-const MAX_PROTEINE = Math.max(...PROTEINE);
 
 export const PAGINE = {
   home: {
     percorso: "/",
+    aggiornamento: "2026-10-15",
     titolo: `${NOME_ATTIVITA} · Meal prep fresco a Pescara per chi si allena`,
     assoluto: true,
     descrizione:
-      "Meal prep fresco a Pescara, mai surgelato: piatti per chi fa cardio o pesi, con i macro su ogni porzione. Matteo cucina e consegna ogni giorno.",
+      "I tuoi pasti, già pronti. Abbonamenti di meal prep a Pescara da 173 € al mese oppure componi la tua settimana. Cucina Matteo, ritiri o ricevi a casa.",
     breve: "Home",
     priorita: 1,
     frequenza: "weekly",
@@ -92,7 +92,7 @@ export const PAGINE = {
   proteici: {
     percorso: "/pasti-proteici-pescara",
     titolo: "Pasti proteici a Pescara per chi va in palestra",
-    descrizione: `Pasti proteici a Pescara per chi si allena: ${PIATTI.length} piatti da ${MIN_PROTEINE} a ${MAX_PROTEINE} g di proteine a porzione, con calorie, carboidrati e grassi veri. Per pesi e cardio.`,
+    descrizione: "Pasti proteici a Pescara cucinati da Matteo. Ingredienti, allergeni e stime nutrizionali delle ricette disponibili. Abbonamenti, ritiro e consegna.",
     breve: "Pasti proteici a Pescara",
     priorita: 0.9,
     frequenza: "monthly",
@@ -108,9 +108,9 @@ export const PAGINE = {
   },
   menu: {
     percorso: "/menu",
-    titolo: "Menu meal prep a Pescara: 6 piatti con i macro",
+    titolo: "Menu meal prep a Pescara: scegli i tuoi piatti",
     descrizione:
-      "I sei piatti del meal prep FUEL LAB a Pescara con ingredienti, allergeni e macro per porzione: calorie, proteine, carboidrati e grassi. Per cardio o pesi.",
+      "Scegli i piatti di FUEL LAB e componi la tua settimana. Ingredienti, allergeni e stime nutrizionali nelle schede. Ritiro a Pescara o consegna in zona.",
     breve: "Menu",
     priorita: 0.9,
     frequenza: "weekly",
@@ -143,9 +143,10 @@ export const PAGINE = {
   },
   chiSiamo: {
     percorso: "/chi-siamo",
+    aggiornamento: "2026-10-08",
     titolo: "Chi siamo: la cucina di Matteo Pattanè a Pescara",
     descrizione:
-      "FUEL LAB è il meal prep fresco di Matteo Pattanè, cuoco e fondatore, a Pescara: piatti per chi si allena, macro su ogni porzione, cucinati ogni giorno.",
+      "Conosci Matteo Pattanè, cuoco diplomato ALMA e fondatore di FUEL LAB. Meal prep e abbonamenti a Pescara, in Via del Santuario 214. Ritiro o consegna.",
     breve: "Chi siamo",
     priorita: 0.6,
     frequenza: "monthly",
@@ -154,7 +155,7 @@ export const PAGINE = {
     percorso: "/scheda",
     titolo: "Meal prep sui macro del tuo nutrizionista",
     descrizione:
-      "Hai una scheda del nutrizionista? Scrivi calorie, proteine, carboidrati e grassi: la settimana si compone sui tuoi numeri con i piatti FUEL LAB a Pescara.",
+      "Hai un piano alimentare? Concorda con Matteo ingredienti e quantità del tuo nutrizionista. Abbonamenti FUEL LAB a Pescara, con ritiro o consegna.",
     breve: "Dai tuoi macro",
     priorita: 0.6,
     frequenza: "monthly",
@@ -227,8 +228,12 @@ export function metadatiPagina(p: PaginaSeo, altro: Partial<Metadata> = {}): Met
  * tiene la prima che entra. Niente giorno di cottura: Matteo cucina ogni giorno.
  */
 export function descrizionePiatto(p: Piatto): string {
-  const testa = `${p.nome}: ${p.kcal} kcal e ${p.proteine} g di proteine a porzione.`;
+  const testa = `${p.nome}.`;
   const candidate = [
+    `${testa} Ingredienti, allergeni e dettagli del piatto, cucinato fresco da Matteo a Pescara. Sceglilo per la tua settimana, con ritiro o consegna.`,
+    `${testa} Ingredienti e allergeni del piatto, cucinato fresco da Matteo a Pescara. Sceglilo per la tua settimana.`,
+    `${testa} Ingredienti e allergeni del piatto, cucinato fresco da Matteo a Pescara. Sceglilo per la tua settimana, da ritirare in sede.`,
+    `${testa} Ingredienti e allergeni. Meal prep fresco a Pescara, cucinato da Matteo. Ritiro in sede o consegna in zona.`,
     `${testa} Ingredienti, allergeni e macro del piatto, cucinato fresco da ${NOME_ATTIVITA} a Pescara.`,
     `${testa} Ingredienti e allergeni del piatto, cucinato fresco da ${NOME_ATTIVITA} a Pescara.`,
     `${testa} Ingredienti e allergeni, cucinato fresco da ${NOME_ATTIVITA} a Pescara.`,

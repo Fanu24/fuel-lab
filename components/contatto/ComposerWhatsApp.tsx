@@ -234,7 +234,7 @@ export default function ComposerWhatsApp({
         {richiedePiano && pasti > 0 ? (
           <>
             <p className="num mt-4 text-sm text-muted">
-              {pasti} pasti · {Math.round(macroSettimana.proteine)} g di proteine nella settimana
+              {pasti} pasti nella settimana
             </p>
             <ul className="mt-5">
               {GIORNI.filter((g) => piano[g] || allenamenti[g]).map((g) => (

@@ -55,6 +55,8 @@ export type StatoOrdine = "requested" | "confirmed" | "preparing" | "ready" | "c
  */
 export type Servizio = "menu-settimana" | "abbonamento" | "sui-tuoi-macro" | "home-cooking";
 export type Modalita = "pickup" | "delivery";
+export type CodiceSconto = { code: string; percent: number; active: 0 | 1; created_at: string; uses: number };
+export type ScontoOrdine = { code: string; percent: number; appliedPercent: number; baseCents: number | null; roundEuro?: boolean };
 
 /**
  * Cosa ha scelto chi si abbona: la formula, la fascia, con chi (da solo, in
@@ -100,6 +102,8 @@ export type Ordine = {
   customer_message: string;
   /** Totale concordato in centesimi; null finche' Matteo non lo scrive. */
   price_cents: number | null;
+  /** Snapshot immutabile del codice; prezzo base prima dello sconto. */
+  discount?: ScontoOrdine | null;
   /** 1 se Matteo ha segnato l'ordine come pagato. */
   paid: 0 | 1;
   dietary_preferences: string | null;
@@ -127,11 +131,14 @@ export type DettaglioOrdine = Ordine & {
 
 /** Il corpo di PATCH /api/orders/:id. Tutti i campi sono facoltativi. */
 export type ModificaOrdine = {
+  /** Piatti modificabili per richieste menu; nomi ed extra derivati dal server. */
+  plan?: Piano;
   status?: StatoOrdine;
   productionDate?: string | null;
   fulfillmentDate?: string | null;
   internalNote?: string;
   customerMessage?: string;
+  /** Con un codice sconto, questo importo è la BASE prima dello sconto. */
   priceCents?: number | null;
   paid?: boolean;
   /** Solo abbonamenti: cambia formula, fascia, nucleo o prova (tutti e quattro i campi). Il totale non si ricalcola da solo. */
@@ -147,6 +154,7 @@ export type ModificaOrdine = {
 
 /** Il corpo di POST /api/orders. */
 export type NuovoOrdine = {
+  discountCode?: string;
   name: string;
   phone: string;
   comune: string;
@@ -170,6 +178,7 @@ export type NuovoOrdine = {
  * resta intestato a Matteo e il cliente non riceve email.
  */
 export type NuovoOrdineManuale = {
+  discountCode?: string;
   customerId?: string | null;
   name: string;
   phone: string;
@@ -188,6 +197,7 @@ export type NuovoOrdineManuale = {
   /** "confirmed" vuole entrambe le date (per l'abbonamento sono entrambe l'inizio). */
   status: "requested" | "confirmed";
   /** Assente per l'abbonamento: vale il prezzo proposto da calcolaPrezzo (lib/abbonamento.ts). */
+  /** Con un codice sconto, questo importo è la BASE prima dello sconto. */
   priceCents?: number | null;
   paid?: boolean;
   internalNote?: string;
@@ -361,6 +371,7 @@ async function chiama<T>(url: string, init?: RequestInit & { json?: unknown; att
 /* ---------- Account e cliente ---------- */
 
 export const api = {
+  verificaSconto: (code: string) => chiama<{ code: string; percent: number }>("/api/discounts", { method: "POST", json: { code } }),
   me: () => chiama<{ user: Utente | null }>("/api/me"),
   providers: () => chiama<Providers>("/api/providers"),
 
@@ -410,6 +421,9 @@ export const api = {
 /* ---------- Solo Matteo ---------- */
 
 export const adminApi = {
+  sconti: () => chiama<{ discounts: CodiceSconto[] }>("/api/admin/discounts"),
+  creaSconto: (percent: number, code?: string) => chiama<{ discount: CodiceSconto }>("/api/admin/discounts", { method: "POST", json: { percent, code } }),
+  attivaSconto: (code: string, active: boolean) => chiama<{ ok: true }>("/api/admin/discounts", { method: "PATCH", json: { code, active } }),
   clienti: () => chiama<{ customers: ClienteAdmin[] }>("/api/admin/customers"),
   /** Tutti gli ordini di un cliente (fino a 500), per la scheda cliente. */
   ordiniCliente: (userId: string) => chiama<{ orders: Ordine[] }>(`/api/orders?user=${encodeURIComponent(userId)}`),

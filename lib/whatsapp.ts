@@ -192,10 +192,7 @@ function rigaGiorno(g: GiornoSettimana, p: Piano, a: Allenamenti, dettaglio: Det
   return `${giorno}: ${parti.length > 0 ? parti.join("; ") : "nessun pasto scelto"}`;
 }
 
-/** I totali con il punto delle migliaia all'italiana: "22.290 kcal", non "22290 kcal". */
-const numero = (n: number) => Math.round(n).toLocaleString("it-IT");
-
-function testoPiano(p: Piano, macro: Macros, nome: string | undefined, allenamenti: Allenamenti, dettaglio: Dettaglio): string {
+function testoPiano(p: Piano, nome: string | undefined, allenamenti: Allenamenti, dettaglio: Dettaglio): string {
   const righeGiorni = GIORNI.map((g) => rigaGiorno(g, p, allenamenti, dettaglio)).filter(
     (r): r is string => !!r,
   );
@@ -206,9 +203,6 @@ function testoPiano(p: Piano, macro: Macros, nome: string | undefined, allenamen
     "",
     righeGiorni.length > 0 ? righeGiorni.join("\n") : "Non ho ancora scelto nessun pasto.",
     "",
-    `Totale settimana: ${numero(macro.kcal)} kcal, ${numero(macro.proteine)} g di proteine, ` +
-      `${numero(macro.carboidrati)} g di carboidrati, ${numero(macro.grassi)} g di grassi.`,
-    "",
     "Mi dici come possiamo organizzarci?",
   ];
 
@@ -217,22 +211,23 @@ function testoPiano(p: Piano, macro: Macros, nome: string | undefined, allenamen
 
 /**
  * Il messaggio che Matteo legge quando arriva dalla richiesta legata a una
- * settimana: chi manda, i giorni con il piatto e le aggiunte, e la riga finale
- * dei macro totali. I ritorni a capo sono `
-` veri: e' compito di
+ * settimana: chi manda, i giorni con il piatto e le aggiunte. I totali
+ * nutrizionali non vengono inviati: alcune ricette e tutte le aggiunte hanno
+ * ancora quantità da confermare. Il parametro macro resta per compatibilità.
+ * I ritorni a capo sono veri: e' compito di
  * linkWhatsApp codificarli nell'URL, non di questa funzione. Se la settimana
  * completa non ci sta nell'indirizzo, accorcia le aggiunte (vedi Dettaglio).
  */
 export function messaggioPiano(
   p: Piano,
-  macro: Macros,
+  _macro: Macros,
   nome?: string,
   allenamenti: Allenamenti = {},
 ): string {
   const livelli: Dettaglio[] = ["completo", "senzaPrezzi", "sintetico"];
   let testo = "";
   for (const d of livelli) {
-    testo = testoPiano(p, macro, nome, allenamenti, d);
+    testo = testoPiano(p, nome, allenamenti, d);
     if (encodeURIComponent(testo).length <= LIMITE_SETTIMANA_URL) break;
   }
   return testo;

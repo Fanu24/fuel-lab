@@ -11,7 +11,7 @@ export const MAX_PERCORSI_AL_GIORNO = 300;
 export const PERCORSO_ALTRO = "/altro";
 
 /** Parti del sito che non sono traffico del sito: il pannello di Matteo non conta come visita. */
-const NON_CONTATI = ["/dashboard", "/api"] as const;
+const NON_CONTATI = ["/admin", "/dashboard", "/api"] as const;
 
 const CARATTERI = /^\/[a-z0-9._~%/-]*$/;
 

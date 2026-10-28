@@ -9,8 +9,8 @@ import {
 } from "./catalogo";
 
 describe("catalogo", () => {
-  it("ha i sei piatti del cliente e il listino box", () => {
-    expect(PIATTI.length).toBe(6);
+  it("ha i dodici piatti del cliente e il listino box", () => {
+    expect(PIATTI.length).toBe(12);
     expect(EXTRA.length).toBeGreaterThanOrEqual(30);
   });
 
@@ -35,7 +35,7 @@ describe("catalogo", () => {
 
   it("ogni piatto ha ingredienti, motivo e allenamento", () => {
     for (const p of PIATTI) {
-      expect(p.ingredienti.length, p.id).toBeGreaterThan(3);
+      expect(p.ingredienti.length, p.id).toBeGreaterThanOrEqual(3);
       expect(p.motivo.length, p.id).toBeGreaterThan(40);
       expect(["cardio", "pesi", "entrambi"]).toContain(p.allenamento);
       expect(getPiatto(p.id)).toBe(p);

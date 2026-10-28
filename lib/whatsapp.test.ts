@@ -102,7 +102,7 @@ describe("whatsapp", () => {
 
   // --- messaggioPiano: leggibile su un telefono ----------------------------
 
-  it("messaggioPiano elenca i giorni pieni con il piatto e chiude con i macro", async () => {
+  it("messaggioPiano elenca i giorni e i piatti senza totali nutrizionali non confermati", async () => {
     vi.resetModules();
     const { messaggioPiano } = await import("./whatsapp");
     const { PIATTI } = await import("./catalogo");
@@ -117,8 +117,8 @@ describe("whatsapp", () => {
 
     expect(testo).toContain("Luca");
     expect(testo).toContain(PIATTI[0].nome);
-    expect(testo).toContain("1500");
-    expect(testo).toContain("120");
+    expect(testo).toContain("Lunedì: pranzo");
+    expect(testo).not.toMatch(/Totale settimana|kcal|g di proteine|g di carboidrati|g di grassi/);
   });
 
   it("messaggioPiano senza pasti scelti non lancia e resta leggibile", async () => {

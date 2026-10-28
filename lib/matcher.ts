@@ -211,7 +211,7 @@ function scartiDi(totali: Macros, bersaglio: Macros) {
 }
 
 function opzioniCasella(vincoli: Vincoli): Opzione<Casella>[] {
-  return PIATTI.filter((e) => ammesso(e, vincoli)).map((p) => ({
+  return PIATTI.filter((e) => e.kcal > 0 && ammesso(e, vincoli)).map((p) => ({
     valore: { piatto: p.id, extra: [] },
     macro: sommaMacro([p]),
     chiavi: [p.id],

@@ -14,8 +14,8 @@ import { periodo } from "./impostazioni";
 
    Il cliente porta il piano scritto dal suo nutrizionista e Matteo lo cucina
    ai grammi; consegna (o ritiro) ogni 3 giorni; la prima settimana e' di
-   prova, senza impegno. Sconti: ritiro in laboratorio -10%, in coppia -8%, in
-   famiglia -10%. Pagine (/abbonamento e le cinque schede), home, servizi,
+   prova, senza impegno. Gli sconti automatici sono rimossi: valgono solo i codici
+   creati da Matteo. Pagine (/abbonamento e le cinque schede), home, servizi,
    dati strutturati, richiesta dall'area cliente, server e pannello di Matteo
    leggono tutti da qui: se cambia un prezzo o una regola, si cambia questo
    file e basta.
@@ -26,7 +26,7 @@ import { periodo } from "./impostazioni";
 
    Cose che il volantino NON dice e che qui sono ipotesi, ognuna in una riga da
    cambiare (vedi docs/superpowers/plans/2026-09-30-abbonamenti-multipli.md):
-   gli sconti non si sommano (si applica il piu' alto), il giorno libero di
+   il giorno libero di
    Full 6 e' la domenica, Leggero e' dal lunedi' al venerdi'.
    ========================================================================= */
 
@@ -34,7 +34,7 @@ import { periodo } from "./impostazioni";
 
 export type FormulaId = "pranzo" | "leggero" | "completo" | "full6" | "full7";
 export type Fascia = "standard" | "plus";
-/** Chi si abbona: da solo, in coppia o in famiglia (gli ultimi due hanno lo sconto). */
+/** Chi si abbona: da solo, in coppia o in famiglia (prezzo per persona). */
 export type Nucleo = "singolo" | "coppia" | "famiglia";
 export type PastoAbb = "colazione" | "pranzo" | "cena";
 
@@ -198,7 +198,7 @@ export const percorsoFormula = (id: FormulaId) => `/abbonamento/${id}`;
  * scelto e, se si sa, la formula e la fascia.
  */
 export function linkRichiediAbbonamento(
-  scelta: { formula?: FormulaId; fascia?: Fascia; ritiro?: boolean; nucleo?: Nucleo } = {},
+  scelta: { formula?: FormulaId; fascia?: Fascia; ritiro?: boolean; nucleo?: Nucleo; codice?: string } = {},
 ): string {
   const q = new URLSearchParams({ sezione: "richiesta", servizio: "abbonamento" });
   if (scelta.formula) q.set("formula", scelta.formula);
@@ -207,32 +207,31 @@ export function linkRichiediAbbonamento(
   // il cliente leggerebbe un prezzo nel simulatore e un altro (con lo sconto del ritiro) nella richiesta.
   if (scelta.ritiro !== undefined) q.set("modalita", scelta.ritiro ? "pickup" : "delivery");
   if (scelta.nucleo) q.set("nucleo", scelta.nucleo);
+  if (scelta.codice) q.set("codice", scelta.codice);
   return `/account?${q.toString()}`;
 }
 export const LINK_RICHIEDI_ABBONAMENTO = linkRichiediAbbonamento();
 
 /** Lo stesso per chi non ha un account: il modulo contatti, con formula e fascia gia' scelte (vedi components/contatto). */
-export function linkScriviAbbonamento(scelta: { formula?: FormulaId; fascia?: Fascia } = {}): string {
+export function linkScriviAbbonamento(scelta: { formula?: FormulaId; fascia?: Fascia; codice?: string } = {}): string {
   const q = new URLSearchParams({ servizio: "abbonamento" });
   if (scelta.formula) q.set("formula", scelta.formula);
   if (scelta.fascia) q.set("fascia", scelta.fascia);
+  if (scelta.codice) q.set("codice", scelta.codice);
   return `/richiesta?${q.toString()}#scrivi`;
 }
 
 /* ---------- Prezzi e sconti ---------- */
 
-/** Gli sconti del volantino, in percentuale. */
-export const SCONTI = { ritiro: 10, coppia: 8, famiglia: 10 } as const;
+/** Compatibilità con i vecchi pannelli: sconti automatici disattivati. */
+export const SCONTI = { ritiro: 0, coppia: 0, famiglia: 0 } as const;
 
 export const SCONTO_NUCLEO: Record<Nucleo, number> = { singolo: 0, coppia: SCONTI.coppia, famiglia: SCONTI.famiglia };
 
-/**
- * Lo sconto che si applica, in percentuale. IPOTESI: il volantino non dice se
- * gli sconti si sommano, e sottopromettere e' la scelta sicura: vale il piu'
- * alto fra quelli che spettano. Per farli sommare basta cambiare questa riga.
- */
-export function scontoApplicato({ ritiro, nucleo }: { ritiro: boolean; nucleo: Nucleo }): number {
-  return Math.max(ritiro ? SCONTI.ritiro : 0, SCONTO_NUCLEO[nucleo]);
+/** Ritiro e nucleo non applicano sconti automatici. */
+export function scontoApplicato(_scelta: { ritiro: boolean; nucleo: Nucleo }): number {
+  void _scelta;
+  return 0;
 }
 
 export type PrezzoAbbonamento = {

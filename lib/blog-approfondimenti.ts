@@ -1,3 +1,5 @@
+import { APPROFONDIMENTI_LOCALI } from "./blog-locali";
+
 export type Approfondimento = {
   /** la risposta breve in apertura: due-tre frasi che rispondono alla ricerca */
   risposta: string;
@@ -13,15 +15,16 @@ export type Approfondimento = {
 // Ogni guida risponde a una ricerca diversa. Gli esempi descrivono scelte pratiche,
 // non prescrizioni nutrizionali né promesse su consegne non ancora confermate.
 export const APPROFONDIMENTI: Record<string, Approfondimento> = {
+  ...APPROFONDIMENTI_LOCALI,
   /* ---- seconda serie ---- */
   "abbinare-pasti-tipo-allenamento": {
     risposta: "Abbina il pasto all’allenamento del giorno: con il cardio un piatto più ricco di carboidrati, con i pesi le proteine ben presenti e i carboidrati in quantità più moderata, nel riposo un piatto completo e meno denso. È un criterio per scegliere tra piatti, non una prescrizione.",
-    scenario: "Una settimana possibile: lunedì pesi, martedì corsa, mercoledì riposo, giovedì pesi, venerdì calcetto, weekend libero. Nel compositore segni i cinque giorni: la proposta mette il maiale alla senape o le uova alla purgatorio nei giorni di pesi, il riso con pollo teriyaki o i noodles nei giorni di cardio e il piatto più leggero il mercoledì. Poi sistemi tu: se il venerdì ceni fuori, lasci la casella vuota.",
+    scenario: "Una settimana possibile: lunedì pesi, martedì corsa, mercoledì riposo, giovedì pesi, venerdì calcetto, weekend libero. Nel compositore scegli i pasti che vuoi avere pronti: puoi alternare carne, uova e ricette con cereali secondo i tuoi gusti e le indicazioni che segui. Se il venerdì ceni fuori, lasci quella casella vuota.",
     passi: [
       "Scrivi gli allenamenti reali della settimana, con il loro orario.",
       "Per ogni giorno individua il pasto chiave: il pranzo prima del cardio serale, la cena dopo i pesi.",
       "Scegli il piatto secondo la regola e controlla ingredienti e allergeni nella scheda.",
-      "Prova la proposta automatica nel [compositore della settimana](/settimana) e correggila a mano.",
+      "Scegli i pasti nel [compositore della settimana](/settimana) e controlla la richiesta prima di inviarla.",
     ],
     daSapere: "La regola viene dall’esperienza di cucina di Matteo ed è coerente con le linee guida per chi fa sport, ma non conosce il tuo peso, i tuoi obiettivi né la tua salute. Se segui un piano, valgono le indicazioni del tuo professionista.",
   },
@@ -70,15 +73,15 @@ export const APPROFONDIMENTI: Record<string, Approfondimento> = {
     daSapere: "Le cifre valgono per adulti sani e sono riferimenti di popolazione. In presenza di malattie, in gravidanza, in crescita o con obiettivi specifici, la quota di proteine va decisa con un professionista.",
   },
   "pallotte-cacio-e-ova-versione-fit": {
-    risposta: "Le pallotte cacio e ova sono polpette abruzzesi di formaggio, uova e pane, fritte e poi cotte nel sugo di pomodoro. La versione fit di FUEL LAB usa pane raffermo, uova, ricotta e parmigiano con un sugo di pomodorini: resta il sapore della tradizione, con un impasto più leggero e i valori della porzione scritti in scheda.",
+    risposta: "Le pallotte cacio e ova sono polpette abruzzesi di formaggio, uova e pane, tradizionalmente fritte e poi cotte nel sugo. La ricetta FUEL LAB usa pane raffermo, uova, ricotta e parmigiano con pomodorini. Ingredienti e allergeni sono in scheda; il calcolo nutrizionale richiede ancora le dosi di olio e parmigiano.",
     scenario: "Il giovedì ti alleni con i pesi alle 18. Le pallotte le ritiri o le ricevi quel giorno stesso, perché Matteo cucina e consegna ogni giorno: le conservi come indicato e la sera le mangi con un contorno di verdure. Il venerdì a pranzo scegli un piatto diverso, per non ripetere lo stesso sapore due volte di fila.",
     passi: [
-      "Apri la scheda delle pallotte fit e controlla ingredienti e allergeni.",
+      "Apri la scheda delle pallotte e controlla ingredienti e allergeni.",
       "Mettile in un giorno di pesi della tua settimana, a pranzo o a cena.",
       "Abbinale a verdure di stagione per completare il pasto.",
       "Chiedi a Matteo disponibilità nel giorno che ti serve, ritiro o consegna.",
     ],
-    daSapere: "Contengono glutine, uova e latte. La versione tradizionale fritta resta un piatto delle feste; quella fit è pensata per i giorni feriali, non per sostituire la tradizione.",
+    daSapere: "Contengono glutine, uova e latte. La ricotta cambia la ricetta, ma da sola non dimostra una riduzione delle calorie: servono quantità complete e un confronto sulla stessa porzione.",
   },
   "cosa-mangiare-calcetto-crossfit-pescara": {
     risposta: "Prima di calcetto e CrossFit fai un pasto digeribile e ricco di carboidrati 2–3 ore prima, oppure una merenda con carboidrati 1–2 ore prima. Dopo, anche se è tardi, una cena completa con carboidrati, una fonte proteica e verdure. Per un’ora di gioco basta l’acqua.",
@@ -114,11 +117,11 @@ export const APPROFONDIMENTI: Record<string, Approfondimento> = {
     daSapere: "Gli schemi descrivono l’organizzazione dei pasti, non il programma di allenamento: per carichi, recuperi e progressioni fai riferimento al tuo allenatore.",
   },
   "piatti-gia-composti-cosa-sono": {
-    risposta: "I piatti già composti sono pasti completi pensati dal cuoco, con base di carboidrati, fonte proteica, verdure e condimento in un’unica ricetta. Ingredienti, grammature, allergeni e macro della porzione sono dichiarati: scegli il piatto invece di assemblare ogni componente.",
+    risposta: "I piatti già composti riuniscono ingredienti e condimenti in una ricetta pensata dal cuoco. In scheda trovi ingredienti, allergeni e le eventuali stime nutrizionali disponibili: scegli il piatto e concordi con Matteo le quantità se segui un piano specifico.",
     scenario: "Hai tre pranzi in ufficio e due cene dopo la palestra da coprire. Invece di decidere ogni volta basi e condimenti, scegli cinque piatti già composti, controlli le schede e li distribuisci nella settimana. Nei giorni in cui hai più fame aggiungi alla box una porzione di verdure o uno snack.",
     passi: [
       "Individua i pasti della settimana che non riesci a cucinare.",
-      "Apri le schede del [menu](/menu) e confronta macro, ingredienti e allergeni.",
+      "Apri le schede del [menu](/menu) e controlla ingredienti, allergeni ed eventuali stime.",
       "Aggiungi alla box solo quello che ti serve davvero.",
       "Componi la settimana e chiedi a Matteo conferma di disponibilità e ritiro.",
     ],

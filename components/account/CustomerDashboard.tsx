@@ -202,7 +202,7 @@ function AreaCliente({ utente, onEliminato }: { utente: Utente; onEliminato: () 
             <p className="mt-3 text-muted [overflow-wrap:anywhere]">{utente.email}</p>
           </div>
           {admin ? (
-            <Link href="/dashboard" className="btn btn-ink btn-sm">
+            <Link href="/admin" className="btn btn-ink btn-sm">
               Pannello di Matteo <span className="freccia" aria-hidden="true">→</span>
             </Link>
           ) : null}
@@ -238,7 +238,7 @@ function AreaCliente({ utente, onEliminato }: { utente: Utente; onEliminato: () 
           <NuovaRichiesta
             // Il modulo prende servizio, formula e fascia solo all'apertura: se l'indirizzo cambia (un altro
             // link "Richiedi" del sito) va rimontato, altrimenti resterebbe la scelta di prima.
-            key={`${parametri.get("servizio")}-${parametri.get("formula")}-${parametri.get("fascia")}-${parametri.get("modalita")}-${parametri.get("nucleo")}`}
+            key={`${parametri.get("servizio")}-${parametri.get("formula")}-${parametri.get("fascia")}-${parametri.get("modalita")}-${parametri.get("nucleo")}-${parametri.get("codice")}`}
             utente={utente}
             profilo={profilo}
             servizioIniziale={servizioDa(parametri.get("servizio"))}

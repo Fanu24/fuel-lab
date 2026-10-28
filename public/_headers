@@ -28,6 +28,10 @@
 /dashboard/*
   X-Robots-Tag: noindex, nofollow
 
+/admin*
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+
 /account*
   X-Robots-Tag: noindex
 
@@ -47,3 +51,11 @@
 
 /pannello.webmanifest
   Content-Type: application/manifest+json
+
+# I domini tecnici ospitano copie del sito, non risultati di ricerca.
+https://fuelchef.pages.dev/*
+  X-Robots-Tag: noindex
+
+https://:version.fuelchef.pages.dev/*
+  X-Robots-Tag: noindex
+

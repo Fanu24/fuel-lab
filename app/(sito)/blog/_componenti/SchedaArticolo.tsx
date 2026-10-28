@@ -63,6 +63,7 @@ export default function SchedaArticolo({
         <div className="smusso relative mb-5 aspect-[16/10] overflow-hidden bg-paper-2">
           <Image
             src={foto.src}
+            style={{ objectPosition: foto.fuoco }}
             alt=""
             fill
             sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"

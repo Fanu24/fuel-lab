@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import {
   campiMancanti,
   contaPiatti,
@@ -9,7 +9,6 @@ import {
   formattaGiornoDa,
   hrefSezione,
   nomeServizioRichiesta,
-  passiDiAvvio,
   periodoRichiesta,
   prossimaConsegna,
   prossimaUscitaDi,
@@ -23,7 +22,7 @@ import { authClient } from "@/lib/auth-client";
 import { CASELLE_TOTALI, usePiano } from "@/lib/piano";
 import Passi from "../Passi";
 import { caricaUtente } from "../sessione";
-import { Avviso, Caricamento, EsitoAzione, IconaSpunta, Scheletro, TitoloSezione } from "../ui";
+import { Avviso, Caricamento, EsitoAzione, Scheletro, TitoloSezione } from "../ui";
 import type { Esito, PropsArea } from "./tipi";
 
 /* La prima schermata: cosa sta per arrivare, cosa aspetta una risposta, a che
@@ -33,7 +32,7 @@ import type { Esito, PropsArea } from "./tipi";
 const NOMI_CAMPI = { telefono: "il telefono", comune: "il comune" } as const;
 
 export default function Panoramica({ utente, profilo, ordini, providers, oggi }: PropsArea) {
-  const { piano, pronto, macroSettimana } = usePiano();
+  const { piano, pronto } = usePiano();
   const [invio, setInvio] = useState(false);
   const [esitoVerifica, setEsitoVerifica] = useState<Esito | null>(null);
 
@@ -95,7 +94,7 @@ export default function Panoramica({ utente, profilo, ordini, providers, oggi }:
 
       <div className="grid gap-5 lg:grid-cols-[1.25fr_1fr]">
         {nuovo ? (
-          <DaDoveCominciare profiloCompleto={profilo.stato === "pronto" ? mancano.length === 0 : null} piatti={piatti} />
+          <DaDoveCominciare piatti={piatti} />
         ) : (
           <ProssimaConsegna ordini={ordini} oggi={oggi} />
         )}
@@ -125,12 +124,7 @@ export default function Panoramica({ utente, profilo, ordini, providers, oggi }:
                 <div className="acc-barra mt-3" aria-hidden="true">
                   <span style={{ width: `${Math.min(100, (piatti / CASELLE_TOTALI) * 100)}%` }} />
                 </div>
-                {piatti ? (
-                  <p className="mt-3 text-sm text-muted">
-                    <span className="num">{Math.round(macroSettimana.kcal).toLocaleString("it-IT")}</span> kcal e{" "}
-                    <span className="num">{Math.round(macroSettimana.proteine)}</span> g di proteine in tutto.
-                  </p>
-                ) : (
+                {piatti ? null : (
                   <p className="mt-3 text-sm text-muted">Ancora nessun piatto: parti dal compositore.</p>
                 )}
               </>
@@ -138,8 +132,8 @@ export default function Panoramica({ utente, profilo, ordini, providers, oggi }:
               <Scheletro righe={2} className="mt-4" />
             )}
             <div className="mt-5 flex flex-wrap gap-x-6 gap-y-3">
-              <Link href="/settimana" className="link text-sm">Componi</Link>
-              <Link href={hrefSezione("settimana")} scroll={false} className="link text-sm">Riepilogo e salvataggio</Link>
+              <Link href="/settimana" className="link text-sm">Scegli i piatti</Link>
+              <Link href={hrefSezione("settimana")} scroll={false} className="link text-sm">Vedi la settimana</Link>
             </div>
           </article>
         </div>
@@ -156,67 +150,25 @@ export default function Panoramica({ utente, profilo, ordini, providers, oggi }:
   );
 }
 
-/* Per chi non ha ancora mandato niente: i tre passi fino alla prima richiesta, con a che punto e' ciascuno.
-   Il profilo non blocca: il modulo chiede comunque telefono e comune e li salva da solo. */
-function DaDoveCominciare({ profiloCompleto, piatti }: { profiloCompleto: boolean | null; piatti: number }) {
-  const [scelta, profilo] = passiDiAvvio({ profiloCompleto, piatti });
-  const passo = (n: number, fatto: boolean, titolo: string, children: ReactNode) => (
-    <li data-fatto={fatto}>
-      <span className="acc-avvio-segno num" aria-hidden="true">{fatto ? <IconaSpunta ok /> : n}</span>
-      <div className="grid gap-1">
-        <p className="acc-avvio-titolo">
-          {titolo}
-          <span className="sr-only">{fatto ? ": fatto" : ": da fare"}</span>
-        </p>
-        {children}
-      </div>
-    </li>
-  );
+/* Il primo accesso propone le stesse due scelte della home, nello stesso ordine. */
+function DaDoveCominciare({ piatti }: { piatti: number }) {
   return (
     <article className="acc-card notte" aria-labelledby="t-inizio">
-      <p id="t-inizio" className="occhiello">Per cominciare</p>
-      <h3 className="titolo-s mt-5">Tre passi fino alla tua prima richiesta.</h3>
-      <ol className="acc-avvio mt-7">
-        {passo(1, scelta.fatto, "Scegli cosa chiedere", (
-          <>
-            <p className="text-sm text-steel">
-              {scelta.fatto
-                ? `Hai scelto ${piatti} ${piatti === 1 ? "pasto" : "pasti"} nella settimana.`
-                : "Componi la settimana pasto per pasto, oppure scegli un abbonamento mensile."}
-            </p>
-            <div className="mt-1 flex flex-wrap gap-x-6 gap-y-3">
-              <Link href="/settimana" className="link text-sm text-lime">{scelta.fatto ? "Modifica la settimana" : "Componi la settimana"}</Link>
-              <Link href={hrefSezione("richiesta", { servizio: "abbonamento" })} scroll={false} className="link text-sm text-lime">Chiedi un abbonamento</Link>
-            </div>
-          </>
-        ))}
-        {passo(2, profilo.fatto, "Lascia i tuoi recapiti", (
-          <>
-            <p className="text-sm text-steel">
-              {profilo.fatto
-                ? "Telefono e comune ci sono: la richiesta parte già compilata."
-                : "Telefono e comune: Matteo ti ricontatta lì per confermare. Li scrivi qui una volta, o direttamente nella richiesta."}
-            </p>
-            {profilo.fatto ? null : (
-              <div className="mt-1">
-                <Link href={hrefSezione("profilo")} scroll={false} className="link text-sm text-lime">Completa il profilo</Link>
-              </div>
-            )}
-          </>
-        ))}
-        {passo(3, false, "Invia a Matteo", (
-          <p className="text-sm text-steel">
-            La guarda e ti conferma giorno, dettagli e totale: lo vedi qui, nelle tue richieste. Nessun pagamento online.
-          </p>
-        ))}
-      </ol>
-      <Link href={hrefSezione("richiesta")} scroll={false} className="btn btn-lime mt-8">
-        {scelta.fatto ? "Invia la settimana" : "Nuova richiesta"} <span className="freccia" aria-hidden="true">→</span>
-      </Link>
+      <p className="occhiello">Per cominciare</p>
+      <h3 id="t-inizio" className="titolo-s mt-5">I tuoi pasti, pronti.</h3>
+      <p className="mt-4 text-steel">Scegli un abbonamento o prepara la tua settimana.</p>
+      <div className="mt-6 grid gap-3">
+        <Link href="/abbonamento" className="btn btn-lime justify-between">
+          Scegli l&apos;abbonamento <span aria-hidden="true">→</span>
+        </Link>
+        <Link href={piatti ? hrefSezione("richiesta", { servizio: "menu-settimana" }) : "/settimana"} className="btn btn-linea justify-between">
+          {piatti ? "Invia la settimana" : "Componi la settimana"} <span aria-hidden="true">→</span>
+        </Link>
+      </div>
+      <p className="mt-4 text-sm text-steel">Matteo conferma disponibilità e prezzo. Nessun pagamento online.</p>
     </article>
   );
 }
-
 function ProssimaConsegna({ ordini, oggi }: Pick<PropsArea, "ordini" | "oggi">) {
   if (ordini.stato === "attesa") {
     return (

@@ -89,9 +89,14 @@ describe("messaggioPiano: formato e lunghezza", () => {
     expect(testo).toContain(`pranzo ${PIATTI[0].nome} + ${EXTRA[0].nome} (+2,00 €); cena ${PIATTI[1].nome}`);
   });
 
-  it("scrive i totali all'italiana, con il punto delle migliaia e 'g di'", () => {
-    const testo = messaggioPiano(piano0(), { kcal: 22290, proteine: 996, carboidrati: 3150, grassi: 634 });
-    expect(testo).toContain("Totale settimana: 22.290 kcal, 996 g di proteine, 3150 g di carboidrati, 634 g di grassi.");
+  it.each([
+    { lun: { pranzo: { piatto: "riso-julien-pollo-teriyaki", extra: [] } } },
+    { lun: { pranzo: { piatto: PIATTI[0].id, extra: [EXTRA[0].id] } } },
+    {},
+  ] satisfies Piano[])("non invia totali nutrizionali, anche se forniti dal chiamante", (piano) => {
+    const testo = messaggioPiano(piano, { kcal: 22290, proteine: 996, carboidrati: 3150, grassi: 634 });
+    expect(testo).not.toMatch(/Totale settimana|kcal|g di proteine|g di carboidrati|g di grassi/);
+    expect(testo.trim().endsWith("?")).toBe(true);
   });
 
   it("una settimana normale resta completa, con il supplemento delle aggiunte", () => {
@@ -123,6 +128,3 @@ describe("messaggioPiano: formato e lunghezza", () => {
   });
 });
 
-function piano0(): Piano {
-  return { lun: { pranzo: { piatto: PIATTI[0].id, extra: [] } } };
-}

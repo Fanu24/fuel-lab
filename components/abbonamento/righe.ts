@@ -84,7 +84,7 @@ export const ELENCO_SCONTI = [
   { chiave: "ritiro", nome: "Ritiro in laboratorio", valore: SCONTI.ritiro },
   { chiave: "coppia", nome: "In coppia", valore: SCONTI.coppia },
   { chiave: "famiglia", nome: "In famiglia", valore: SCONTI.famiglia },
-] as const;
+].filter((s) => s.valore > 0);
 
 /** Il minimo e il massimo dei pasti a settimana fra le formule: "da 5 a 21". */
 export const PASTI_SETTIMANA_MIN = Math.min(...FORMULE.map((f) => f.pastiSettimana));

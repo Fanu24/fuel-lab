@@ -332,4 +332,13 @@ export const EXTRA: Extra[] = [
     img: "/foto/photo-1613478223719-2ab802602423.webp",
     reparto: "snack", prezzoEuro: null, prezzoNota: "su-richiesta",
   }),
+  extra({
+    id: "snack-biscotti-avena-mandorle", nome: "Biscotti avena e mandorle",
+    descrizione: "Biscotti con farina di avena e mandorle, olio di cocco ed eritritolo.",
+    grammi: 0, proteine: 0, carboidrati: 0, grassi: 0, allergeni: ["glutine", "frutta a guscio"],
+    img: "/foto/fuel-20261015-v2-snack-biscotti-avena-mandorle.webp",
+    reparto: "snack", prezzoEuro: null, prezzoNota: "su-richiesta", novita: true,
+    ingredienti: [{ nome: "Farina di avena", grammi: 300 }, { nome: "Farina di mandorle", grammi: 100 }, { nome: "Olio di cocco", grammi: 50 }, { nome: "Eritritolo", grammi: 100 }],
+    notaRicetta: "Dosi dell’impasto completo fornite da Matteo. Numero di biscotti, porzione e prezzo da concordare; valori nutrizionali per porzione da confermare.",
+  }),
 ];

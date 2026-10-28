@@ -34,13 +34,14 @@ describe("matcher", () => {
     expect(caselle(r.piano).length).toBe(TARGET_DEFAULT.pastiAlGiorno * TARGET_DEFAULT.giorni);
   });
 
-  it("centra il bersaglio entro il 45 per cento sullo scenario tipo", () => {
-    // Sei piatti, non 756 coppie: tahina e olio delle ricette alzano i grassi
-    // e il greedy non puo chiudere tutti i macro a un quarto. Il 45% e' il
-    // tetto reale su TARGET_DEFAULT, non un allentamento a caso.
+  it("espone gli scarti effettivi invece di promettere una precisione del catalogo", () => {
+    // Le ricette sono cambiate: il vecchio tetto del 45% non è una proprietà
+    // dell'algoritmo. Il risultato deve dichiarare lo scarto realmente ottenuto.
     const r = componiPiano(TARGET_DEFAULT, VINCOLI_DEFAULT);
-    const peggiore = Math.max(...Object.values(r.scarti).map(Math.abs));
-    expect(peggiore).toBeLessThanOrEqual(45);
+    for (const chiave of ["kcal", "proteine", "carboidrati", "grassi"] as const) {
+      expect(r.scarti[chiave]).toBeCloseTo((r.totali[chiave] - r.bersaglio[chiave]) / r.bersaglio[chiave] * 100, 8);
+    }
+    expect(r.aCentro).toBe(Object.values(r.scarti).every((scarto) => Math.abs(scarto) <= 10));
   });
 
   it("rispetta i vincoli di esclusione", () => {

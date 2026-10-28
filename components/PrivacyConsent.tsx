@@ -80,7 +80,9 @@ function nonAscolta() { return () => {}; }
 
 /* Il pannello di Matteo non e' il sito pubblico: niente banner sopra i suoi dati
    e niente visualizzazioni (il server, del resto, non le conta). */
-const suPannello = (percorso: string) => percorso === "/dashboard" || percorso.startsWith("/dashboard/");
+const suPannello = (percorso: string) =>
+  percorso === "/dashboard" || percorso.startsWith("/dashboard/") ||
+  percorso === "/admin" || percorso.startsWith("/admin/");
 
 export default function PrivacyConsent() {
   const pathname = usePathname();

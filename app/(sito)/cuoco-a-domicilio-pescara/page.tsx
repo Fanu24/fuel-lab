@@ -305,7 +305,7 @@ export default function CuocoADomicilioPescara() {
       </section>
 
       <LinkBlog
-        slug={["menu-settimanale-pescara-come-pianificarlo", "spesa-settimanale-meal-prep-zero-sprechi"]}
+        slug={["cuoco-domicilio-pescara-cucina-abruzzese", "menu-settimanale-pescara-come-pianificarlo", "spesa-settimanale-meal-prep-zero-sprechi"]}
         titolo="Organizzare la settimana."
       />
 

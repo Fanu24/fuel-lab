@@ -197,6 +197,7 @@ export type RichiestaPerEmail = {
   items: VoceOrdine[];
   /** La proposta di prezzo partita con la richiesta (l'abbonamento ne ha una). */
   price_cents?: number | null;
+  discount?: import("../api").ScontoOrdine | null;
   /** La formula scelta: solo per l'abbonamento. Senza, si legge come un Pranzo (gli abbonamenti nati prima delle formule). */
   subscription?: SceltaAbbonamento | null;
 };
@@ -234,6 +235,11 @@ export function piattiPerGiorno(items: VoceOrdine[]): string[] {
 const nomeAbbonamento = (o: { subscription?: SceltaAbbonamento | null }) => etichettaFormula(formulaDi(o), o.subscription?.tier);
 
 /** "Pasti: 3" o, per l'abbonamento, cosa chiede davvero: la data e' l'inizio, non un giorno di ritiro. */
+function righeSconto(o: { discount?: import("../api").ScontoOrdine | null }): Array<[string, string]> {
+  if (!o.discount) return [];
+  const s = o.discount;
+  return [["Codice sconto", `${s.code}: ${s.percent}%${s.appliedPercent > s.percent ? ` (applicata promozione migliore: ${s.appliedPercent}%)` : ""}`], ["Prima dello sconto", s.baseCents === null ? "Totale da concordare: codice registrato" : euroTesto(s.baseCents)]];
+}
 function righeRichiesta(o: RichiestaPerEmail): Array<[string, string]> {
   if (o.service === "abbonamento") {
     const scelta = o.subscription;
@@ -247,9 +253,10 @@ function righeRichiesta(o: RichiestaPerEmail): Array<[string, string]> {
     }
     if (o.price_cents !== null && o.price_cents !== undefined) righe.push(["Prezzo proposto", `${euroTesto(o.price_cents)} al mese`]);
     righe.push(["Inizio desiderato", o.requested_date ? dataEstesa(o.requested_date) : "Da concordare"]);
-    return righe;
+    return [...righe, ...righeSconto(o)];
   }
   return [
+    ...righeSconto(o),
     ["Data preferita", o.requested_date ? dataEstesa(o.requested_date) : "Nessuna preferenza"],
     ["Pasti", String(o.meals)],
   ];
@@ -429,6 +436,7 @@ export type AggiornamentoPerEmail = {
   comune: string;
   customer_message: string;
   price_cents: number | null;
+  discount?: import("../api").ScontoOrdine | null;
   paid: 0 | 1;
   /** La formula scelta: solo per l'abbonamento. */
   subscription?: SceltaAbbonamento | null;
@@ -463,6 +471,7 @@ export function emailAggiornamentoCliente(o: AggiornamentoPerEmail, statoCambiat
     const alMese = proposto && abbonamento ? " al mese" : "";
     righe.push([proposto ? "Prezzo proposto" : "Totale concordato", `${euroTesto(o.price_cents)}${alMese}${o.paid ? " · pagato" : ""}`]);
   }
+  righe.push(...righeSconto(o));
   const frase = statoCambiato ? fraseStato(o, abbonamento) : "Matteo ti ha scritto un messaggio sulla tua richiesta.";
   const nota = statoCambiato || o.status === "requested" ? notaStato(o, abbonamento) : null;
   const messaggio: Blocco[] = o.customer_message ? [{ tipo: "citazione", titolo: "Messaggio di Matteo", testo: o.customer_message }] : [];

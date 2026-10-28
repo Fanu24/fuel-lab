@@ -8,7 +8,6 @@ import { useSessione } from "@/components/account/sessione";
 import { IconaPersona } from "@/components/account/ui";
 import WhatsAppCta from "@/components/ui/WhatsAppCta";
 import { iniziale, nomeBreve } from "@/lib/account";
-import { EMAIL } from "@/lib/sito";
 
 /* Cio' che il browser mette nel giro di Tab dentro un pannello. */
 const FOCUSABILI =
@@ -17,26 +16,13 @@ const FOCUSABILI =
 /* Una voce di menu e' la pagina corrente se e' la sua rotta o una sottopagina. */
 const inRotta = (percorso: string, href: string) => percorso === href || percorso.startsWith(href + "/");
 
-/* Nella barra del computer "Contatti" non c'e': porta alla stessa pagina del
-   bottone "Scrivi a Matteo" che sta accanto alla nav, e con "Abbonamento" non
-   entra a 1024px (ne' a 1280 e 1440 per Matteo, che ha anche "Pannello").
-   Nel menu del telefono lo spazio c'e', e Contatti torna al suo posto
-   (CONTATTI, sotto).
-
-   Le voci della barra non vanno mai a capo: fra 1024 e 1535px gli spazi e la
-   spaziatura delle lettere si stringono e il logo non si rimpicciolisce; dai
-   1536px tornano quelli pieni. */
+/* Lo stesso ordine della home: prima abbonamenti, poi settimana libera. */
 const VOCI = [
-  { href: "/menu", label: "Menu" },
-  { href: "/abbonamento", label: "Abbonamento" },
-  { href: "/settimana", label: "Componi" },
-  { href: "/come-funziona", label: "Come funziona" },
+  { href: "/abbonamento", label: "Abbonamenti" },
+  { href: "/settimana", label: "La tua settimana" },
+  { href: "/menu", label: "Il menu" },
   { href: "/chi-siamo", label: "Chi siamo" },
-  { href: "/account", label: "Area cliente" },
 ];
-
-/* Solo nel menu del telefono, prima dell'area cliente. */
-const CONTATTI = { href: "/richiesta", label: "Contatti" };
 
 /* Le pagine che si aprono su una foto scura a tutta altezza: li' la barra parte
    trasparente col logo in negativo, e diventa carta appena si scorre. */
@@ -62,12 +48,10 @@ export default function Nav() {
   const sessione = useSessione();
   const utente = sessione.utente;
   const admin = utente?.role === "admin";
-  const voci = VOCI.map((v) => (v.href === "/account" && utente ? { ...v, label: "Il mio account" } : v));
   const vociMobile = [
-    ...voci.filter((v) => v.href !== "/account"),
-    CONTATTI,
-    ...voci.filter((v) => v.href === "/account"),
-    ...(admin ? [{ href: "/dashboard", label: "Pannello" }] : []),
+    ...VOCI,
+    { href: utente ? "/account" : "/accedi", label: utente ? "Il mio account" : "Accedi" },
+    ...(admin ? [{ href: "/admin", label: "Pannello" }] : []),
   ];
   const suAccount = percorso === "/account" || percorso === "/accedi";
   const etichettaAccount =
@@ -98,7 +82,7 @@ export default function Nav() {
       if (e.key !== "Tab") return;
       /* Trappola di Tab: senza, il fuoco scivola sulla pagina dietro l'overlay
          opaco, invisibile e con lo scroll bloccato. Il giro comprende la barra
-         (logo, account, la X che chiude: restano sopra il pannello) e il pannello. */
+         (logo e la X che chiude: restano sopra il pannello) e il pannello. */
       const nodi = [...visibili(testata.current), ...visibili(pannello.current)];
       if (nodi.length === 0) return;
       const primo = nodi[0];
@@ -160,7 +144,7 @@ export default function Nav() {
           </Link>
 
           <nav aria-label="Principale" className="hidden items-center gap-4 lg:flex xl:gap-6 2xl:gap-8">
-            {VOCI.filter((v) => v.href !== "/account").map((v) => {
+            {VOCI.map((v) => {
               const attiva = inRotta(percorso, v.href);
               return (
                 <Link
@@ -181,7 +165,7 @@ export default function Nav() {
             })}
             {admin ? (
               <Link
-                href="/dashboard"
+                href="/admin"
                 className="hidden py-3 font-disp text-[13px] font-semibold tracking-[.12em] whitespace-nowrap uppercase xl:inline-block 2xl:tracking-[.16em]"
               >
                 Pannello
@@ -218,8 +202,10 @@ export default function Nav() {
             aria-expanded={aperto}
             aria-controls="menu-mobile"
             aria-label={aperto ? "Chiudi il menu" : "Apri il menu"}
-            className="relative grid h-11 w-11 place-items-center lg:hidden"
+            className="flex min-h-11 min-w-18 items-center justify-end gap-2 lg:hidden"
           >
+            <span className="text-sm font-semibold">{aperto ? "Chiudi" : "Menu"}</span>
+            <span className="relative grid h-8 w-7 shrink-0 place-items-center" aria-hidden="true">
             <span
               className="absolute block h-[2px] w-6 bg-current transition-transform duration-500"
               style={{ transform: aperto ? "rotate(45deg)" : "translateY(-5px)" }}
@@ -228,6 +214,7 @@ export default function Nav() {
               className="absolute block h-[2px] w-6 bg-current transition-transform duration-500"
               style={{ transform: aperto ? "rotate(-45deg)" : "translateY(5px)" }}
             />
+            </span>
           </button>
         </div>
       </header>
@@ -248,7 +235,7 @@ export default function Nav() {
                 href={v.href}
                 onClick={() => setAperto(false)}
                 aria-current={attiva ? "page" : undefined}
-                className={`border-b py-3 font-disp text-[clamp(26px,8vw,40px)] leading-none font-bold uppercase ${attiva ? "text-lime" : ""}`}
+                className={`flex min-h-16 items-center border-b py-3 font-disp text-[clamp(25px,7vw,34px)] leading-tight font-bold uppercase ${attiva || v.href === "/abbonamento" ? "text-lime" : ""}`}
                 style={{
                   borderColor: "var(--line)",
                   animation: aperto ? `fuel-sale .6s var(--e-out) both ${60 + i * 50}ms` : undefined,
@@ -265,9 +252,6 @@ export default function Nav() {
             onClick={() => setAperto(false)}
             buttonClassName="w-full justify-between"
           />
-          <a href={`mailto:${EMAIL}`} className="mt-4 inline-flex min-h-11 items-center text-sm underline underline-offset-4">
-            Oppure scrivi a {EMAIL}
-          </a>
         </div>
       </div>
     </>

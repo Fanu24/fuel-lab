@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { REPARTI, etichettaPrezzo, extraPerReparto, getPiatto } from "@/lib/catalogo";
 import { NOMI_GIORNO, usePiano } from "@/lib/piano";
-import { macroCasella, type Slot } from "@/lib/settimana";
+import type { Slot } from "@/lib/settimana";
 
 /**
  * Le aggiunte di una casella, in un <dialog> nativo: showModal() porta con se'
@@ -30,7 +30,6 @@ export default function FoglioExtra({ slot, chiudi }: { slot: Slot | null; chiud
 
   const c = slot ? casella(slot.g, slot.m) : undefined;
   const piatto = c?.piatto ? getPiatto(c.piatto) : undefined;
-  const tot = macroCasella(c);
 
   return (
     <dialog
@@ -52,14 +51,7 @@ export default function FoglioExtra({ slot, chiudi }: { slot: Slot | null; chiud
               <h2 id="foglio-titolo" className="titolo-s mt-3">
                 {piatto ? `Aggiunte a ${piatto.nome}` : "Aggiunte"}
               </h2>
-              {/* il totale della casella si aggiorna a ogni spunta: chi conta i macro vede subito cosa cambia */}
-              <p className="num mt-3 text-xs text-muted" aria-live="polite" aria-atomic="true">
-                <span className="font-sans">Questo pasto: </span>
-                <span className="whitespace-nowrap">{tot.kcal} kcal</span> ·{" "}
-                <span className="whitespace-nowrap">P {tot.proteine} g</span> ·{" "}
-                <span className="whitespace-nowrap">C {tot.carboidrati} g</span> ·{" "}
-                <span className="whitespace-nowrap">G {tot.grassi} g</span>
-              </p>
+              <p className="mt-3 text-sm text-muted">Facoltative. Quantità e supplementi si confermano con Matteo.</p>
             </div>
             <button type="button" onClick={chiudi} className="grid h-11 w-11 shrink-0 place-items-center bg-ink text-xl text-paper" aria-label="Chiudi">
               ×
@@ -82,10 +74,8 @@ export default function FoglioExtra({ slot, chiudi }: { slot: Slot | null; chiud
                             className="h-5 w-5 accent-[#121412]"
                           />
                           <span className="min-w-0 flex-1">
-                            <span className="block">{e.nome}</span>
-                            <span className="num block text-xs text-muted">
-                              {e.grammi} g · {e.kcal} kcal
-                            </span>
+                            <span className="block">{e.nome}{e.novita ? <span className="ml-2 text-xs font-semibold">· Novità</span> : null}</span>
+                            {e.reparto === "snack" && e.novita ? <span className="mt-1 block text-xs text-muted">Porzione da concordare · contiene glutine e mandorle</span> : null}
                           </span>
                           <span className="num text-xs text-muted">{etichettaPrezzo(e, true)}</span>
                         </label>

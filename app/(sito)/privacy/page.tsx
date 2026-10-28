@@ -1,6 +1,6 @@
 import JsonLd from "@/components/seo/JsonLd";
 import PrivacySettingsButton from "@/components/PrivacySettingsButton";
-import { AGGIORNAMENTO, PAGINE, metadatiPagina } from "@/components/seo/pagine";
+import { PAGINE, metadatiPagina } from "@/components/seo/pagine";
 import { nodiPagina } from "@/components/seo/schema";
 import { EMAIL_PRIVACY, INDIRIZZO } from "@/lib/sito";
 
@@ -14,6 +14,7 @@ const INDICE = [
   { id: "titolare", titolo: "Titolare del trattamento" },
   { id: "richieste-account", titolo: "Richieste e account cliente" },
   { id: "analytics", titolo: "Google Analytics" },
+  { id: "mappe", titolo: "Google Maps" },
   { id: "cookie", titolo: "Cookie e memoria del browser" },
   { id: "hosting", titolo: "Hosting e sicurezza" },
   { id: "diritti", titolo: "I tuoi diritti" },
@@ -30,7 +31,7 @@ export default function PrivacyPage() {
           nome: PAGINA.titolo,
           descrizione: PAGINA.descrizione,
           briciole: [{ nome: PAGINA.breve, href: PAGINA.percorso }],
-          dataModifica: AGGIORNAMENTO,
+          dataModifica: "2026-10-08",
         })}
       />
       <header className="testata">
@@ -39,7 +40,7 @@ export default function PrivacyPage() {
           <h1 className="titolo-xl mt-6">Privacy e cookie.</h1>
           <p className="lead mt-6 max-w-[68ch]">
             Questa informativa spiega quali dati tratta il sito fuelchef.it, per quali motivi e quali scelte puoi fare.
-            Ultimo aggiornamento: 27 settembre 2026.
+            Ultimo aggiornamento: 8 ottobre 2026.
           </p>
         </div>
       </header>
@@ -105,7 +106,7 @@ export default function PrivacyPage() {
             <h2 className="titolo-s text-ink">Google Analytics</h2>
             <p className="mt-4">
               Google Analytics 4 viene caricato soltanto dopo che selezioni “Accetta Analytics”. Se rifiuti, il tag non
-              viene caricato e il sito non invia a Google eventi o segnali relativi alla tua visita. Puoi modificare la
+              viene caricato e il sito non invia a Google eventi o segnali relativi alla tua visita per Analytics. Puoi modificare la
               scelta dal link “Impostazioni privacy” nel footer.
             </p>
             <p className="mt-4">
@@ -131,6 +132,21 @@ export default function PrivacyPage() {
               <a className="link" href="https://support.google.com/analytics/answer/11593727?hl=it" target="_blank" rel="noreferrer">
                 Google Analytics sulla raccolta dei dati
               </a>.
+            </p>
+          </section>
+
+          <section id="mappe" className="mt-10">
+            <h2 className="titolo-s text-ink">Google Maps</h2>
+            <p className="mt-4">
+              Le mappe mostrano un&apos;anteprima ospitata sul sito, che non contatta Google. La mappa interattiva
+              viene caricata soltanto quando premi “Esplora la mappa”. Questa scelta è separata dal consenso Analytics
+              e non viene memorizzata per le visite successive.
+            </p>
+            <p className="mt-4">
+              Attivando la mappa, il browser si collega a Google, che può ricevere l&apos;indirizzo IP e informazioni
+              tecniche e utilizzare cookie secondo la propria <a className="link" href="https://policies.google.com/privacy?hl=it" target="_blank" rel="noreferrer">informativa privacy</a>.
+              Per interrompere il caricamento della mappa, premi “Chiudi la mappa” o riapri “Impostazioni privacy”.
+              I collegamenti “Indicazioni” aprono Google Maps in una nuova scheda.
             </p>
           </section>
 

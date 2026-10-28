@@ -11,9 +11,9 @@ export interface Taglia {
  */
 export const TAGLIE: Taglia[] = [
   { pasti: 6, prezzoPasto: 10.9, scontoVolume: 0 },
-  { pasti: 10, prezzoPasto: 10.2, scontoVolume: 6 },
-  { pasti: 15, prezzoPasto: 9.6, scontoVolume: 12 },
-  { pasti: 20, prezzoPasto: 8.9, scontoVolume: 18 },
+  { pasti: 10, prezzoPasto: 10.2, scontoVolume: 0 },
+  { pasti: 15, prezzoPasto: 9.6, scontoVolume: 0 },
+  { pasti: 20, prezzoPasto: 8.9, scontoVolume: 0 },
 ];
 
 /**

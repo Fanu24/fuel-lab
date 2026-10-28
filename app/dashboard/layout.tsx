@@ -1,8 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import AdminGate from "@/components/dashboard/AdminGate";
-import PannelloDati from "@/components/dashboard/PannelloDati";
-import Testata from "@/components/dashboard/Testata";
-import TitoloAvvisi from "@/components/dashboard/TitoloAvvisi";
+import LegacyAdminRedirect from "@/components/admin/LegacyAdminRedirect";
 
 export const metadata: Metadata = {
   title: { default: "Pannello", template: "%s · Pannello FUEL LAB" },
@@ -25,18 +22,6 @@ export const viewport: Viewport = {
   themeColor: "#0e100f",
 };
 
-export default function LayoutDashboard({ children }: { children: React.ReactNode }) {
-  return (
-    <AdminGate>
-      <PannelloDati>
-        <TitoloAvvisi />
-        <div className="min-h-svh bg-paper">
-          <Testata />
-          <main id="contenuto" tabIndex={-1} className="wrap pn-contenuto outline-none">
-            {children}
-          </main>
-        </div>
-      </PannelloDati>
-    </AdminGate>
-  );
+export default function LayoutDashboard() {
+  return <LegacyAdminRedirect />;
 }

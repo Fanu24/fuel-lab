@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { calcolaPrezzo } from "@/lib/abbonamento";
+import { totaleScontato } from "@/lib/sconti";
 import { useEffect, useRef, useState, type FormEvent, type InputHTMLAttributes, type ReactNode } from "react";
 import {
   campiMancanti,
@@ -30,11 +32,8 @@ import {
   NOMI_NUCLEO,
   NOTE_FASCIA,
   NUCLEI,
-  PREZZO_DA_TESTO,
   prezzoListino,
   RAGGIO_CONSEGNA_KM,
-  SCONTI,
-  SCONTO_NUCLEO,
   type Fascia,
   type FormulaId,
   type Nucleo,
@@ -42,7 +41,7 @@ import {
 import { api, type Chiusura, type Modalita, type Profilo, type Servizio, type Utente } from "@/lib/api";
 import { caselleEscluse, chiusuraDi, chiusureVicine, fraseChiusura } from "@/lib/impostazioni";
 import { useImpostazioni } from "@/components/impostazioni/useImpostazioni";
-import { GIORNI, usePiano } from "@/lib/piano";
+import { usePiano } from "@/lib/piano";
 import { SERVIZI } from "@/lib/servizi";
 import { cancellaBozzaRichiesta, leggiBozzaSalvata, salvaBozzaRichiesta } from "../bozza";
 import { Avviso, Caricamento, LinkAccediDiNuovo, Stato, TitoloSezione } from "../ui";
@@ -137,10 +136,10 @@ const TITOLO_SERVIZIO: Record<Servizio, string> = {
 };
 
 const LEAD_SERVIZIO: Record<Servizio, string> = {
-  "menu-settimana": "Nessun pagamento online: Matteo ti conferma disponibilità, giorno e totale prima di cucinare.",
-  abbonamento: "Nessun pagamento online: inizio, consegna o ritiro e pagamento si concordano con Matteo.",
-  "sui-tuoi-macro": "Nessun pagamento online: Matteo ti conferma disponibilità, giorno e totale prima di cucinare.",
-  "home-cooking": "Nessun pagamento online: Matteo ti ricontatta per concordare menu, spesa, giorno e preventivo.",
+  "menu-settimana": "Lascia i recapiti. Matteo ti conferma giorno e prezzo.",
+  abbonamento: "Controlla la formula e lascia i recapiti. Matteo ti ricontatta.",
+  "sui-tuoi-macro": "Lascia i recapiti. Matteo ti conferma giorno e prezzo.",
+  "home-cooking": "Lascia i recapiti. Matteo ti ricontatta per il preventivo.",
 };
 
 const MODALITA: { id: Modalita; titolo: string; nota: string }[] = [
@@ -150,7 +149,7 @@ const MODALITA: { id: Modalita; titolo: string; nota: string }[] = [
 
 /* Per l'abbonamento le stesse due strade, con cio' che cambia: lo sconto del ritiro e la cadenza di ogni 3 giorni. */
 const MODALITA_ABBONAMENTO: { id: Modalita; titolo: string; nota: string }[] = [
-  { id: "pickup", titolo: "Ritiro", nota: `In Via del Santuario 214, Pescara, ogni ${CONSEGNA_OGNI_GIORNI} giorni · sconto −${SCONTI.ritiro}%` },
+  { id: "pickup", titolo: "Ritiro", nota: `In Via del Santuario 214, Pescara, ogni ${CONSEGNA_OGNI_GIORNI} giorni` },
   {
     id: "delivery",
     titolo: "Consegna",
@@ -158,18 +157,11 @@ const MODALITA_ABBONAMENTO: { id: Modalita; titolo: string; nota: string }[] = [
   },
 ];
 
-const NOTE_SERVIZIO: Record<Servizio, string> = {
-  "menu-settimana": "Con i piatti che hai scelto",
-  abbonamento: `Da ${PREZZO_DA_TESTO} al mese · cinque formule, sul piano del tuo nutrizionista`,
-  "sui-tuoi-macro": "Sui numeri della tua scheda",
-  "home-cooking": "Su preventivo, niente piatti da scegliere",
-};
-
 /* Con chi ci si abbona: lo sconto accanto, letto da lib/abbonamento.ts. */
 const NOTE_NUCLEO: Record<Nucleo, string> = {
   singolo: "Prezzo di listino",
-  coppia: `Sconto −${SCONTO_NUCLEO.coppia}% se vi abbonate in due`,
-  famiglia: `Sconto −${SCONTO_NUCLEO.famiglia}% se vi abbonate in famiglia`,
+  coppia: "Abbonamento per due persone",
+  famiglia: "Abbonamento per la famiglia",
 };
 
 function Modulo({
@@ -204,7 +196,7 @@ function Modulo({
   ricerca: string;
   onInviata: (id: string) => void;
 }) {
-  const { piano, allenamenti, pronto, macroSettimana } = usePiano();
+  const { piano, allenamenti, pronto } = usePiano();
   const [limiti] = useState(() => limitiDataRichiesta(new Date()));
   const daCapo = (): DatiRichiesta => ({
     servizio: servizioIniziale,
@@ -233,6 +225,26 @@ function Modulo({
   const inVolo = useRef(false);
   const [errore, setErrore] = useState<{ testo: string; sessione: boolean } | null>(null);
   const refErrore = useRef<HTMLDivElement>(null);
+  const codiceDaQuery = new URLSearchParams(ricerca).get("codice")?.slice(0, 32) ?? "";
+  const [codiceSconto, setCodiceSconto] = useState(codiceDaQuery);
+  const [scontoVerificato, setScontoVerificato] = useState<{ code: string; percent: number } | null>(null);
+  const [verificaSconto, setVerificaSconto] = useState(!!codiceDaQuery);
+  const [erroreSconto, setErroreSconto] = useState("");
+  useEffect(() => {
+    if (!codiceDaQuery) return;
+    let vivo = true;
+    api.verificaSconto(codiceDaQuery).then((risultato) => {
+      if (vivo) { setScontoVerificato(risultato); setCodiceSconto(risultato.code); }
+    }).catch((e) => { if (vivo) setErroreSconto(e instanceof Error ? e.message : "Non riesco a verificare il codice."); })
+      .finally(() => { if (vivo) setVerificaSconto(false); });
+    return () => { vivo = false; };
+  }, [codiceDaQuery]);
+  async function controllaSconto() {
+    setVerificaSconto(true); setErroreSconto("");
+    try { setScontoVerificato(await api.verificaSconto(codiceSconto)); }
+    catch (e) { setScontoVerificato(null); setErroreSconto(e instanceof Error ? e.message : "Non riesco a verificare il codice."); }
+    finally { setVerificaSconto(false); }
+  }
 
   useEffect(() => {
     if (errore) refErrore.current?.focus();
@@ -257,10 +269,14 @@ function Modulo({
   const conPiatti = SERVIZIO_CON_PIATTI[dati.servizio];
   const abbonamento = dati.servizio === "abbonamento";
   const servizio = SERVIZI.find((s) => s.id === dati.servizio)!;
-  const giorniAllenamento = GIORNI.filter((g) => allenamenti[g]).length;
   const formula = getFormula(dati.formula);
   const stima = abbonamento ? stimaAbbonamento(dati) : null;
   const ritiro = dati.modalita === "pickup";
+  const prezzo = abbonamento ? calcolaPrezzo({ formula: dati.formula, fascia: dati.fascia, nucleo: dati.nucleo, ritiro }) : null;
+  const totaleConCodice = prezzo && scontoVerificato
+    ? totaleScontato(prezzo.listinoCentesimi, scontoVerificato.percent)
+    : null;
+  const stimaConCodice = totaleConCodice === null ? null : new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(totaleConCodice / 100);
 
   /* Le allergie sono l'unica riga del riepilogo che riguarda la sicurezza di chi mangia: si vede cosa leggera' Matteo
      (quelle del profilo arrivano con ogni richiesta) o che non c'e' niente, e dove scriverle. */
@@ -303,7 +319,7 @@ function Modulo({
     setDati(daCapo());
     setRitrovata(false);
     setProvato(false);
-    window.requestAnimationFrame(() => document.getElementById("nr-servizio")?.focus());
+    portaAlCampo("nr-servizio");
   }
 
   async function invia(e: FormEvent) {
@@ -313,14 +329,14 @@ function Modulo({
     setProvato(true);
     const primo = ORDINE_CAMPI_RICHIESTA.find((k) => errori[k]);
     if (primo) {
-      document.getElementById(`nr-${primo}`)?.focus();
+      portaAlCampo(`nr-${primo}`);
       return;
     }
     inVolo.current = true;
     setInvio(true);
     setErrore(null);
     try {
-      const r = await api.inviaOrdine(corpoRichiesta(dati, piano, allenamenti));
+      const r = await api.inviaOrdine({ ...corpoRichiesta(dati, piano, allenamenti), discountCode: codiceSconto.trim() || undefined });
       if (salvaNelProfilo && diverso && profilo) {
         try {
           const salvato = await api.salvaProfilo({
@@ -402,8 +418,8 @@ function Modulo({
             <p className="acc-avviso-titolo">Prima i piatti</p>
             <p>
               {dati.servizio === "sui-tuoi-macro"
-                ? "Per questo servizio serve almeno un piatto nella settimana: scrivi i numeri del tuo nutrizionista e la settimana si compone da sola coi piatti più vicini. Poi torni qui a inviarla."
-                : "Per questo servizio serve almeno un piatto nella settimana: componila, poi torni qui a inviarla. Se non vuoi scegliere i piatti, c’è l’abbonamento."}
+                ? "Scegli almeno un piatto prima di inviare la richiesta."
+                : "Scegli almeno un piatto, oppure chiedi un abbonamento."}
             </p>
             <div className="acc-avviso-azioni">
               <Link href={dati.servizio === "sui-tuoi-macro" ? "/scheda" : "/settimana"} className="btn btn-ink btn-sm">
@@ -418,121 +434,59 @@ function Modulo({
           </div>
         ) : null}
 
-        <Gruppo legenda="Servizio" errore={visibili.servizio} idErrore="nr-servizio-errore">
-          <div className="grid gap-2 sm:grid-cols-2">
-            {SERVIZI.map((s, i) => (
-              <label key={s.id} className="acc-scelta">
-                <input
-                  id={i === 0 ? "nr-servizio" : undefined}
-                  type="radio"
-                  name="nr-servizio"
-                  value={s.id}
-                  checked={dati.servizio === s.id}
-                  onChange={() => aggiorna("servizio", s.id)}
-                />
-                <span>
-                  <span className="acc-scelta-titolo">{s.nome}</span>
-                  <span className="acc-scelta-nota">{NOTE_SERVIZIO[s.id]}</span>
-                </span>
-              </label>
-            ))}
+        <details className="acc-dettagli-piatti">
+          <summary>Servizio: {servizio.nome} · Cambia</summary>
+          <div className="campo mt-4">
+            <label htmlFor="nr-servizio">Cosa vuoi richiedere?</label>
+            <select id="nr-servizio" value={dati.servizio} onChange={(e) => aggiorna("servizio", e.target.value as Servizio)} aria-invalid={visibili.servizio ? true : undefined} aria-describedby={visibili.servizio ? "nr-servizio-errore" : undefined}>
+              {[...SERVIZI].sort((a, b) => Number(b.id === "abbonamento") - Number(a.id === "abbonamento")).map((s) => <option key={s.id} value={s.id}>{s.nome}</option>)}
+            </select>
+            {visibili.servizio ? <p id="nr-servizio-errore" className="errore">{visibili.servizio}</p> : null}
           </div>
-        </Gruppo>
+        </details>
 
         {abbonamento ? (
           <>
-            <Gruppo legenda="Formula" errore={visibili.formula} idErrore="nr-formula-errore">
-              <div className="grid gap-2">
-                {FORMULE.map((f, i) => (
-                  <label key={f.id} className="acc-scelta">
-                    <input
-                      id={i === 0 ? "nr-formula" : undefined}
-                      type="radio"
-                      name="nr-formula"
-                      value={f.id}
-                      checked={dati.formula === f.id}
-                      onChange={() => aggiorna("formula", f.id)}
-                    />
-                    <span>
-                      <span className="acc-scelta-titolo">
-                        {f.nome}
-                        {f.consigliato ? <span className="acc-scelta-tag">Consigliato</span> : null}
-                      </span>
-                      <span className="acc-scelta-nota">{f.slogan}</span>
-                      <span className="acc-scelta-nota acc-scelta-riga">
-                        <span>{f.pastiSettimana} pasti a settimana</span>
-                        <span className="num">Standard {f.prezzo.standard} €</span>
-                        <span className="num">Plus {f.prezzo.plus} €</span>
-                      </span>
-                    </span>
-                  </label>
-                ))}
-              </div>
-              <p className="mt-3 text-sm text-muted">Prezzi al mese, di listino. Il piano lo porti tu, scritto dal tuo nutrizionista: Matteo lo cucina ai grammi.</p>
-            </Gruppo>
+            <div className="campo">
+              <label htmlFor="nr-formula">Il tuo abbonamento</label>
+              <select id="nr-formula" value={dati.formula} onChange={(e) => aggiorna("formula", e.target.value as FormulaId)} aria-invalid={visibili.formula ? true : undefined} aria-describedby={visibili.formula ? "nr-formula-errore" : "nr-formula-aiuto"}>
+                {FORMULE.map((f) => <option key={f.id} value={f.id}>{f.nome} · {f.pastiSettimana} pasti/settimana · {f.prezzo[dati.fascia]} €/mese</option>)}
+              </select>
+              <p id="nr-formula-aiuto" className="text-sm text-muted">{formula.slogan} Sul piano del tuo nutrizionista.</p>
+              {visibili.formula ? <p id="nr-formula-errore" className="errore">{visibili.formula}</p> : null}
+            </div>
 
-            <Gruppo legenda="Fascia">
-              <div className="grid gap-2 sm:grid-cols-2">
-                {FASCE.map((f, i) => (
-                  <label key={f} className="acc-scelta">
-                    <input
-                      id={i === 0 ? "nr-fascia" : undefined}
-                      type="radio"
-                      name="nr-fascia"
-                      value={f}
-                      checked={dati.fascia === f}
-                      onChange={() => aggiorna("fascia", f)}
-                    />
-                    <span>
-                      <span className="acc-scelta-titolo">{NOMI_FASCIA[f]}</span>
-                      <span className="acc-scelta-nota">{NOTE_FASCIA[f]}</span>
-                      <span className="acc-scelta-nota num">{prezzoListino(dati.formula, f)} € al mese</span>
-                    </span>
-                  </label>
-                ))}
+            <details className="acc-dettagli-piatti">
+              <summary>
+                Personalizza l&apos;abbonamento
+                <span className="mt-1 block text-sm font-normal text-muted">{NOMI_FASCIA[dati.fascia]} · {NOMI_NUCLEO[dati.nucleo]} · {dati.prova ? "Settimana di prova" : "Senza prova"}</span>
+              </summary>
+              <div className="mt-5 grid gap-5">
+                <div className="campo">
+                  <label htmlFor="nr-fascia">Porzioni</label>
+                  <select id="nr-fascia" value={dati.fascia} onChange={(e) => aggiorna("fascia", e.target.value as Fascia)}>
+                    {FASCE.map((f) => <option key={f} value={f}>{NOMI_FASCIA[f]} · {prezzoListino(dati.formula, f)} € al mese</option>)}
+                  </select>
+                  <p className="text-sm text-muted">{NOTE_FASCIA[dati.fascia]}</p>
+                </div>
+                <div className="campo">
+                  <label htmlFor="nr-nucleo">Come ti abboni?</label>
+                  <select id="nr-nucleo" value={dati.nucleo} onChange={(e) => aggiorna("nucleo", e.target.value as Nucleo)}>
+                    {NUCLEI.map((n) => <option key={n} value={n}>{NOMI_NUCLEO[n]}</option>)}
+                  </select>
+                  <p className="text-sm text-muted">{NOTE_NUCLEO[dati.nucleo]}. Lo conferma Matteo.</p>
+                </div>
+                <label className="acc-spunta">
+                  <input id="nr-prova" type="checkbox" checked={dati.prova} onChange={(e) => aggiorna("prova", e.target.checked)} aria-describedby="nr-prova-aiuto" />
+                  <span>
+                    <span className="font-semibold">Parto con la settimana di prova</span>
+                    <span id="nr-prova-aiuto" className="block text-sm text-muted">Modalità e prezzo si concordano con Matteo.</span>
+                  </span>
+                </label>
               </div>
-            </Gruppo>
-
-            <Gruppo legenda="Come ti abboni">
-              <div className="grid gap-2 sm:grid-cols-3">
-                {NUCLEI.map((n, i) => (
-                  <label key={n} className="acc-scelta">
-                    <input
-                      id={i === 0 ? "nr-nucleo" : undefined}
-                      type="radio"
-                      name="nr-nucleo"
-                      value={n}
-                      checked={dati.nucleo === n}
-                      onChange={() => aggiorna("nucleo", n)}
-                    />
-                    <span>
-                      <span className="acc-scelta-titolo">{NOMI_NUCLEO[n]}</span>
-                      <span className="acc-scelta-nota">{NOTE_NUCLEO[n]}</span>
-                    </span>
-                  </label>
-                ))}
-              </div>
-              <p className="mt-3 text-sm text-muted">Lo sconto vale se vi abbonate insieme: lo conferma Matteo.</p>
-            </Gruppo>
-
-            <label className="acc-spunta">
-              <input
-                id="nr-prova"
-                type="checkbox"
-                checked={dati.prova}
-                onChange={(e) => aggiorna("prova", e.target.checked)}
-                aria-describedby="nr-prova-aiuto"
-              />
-              <span>
-                <span className="font-semibold">Parto con la settimana di prova</span>
-                <span id="nr-prova-aiuto" className="block text-sm text-muted">
-                  La prima settimana è di prova, senza impegno. Come si svolge lo concordi con Matteo.
-                </span>
-              </span>
-            </label>
+            </details>
           </>
         ) : null}
-
         <Gruppo legenda="I tuoi recapiti">
           <div className="grid gap-5 sm:grid-cols-2">
             <div className="sm:col-span-2">
@@ -569,7 +523,9 @@ function Modulo({
           ) : null}
         </Gruppo>
 
-        <div className="grid gap-5 sm:grid-cols-2">
+        <details className="acc-dettagli-piatti">
+          <summary>{dati.data ? `Data preferita: ${formattaGiorno(dati.data, limiti.min)}` : "Vuoi indicare una data?"}</summary>
+        <div className="mt-4 grid gap-5 sm:grid-cols-2">
           <div className="campo">
             <label htmlFor="nr-data">{abbonamento ? "Inizio desiderato (facoltativo)" : "Giorno preferito (facoltativo)"}</label>
             <input
@@ -588,15 +544,16 @@ function Modulo({
             </div>
             <p id="nr-data-aiuto" className="text-sm text-muted">
               {abbonamento
-                ? "Da domani a 90 giorni. Matteo ti conferma l’inizio: da quel giorno l’abbonamento vale un mese."
-                : "Da domani a 90 giorni. Matteo cucina ogni giorno e consegna ogni giorno: ti conferma lui il giorno."}
+                ? "Matteo conferma l’inizio. Se lasci vuoto, lo concordate insieme."
+                : "Matteo conferma il giorno. Se lasci vuoto, lo concordate insieme."}
             </p>
           </div>
         </div>
+        </details>
 
         <div className="campo">
           <div className="flex items-baseline justify-between gap-3">
-            <label htmlFor="nr-note">{abbonamento ? "La tua scheda per Matteo (facoltativa)" : "Note per Matteo (facoltative)"}</label>
+            <label htmlFor="nr-note">{abbonamento ? "Piano alimentare e allergie" : "Allergie e note per Matteo"}</label>
             <span className="num text-xs text-muted" aria-hidden="true">{dati.note.length}/{NOTE_MAX}</span>
           </div>
           <textarea
@@ -604,26 +561,41 @@ function Modulo({
             maxLength={NOTE_MAX}
             value={dati.note}
             onChange={(e) => aggiorna("note", e.target.value)}
-            rows={abbonamento ? 6 : 4}
+            rows={4}
             placeholder={
               abbonamento
-                ? "Come e quando ti alleni, i tuoi obiettivi, le indicazioni del nutrizionista (calorie, proteine, carboidrati, grassi), cosa non mangi…"
-                : "Orari, citofono, domande…"
+                ? "Incolla le indicazioni del nutrizionista e segnala allergie o intolleranze."
+                : "Allergie, intolleranze, orari o altre indicazioni…"
             }
             aria-invalid={visibili.note ? true : undefined}
             aria-describedby={visibili.note ? "nr-note-errore" : "nr-note-aiuto"}
           />
           <p id="nr-note-aiuto" className="text-sm text-muted">
             {abbonamento
-              ? "Su questa scheda Matteo cucina i tuoi pasti: scrivi o incolla il piano del tuo nutrizionista, oppure come ti alleni e cosa vuoi ottenere. "
+              ? "Puoi inviare il piano alimentare anche dopo, direttamente a Matteo. "
               : ""}
             {profilo?.preferences
               ? "Preferenze e allergie del tuo profilo arrivano a Matteo insieme alla richiesta."
-              : "Allergie o intolleranze? Scrivile qui, o salvale una volta per tutte nel profilo."}
+              : "Segnala eventuali allergie prima della conferma."}
           </p>
           {visibili.note ? <p id="nr-note-errore" className="errore">{visibili.note}</p> : null}
         </div>
 
+        <details className="acc-dettagli-piatti">
+          <summary>{scontoVerificato ? `Codice ${scontoVerificato.code} · −${scontoVerificato.percent}%` : verificaSconto ? "Verifico il codice sconto…" : erroreSconto ? "Controlla il codice sconto" : "Hai un codice sconto?"}</summary>
+        <div className="campo mt-4">
+          <label htmlFor="nr-sconto">Codice sconto (facoltativo)</label>
+          <div className="flex flex-wrap gap-2">
+            <input id="nr-sconto" className="min-w-0 flex-1" value={codiceSconto} maxLength={32} autoCapitalize="characters" autoComplete="off" disabled={verificaSconto || invio} onChange={(e) => { setCodiceSconto(e.target.value); setScontoVerificato(null); setErroreSconto(""); }} aria-describedby="nr-sconto-aiuto" />
+            <button className="btn btn-ink btn-sm" type="button" disabled={verificaSconto || !codiceSconto.trim()} onClick={() => void controllaSconto()}>{verificaSconto ? "Verifico…" : "Verifica"}</button>
+          </div>
+          <p id="nr-sconto-aiuto" className="text-sm text-muted">Sul totale concordato da Matteo. Il codice si applica una volta al totale dell’abbonamento.</p>
+          {erroreSconto ? <p role="alert" className="errore">{erroreSconto}</p> : null}
+          {scontoVerificato ? <p role="status" className="text-sm font-semibold">{scontoVerificato.code}: −{scontoVerificato.percent}%.
+            {abbonamento ? ` Stima con codice: ${stimaConCodice} al mese.` : " Il totale scontato sarà visibile dopo la conferma del prezzo."}
+          </p> : null}
+        </div>
+        </details>
         {diverso ? (
           <label className="acc-spunta">
             <input type="checkbox" checked={salvaNelProfilo} onChange={(e) => setSalvaNelProfilo(e.target.checked)} />
@@ -643,11 +615,11 @@ function Modulo({
               {/* Regione live sempre presente nell'abbonamento: il prezzo cambia a ogni scelta e chi usa un lettore di schermo lo sente. */}
               <Stato className="acc-stima">
                 <p className="acc-etichetta">Prezzo stimato al mese</p>
-                <p className="acc-stima-totale num">{stima.totale}</p>
-                <p className="mt-2 text-sm text-muted">{stima.dettaglio}</p>
+                <p className="acc-stima-totale num">{stimaConCodice ?? stima.totale}</p>
+                <p className="mt-2 text-sm text-muted">{scontoVerificato ? `Codice ${scontoVerificato.code}: sconto applicato al listino.` : stima.dettaglio}</p>
               </Stato>
               <p className="text-sm text-muted">
-                Stima: applica lo sconto più alto fra quelli che ti spettano. Il prezzo finale lo conferma Matteo; sul sito non si paga niente.
+                Il prezzo finale lo conferma Matteo. Nessun pagamento online.
               </p>
             </>
           ) : null}
@@ -677,9 +649,7 @@ function Modulo({
                   <dt>Inizio desiderato</dt>
                   <dd>{dati.data ? formattaGiorno(dati.data, limiti.min) : "Da concordare"}</dd>
                 </div>
-                <div><dt>La tua scheda</dt><dd>{dati.note.trim() ? "Scritta nelle note" : "Da scrivere nelle note"}</dd></div>
-                {/* Gli allenamenti del compositore contano solo se ci sono: nell'abbonamento si scrivono nella scheda. */}
-                {giorniAllenamento ? <div><dt>Allenamenti</dt><dd>{`${giorniAllenamento} giorni indicati`}</dd></div> : null}
+                <div><dt>La tua scheda</dt><dd>{dati.note.trim() ? "Scritta nelle note" : "Da inviare a Matteo"}</dd></div>
                 {voceAllergie}
               </>
             ) : (
@@ -689,15 +659,6 @@ function Modulo({
                   <dt>Piatti</dt>
                   <dd>{pronto ? (piatti ? `${piatti} su 14` : conPiatti ? "Nessuno, per ora" : "Nessuno: non servono") : "…"}</dd>
                 </div>
-                {pronto && piatti ? (
-                  <div>
-                    <dt>Macro della settimana</dt>
-                    <dd className="num text-sm">
-                      {Math.round(macroSettimana.kcal).toLocaleString("it-IT")} kcal · P {Math.round(macroSettimana.proteine)} · C {Math.round(macroSettimana.carboidrati)} · G {Math.round(macroSettimana.grassi)}
-                    </dd>
-                  </div>
-                ) : null}
-                <div><dt>Allenamenti</dt><dd>{giorniAllenamento ? `${giorniAllenamento} giorni indicati` : "Non indicati"}</dd></div>
                 <div>
                   <dt>{ritiro ? "Ritiro" : "Consegna"}</dt>
                   <dd>{ritiro ? "Via del Santuario 214, Pescara" : dati.indirizzo.trim() || "Indirizzo da scrivere"}</dd>
@@ -784,6 +745,17 @@ function Modulo({
       </div>
     </form>
   );
+}
+
+/** I campi facoltativi restano raccolti; un errore li rende visibili prima del fuoco. */
+function portaAlCampo(id: string) {
+  const campo = document.getElementById(id);
+  let contenitore = campo?.parentElement ?? null;
+  while (contenitore) {
+    if (contenitore instanceof HTMLDetailsElement) contenitore.open = true;
+    contenitore = contenitore.parentElement;
+  }
+  window.requestAnimationFrame(() => campo?.focus());
 }
 
 function Gruppo({

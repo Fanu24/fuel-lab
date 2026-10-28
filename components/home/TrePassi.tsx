@@ -1,40 +1,30 @@
+import Link from "next/link";
 import Reveal from "@/components/Reveal";
 
-const PASSI = [
-  {
-    n: "01",
-    titolo: "Dici come ti alleni",
-    testo: "Cardio, pesi o riposo, giorno per giorno. Ci vogliono dieci secondi.",
-  },
-  {
-    n: "02",
-    titolo: "La settimana si riempie",
-    testo: "Ogni giorno riceve i piatti giusti per quell'allenamento. Se uno non ti convince, lo cambi tu.",
-  },
-  {
-    n: "03",
-    titolo: "Matteo cucina e consegna",
-    testo: "Mandi la settimana a Matteo: lui conferma piatti, giorno e ritiro o consegna, poi si mette ai fornelli.",
-  },
-];
+const PASSI = ["Scegli i piatti", "Controlla la settimana", "Invia a Matteo"];
 
 export default function TrePassi() {
   return (
-    <section className="sezione">
-      <div className="wrap">
+    <section className="sezione carta-2" aria-labelledby="settimana-home-titolo">
+      <div className="wrap grid items-start gap-8 lg:grid-cols-2 lg:gap-20">
         <Reveal>
-          <p className="occhiello">Come funziona</p>
-          <h2 className="titolo mt-5 max-w-[14ch]">Tre passi. Zero calcoli.</h2>
+          <h2 id="settimana-home-titolo" className="titolo max-w-[15ch]">Componi la tua settimana.</h2>
+          <p className="lead mt-5">Preferisci scegliere dal menu? Parti dai piatti che ti piacciono.</p>
         </Reveal>
-        <ol className="mt-14 grid gap-10 md:mt-20 md:grid-cols-3 md:gap-8">
-          {PASSI.map((p, i) => (
-            <Reveal as="li" key={p.n} delay={i * 90} className="border-t-[3px] border-ink pt-6">
-              <span className="num text-sm text-muted">{p.n}</span>
-              <h3 className="titolo-s mt-3">{p.titolo}</h3>
-              <p className="mt-3 max-w-[34ch] text-muted">{p.testo}</p>
-            </Reveal>
-          ))}
-        </ol>
+        <Reveal delay={80}>
+          <ol className="grid gap-4">
+            {PASSI.map((passo, i) => (
+              <li key={passo} className="flex items-center gap-4">
+                <span className="num flex h-10 w-10 shrink-0 items-center justify-center bg-ink text-paper" aria-hidden="true">{i + 1}</span>
+                <span className="text-lg font-semibold">{passo}</span>
+              </li>
+            ))}
+          </ol>
+          <Link href="/settimana" className="btn btn-ink mt-7 w-full justify-between sm:w-auto">
+            Componi la tua settimana <span aria-hidden="true">→</span>
+          </Link>
+          <p className="mt-3 text-sm text-muted">Matteo conferma disponibilità e prezzo.</p>
+        </Reveal>
       </div>
     </section>
   );

@@ -27,8 +27,6 @@ function cifre36(massimo: number): number {
 
 const LARGH_PIATTO = cifre36(Math.max(0, PIATTI.length - 1));
 const LARGH_EXTRA = cifre36(2 ** EXTRA.length - 1);
-const LARGH_CASELLA = LARGH_PIATTO + LARGH_EXTRA;
-const LUNGH_CORPO = CASELLE_TOTALI * LARGH_CASELLA;
 
 function fnv1a(s: string): number {
   let h = 0x811c9dc5;
@@ -39,14 +37,17 @@ function fnv1a(s: string): number {
   return h >>> 0;
 }
 
-const MATERIA = [
-  PIATTI.map((e) => e.id).join(","),
-  EXTRA.map((e) => e.id).join(","),
-  GIORNI.join(","),
-  PASTI.join(","),
-].join(";");
+function impronta(quantiPiatti: number, quantiExtra: number): string {
+  const materia = [PIATTI.slice(0, quantiPiatti).map((e) => e.id).join(","), EXTRA.slice(0, quantiExtra).map((e) => e.id).join(","), GIORNI.join(","), PASTI.join(",")].join(";");
+  return `${(quantiPiatti + quantiExtra).toString(36)}-${fnv1a(materia).toString(36)}`;
+}
 
-export const IMPRONTA_CATALOGO = `${(PIATTI.length + EXTRA.length).toString(36)}-${fnv1a(MATERIA).toString(36)}`;
+export const IMPRONTA_CATALOGO = impronta(PIATTI.length, EXTRA.length);
+// Il catalogo del 14 ottobre rimane un prefisso: i link già inviati mantengono gli stessi piatti e aggiunte.
+const VERSIONI = [
+  { impronta: IMPRONTA_CATALOGO, piatti: PIATTI.length, extra: EXTRA.length },
+  { impronta: impronta(6, 39), piatti: 6, extra: 39 },
+];
 
 const INDICE_PIATTO = new Map(PIATTI.map((e, i) => [e.id, i] as const));
 const INDICE_EXTRA = new Map(EXTRA.map((e, i) => [e.id, i] as const));
@@ -89,11 +90,11 @@ function leggiIndice(tok: string, quanti: number): number | undefined {
   return Number.isInteger(n) && n >= 0 && n < quanti ? n : undefined;
 }
 
-function leggiExtra(tok: string): string[] {
+function leggiExtra(tok: string, quanti: number): string[] {
   const maschera = Number.parseInt(tok, 36);
   if (!Number.isInteger(maschera) || maschera < 0) return [];
   const out: string[] = [];
-  for (let i = 0; i < EXTRA.length; i += 1) {
+  for (let i = 0; i < quanti; i += 1) {
     if (Math.floor(maschera / 2 ** i) % 2 === 1) out.push(EXTRA[i].id);
   }
   return out;
@@ -108,21 +109,25 @@ export function decodificaPiano(s: string): Piano | null {
 
     const parti = testo.split(SEP);
     if (parti.length !== 2) return null;
-    if (parti[0] !== IMPRONTA_CATALOGO) return null;
+    const versione = VERSIONI.find((v) => v.impronta === parti[0]);
+    if (!versione) return null;
+    const larghPiatto = cifre36(Math.max(0, versione.piatti - 1));
+    const larghExtra = cifre36(2 ** versione.extra - 1);
+    const larghCasella = larghPiatto + larghExtra;
 
     const corpo = parti[1];
-    if (corpo.length !== LUNGH_CORPO || !ALFABETO.test(corpo)) return null;
+    if (corpo.length !== CASELLE_TOTALI * larghCasella || !ALFABETO.test(corpo)) return null;
 
     const grezzo: Piano = {};
     let cursore = 0;
     for (const g of GIORNI) {
       const riga: Partial<Record<Pasto, Casella>> = {};
       for (const m of PASTI) {
-        const blocco = corpo.slice(cursore, cursore + LARGH_CASELLA);
-        cursore += LARGH_CASELLA;
+        const blocco = corpo.slice(cursore, cursore + larghCasella);
+        cursore += larghCasella;
 
-        const iPiatto = leggiIndice(blocco.slice(0, LARGH_PIATTO), PIATTI.length);
-        const casella: Casella = { extra: leggiExtra(blocco.slice(LARGH_PIATTO)) };
+        const iPiatto = leggiIndice(blocco.slice(0, larghPiatto), versione.piatti);
+        const casella: Casella = { extra: leggiExtra(blocco.slice(larghPiatto), versione.extra) };
         if (iPiatto !== undefined) casella.piatto = PIATTI[iPiatto].id;
         riga[m] = casella;
       }

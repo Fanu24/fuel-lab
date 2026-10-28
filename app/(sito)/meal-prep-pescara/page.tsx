@@ -237,9 +237,6 @@ export default function MealPrepPescara() {
                       <Link href={`/menu/${p.id}`} className="text-lg underline-offset-4 hover:text-lime hover:underline">
                         {p.nome}
                       </Link>
-                      <span className="num ml-2 text-sm text-steel">
-                        {p.kcal} kcal · {p.proteine} g prot.
-                      </span>
                     </li>
                   ))}
                 </ul>

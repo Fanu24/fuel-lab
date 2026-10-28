@@ -8,7 +8,7 @@
 
 import Link from "next/link";
 import { fineAbbonamento } from "@/lib/abbonamento";
-import { ETICHETTE_SERVIZIO, type Ordine } from "@/lib/api";
+import { euro, ETICHETTE_SERVIZIO, type Ordine } from "@/lib/api";
 import { dettaglioAbbonamento, nomeGiornoPasto, pastiInConsegna, vociInOrdine } from "@/lib/produzione";
 import { fraseConsegna } from "./AbbonamentoConsegna";
 import { BottoniContatto } from "./ClientiContatti";
@@ -84,6 +84,7 @@ function SchedaAbbonamento({
         {[o.phone, o.email].filter(Boolean).join(" · ")}
         {o.fulfillment_date ? ` · ${dettaglioAbbonamento(o)} · abbonamento fino a ${giornoCorto(fineAbbonamento(o.fulfillment_date))}` : ""}
       </p>
+      {o.discount ? <p className="cu-ordine-contatti"><strong>{o.discount.code}: −{o.discount.appliedPercent}%</strong>{o.discount.baseCents === null ? " · Totale da concordare" : ` · Prima dello sconto ${euro(o.discount.baseCents)} · Totale ${euro(o.price_cents)}`}</p> : null}
       <BottoniContatto
         nome={o.customer_name}
         telefono={o.phone}
@@ -171,6 +172,7 @@ function SchedaOrdine({ o, imballato, onImballato }: { o: Ordine; imballato: boo
       <p className="cu-ordine-contatti">
         {[o.phone, o.email].filter(Boolean).join(" · ")}
       </p>
+      {o.discount ? <p className="cu-ordine-contatti"><strong>{o.discount.code}: −{o.discount.appliedPercent}%</strong>{o.discount.baseCents === null ? " · Totale da concordare" : ` · Prima dello sconto ${euro(o.discount.baseCents)} · Totale ${euro(o.price_cents)}`}</p> : null}
       <BottoniContatto
         nome={o.customer_name}
         telefono={o.phone}

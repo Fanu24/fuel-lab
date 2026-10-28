@@ -5,6 +5,7 @@
  * cliente puo' vedere si decide qui.
  */
 
+import { totaleScontato } from "../sconti";
 import { calcolaPrezzo, eFascia, eFormulaId, eNucleo, etichettaFormula, fineAbbonamento, getFormula, NOMI_NUCLEO, type FormulaId } from "../abbonamento";
 import { etichettaStato, type DettaglioOrdine, type EventoOrdine, type Modalita, type Ordine, type SceltaAbbonamento, type Servizio, type StatoOrdine, type VoceOrdine } from "../api";
 import { getExtra, getPiatto } from "../catalogo";
@@ -88,6 +89,12 @@ export function ordineDaRiga(row: RigaOrdine, admin: boolean): Ordine {
     updated_at: tsSqlite(row.updated_at) ?? testo(row.updated_at),
     items: leggiJson<VoceOrdine[]>(row.items_json, []),
     subscription: null,
+    discount: typeof row.discount_code === "string" && typeof row.discount_percent === "number" ? {
+      code: row.discount_code, percent: row.discount_percent,
+      appliedPercent: Number(row.discount_applied_percent) || row.discount_percent,
+      baseCents: typeof row.discount_base_cents === "number" ? row.discount_base_cents : null,
+      roundEuro: Number(row.discount_round_euro) === 1,
+    } : null,
   };
   if (ordine.service === "abbonamento") ordine.subscription = sceltaDaRiga(row);
   if (admin) {
@@ -277,6 +284,7 @@ export type StatoModificabile = {
   paid: 0 | 1;
   /** La formula dell'abbonamento; null (o assente) per gli altri servizi. */
   subscription?: SceltaAbbonamento | null;
+  discount?: Ordine["discount"];
 };
 
 export type Cambio = Pick<EventoOrdine, "type" | "from_status" | "to_status" | "detail">;
@@ -357,11 +365,16 @@ export function leggiModificaAdmin(
   }
 
   let prezzo = current.price_cents;
+  let baseSconto = current.discount?.baseCents ?? null;
   if (body.priceCents !== undefined) {
     if (body.priceCents === null) prezzo = null;
     else if (typeof body.priceCents === "number" && Number.isInteger(body.priceCents) && body.priceCents >= 0 && body.priceCents <= MAX_PREZZO_CENTESIMI) {
       prezzo = body.priceCents;
     } else return errore(400, "Totale non valido: usa i centesimi, da 0 a 10.000 €");
+    if (current.discount) {
+      baseSconto = prezzo;
+      prezzo = totaleScontato(baseSconto, current.discount.appliedPercent, current.discount.roundEuro);
+    }
   }
 
   if (body.paid !== undefined && typeof body.paid !== "boolean") return errore(400, "Pagamento non valido");
@@ -388,7 +401,7 @@ export function leggiModificaAdmin(
   if (nota !== current.internal_note) evento("note", nota || "Nota interna cancellata");
   const messaggioCambiato = messaggio !== current.customer_message;
   if (messaggioCambiato) evento("message", messaggio || "Messaggio rimosso");
-  if (prezzo !== current.price_cents) evento("price", prezzo === null ? "Totale rimosso" : `Totale concordato: ${euroTesto(prezzo)}`);
+  if (prezzo !== current.price_cents || baseSconto !== (current.discount?.baseCents ?? null)) evento("price", prezzo === null ? "Totale rimosso" : `Totale concordato: ${euroTesto(prezzo)}`);
   if (pagato !== current.paid) evento("payment", pagato ? "Segnato come pagato" : "Segnato come non pagato");
   if (formulaCambiata && formula) evento("note", descriviFormula(formula));
 
@@ -404,6 +417,7 @@ export function leggiModificaAdmin(
         price_cents: prezzo,
         paid: pagato,
         subscription: formula,
+        discount: current.discount ? { ...current.discount, baseCents: baseSconto } : null,
       },
       cambi,
       avvisaCliente: body.notify === true && (statoCambiato || (messaggioCambiato && messaggio !== "")),

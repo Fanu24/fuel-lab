@@ -1,3 +1,4 @@
+import { ARTICOLI_LOCALI } from "./blog-locali";
 import { APPROFONDIMENTI } from "./blog-approfondimenti";
 import { INDIRIZZO, elencoZone } from "./sito";
 
@@ -47,7 +48,7 @@ export type Categoria = {
   introduzione: string;
 };
 
-export type FotoBlog = { src: string; alt: string; larghezza: number; altezza: number };
+export type FotoBlog = { src: string; alt: string; larghezza: number; altezza: number; didascalia?: string; fuoco?: string };
 
 export type Articolo = {
   slug: string;
@@ -81,11 +82,12 @@ export const DATA_BLOG = "2026-09-27";
 export const MARCHIO = " · FUEL LAB";
 
 /** L’articolo in evidenza nell’indice del blog. */
-export const SLUG_IN_EVIDENZA = "abbinare-pasti-tipo-allenamento";
+export const SLUG_IN_EVIDENZA = "cucina-pescarese-piatti-tipici";
 
-/* Foto di repertorio già ospitate in /public/foto. L’alt descrive quello che
-   si vede, non quello che vorremmo far credere: sono foto illustrative. */
+/* Foto originali e di repertorio in /public/foto, con didascalie esplicite. */
 export const FOTO_BLOG = {
+  matteoCucina: { src: "/foto/matteo-pattane-in-cucina.webp", alt: "Matteo Pattanè in divisa mentre versa una preparazione nelle ciotole", larghezza: 960, altezza: 1350, didascalia: "Matteo Pattanè in cucina", fuoco: "75% 15%" },
+  matteoPreparazioni: { src: "/foto/matteo-preparazioni.webp", alt: "Teglie di verdure e porzioni in preparazione nella cucina di Matteo", larghezza: 1080, altezza: 1352, didascalia: "Preparazioni di Matteo", fuoco: "50% 35%" },
   pesi: { src: "/foto/photo-1574680096145-d05b474e2155.webp", alt: "Atleta di spalle con il bilanciere appoggiato sulle spalle", larghezza: 1200, altezza: 801 },
   presa: { src: "/foto/photo-1549060279-7e168fcee0c2.webp", alt: "Mano che stringe il bilanciere carico, in primo piano", larghezza: 1200, altezza: 800 },
   distensione: { src: "/foto/photo-1541534741688-6078c6bfb5c5.webp", alt: "Atleta in spinta sopra la testa con il bilanciere", larghezza: 1200, altezza: 801 },
@@ -163,9 +165,9 @@ export const CATEGORIE: Categoria[] = [
     titolo: "Cucina a Pescara e in Abruzzo",
     titoloSeo: "Cucina a Pescara e in Abruzzo: guide",
     descrizione:
-      "Cucina a Pescara e in Abruzzo per chi si allena: tradizione in chiave fit, ingredienti di stagione, cibo d’asporto e cosa chiedere a chi consegna i pasti.",
+      "Cucina pescarese e abruzzese: piatti tipici, prodotti della provincia, pasta, idee vegetariane per organizzare pasti e consegne a Pescara e dintorni.",
     introduzione:
-      "FUEL LAB cucina a Pescara, in Via del Santuario 214. In questa sezione raccogliamo le guide legate al territorio: la tradizione abruzzese rivista per chi si allena, gli ingredienti di stagione, la cucina d’asporto e le domande da fare prima di scegliere un servizio di consegna pasti in zona.",
+      "FUEL LAB cucina a Pescara, in Via del Santuario 214. Qui trovi guide alla cucina pescarese e ai prodotti della provincia, alla pasta abruzzese e alle proposte vegetariane. Le affianchiamo a indicazioni pratiche su spesa, pasti, consegna e cucina a domicilio, distinguendo le tradizioni raccontate dai servizi effettivamente disponibili.",
   },
 ];
 
@@ -239,6 +241,7 @@ const FONTI = {
 } satisfies Record<string, FonteArticolo>;
 
 export const ARTICOLI: Articolo[] = [
+  ...ARTICOLI_LOCALI,
   /* ---- seconda serie: guide approfondite ---- */
   {
     slug: "abbinare-pasti-tipo-allenamento",
@@ -253,7 +256,7 @@ export const ARTICOLI: Articolo[] = [
     piatti: ["riso-julien-pollo-teriyaki", "maiale-senape-spinaci", "uova-purgatorio-peperoni"],
     correlati: ["cosa-mangiare-prima-di-correre", "cosa-mangiare-dopo-allenamento-pesi", "settimana-tipo-allenamento-alimentazione"],
     introduzione:
-      "Nella cucina di FUEL LAB c’è una regola semplice, la stessa che usa il compositore della settimana: nei giorni di cardio un piatto più ricco di carboidrati, nei giorni di pesi un piatto con le proteine in primo piano e i carboidrati in quantità più moderata, nei giorni di riposo il piatto più leggero. Non è una dieta: è un criterio per scegliere che cosa mettere nel contenitore. Qui spieghiamo da dove viene, come applicarlo nella pratica e dove si ferma.",
+      "Organizzare i pasti intorno all’allenamento significa prima di tutto sapere quando mangerai e che cosa avrai pronto. Nel menu FUEL LAB trovi ricette con cereali, carne, uova, latticini e verdure da alternare nella settimana. Qui raccogliamo riferimenti generali su cardio, pesi e riposo: la scelta delle quantità personali resta al professionista che ti segue, mentre il compositore ti aiuta a ordinare i pasti.",
     sezioni: [
       {
         titolo: "La regola in tre righe",
@@ -277,7 +280,7 @@ export const ARTICOLI: Articolo[] = [
         titolo: "Giorni di cardio: più carboidrati",
         paragrafi: [
           "Corsa, bici, nuoto, spinning, circuiti lunghi: nel cardio i muscoli consumano soprattutto glicogeno, cioè carboidrati di riserva. Per questo, nei giorni in cui corri o pedali, il piatto che precede o segue la seduta dovrebbe avere una buona quota di pasta, riso, noodles, patate o pane.",
-          "Nel menu, il [riso con carote, zucchine e pollo teriyaki](/menu/riso-julien-pollo-teriyaki) è il piatto con più carboidrati, e unisce una fonte proteica: per questo è indicato sia per il cardio sia per i pesi. I [noodles sesamo e maiale in agrodolce](/menu/noodles-sesamo-maiale) sono l’altra scelta da giorno di cardio, dal sapore più deciso.",
+          "Nel menu trovi il [riso con carote, zucchine e pollo teriyaki](/menu/riso-julien-pollo-teriyaki) e i [noodles sesamo e maiale in agrodolce](/menu/noodles-sesamo-maiale). Entrambi uniscono cereali, carne e verdure, con condimenti diversi. Scegli il sapore che preferisci e concorda con Matteo le quantità indicate nel tuo eventuale piano alimentare.",
           "Conta anche l’orario. Se corri la sera, il pranzo è il pasto su cui puntare; se corri la mattina presto, contano la cena del giorno prima e una colazione leggera. Ne parliamo nella guida su [cosa mangiare prima di correre](/blog/cosa-mangiare-prima-di-correre).",
         ],
       },
@@ -285,7 +288,7 @@ export const ARTICOLI: Articolo[] = [
         titolo: "Giorni di pesi: proteine davanti, carboidrati dosati",
         paragrafi: [
           "Dopo una seduta di forza il piatto mette la fonte proteica al centro. Le posizioni dell’International Society of Sports Nutrition (ISSN) indicano come riferimento circa 20–40 grammi di proteine per pasto, distribuiti nella giornata ogni tre o quattro ore.",
-          "I carboidrati restano, in quantità più moderata rispetto ai giorni di cardio: servono anche loro al recupero. Nel menu il [maiale alla senape con spinaci e patate novelle](/menu/maiale-senape-spinaci) ha il rapporto più alto tra proteine e carboidrati; le [uova alla purgatorio con sugo di peperoni](/menu/uova-purgatorio-peperoni) sono la versione più leggera; le [pallotte cacio e ova fit](/menu/pallotte-cacio-ovo) portano in tavola la tradizione abruzzese.",
+          "Anche i carboidrati contribuiscono al recupero: le quantità dipendono dalla tua giornata. Nel menu puoi alternare il [maiale alla senape con spinaci e patate novelle](/menu/maiale-senape-spinaci), le [uova alla purgatorio con sugo di peperoni](/menu/uova-purgatorio-peperoni) e le [pallotte cacio e ova](/menu/pallotte-cacio-ovo). Sono ricette diverse per ingredienti e gusto, senza una classifica nutrizionale tra i piatti.",
           "Per esempi concreti di pasto dopo la palestra, leggi la guida su [cosa mangiare dopo l’allenamento con i pesi](/blog/cosa-mangiare-dopo-allenamento-pesi); per i piatti pronti con le proteine in primo piano c’è la pagina sui [pasti proteici a Pescara](/pasti-proteici-pescara).",
         ],
       },
@@ -293,19 +296,19 @@ export const ARTICOLI: Articolo[] = [
         titolo: "Giorni di riposo: flessibilità",
         paragrafi: [
           "Il riposo non è un giorno di digiuno. Le linee guida CREA ricordano che chi si allena con regolarità a livello amatoriale può seguire le indicazioni valide per tutti, mangiando un po’ di più nei giorni di impegno: nei giorni senza allenamento si torna semplicemente alla normalità.",
-          "In pratica è il giorno ideale per un piatto completo e meno denso, per più verdure e per i legumi, che a ridosso di un allenamento possono dare fastidio per la quantità di fibra. Il compositore propone come punto di partenza il piatto meno calorico tra quelli adatti, ma appetito e abitudini vengono prima.",
+          "Nel giorno libero puoi organizzare i pasti secondo appetito, abitudini e indicazioni personali. Alterna le ricette, includi verdure e scegli i pasti che vuoi avere già pronti. Il compositore serve a raccogliere le tue scelte e inviarle a Matteo; non stabilisce quante calorie devi mangiare.",
         ],
       },
       {
         titolo: "Come ragiona il compositore",
         paragrafi: [
-          "Quando nel [compositore della settimana](/settimana) segni un giorno, la proposta segue regole precise e sempre uguali, così puoi prevederla e correggerla:",
+          "Nel [compositore della settimana](/settimana) scegli i pasti che vuoi delegare alla cucina. Puoi partire da poche caselle e completare il resto in seguito:",
         ],
         punti: [
-          "Cardio: in cima i piatti indicati per il cardio, ordinati per quanto pesano i carboidrati sull’energia totale del piatto.",
-          "Pesi: in cima i piatti indicati per i pesi, ordinati per rapporto tra proteine e carboidrati.",
-          "Riposo: il piatto meno calorico tra quelli da pesi o da cardio e pesi.",
-          "I piatti ‘cardio e pesi’ sono la seconda scelta di entrambe le giornate; nessun piatto compare più di tre volte a settimana.",
+          "Scegli il giorno e il pasto che vuoi preparato.",
+          "Aggiungi il piatto che preferisci tra quelli disponibili.",
+          "Controlla ingredienti e allergeni prima di inviare la richiesta.",
+          "Se segui un piano alimentare, condividilo con Matteo per concordare le quantità.",
         ],
         piatti: ["riso-julien-pollo-teriyaki", "noodles-sesamo-maiale", "gnocchetti-sugo-ricotta", "maiale-senape-spinaci", "pallotte-cacio-ovo", "uova-purgatorio-peperoni"],
         dopo: ["Ogni proposta si può trascinare, sostituire o lasciare vuota: il compositore suggerisce, sei tu a decidere."],
@@ -328,7 +331,7 @@ export const ARTICOLI: Articolo[] = [
     ],
     faq: [
       { domanda: "Se faccio cardio e pesi nella stessa seduta, quale piatto scelgo?", risposta: "Guarda che cosa pesa di più nella seduta. Per gli allenamenti misti il menu segnala i piatti ‘cardio e pesi’, oggi il riso con carote, zucchine e pollo teriyaki, che unisce una buona quota di carboidrati e una fonte proteica." },
-      { domanda: "Nei giorni di riposo devo mangiare meno?", risposta: "Non necessariamente. Il riposo non impone porzioni ridotte: il compositore propone il piatto meno denso del menu come punto di partenza, ma appetito, abitudini e indicazioni personali vengono prima." },
+      { domanda: "Nei giorni di riposo devo mangiare meno?", risposta: "Non necessariamente. Il riposo non impone porzioni ridotte: scegli secondo appetito, abitudini e indicazioni personali, senza usare una classifica automatica delle calorie." },
       { domanda: "Questa regola serve a dimagrire?", risposta: "No. Serve a scegliere il piatto in base all’allenamento del giorno, non a perdere peso. Per obiettivi di composizione corporea serve un percorso con un professionista abilitato." },
       { domanda: "Posso cambiare i piatti proposti dal compositore?", risposta: "Sì. La proposta è modificabile: puoi trascinare i piatti, sostituirli o lasciare caselle vuote nei giorni in cui mangi fuori." },
     ],
@@ -388,13 +391,13 @@ export const ARTICOLI: Articolo[] = [
         titolo: "Quattro esempi di pasto dopo i pesi",
         paragrafi: ["Qualche combinazione concreta, tra piatti del menu FUEL LAB e idee da cucinare a casa:"],
         punti: [
-          "Carne magra, patate e verdure cotte: è la struttura del [maiale alla senape con spinaci e patate novelle](/menu/maiale-senape-spinaci), il piatto del menu con il rapporto più alto tra proteine e carboidrati.",
-          "Uova, sugo di verdure e pane: le [uova alla purgatorio con sugo di peperoni](/menu/uova-purgatorio-peperoni) sono l’opzione più leggera per una cena dopo la palestra.",
-          "Un piatto della tradizione: le [pallotte cacio e ova in versione fit](/blog/pallotte-cacio-e-ova-versione-fit), con uova, ricotta e sugo di pomodorini.",
+          "Carne, patate e verdure cotte: è la struttura del [maiale alla senape con spinaci e patate novelle](/menu/maiale-senape-spinaci). La salsa contribuisce sia al sapore sia ai valori del piatto.",
+          "Le [uova alla purgatorio con sugo di peperoni](/menu/uova-purgatorio-peperoni) uniscono uova, verdure e quark. Se vuoi aggiungere pane o un contorno, concorda le quantità in base alle tue esigenze.",
+          "Un piatto della tradizione: le [pallotte cacio e ova con ricotta](/blog/pallotte-cacio-e-ova-versione-fit), con uova, ricotta e sugo di pomodorini.",
           "A casa: pasta e legumi con una spolverata di formaggio, oppure riso, pollo e verdure saltate in padella.",
         ],
         dopo: [
-          "Nel [compositore della settimana](/settimana), segnando un giorno come ‘pesi’, la proposta mette in cima i piatti con il rapporto più alto tra proteine e carboidrati. Puoi sempre cambiarli. Come lavoriamo questi piatti è spiegato nella pagina sui [pasti proteici a Pescara](/pasti-proteici-pescara).",
+          "Nel [compositore della settimana](/settimana) scegli i piatti e i giorni in cui ti servono. Puoi cambiare ogni scelta prima di inviare la richiesta. Come lavoriamo questi piatti è spiegato nella pagina sui [pasti proteici a Pescara](/pasti-proteici-pescara).",
         ],
       },
       {
@@ -472,7 +475,7 @@ export const ARTICOLI: Articolo[] = [
       {
         titolo: "Le proteine nei piatti del menu",
         paragrafi: [
-          "I piatti del [menu FUEL LAB](/menu) sono pensati come pasto unico, con porzioni generose: diversi superano i 40 grammi di proteine per porzione. La tabella qui sotto riporta i valori aggiornati dei piatti in carta, così puoi confrontarli con il riferimento che ti riguarda. Se cerchi piatti pronti con queste caratteristiche, c’è anche la pagina sui [pasti proteici a Pescara](/pasti-proteici-pescara).",
+          "I piatti del [menu FUEL LAB](/menu) combinano ingredienti diversi in una preparazione. Nelle schede trovi ingredienti, allergeni e, quando il calcolo è disponibile, una stima nutrizionale con le sue ipotesi. Le ricette ancora da completare non riportano un totale. Puoi approfondire il servizio nella pagina sui [pasti proteici a Pescara](/pasti-proteici-pescara).",
         ],
         piatti: ["maiale-senape-spinaci", "riso-julien-pollo-teriyaki", "noodles-sesamo-maiale", "pallotte-cacio-ovo", "gnocchetti-sugo-ricotta", "uova-purgatorio-peperoni"],
         dopo: [
@@ -504,9 +507,9 @@ export const ARTICOLI: Articolo[] = [
   },
   {
     slug: "pallotte-cacio-e-ova-versione-fit",
-    titolo: "Pallotte cacio e ova in versione fit: la tradizione abruzzese nel meal prep",
-    titoloSeo: "Pallotte cacio e ova fit: la ricetta abruzzese",
-    descrizione: "Pallotte cacio e ova in versione fit: la ricetta abruzzese tradizionale, cosa cambia nella proposta FUEL LAB con ricotta e sugo e come inserirla nel menu.",
+    titolo: "Pallotte cacio e ova: la tradizione abruzzese nel meal prep",
+    titoloSeo: "Pallotte cacio e ova: la ricetta abruzzese",
+    descrizione: "Pallotte cacio e ova a Pescara: la ricetta abruzzese, gli ingredienti della proposta FUEL LAB con ricotta e sugo e come inserirla nel menu settimanale.",
     categoria: "pescara-abruzzo",
     parolaChiave: "pallotte cacio e ova",
     foto: "polpette",
@@ -515,7 +518,7 @@ export const ARTICOLI: Articolo[] = [
     piatti: ["pallotte-cacio-ovo", "uova-purgatorio-peperoni", "gnocchetti-sugo-ricotta"],
     correlati: ["cucina-di-stagione-abruzzo-pescara", "cosa-mangiare-dopo-allenamento-pesi", "piatti-gia-composti-cosa-sono"],
     introduzione:
-      "Le pallotte cacio e ova, cac’e ove come si dice tra Chieti e Pescara, sono polpette senza carne: formaggio, uova e pane raffermo, fritte e poi cotte nel sugo di pomodoro. Un piatto nato per sfamare con poco, che oggi si trova nelle trattorie e sulle tavole delle feste. Nel menu FUEL LAB c’è una versione pensata per chi si allena: stessa idea, ingredienti ricalibrati. Vediamo che cosa resta della tradizione e che cosa cambia.",
+      "Le pallotte cacio e ova, cac’e ove come si dice tra Chieti e Pescara, sono polpette senza carne: formaggio, uova e pane raffermo, fritte e poi cotte nel sugo di pomodoro. Un piatto nato per sfamare con poco, che oggi si trova nelle trattorie e sulle tavole delle feste. Nel menu FUEL LAB trovi una ricetta con ricotta, parmigiano e sugo di pomodorini. Vediamo che cosa resta della tradizione e che cosa cambia.",
     sezioni: [
       {
         titolo: "La ricetta tradizionale",
@@ -529,14 +532,14 @@ export const ARTICOLI: Articolo[] = [
         titolo: "Perché piacciono a chi si allena",
         paragrafi: [
           "Sulla carta le pallotte hanno tutto: uova e formaggio portano proteine, il pane porta carboidrati, il sugo di pomodoro dà volume e sapore. È un piatto unico completo, che si conserva bene nel suo sugo e si porta facilmente in un contenitore.",
-          "Il punto debole della versione classica è la quantità di formaggio stagionato unita alla frittura: un piatto ricco di grassi, buonissimo nel pranzo della domenica, meno pratico come pasto di tutti i giorni per chi si allena più volte a settimana. È lì che interviene la versione fit.",
+          "La quantità di pane, formaggio e olio cambia molto il risultato. La presenza di ricotta da sola non dimostra che una ricetta sia meno calorica: servono le dosi complete e un confronto sulla stessa quantità di prodotto. Per scegliere, parti quindi dagli ingredienti e dalle porzioni concordate.",
         ],
       },
       {
         titolo: "La versione FUEL LAB: cosa cambia",
         paragrafi: [
-          "Le [pallotte cacio e ovo fit proteiche](/menu/pallotte-cacio-ovo) del menu partono da pane raffermo, uova e ricotta, con parmigiano, sale e pepe; il sugo è di pomodorini, cipolla e basilico. La ricotta prende il posto di buona parte del formaggio stagionato: il sapore resta riconoscibile, l’impasto è più morbido e fresco.",
-          "Nella scheda del piatto trovi grammature, allergeni (glutine, uova, latte) e i macro della porzione, aggiornati. Il piatto è indicato per i giorni di pesi: nel compositore compare tra le prime proposte quando segni una giornata di forza.",
+          "Le [pallotte cacio e ovo](/menu/pallotte-cacio-ovo) del menu partono da pane raffermo, uova e ricotta, con parmigiano, sale e pepe; il sugo è di pomodorini, cipolla e basilico. La ricotta prende il posto di buona parte del formaggio stagionato: il sapore resta riconoscibile, l’impasto è più morbido e fresco.",
+          "Nella scheda del piatto trovi gli ingredienti e gli allergeni: glutine, uova e latte. Per completare il calcolo nutrizionale delle pallotte servono anche le dosi di olio e parmigiano. Puoi sceglierle nel compositore e concordare con Matteo le quantità prima della conferma.",
         ],
       },
       {
@@ -568,8 +571,8 @@ export const ARTICOLI: Articolo[] = [
       },
     ],
     faq: [
-      { domanda: "Pallotte cacio e ova o cace e ove: qual è il nome giusto?", risposta: "Sono lo stesso piatto: cace e ove, o cac’e ove, è la forma dialettale di cacio e uova. Le trovi scritte in più modi, anche sui menu dei ristoranti; nel menu FUEL LAB si chiamano ‘pallotte cacio e ovo fit proteiche’." },
-      { domanda: "Le pallotte fit vanno bene se ho un’allergia o un’intolleranza?", risposta: "Contengono glutine, uova e latte. Se hai allergie o intolleranze, leggi la scheda del piatto e chiedi conferma a Matteo prima di ordinarle." },
+      { domanda: "Pallotte cacio e ova o cace e ove: qual è il nome giusto?", risposta: "Sono lo stesso piatto: cace e ove, o cac’e ove, è la forma dialettale di cacio e uova. Le trovi scritte in più modi, anche sui menu dei ristoranti; nel menu FUEL LAB si chiamano ‘pallotte cacio e ovo’." },
+      { domanda: "Le pallotte vanno bene se ho un’allergia o un’intolleranza?", risposta: "Contengono glutine, uova e latte. Se hai allergie o intolleranze, leggi la scheda del piatto e chiedi conferma a Matteo prima di ordinarle." },
       { domanda: "Sono un piatto da giorno di pesi o di cardio?", risposta: "Nel menu sono indicate per i giorni di pesi, e il compositore le propone in quelle giornate. Puoi comunque spostarle dove preferisci." },
       { domanda: "Quando si possono avere le pallotte di FUEL LAB?", risposta: "Matteo cucina ogni giorno e consegna ogni giorno: chiedi a lui la disponibilità nel giorno che ti serve. Ritiro in Via del Santuario 214 o consegna in zona vanno confermati con Matteo." },
     ],
@@ -837,7 +840,7 @@ export const ARTICOLI: Articolo[] = [
     ],
     faq: [
       { domanda: "Quanti giorni di riposo servono?", risposta: "Dipende dal programma e da chi ti segue in palestra. Negli schemi di questa guida c’è sempre almeno un giorno senza allenamento, utile anche per organizzare spesa e cucina." },
-      { domanda: "Nei giorni di riposo devo cambiare menu?", risposta: "Non per forza: puoi scegliere un piatto completo e meno denso. Il compositore propone il piatto più leggero del menu come punto di partenza, ma decidi tu." },
+      { domanda: "Nei giorni di riposo devo cambiare menu?", risposta: "Non per forza: puoi scegliere un piatto completo e meno denso. Nel compositore scegli ciò che preferisci, tenendo conto delle indicazioni personali." },
       { domanda: "Perché cucinare due volte a settimana e non una?", risposta: "Perché i cibi cotti conservati in frigorifero vanno consumati in tempi brevi: le linee guida CREA parlano in genere di due o tre giorni. Due sessioni riducono i tempi di conservazione e rendono il menu più vario." },
       { domanda: "Gli schemi valgono anche se mi alleno la mattina?", risposta: "Sì: sposta il pasto ricco di carboidrati alla sera prima e alla colazione, e metti il pasto proteico dopo la seduta." },
     ],
@@ -862,7 +865,7 @@ export const ARTICOLI: Articolo[] = [
         titolo: "Cosa intendiamo per piatto già composto",
         paragrafi: [
           "Un piatto già composto è una ricetta completa pensata dal cuoco: una base di carboidrati, una fonte proteica, le verdure e un condimento, bilanciati in un’unica preparazione. Non scegli tu le proporzioni tra riso e pollo: sono decise in cucina, insieme a sapori e consistenze.",
-          "Per ogni piatto la scheda dichiara gli ingredienti con le grammature, gli allergeni e i macro della porzione. Le calorie non sono stimate a occhio: si calcolano dai macro, con 4 kcal per grammo di proteine e di carboidrati e 9 per grammo di grassi. Il [riso con carote, zucchine e pollo teriyaki](/menu/riso-julien-pollo-teriyaki), per esempio, riporta riso basmati, petto di pollo, carote, zucchine, olio d’oliva e olio di sesamo, ciascuno con i suoi grammi.",
+          "La scheda riporta ingredienti e allergeni. Le stime nutrizionali sono disponibili soltanto per le ricette con quantità sufficienti per il calcolo, e dichiarano le ipotesi usate. Nel [riso con carote, zucchine e pollo teriyaki](/menu/riso-julien-pollo-teriyaki), per esempio, i 150 grammi di riso si intendono cotti: usare il valore del riso secco produrrebbe un risultato molto diverso. Eventuali salse aggiuntive vanno conteggiate a parte.",
         ],
       },
       {
@@ -870,9 +873,9 @@ export const ARTICOLI: Articolo[] = [
         paragrafi: ["Il vantaggio principale è che le decisioni si prendono una volta, non a ogni pasto:"],
         punti: [
           "Meno scelte: apri il frigorifero e il pasto è già deciso, completo in ogni sua parte.",
-          "Porzione nota: sai quanto mangi, senza pesare o stimare.",
-          "Valori leggibili: macro e calorie sono riferiti alla porzione, quindi confronti due piatti in un colpo d’occhio.",
-          "Abbinamento all’allenamento: ogni piatto è indicato per cardio, pesi o entrambi, e il [compositore](/settimana) lo usa per proporre la settimana.",
+          "Una preparazione già porzionata, da concordare con Matteo se segui quantità specifiche.",
+          "Ingredienti leggibili: controlli la ricetta e le eventuali stime, con il riferimento usato per calcolarle.",
+          "Organizzazione semplice: il [compositore](/settimana) raccoglie i piatti e i giorni in cui ti servono.",
           "Allergeni in chiaro: sono un campo obbligatorio della scheda, come previsto dalle regole europee sull’informazione ai consumatori.",
         ],
       },
@@ -898,10 +901,10 @@ export const ARTICOLI: Articolo[] = [
         titolo: "Come leggere la scheda di un piatto",
         paragrafi: ["Ogni scheda del [menu](/menu) segue lo stesso ordine; leggerla in questa sequenza richiede meno di un minuto:"],
         punti: [
-          "L’etichetta di allenamento: cardio, pesi oppure cardio e pesi.",
-          "I macro della porzione, con la barra che mostra quanta energia viene da proteine, carboidrati e grassi.",
-          "Il peso della porzione, in grammi.",
-          "Il motivo dell’abbinamento, scritto in cucina.",
+          "Il nome del piatto e la sua descrizione.",
+          "Le eventuali stime nutrizionali, con le ipotesi indicate per quella ricetta.",
+          "Le quantità degli ingredienti disponibili: sono distinte dal peso del piatto dopo la cottura.",
+          "La preparazione e gli eventuali condimenti.",
           "Gli ingredienti con le grammature e, in fondo, gli allergeni.",
         ],
         dopo: [
@@ -926,7 +929,7 @@ export const ARTICOLI: Articolo[] = [
     faq: [
       { domanda: "Un piatto già composto è un piatto pronto industriale?", risposta: "No. Nel caso di FUEL LAB sono piatti cucinati freschi da Matteo ogni giorno, con ingredienti e grammature dichiarati nella scheda." },
       { domanda: "Posso modificare un piatto?", risposta: "Puoi aggiungere alla box carboidrati, proteine, condimenti, verdure o snack. Per modifiche agli ingredienti, soprattutto in caso di allergie, chiedi prima a Matteo." },
-      { domanda: "I macro sono per porzione o per 100 grammi?", risposta: "Nel menu FUEL LAB i valori si riferiscono alla porzione indicata in scheda. Per confrontarli con un’etichetta per 100 grammi, dividi per il peso della porzione e moltiplica per 100." },
+      { domanda: "I macro sono per porzione o per 100 grammi?", risposta: "Le stime disponibili si riferiscono a una porzione della ricetta descritta. I grammi degli ingredienti non sono il peso del piatto finito: senza pesare la preparazione cotta non si può ricavare un dato attendibile per 100 grammi." },
       { domanda: "Quanti piatti ci sono nel menu?", risposta: "Oggi sono sei, un numero contenuto perché ogni ricetta resti curata, e il menu può cambiare nel tempo. Trovi quelli in carta, con i valori aggiornati, nella pagina del menu; quali Matteo cucina nei giorni che ti servono te lo conferma lui." },
     ],
     fonti: [FONTI.creaEtichette],
@@ -1222,7 +1225,7 @@ export const ARTICOLI: Articolo[] = [
         titolo: "Quattro cene pronte in dieci minuti",
         paragrafi: ["Idee per le sere in cui hai poco tempo e poca voglia di cucinare:"],
         punti: [
-          "Uova, sugo di verdure e pane: sono le [uova alla purgatorio con sugo di peperoni](/menu/uova-purgatorio-peperoni), il piatto del menu con i valori energetici più contenuti.",
+          "Le [uova alla purgatorio con sugo di peperoni](/menu/uova-purgatorio-peperoni) abbinano uova, verdure e quark. Controlla gli ingredienti e concorda eventuali aggiunte, come pane o contorni, prima di ordinare.",
           "Carne magra con patate e verdure: il [maiale alla senape con spinaci e patate novelle](/menu/maiale-senape-spinaci), per le sere dopo i pesi.",
           "Riso, pollo e verdure: il [riso con carote, zucchine e pollo teriyaki](/menu/riso-julien-pollo-teriyaki), per le sere dopo il cardio.",
           "A casa: una frittata con verdure e pane, oppure pasta e legumi preparati in anticipo e riscaldati bene.",
@@ -1236,7 +1239,7 @@ export const ARTICOLI: Articolo[] = [
       { domanda: "Mangiare carboidrati la sera fa ingrassare?", risposta: "Non un alimento in sé: secondo le linee guida CREA non esistono cibi che fanno ingrassare o dimagrire, contano l’insieme delle abitudini e le quantità. Dopo un allenamento serale i carboidrati aiutano a reintegrare le scorte usate." },
       { domanda: "Se mi alleno alle 21 devo cenare prima o dopo?", risposta: "Molti preferiscono una merenda con carboidrati nel tardo pomeriggio e una cena completa ma leggera dopo la seduta. Evita un pasto abbondante subito prima dell’allenamento." },
       { domanda: "Posso cenare solo con uno shake proteico?", risposta: "Uno shake non sostituisce un pasto completo: mancano carboidrati, verdure e varietà. Se usi un integratore su indicazione di un professionista, consideralo un’aggiunta." },
-      { domanda: "Qual è il piatto FUEL LAB più leggero per la sera?", risposta: "Tra i piatti del menu, le uova alla purgatorio con sugo di peperoni hanno i valori energetici più contenuti. Controlla la scheda del piatto per ingredienti e allergeni." },
+      { domanda: "Come scelgo un piatto FUEL LAB per la sera?", risposta: "Parti dagli ingredienti che preferisci, dall’appetito e dalle indicazioni che segui. Non pubblichiamo una classifica del piatto più leggero: chiedi a Matteo le quantità e i condimenti della ricetta che ti interessa." },
     ],
     fonti: [FONTI.creaLineeGuida, FONTI.issnTiming, FONTI.issnProteine],
   },
@@ -1275,7 +1278,7 @@ export const ARTICOLI: Articolo[] = [
           nota: "I metodi si mescolano: per esempio basi fatte in casa e qualche piatto già pronto nei giorni più pieni.",
         },
         dopo: [
-          "Accanto al fai da te c’è una quarta strada: affidare una parte della preparazione a una cucina. È il caso dei [piatti già composti](/blog/piatti-gia-composti-cosa-sono), cucinati e porzionati da altri, con ingredienti e valori dichiarati.",
+          "Accanto al fai da te c’è una quarta strada: affidare una parte della preparazione a una cucina. È il caso dei [piatti già composti](/blog/piatti-gia-composti-cosa-sono), cucinati e porzionati da altri, con ingredienti, allergeni e le eventuali stime disponibili.",
         ],
       },
       {
@@ -1312,7 +1315,7 @@ export const ARTICOLI: Articolo[] = [
       {
         titolo: "Il meal prep a Pescara con FUEL LAB",
         paragrafi: [
-          "Se cucinare in blocco non fa per te, o non sempre, puoi affidare una parte della settimana a una cucina. Con il [meal prep di FUEL LAB a Pescara](/meal-prep-pescara) Matteo, che è un cuoco, prepara piatti freschi ogni giorno: il [riso con carote, zucchine e pollo teriyaki](/menu/riso-julien-pollo-teriyaki), le [pallotte cacio e ova fit](/menu/pallotte-cacio-ovo), le [uova alla purgatorio](/menu/uova-purgatorio-peperoni) e gli altri piatti del [menu](/menu), ciascuno con ingredienti, allergeni e macro della porzione.",
+          "Se cucinare in blocco non fa per te, o non sempre, puoi affidare una parte della settimana a una cucina. Con il [meal prep di FUEL LAB a Pescara](/meal-prep-pescara) Matteo, che è un cuoco, prepara piatti freschi ogni giorno: il [riso con carote, zucchine e pollo teriyaki](/menu/riso-julien-pollo-teriyaki), le [pallotte cacio e ova](/menu/pallotte-cacio-ovo), le [uova alla purgatorio](/menu/uova-purgatorio-peperoni) e gli altri piatti del [menu](/menu), ciascuno con ingredienti e allergeni; le stime sono indicate solo dove disponibili.",
           "Scegli i pasti nel [compositore della settimana](/settimana), anche solo due o tre, e manda la richiesta: Matteo conferma disponibilità, ritiro in Via del Santuario 214 o [consegna a Pescara e dintorni](/consegna-pasti-pescara). Se vuoi i pasti di tutta la settimana senza pensarci, ci sono gli [abbonamenti mensili](/abbonamento): Matteo cucina il piano del tuo nutrizionista e lo porta ogni 3 giorni; se preferisci che la preparazione avvenga nella tua cucina, c’è il servizio di [cuoco a domicilio](/cuoco-a-domicilio-pescara).",
         ],
       },
@@ -1343,7 +1346,7 @@ export const ARTICOLI: Articolo[] = [
       {
         titolo: "‘Salutare’ non basta: cosa guardare davvero",
         paragrafi: [
-          "Un piatto non diventa adatto a te per come viene chiamato. ‘Bowl’, ‘fit’, ‘light’ o ‘proteico’ descrivono un’intenzione; conta che cosa c’è dentro e in che quantità. Per i prodotti confezionati alcune diciture, come ‘leggero’ o ‘a basso contenuto di grassi’, hanno soglie di legge precise, che il CREA elenca nella sua guida alle etichette; il nome di un piatto preparato al momento, invece, non è legato a nessun numero.",
+          "Un piatto non diventa adatto a te per come viene chiamato. Conta che cosa c’è dentro e in che quantità. Se trovi parole come ‘fit’, ‘light’ o ‘proteico’, chiedi quali dati sostengono quella descrizione. Per una ricetta preparata su ordinazione, leggere ingredienti, dosi e condimenti ti aiuta a fare una scelta più concreta del solo nome sul menu.",
           "Per questo conviene guardare cinque cose, sempre nello stesso ordine:",
         ],
         punti: [
@@ -1365,7 +1368,7 @@ export const ARTICOLI: Articolo[] = [
         titolo: "Valori nutrizionali: utili se riferiti alla porzione",
         paragrafi: [
           "Proprio perché non sono obbligatori per i piatti d’asporto, i valori nutrizionali, quando ci sono, vanno letti con attenzione. La domanda chiave è: a che cosa si riferiscono? Sulle etichette dei prodotti confezionati i valori sono sempre per 100 grammi o 100 millilitri, e possono essere dati anche per porzione; un menu può riportare l’una o l’altra cosa, e la differenza cambia tutto.",
-          "Un esempio: un piatto che dichiara 150 kcal per 100 grammi, con una porzione di 500 grammi, porta 750 kcal. Nel [menu FUEL LAB](/menu) i valori si riferiscono alla porzione intera indicata in scheda, e le calorie sono calcolate dai macro con i coefficienti del regolamento europeo: 4 kcal per grammo di proteine e di carboidrati, 9 per grammo di grassi. Come leggere questi numeri è spiegato nella guida sui [macro alimentari](/blog/macro-cosa-sono-come-leggerli).",
+          "Un esempio: un piatto che dichiara 150 kcal per 100 grammi, con una porzione pesata di 500 grammi, porta 750 kcal. Nel [menu FUEL LAB](/menu) le stime disponibili riguardano la ricetta per una porzione, con le ipotesi di calcolo indicate. Per le ricette incomplete il totale resta da confermare. Come leggere questi numeri è spiegato nella guida sui [macro alimentari](/blog/macro-cosa-sono-come-leggerli).",
         ],
       },
       {
@@ -1400,7 +1403,7 @@ export const ARTICOLI: Articolo[] = [
       {
         titolo: "L’asporto di FUEL LAB a Pescara",
         paragrafi: [
-          "FUEL LAB non è un locale con il bancone: è una cucina che prepara piatti freschi ogni giorno, da ritirare in Via del Santuario 214 o da ricevere con la [consegna a Pescara e dintorni](/consegna-pasti-pescara). Ogni scheda del [menu](/menu) riporta ingredienti con i grammi, allergeni, peso della porzione e macro: le [uova alla purgatorio con sugo di peperoni](/menu/uova-purgatorio-peperoni), per esempio, dichiarano uova e latte, il [riso con pollo teriyaki](/menu/riso-julien-pollo-teriyaki) sesamo e soia.",
+          "FUEL LAB non è un locale con il bancone: è una cucina che prepara piatti freschi ogni giorno, da ritirare in Via del Santuario 214 o da ricevere con la [consegna a Pescara e dintorni](/consegna-pasti-pescara). Ogni scheda del [menu](/menu) riporta ingredienti e allergeni, con stime nutrizionali solo dove il calcolo è disponibile: le [uova alla purgatorio con sugo di peperoni](/menu/uova-purgatorio-peperoni), per esempio, dichiarano uova e latte, il [riso con pollo teriyaki](/menu/riso-julien-pollo-teriyaki) sesamo e soia.",
           "Puoi scegliere i piatti nel [compositore](/settimana) e scrivere a Matteo dalla pagina [Scrivi a Matteo](/richiesta) per disponibilità, zona e domande sugli ingredienti. Se hai allergie, dillo nella richiesta: la conferma su contaminazioni e sostituzioni arriva da lui, non dalla scheda.",
         ],
       },
@@ -1771,7 +1774,7 @@ export const ARTICOLI: Articolo[] = [
       {
         titolo: "I piatti FUEL LAB, dal ritiro al frigorifero",
         paragrafi: [
-          "I piatti di FUEL LAB sono freschi, mai surgelati, e sono piatti da frigorifero: Matteo li cucina ogni giorno e, che tu li ritiri in Via del Santuario 214 o li riceva con la [consegna in zona](/consegna-pasti-pescara), vanno messi in frigo appena arrivano. Per ogni piatto, come le [pallotte cacio e ova fit](/menu/pallotte-cacio-ovo) nel loro sugo o il [maiale alla senape con spinaci e patate](/menu/maiale-senape-spinaci), valgono le indicazioni di conservazione e riscaldamento che ricevi con il piatto.",
+          "I piatti di FUEL LAB sono freschi, mai surgelati, e sono piatti da frigorifero: Matteo li cucina ogni giorno e, che tu li ritiri in Via del Santuario 214 o li riceva con la [consegna in zona](/consegna-pasti-pescara), vanno messi in frigo appena arrivano. Per ogni piatto, come le [pallotte cacio e ova](/menu/pallotte-cacio-ovo) nel loro sugo o il [maiale alla senape con spinaci e patate](/menu/maiale-senape-spinaci), valgono le indicazioni di conservazione e riscaldamento che ricevi con il piatto.",
           "Se qualcosa non è chiaro, chiedi prima dell’ordine, e organizza il ritiro in modo da andare subito a casa o in ufficio. Il [compositore](/settimana) ti aiuta a distribuire i piatti nei giorni giusti, così nessuno resta in frigorifero più del necessario.",
         ],
       },
@@ -1854,7 +1857,7 @@ export const ARTICOLI: Articolo[] = [
         titolo: "Un pranzo pronto dopo la palestra, a Pescara",
         paragrafi: [
           "Se ti alleni al mattino e lavori a Pescara o nei comuni vicini, puoi avere il pranzo già pronto in frigorifero. FUEL LAB cucina ogni giorno e consegna ogni giorno: scegli i piatti nel [compositore](/settimana), segnando i giorni di allenamento come cardio o pesi, e ricevili a casa o in ufficio con la [consegna in zona](/consegna-pasti-pescara), oppure ritirali in Via del Santuario 214.",
-          "Nel [menu](/menu) ogni piatto ha ingredienti, allergeni e macro della porzione: gli [gnocchetti al sugo con ricotta fresca](/menu/gnocchetti-sugo-ricotta), per esempio, sono tra i piatti indicati per i giorni di cardio. Chi cerca piatti con le proteine in primo piano trova una selezione nella pagina sui [pasti proteici a Pescara](/pasti-proteici-pescara).",
+          "Nel [menu](/menu) ogni piatto riporta ingredienti, allergeni ed eventuali stime: gli [gnocchetti al sugo con ricotta fresca](/menu/gnocchetti-sugo-ricotta), per esempio, sono tra i piatti indicati per i giorni di cardio. Chi cerca piatti con le proteine in primo piano trova una selezione nella pagina sui [pasti proteici a Pescara](/pasti-proteici-pescara).",
         ],
       },
     ],
@@ -2055,7 +2058,7 @@ export const ARTICOLI: Articolo[] = [
         titolo: "E i piatti senza etichetta?",
         paragrafi: [
           "I piatti preparati e venduti direttamente seguono regole diverse: per gli alimenti non preimballati, o preimballati per la vendita diretta, il regolamento rende obbligatoria l’informazione sugli allergeni, mentre la dichiarazione nutrizionale non è obbligatoria, salvo disposizioni nazionali.",
-          "Per questo, quando un servizio pubblica i valori, conviene capire come sono calcolati. Nel [menu FUEL LAB](/menu) ogni scheda riporta ingredienti con i grammi, allergeni e macro della porzione intera, con le calorie calcolate dagli stessi coefficienti del regolamento: per esempio il [maiale alla senape con spinaci e patate](/menu/maiale-senape-spinaci) o le [uova alla purgatorio](/menu/uova-purgatorio-peperoni). Per confrontarli con un’etichetta, dividi per il peso della porzione e moltiplica per 100; il resto è nella guida sui [macro alimentari](/blog/macro-cosa-sono-come-leggerli).",
+          "Quando un servizio pubblica i valori, conviene capire come sono calcolati. Nel [menu FUEL LAB](/menu) trovi ingredienti e allergeni; nelle ricette calcolabili, come il [riso con pollo](/menu/riso-julien-pollo-teriyaki), sono riportate stime e ipotesi. Per le [uova alla purgatorio](/menu/uova-purgatorio-peperoni) manca ancora la quantità di quark: un totale sarebbe prematuro. Non usare la somma degli ingredienti come peso cotto per ricavare valori per 100 grammi. Il resto è nella guida sui [macro alimentari](/blog/macro-cosa-sono-come-leggerli).",
         ],
       },
     ],
@@ -2120,8 +2123,8 @@ export const ARTICOLI: Articolo[] = [
       {
         titolo: "Le proteine nei piatti del menu",
         paragrafi: [
-          "Nel [menu FUEL LAB](/menu) le fonti proteiche principali sono la carne di maiale e di pollo, le uova e i latticini: il [maiale alla senape con spinaci e patate](/menu/maiale-senape-spinaci), il [riso con pollo teriyaki](/menu/riso-julien-pollo-teriyaki), le [uova alla purgatorio](/menu/uova-purgatorio-peperoni) con formaggio tipo quark, le [pallotte cacio e ova fit](/menu/pallotte-cacio-ovo) con uova e ricotta, gli [gnocchetti al sugo con ricotta fresca](/menu/gnocchetti-sugo-ricotta). Tra le aggiunte della box ci sono anche salmone, merluzzo, gamberi e manzo.",
-          "Pesce e legumi, quindi, trovano posto soprattutto nei pasti di casa: è una buona divisione dei compiti. I valori aggiornati dei piatti sono qui sotto.",
+          "Nel [menu FUEL LAB](/menu) le fonti proteiche principali sono la carne di maiale e di pollo, le uova e i latticini: il [maiale alla senape con spinaci e patate](/menu/maiale-senape-spinaci), il [riso con pollo teriyaki](/menu/riso-julien-pollo-teriyaki), le [uova alla purgatorio](/menu/uova-purgatorio-peperoni) con formaggio tipo quark, le [pallotte cacio e ova](/menu/pallotte-cacio-ovo) con uova e ricotta, gli [gnocchetti al sugo con ricotta fresca](/menu/gnocchetti-sugo-ricotta). Tra le aggiunte della box ci sono anche salmone, merluzzo, gamberi e manzo.",
+          "Pesce e legumi, quindi, trovano posto soprattutto nei pasti di casa: è una buona divisione dei compiti. Le ricette sono raccolte qui sotto; apri la scheda per ingredienti ed eventuali stime.",
         ],
         piatti: ["maiale-senape-spinaci", "riso-julien-pollo-teriyaki", "noodles-sesamo-maiale", "pallotte-cacio-ovo", "gnocchetti-sugo-ricotta", "uova-purgatorio-peperoni"],
       },
@@ -2224,13 +2227,13 @@ export const ARTICOLI: Articolo[] = [
         titolo: "La tradizione abruzzese in chiave quotidiana",
         paragrafi: [
           "La cucina abruzzese è da sempre legata alle stagioni e ai legumi: lenticchie, ceci, fagioli e cicerchie nelle zuppe, le verdure dell’orto nei sughi, il pesce dell’Adriatico sulla costa. Molti piatti della tradizione nascono per usare bene quello che c’era, ed è lo stesso spirito del meal prep.",
-          "Qualche esempio di come rileggerli: le zuppe di legumi e cereali si preparano in anticipo e spesso sono più buone il giorno dopo; le verdure ripassate in padella con aglio e olio diventano contorni da porzionare; le [pallotte cacio e ova](/blog/pallotte-cacio-e-ova-versione-fit), polpette di uova, formaggio e pane cotte nel sugo, diventano un piatto unico da portare al lavoro, nella versione più leggera del menu FUEL LAB.",
+          "Qualche esempio di come rileggerli: le zuppe di legumi e cereali si preparano in anticipo e spesso sono più buone il giorno dopo; le verdure ripassate in padella con aglio e olio diventano contorni da porzionare; le [pallotte cacio e ova](/blog/pallotte-cacio-e-ova-versione-fit), polpette di uova, formaggio e pane cotte nel sugo, diventano un piatto unico da portare al lavoro, nella ricetta con ricotta del menu FUEL LAB.",
         ],
       },
       {
         titolo: "I sapori locali nel menu FUEL LAB",
         paragrafi: [
-          "Nel [menu](/menu) la tradizione abruzzese c’è in modo esplicito con le [pallotte cacio e ovo fit proteiche](/menu/pallotte-cacio-ovo), con ricotta e sugo di pomodorini; altri piatti usano ingredienti che seguono bene le stagioni, come i peperoni delle [uova alla purgatorio](/menu/uova-purgatorio-peperoni) o i pomodorini degli [gnocchetti al sugo con ricotta fresca](/menu/gnocchetti-sugo-ricotta). Tra le aggiunte della box ci sono anche le verdure di stagione.",
+          "Nel [menu](/menu) la tradizione abruzzese c’è in modo esplicito con le [pallotte cacio e ovo](/menu/pallotte-cacio-ovo), con ricotta e sugo di pomodorini; altri piatti usano ingredienti che seguono bene le stagioni, come i peperoni delle [uova alla purgatorio](/menu/uova-purgatorio-peperoni) o i pomodorini degli [gnocchetti al sugo con ricotta fresca](/menu/gnocchetti-sugo-ricotta). Tra le aggiunte della box ci sono anche le verdure di stagione.",
           "Il menu ruota su pochi piatti e può cambiare nel tempo: prima di pianificare, controlla la selezione aggiornata e chiedi a Matteo quali piatti sono disponibili nei giorni che ti servono. Poi scegli tra ritiro in Via del Santuario 214 e [consegna a Pescara e dintorni](/consegna-pasti-pescara), da confermare per il tuo indirizzo.",
         ],
       },
@@ -2290,7 +2293,7 @@ export const ARTICOLI: Articolo[] = [
         titolo: "Valori nutrizionali e porzioni",
         paragrafi: [
           "Se il servizio pubblica i macro, chiedi a che cosa si riferiscono, alla porzione intera o a 100 grammi, e come sono calcolati. Un valore per 100 grammi senza il peso della porzione non dice quanto mangerai.",
-          "Nel [menu FUEL LAB](/menu) i valori sono riferiti alla porzione indicata in scheda, con il suo peso, e le calorie sono sempre la somma di proteine e carboidrati per 4 e dei grassi per 9. Le porzioni sono pensate come pasto unico, per esempio il [maiale alla senape con spinaci e patate](/menu/maiale-senape-spinaci). Per leggere i numeri c’è la guida sui [macro alimentari](/blog/macro-cosa-sono-come-leggerli).",
+          "Nel [menu FUEL LAB](/menu) le stime disponibili si riferiscono a una porzione della ricetta e spiegano quali quantità sono state usate. Alcune preparazioni, come il [maiale alla senape con spinaci e patate](/menu/maiale-senape-spinaci), richiedono ancora dettagli sui condimenti prima di pubblicare un totale. Per leggere i numeri c’è la guida sui [macro alimentari](/blog/macro-cosa-sono-come-leggerli).",
         ],
       },
       {
@@ -2368,21 +2371,21 @@ export const ARTICOLI: Articolo[] = [
           nota: "Coefficienti dell’allegato XIV del Regolamento UE 1169/2011.",
         },
         dopo: [
-          "Nel [menu FUEL LAB](/menu) la regola vale sempre: le calorie di ogni piatto sono proteine per 4, più carboidrati per 4, più grassi per 9. Così i quattro numeri della scheda tornano fra loro, e puoi rifare il conto da solo.",
+          "Nel [menu FUEL LAB](/menu) le stime disponibili usano proteine e carboidrati per 4, più grassi per 9, dopo l’arrotondamento dei macro. È un’approssimazione: fibre, altri componenti e metodi di calcolo delle tabelle possono produrre differenze. La coerenza aritmetica da sola non dimostra che siano corrette le quantità degli ingredienti.",
         ],
       },
       {
         titolo: "Per 100 grammi o per porzione",
         paragrafi: [
           "È la domanda da fare prima di ogni confronto. Le etichette dei prodotti confezionati riportano i valori per 100 grammi o 100 millilitri e, se vogliono, anche per porzione; molti menu e app usano invece la porzione. Confrontare un dato per 100 grammi con uno per porzione porta a conclusioni sbagliate.",
-          "I valori del menu FUEL LAB sono riferiti alla porzione intera indicata in scheda. Un piatto può avere più proteine di un altro semplicemente perché è più grande: per confrontare la densità di due piatti, dividi i valori per il peso della porzione e moltiplica per 100. Le regole complete sono nella guida su [come leggere l’etichetta nutrizionale](/blog/leggere-etichetta-nutrizionale-piatti-pronti).",
+          "Le stime del menu FUEL LAB descrivono una porzione della ricetta, quando le quantità permettono il calcolo. Riso e pasta sono pesati cotti. Il peso degli ingredienti non equivale al peso della preparazione finita: la cottura aggiunge o fa perdere acqua. Senza una pesata finale non ricavare valori per 100 grammi. Le regole complete sono nella guida su [come leggere l’etichetta nutrizionale](/blog/leggere-etichetta-nutrizionale-piatti-pronti).",
         ],
       },
       {
         titolo: "Leggere un piatto: la quota di energia",
         paragrafi: [
           "Oltre ai grammi, è utile guardare quanta parte dell’energia del piatto arriva da ciascun macro: grammi per coefficiente, diviso le calorie totali. Un esempio con numeri tondi: un piatto con 40 grammi di proteine, 100 di carboidrati e 20 di grassi ha 740 kcal; le proteine ne forniscono 160, circa il 22%, i carboidrati 400, circa il 54%, i grassi 180, circa il 24%.",
-          "È lo stesso ragionamento del [compositore della settimana](/settimana): nei giorni di cardio mette in cima i piatti in cui i carboidrati pesano di più sull’energia totale, nei giorni di pesi quelli con il rapporto più alto tra proteine e carboidrati. Nelle schede la barra dei macro mostra proprio questa ripartizione. I valori aggiornati dei piatti:",
+          "Il [compositore della settimana](/settimana) serve a organizzare i pasti che vuoi ricevere. Le eventuali stime nelle schede aiutano a capire la ricetta; non sostituiscono le quantità stabilite dal tuo professionista. Non confrontare come equivalenti una ricetta completa e una a cui mancano ancora condimenti o grammature. Qui trovi i piatti da consultare:",
         ],
         piatti: ["riso-julien-pollo-teriyaki", "noodles-sesamo-maiale", "gnocchetti-sugo-ricotta", "maiale-senape-spinaci", "pallotte-cacio-ovo", "uova-purgatorio-peperoni"],
       },

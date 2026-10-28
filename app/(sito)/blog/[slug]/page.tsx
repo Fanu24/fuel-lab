@@ -198,6 +198,7 @@ export default async function ArticoloPage({ params }: Props) {
           <figure className="smusso relative aspect-[16/10] overflow-hidden bg-paper-2 md:aspect-[21/9]">
             <Image
               src={foto.src}
+              style={{ objectPosition: foto.fuoco }}
               alt={foto.alt}
               fill
               sizes="(min-width: 1320px) 1240px, 100vw"
@@ -205,7 +206,7 @@ export default async function ArticoloPage({ params }: Props) {
               fetchPriority="high"
               className="object-cover"
             />
-            <figcaption className="absolute right-3 bottom-3 bg-paper px-3 py-1 text-xs text-ink">Foto illustrativa</figcaption>
+            <figcaption className="absolute right-3 bottom-3 bg-paper px-3 py-1 text-xs text-ink">{foto.didascalia ?? "Foto illustrativa"}</figcaption>
           </figure>
         </div>
 

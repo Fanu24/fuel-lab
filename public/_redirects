@@ -12,3 +12,8 @@
 /contatto/ /richiesta 301
 /abbonamenti /abbonamento 301
 /abbonamenti/ /abbonamento 301
+
+# Il pannello operativo semplificato di Matteo.
+/dashboard /admin 302
+/dashboard/ /admin 302
+/dashboard/* /admin 302
