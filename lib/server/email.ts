@@ -7,7 +7,7 @@
  * nell'HTML, e da unaRiga prima di finire in un oggetto.
  */
 
-import { CONSEGNA_OGNI_GIORNI, etichettaFormula, formulaDi, getFormula, NOMI_NUCLEO, periodoAbbonamento } from "../abbonamento";
+import { etichettaFormula, formulaDi, getFormula, NOMI_NUCLEO, periodoAbbonamento } from "../abbonamento";
 import {
   ETICHETTE_ARGOMENTO,
   ETICHETTE_SERVIZIO,
@@ -451,11 +451,11 @@ export function emailAggiornamentoCliente(o: AggiornamentoPerEmail, statoCambiat
   if (abbonamento) righe.push(["Servizio", ETICHETTE_SERVIZIO.abbonamento], ["Formula", nomeAbbonamento(o)]);
   if (o.status !== "cancelled") {
     if (o.fulfillment_date && abbonamento) {
-      // Il periodo e' un mese dall'inizio; la prima consegna (o ritiro) e' il primo giorno, poi una ogni 3 giorni.
+      // Il periodo e' un mese dall'inizio; la prima consegna (o ritiro) e' il primo giorno, poi giorno e orario si concordano con Matteo.
       const { dal, al } = periodoAbbonamento(o.fulfillment_date);
       righe.push(
         ["Periodo", `dal ${dataEstesa(dal)} al ${dataEstesa(al)}`],
-        [o.fulfillment === "delivery" ? "Consegna" : "Ritiro", `ogni ${CONSEGNA_OGNI_GIORNI} giorni, a partire da ${dataEstesa(dal)}`],
+        [o.fulfillment === "delivery" ? "Consegna" : "Ritiro", `con giorno e orario concordati, a partire da ${dataEstesa(dal)}`],
       );
     } else if (o.fulfillment_date) {
       righe.push([o.fulfillment === "delivery" ? "Consegna" : "Ritiro", dataEstesa(o.fulfillment_date)]);

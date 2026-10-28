@@ -1,4 +1,4 @@
-import { CONSEGNA_OGNI_GIORNI, FORMULE, PREZZO_DA } from "./abbonamento";
+import { FORMULE, PREZZO_DA } from "./abbonamento";
 
 /* =========================================================================
    I quattro servizi di FUEL LAB (spec sezione 12, piu' gli abbonamenti decisi
@@ -69,7 +69,7 @@ export const SERVIZI: Servizio[] = [
     id: "abbonamento",
     numero: "02",
     nome: "Gli abbonamenti",
-    descrizione: `Cinque abbonamenti mensili (${FORMULE.map((f) => f.nome).join(", ")}), in fascia Standard o Plus: Matteo cucina il piano del tuo nutrizionista e te lo porta ogni ${CONSEGNA_OGNI_GIORNI} giorni, a casa o al ritiro.`,
+    descrizione: `Cinque abbonamenti mensili (${FORMULE.map((f) => f.nome).join(", ")}), in fascia Standard o Plus: Matteo cucina il piano del tuo nutrizionista e te lo porta con giorno e orario concordati, a casa o al ritiro.`,
     prezzo: { tipo: "mese-da", valore: PREZZO_DA },
     img: "/foto/photo-1498837167922-ddd27525d352.webp",
     href: "/abbonamento",
@@ -89,7 +89,7 @@ export const SERVIZI: Servizio[] = [
     numero: "04",
     nome: "Home cooking",
     descrizione:
-      "Matteo fa la spesa e cucina a casa tua, poi prepara le porzioni per i giorni successivi. Il servizio si concorda su preventivo.",
+      "Matteo fa la spesa e cucina a casa tua, poi prepara le porzioni per la settimana. Il servizio si concorda su preventivo.",
     prezzo: { tipo: "preventivo" },
     img: "/foto/photo-1556910103-1c02745aae4d.webp",
     // Il bottone porta a "Chi siamo": e' un posizionamento deliberato, "conosci Matteo prima

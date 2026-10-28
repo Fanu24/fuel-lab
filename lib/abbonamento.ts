@@ -13,7 +13,7 @@ import { periodo } from "./impostazioni";
      Full 7    21 pasti/sett.   tre pasti al giorno, tutti i giorni
 
    Il cliente porta il piano scritto dal suo nutrizionista e Matteo lo cucina
-   ai grammi; consegna (o ritiro) ogni 3 giorni. Gli sconti automatici sono
+   ai grammi; consegna (o ritiro) con giorno e orario concordati. Gli sconti automatici sono
    rimossi: valgono solo i codici creati da Matteo. Pagine (/abbonamento e le
    cinque schede), home, servizi, dati strutturati, richiesta dall'area cliente,
    server e pannello di Matteo
@@ -160,8 +160,11 @@ export function formulaDi(o: { subscription?: { plan: FormulaId } | null } | nul
 /** Le diete che Matteo cucina: dal volantino, "qualunque sia il piano, lo cuciniamo noi". */
 export const DIETE = ["mediterranea", "iperproteica", "chetogenica", "low-carb", "vegana"] as const;
 
-/** Ogni quanti giorni si consegna (o si ritira): i pasti dei tre giorni successivi. */
+/** Ogni quanti giorni si consegna (o si ritira): usato solo dal calendario di cucina e dal vecchio pannello, mai nei testi per i clienti. */
 export const CONSEGNA_OGNI_GIORNI = 3;
+
+/** Come si dice ai clienti la consegna: il giorno e l'orario li concorda Matteo, nessuna cadenza fissa. */
+export const CONSEGNA_CONCORDATA = "Ritiro o consegna, con giorno e orario concordati.";
 
 /** Il raggio della consegna, dal volantino: "Pescara e dintorni, fino a 20 km". */
 export const RAGGIO_CONSEGNA_KM = 20;
@@ -275,7 +278,7 @@ export const euroInteri = (euro: number) => `${euro} €`;
    Quando il mese dopo non ha quel giorno (31 gennaio) si prende l'ultimo del
    mese (28 o 29 febbraio), come fanno i calendari.
 
-   Ogni 3 giorni dall'inizio c'e' una consegna (o un ritiro) che porta i pasti
+   Ogni CONSEGNA_OGNI_GIORNI giorni dall'inizio c'e' una consegna (o un ritiro) che porta i pasti
    dei tre giorni che partono da quello: oggi, domani e dopodomani, nei soli
    giorni e pasti della formula e senza uscire dal periodo. Quel giorno Matteo
    cucina quei pasti.
@@ -351,7 +354,7 @@ export function pastiDelBlocco(formula: FormulaId, inizio: string, consegna: str
 }
 
 /**
- * I giorni di consegna (o ritiro) del periodo: l'inizio e poi ogni 3 giorni.
+ * I giorni di consegna (o ritiro) del periodo: l'inizio e poi ogni CONSEGNA_OGNI_GIORNI giorni.
  * Una consegna che non porterebbe nessun pasto (l'ultima, se cade su un giorno
  * non coperto) non si fa.
  */

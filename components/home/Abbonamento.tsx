@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Reveal from "@/components/Reveal";
-import { CONSEGNA_OGNI_GIORNI, PREZZO_DA_TESTO } from "@/lib/abbonamento";
+import { CONSEGNA_CONCORDATA, PREZZO_DA_TESTO } from "@/lib/abbonamento";
 
 export default function Abbonamento() {
   return (
@@ -10,7 +10,7 @@ export default function Abbonamento() {
           <p className="occhiello">Abbonamenti</p>
           <h2 id="abbonamento-home-titolo" className="titolo mt-5 max-w-[15ch]">La settimana è servita.</h2>
           <p className="lead mt-5 max-w-[40ch]">Matteo cucina il piano del tuo nutrizionista. Scegli quanti pasti ricevere.</p>
-          <p className="mt-3 text-muted">Ritiro o consegna ogni {CONSEGNA_OGNI_GIORNI} giorni.</p>
+          <p className="mt-3 text-muted">{CONSEGNA_CONCORDATA}</p>
         </Reveal>
         <Reveal delay={80} className="notte smusso p-6 md:p-9">
           <p className="text-sm text-steel">Abbonamenti da</p>

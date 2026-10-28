@@ -125,7 +125,7 @@ describe("email", () => {
     expect(vecchio.text).not.toContain("Chi si abbona");
   });
 
-  it("al cliente dell'abbonamento nomina la formula, scrive il periodo e la consegna ogni 3 giorni, e chiama proposta il prezzo non ancora confermato", () => {
+  it("al cliente dell'abbonamento nomina la formula, scrive il periodo e che giorno e orario si concordano, e chiama proposta il prezzo non ancora confermato", () => {
     const sub = { plan: "completo", tier: "plus", household: "singolo" } as const;
     const base = { service: "abbonamento" as const, subscription: sub, customer_name: "Giulia", fulfillment: "pickup" as const, fulfillment_date: null,
       address: "", comune: "", customer_message: "", price_cents: null, paid: 0 as const };
@@ -136,14 +136,14 @@ describe("email", () => {
     expect(confermato.text).toContain("Matteo ha confermato il tuo abbonamento Completo · Plus.");
     expect(confermato.text).toContain("Formula: Completo · Plus");
     expect(confermato.text).toContain("Periodo: dal lunedì 5 ottobre 2026 al mercoledì 4 novembre 2026");
-    expect(confermato.text).toContain("Ritiro: ogni 3 giorni, a partire da lunedì 5 ottobre 2026");
+    expect(confermato.text).toContain("Ritiro: con giorno e orario concordati, a partire da lunedì 5 ottobre 2026");
     expect(confermato.text).toContain("Totale concordato: € 608,00");
     expect(confermato.text).not.toContain("al mese");
     expect(confermato.text).not.toMatch(/lunedì al venerdì/);
     const consegna = emailAggiornamentoCliente({
       ...base, status: "confirmed", fulfillment: "delivery", fulfillment_date: "2026-10-05", address: "Via Roma 1", comune: "Pescara",
     }, true);
-    expect(consegna.text).toContain("Consegna: ogni 3 giorni, a partire da lunedì 5 ottobre 2026");
+    expect(consegna.text).toContain("Consegna: con giorno e orario concordati, a partire da lunedì 5 ottobre 2026");
     expect(consegna.text).toContain("Dove: Via Roma 1, Pescara");
     const concluso = emailAggiornamentoCliente({ ...base, status: "completed", fulfillment_date: "2026-10-05", price_cents: 60800, paid: 1 }, true);
     expect(concluso.subject).toBe("Abbonamento concluso · FUEL LAB");

@@ -16,7 +16,6 @@ import { ETICHETTE_SERVIZIO } from "./api";
 import { SERVIZI } from "./servizi";
 import {
   BOX_DEL_GIORNO_TESTO,
-  CONSEGNA_OGNI_GIORNI,
   DIETE,
   FASCE,
   FORMULE,
@@ -151,7 +150,7 @@ describe("metadata delle pagine", () => {
     const { titolo, descrizione } = PAGINE.abbonamento;
     expect(titolo).toContain(`da ${PREZZO_DA_TESTO} al mese`);
     expect(descrizione).toContain(`${PREZZO_DA_TESTO} al mese`);
-    expect(descrizione).toContain(`ogni ${CONSEGNA_OGNI_GIORNI} giorni`);
+    expect(descrizione).toContain("concorda giorno e orario");
     expect(PAGINE.servizi.descrizione).toContain(`${PREZZO_DA_TESTO} al mese`);
   });
 
@@ -439,8 +438,23 @@ describe("pagine locali e contatti", () => {
   it("la consegna dice il raggio e le consegne in abbonamento, come il volantino", () => {
     const src = sorgente(PAGINE.consegna);
     expect(src).toContain("RAGGIO_CONSEGNA_KM");
-    expect(src).toContain("CONSEGNA_OGNI_GIORNI");
+    expect(src).toContain("con giorno e orario concordati");
+    expect(src).not.toContain("CONSEGNA_OGNI_GIORNI");
     expect(RAGGIO_CONSEGNA_KM).toBe(20);
+  });
+
+  it("nessun testo per i clienti usa la cadenza fissa: CONSEGNA_OGNI_GIORNI resta solo nel vecchio pannello e nei calcoli di cucina", () => {
+    const cartelle = ["app/(sito)", "components", "lib"].map((c) => path.join(RADICE, c));
+    const scritti: string[] = [];
+    for (const cartella of cartelle) {
+      for (const f of readdirSync(cartella, { recursive: true }) as string[]) {
+        if (!/\.(ts|tsx)$/.test(f) || /\.test\.ts$/.test(f) || /(^|[\\/])dashboard[\\/]/.test(f)) continue;
+        const contenuto = readFileSync(path.join(cartella, f), "utf8");
+        if (contenuto.includes("CONSEGNA_OGNI_GIORNI")) scritti.push(path.relative(RADICE, path.join(cartella, f)).replaceAll("\\", "/"));
+      }
+    }
+    // Il calcolo delle consegne (lib/abbonamento.ts) e il vecchio pannello (produzione, operazioni) lo usano ancora.
+    expect(scritti.filter((f) => !/^lib\/(abbonamento|produzione|operazioni)\.ts$/.test(f))).toEqual([]);
   });
 
   it("/richiesta e' una pagina della mappa, con titolo e descrizione nei limiti, e dice chi siamo e dove senza una seconda copia dei dati", () => {
@@ -513,9 +527,10 @@ describe("public/llms.txt", () => {
     }
   });
 
-  it("dice degli abbonamenti quello che ha detto il committente: piano del nutrizionista, ogni 3 giorni, sconti, diete, box", () => {
+  it("dice degli abbonamenti quello che ha detto il committente: piano del nutrizionista, giorno e orario concordati, sconti, diete, box", () => {
     expect(testo).toContain("piano scritto dal suo nutrizionista");
-    expect(testo).toContain(`ogni ${CONSEGNA_OGNI_GIORNI} giorni`);
+    expect(testo).toContain("con giorno e orario concordati");
+    expect(testo).not.toMatch(/ogni 3 giorni/);
     expect(testo).toContain(`fino a ${RAGGIO_CONSEGNA_KM} km`);
     expect(testo).not.toMatch(/prova/i);
     expect(testo).toContain("Sconti solo con i codici creati da Matteo");
@@ -574,9 +589,9 @@ describe("decisioni del committente", () => {
     expect(SERVIZI[1].prezzo).toEqual({ tipo: "mese-da", valore: PREZZO_DA });
     expect(SERVIZI[1].href).toBe(PAGINE.abbonamento.percorso);
     expect(ETICHETTE_SERVIZIO.abbonamento).toBe("Abbonamento mensile");
-    // La descrizione cita le cinque formule per nome e la consegna ogni 3 giorni.
+    // La descrizione cita le cinque formule per nome e la consegna con giorno e orario concordati.
     for (const f of FORMULE) expect(SERVIZI[1].descrizione).toContain(f.nome);
-    expect(SERVIZI[1].descrizione).toContain(`ogni ${CONSEGNA_OGNI_GIORNI} giorni`);
+    expect(SERVIZI[1].descrizione).toContain("con giorno e orario concordati");
   });
 
   it("la vecchia pagina su Matteo non c'e' piu' e reindirizza in modo permanente a /chi-siamo", () => {

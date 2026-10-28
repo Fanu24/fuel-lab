@@ -1,7 +1,6 @@
 import Link from "next/link";
 import Reveal from "@/components/Reveal";
 import {
-  CONSEGNA_OGNI_GIORNI,
   FORMULE,
   NOMI_FASCIA,
   NOTE_FASCIA,
@@ -84,7 +83,7 @@ export function RiquadroDa({ delay = 0 }: { delay?: number }) {
       <ul className="mt-8 grid gap-3 border-t pt-6" style={RIGA}>
         {[
           `Cinque formule, da ${PASTI_SETTIMANA_MIN} a ${PASTI_SETTIMANA_MAX} pasti a settimana, in Standard o Plus`,
-          `Consegna o ritiro ogni ${CONSEGNA_OGNI_GIORNI} giorni. ${ZONA_A_PAROLE}`,
+          `Consegna o ritiro, con giorno e orario concordati. ${ZONA_A_PAROLE}`,
         ].map((voce) => (
           <li key={voce} className="flex gap-3">
             <span aria-hidden="true" className="mt-2.5 h-2 w-2 shrink-0 bg-lime" />

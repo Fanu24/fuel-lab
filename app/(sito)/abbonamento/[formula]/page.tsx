@@ -5,7 +5,7 @@ import Briciole from "@/components/seo/Briciole";
 import JsonLd from "@/components/seo/JsonLd";
 import { AGGIORNAMENTO, PAGINE, metadatiPagina, paginaFormula } from "@/components/seo/pagine";
 import { nodiPagina, nodoFormula } from "@/components/seo/schema";
-import { CONSEGNA_OGNI_GIORNI, FORMULE_ID, NOMI_FASCIA, FASCE, eFormulaId, getFormula, linkRichiediAbbonamento, linkScriviAbbonamento, percorsoFormula } from "@/lib/abbonamento";
+import { FORMULE_ID, NOMI_FASCIA, FASCE, eFormulaId, getFormula, linkRichiediAbbonamento, linkScriviAbbonamento, percorsoFormula } from "@/lib/abbonamento";
 
 type Props = { params: Promise<{ formula: string }> };
 export const dynamicParams = false;
@@ -49,7 +49,7 @@ export default async function SchedaFormulaPage({ params }: Props) {
     <section className="carta-2 py-10">
       <div className="wrap grid gap-6 md:grid-cols-3">
         <div><h2 className="font-semibold">Piatti su misura</h2><p className="mt-2 text-sm text-muted">Porta il piano del nutrizionista, oppure concorda piatti e porzioni con Matteo. Segnala sempre allergie e intolleranze.</p></div>
-        <div><h2 className="font-semibold">Ritiro o consegna</h2><p className="mt-2 text-sm text-muted">I pasti arrivano ogni {CONSEGNA_OGNI_GIORNI} giorni. Puoi ritirarli in laboratorio o riceverli a casa. Hai un codice? Applicalo nella scelta dell’abbonamento.</p></div>
+        <div><h2 className="font-semibold">Ritiro o consegna</h2><p className="mt-2 text-sm text-muted">Giorno e orario si concordano con Matteo. Puoi ritirarli in laboratorio o riceverli a casa. Hai un codice? Applicalo nella scelta dell’abbonamento.</p></div>
         <div><h2 className="font-semibold">Prezzo e inizio</h2><p className="mt-2 text-sm text-muted">Matteo conferma prezzo, inizio, consegna e pagamento prima di partire.</p></div>
       </div>
     </section>

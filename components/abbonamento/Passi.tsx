@@ -1,5 +1,4 @@
 import Reveal from "@/components/Reveal";
-import { CONSEGNA_OGNI_GIORNI } from "@/lib/abbonamento";
 
 /* I tre passi del volantino: "Porti il piano. Cuciniamo noi. Ricevi gia'
    pronto." Gli stessi sulla pagina dell'abbonamento e su ogni scheda. Solo la
@@ -8,7 +7,7 @@ import { CONSEGNA_OGNI_GIORNI } from "@/lib/abbonamento";
 const PASSI = [
   { n: "01", titolo: "Porti il piano", testo: "Ci lasci la dieta scritta dal tuo nutrizionista." },
   { n: "02", titolo: "Cuciniamo noi", testo: "Prepariamo ogni pasto ai grammi, nel nostro laboratorio a Pescara." },
-  { n: "03", titolo: "Ricevi già pronto", testo: `A casa o al ritiro, ogni ${CONSEGNA_OGNI_GIORNI} giorni. Scaldi e mangi.` },
+  { n: "03", titolo: "Ricevi già pronto", testo: "A casa o al ritiro, con giorno e orario concordati. Scaldi e mangi." },
 ];
 
 export default function Passi() {

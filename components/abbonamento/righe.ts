@@ -1,5 +1,5 @@
 import {
-  CONSEGNA_OGNI_GIORNI,
+  CONSEGNA_CONCORDATA,
   FORMULE,
   NOMI_PASTO_ABB,
   PASTO_STANDARD_CIRCA,
@@ -7,7 +7,6 @@ import {
   SCONTI,
   type Formula,
   type Nucleo,
-  type PastoAbb,
 } from "@/lib/abbonamento";
 
 /* Le frasi che le pagine dell'abbonamento ricavano dai dati di
@@ -25,10 +24,8 @@ export const CIRCA_A_PASTO = `circa ${PASTO_STANDARD_CIRCA}\u00a0€ a pasto`;
 export const CIRCA_A_PASTO_FRASE = `Circa ${PASTO_STANDARD_CIRCA}\u00a0€ a pasto.`;
 
 const IN_LETTERE: Record<number, string> = { 2: "due", 3: "tre", 4: "quattro", 5: "cinque", 6: "sei", 7: "sette", 20: "venti" };
-/** Un numero in lettere, per i testi discorsivi ("ogni tre giorni"); fuori elenco resta la cifra. */
+/** Un numero in lettere, per i testi discorsivi ("tre giorni"); fuori elenco resta la cifra. */
 export const inLettere = (n: number) => IN_LETTERE[n] ?? String(n);
-
-const PLURALE_PASTO: Record<PastoAbb, string> = { colazione: "colazioni", pranzo: "pranzi", cena: "cene" };
 
 const maiuscola = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
 
@@ -62,19 +59,13 @@ export function coperturaAParole(f: Formula): string {
   return `${pastiAParole(f)} · ${giorniAParole(f)}`;
 }
 
-/** "tre pranzi e tre cene": i pasti che porta una consegna in un blocco di giorni pieno. */
-export function pastiPerConsegna(f: Formula): string {
-  return elenco(f.pasti.map((p) => `${inLettere(CONSEGNA_OGNI_GIORNI)} ${PLURALE_PASTO[p]}`));
-}
-
-/** Cosa arriva a ogni consegna, in due frasi: i pasti dei tre giorni successivi, nei soli giorni coperti. */
+/** Cosa dice la scheda della consegna: giorno e orario si concordano; nei giorni che la formula non copre non c'e' niente da portare. */
 export function esempioConsegna(f: Formula): string {
-  const base = `Ogni ${inLettere(CONSEGNA_OGNI_GIORNI)} giorni ricevi (o ritiri) i pasti dei ${inLettere(CONSEGNA_OGNI_GIORNI)} giorni successivi: ${pastiPerConsegna(f)}, già pronti.`;
-  return f.giorni.length < 7 ? `${base} Nei giorni che la formula non copre non c'è nessun pasto da portare.` : base;
+  return f.giorni.length < 7 ? `${CONSEGNA_CONCORDATA} Nei giorni che la formula non copre non c'è nessun pasto da portare.` : CONSEGNA_CONCORDATA;
 }
 
-/** La consegna, come sul volantino: "Ogni 3 giorni, a casa o al ritiro". */
-export const CONSEGNA_A_PAROLE = `Ogni ${CONSEGNA_OGNI_GIORNI} giorni, a casa o al ritiro`;
+/** La consegna in breve, come sul volantino: "Con giorno e orario concordati, a casa o al ritiro". */
+export const CONSEGNA_A_PAROLE = "Con giorno e orario concordati, a casa o al ritiro";
 
 /** "Pescara e dintorni, fino a 20 km". */
 export const ZONA_A_PAROLE = `Pescara e dintorni, fino a ${RAGGIO_CONSEGNA_KM} km`;

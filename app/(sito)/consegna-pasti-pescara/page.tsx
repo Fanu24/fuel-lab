@@ -11,7 +11,7 @@ import LinkBlog from "@/components/seo/LinkBlog";
 import { AGGIORNAMENTO, PAGINE, metadatiPagina } from "@/components/seo/pagine";
 import { idServizio, nodiPagina, nodoServizio, type DomandaTesto } from "@/components/seo/schema";
 import { ZONA_A_PAROLE } from "@/components/abbonamento/righe";
-import { CONSEGNA_OGNI_GIORNI, PREZZO_DA_TESTO, RAGGIO_CONSEGNA_KM } from "@/lib/abbonamento";
+import { PREZZO_DA_TESTO, RAGGIO_CONSEGNA_KM } from "@/lib/abbonamento";
 import { EMAIL, INDIRIZZO_RIGA, LINK_MAPPA, ZONE_SERVITE, elencoZone, type Zona } from "@/lib/sito";
 
 /* Ritiro e consegna: dove arrivano i piatti, come si ritirano, cosa sapere e
@@ -90,7 +90,7 @@ const DOMANDE: DomandaTesto[] = [
   },
   {
     q: "E se mi abbono, come arrivano i pasti?",
-    a: `Con un abbonamento mensile (da ${PREZZO_DA_TESTO} al mese) Matteo consegna a casa, o prepara per il ritiro in laboratorio, ogni ${CONSEGNA_OGNI_GIORNI} giorni: i pasti dei tre giorni successivi, a Pescara e dintorni, fino a ${RAGGIO_CONSEGNA_KM} km. Formule e prezzi sono nella pagina Abbonamenti.`,
+    a: `Con un abbonamento mensile (da ${PREZZO_DA_TESTO} al mese) Matteo consegna i pasti a casa, o li prepara per il ritiro in laboratorio, con giorno e orario concordati. La consegna è a Pescara e dintorni, fino a ${RAGGIO_CONSEGNA_KM} km. Formule e prezzi sono nella pagina Abbonamenti.`,
   },
   {
     q: "I piatti arrivano caldi?",
@@ -173,7 +173,7 @@ export default function ConsegnaPastiPescara() {
                 .
               </p>
               <p className="mt-4 max-w-[46ch] text-lg text-muted">
-                Con un abbonamento mensile la consegna (o il ritiro) è ogni {CONSEGNA_OGNI_GIORNI} giorni, sempre entro{" "}
+                Con un abbonamento mensile la consegna (o il ritiro) ha giorno e orario concordati, sempre entro{" "}
                 {RAGGIO_CONSEGNA_KM} km da Pescara:{" "}
                 <Link href={PAGINE.abbonamento.percorso} className="link">
                   guarda gli abbonamenti

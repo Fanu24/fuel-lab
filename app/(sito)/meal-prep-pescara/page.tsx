@@ -12,7 +12,7 @@ import LinkBlog from "@/components/seo/LinkBlog";
 import { AGGIORNAMENTO, PAGINE, metadatiPagina } from "@/components/seo/pagine";
 import { idServizio, nodiPagina, nodoServizio, prezzoIt, type DomandaTesto } from "@/components/seo/schema";
 import { PIATTI, type Allenamento } from "@/lib/catalogo";
-import { CONSEGNA_OGNI_GIORNI, PREZZO_DA_TESTO, RAGGIO_CONSEGNA_KM } from "@/lib/abbonamento";
+import { PREZZO_DA_TESTO, RAGGIO_CONSEGNA_KM } from "@/lib/abbonamento";
 import { CONSIGLI } from "@/lib/consigli";
 import { SOGLIA_PREZZO } from "@/lib/servizi";
 import { INDIRIZZO_RIGA, LINK_MAPPA } from "@/lib/sito";
@@ -96,7 +96,7 @@ const DOMANDE: DomandaTesto[] = [
   },
   {
     q: "Quanto costa il meal prep a Pescara con FUEL LAB?",
-    a: `Da ${PREZZO} € a pasto. Il prezzo finale dipende dalla richiesta e te lo conferma Matteo: sul sito non c'è pagamento online. Se vuoi i pasti di tutta la settimana senza ordinare ogni volta, ci sono cinque abbonamenti mensili da ${PREZZO_DA_TESTO} al mese: Matteo cucina il piano del tuo nutrizionista e lo porta ogni ${CONSEGNA_OGNI_GIORNI} giorni.`,
+    a: `Da ${PREZZO} € a pasto. Il prezzo finale dipende dalla richiesta e te lo conferma Matteo: sul sito non c'è pagamento online. Se vuoi i pasti di tutta la settimana senza ordinare ogni volta, ci sono cinque abbonamenti mensili da ${PREZZO_DA_TESTO} al mese: Matteo cucina il piano del tuo nutrizionista e lo porta con giorno e orario concordati.`,
   },
   {
     q: "Va bene anche se non mi alleno?",
@@ -329,7 +329,7 @@ export default function MealPrepPescara() {
                 Da <span className="evidenzia font-semibold text-ink">{PREZZO} € a pasto</span>. Il prezzo finale te lo
                 conferma Matteo con la richiesta: sul sito non si paga niente. Se vuoi i pasti di tutta la
                 settimana senza ordinare ogni volta, ci sono cinque abbonamenti mensili da {PREZZO_DA_TESTO} al mese:
-                Matteo cucina il piano del tuo nutrizionista e lo porta ogni {CONSEGNA_OGNI_GIORNI} giorni.
+                Matteo cucina il piano del tuo nutrizionista e lo porta con giorno e orario concordati.
               </p>
               <div className="mt-5 flex flex-wrap gap-x-8 gap-y-4">
                 <Link href="/servizi" className="link">

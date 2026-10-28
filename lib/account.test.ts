@@ -312,37 +312,26 @@ describe("stato degli ordini", () => {
     expect(passiOrdine("cancelled", "pickup", "abbonamento")).toBeNull();
   });
 
-  it("per l'abbonamento la prossima consegna e' una ogni 3 giorni dall'inizio, e il periodo si legge", () => {
+  it("per un abbonamento la prossima uscita è solo l'inizio, se non è passato", () => {
+    const abb = { service: "abbonamento" as const, fulfillment_date: "2026-11-02", subscription: { plan: "completo" as const, tier: "standard" as const, household: "singolo" as const } };
+    expect(prossimaUscitaDi(abb, "2026-10-28")).toBe("2026-11-02");
+    expect(prossimaUscitaDi(abb, "2026-11-05")).toBeNull();
+  });
+
+  it("per l'abbonamento la prossima uscita e' l'inizio, se non e' passato: il resto si concorda con Matteo", () => {
     const abb = ordine({
       id: "abb", service: "abbonamento", status: "confirmed", fulfillment_date: "2026-09-14",
       subscription: { plan: "completo", tier: "plus", household: "singolo" },
     });
-    // dal 14 settembre al 13 ottobre, consegne il 14, 17, 20, 23, 26, 29 settembre, 2, 5, 8, 11 ottobre.
     expect(prossimaUscitaDi(abb, "2026-09-14")).toBe("2026-09-14");
-    expect(prossimaUscitaDi(abb, "2026-09-27")).toBe("2026-09-29");
-    expect(prossimaUscitaDi(abb, "2026-10-12")).toBeNull();
+    expect(prossimaUscitaDi(abb, "2026-09-27")).toBeNull();
     expect(prossimaUscitaDi(abb, "2026-10-14")).toBeNull();
     const lontana = ordine({ id: "lontana", status: "confirmed", fulfillment_date: "2026-10-10" });
-    expect(prossimaConsegna([lontana, abb], "2026-09-27")?.id).toBe("abb");
+    expect(prossimaConsegna([lontana, abb], "2026-09-10")?.id).toBe("abb");
     expect(periodoRichiesta(abb, "2026-09-27")).toBe("dal 14 settembre al 13 ottobre");
     expect(periodoRichiesta({ ...abb, service: "menu-settimana" }, "2026-09-27")).toBeNull();
     expect(periodoRichiesta({ ...abb, fulfillment_date: null }, "2026-09-27")).toBeNull();
     expect(prossimaUscitaDi({ ...abb, fulfillment_date: null }, "2026-09-27")).toBeNull();
-  });
-
-  it("la formula decide quali consegne portano davvero dei pasti", () => {
-    // Dal 1 al 31 ottobre: l'ultima consegna cade sabato 31. Pranzo non copre il sabato e non la fa,
-    // Completo (tutti i giorni) si'.
-    const con = (plan: "pranzo" | "completo") => ordine({
-      service: "abbonamento", status: "confirmed", fulfillment_date: "2026-10-01",
-      subscription: { plan, tier: "standard", household: "singolo" },
-    });
-    expect(prossimaUscitaDi(con("pranzo"), "2026-10-29")).toBeNull();
-    expect(prossimaUscitaDi(con("completo"), "2026-10-29")).toBe("2026-10-31");
-    // Un abbonamento senza scelta salvata (nato prima delle formule) e' un Pranzo.
-    const vecchio = ordine({ service: "abbonamento", status: "confirmed", fulfillment_date: "2026-10-01" });
-    expect(prossimaUscitaDi(vecchio, "2026-10-29")).toBeNull();
-    expect(prossimaUscitaDi(vecchio, "2026-10-28")).toBe("2026-10-28");
   });
 
   it("legge un abbonamento a parole: formula e fascia, chi si abbona, cosa ricevi", () => {
@@ -366,9 +355,12 @@ describe("stato degli ordini", () => {
     expect(nomeServizioRichiesta(ordine({ service: "menu-settimana" }))).toBe("Menu della settimana");
   });
 
-  it("dice ogni quanto si consegna o si ritira, e cosa scrive il promemoria del calendario", () => {
-    expect(frequenzaConsegne("pickup")).toBe("Ritiro in laboratorio ogni 3 giorni");
-    expect(frequenzaConsegne("delivery")).toBe("Consegna a casa ogni 3 giorni");
+  it("la consegna dell'abbonamento si concorda: nessuna cadenza fissa", () => {
+    expect(frequenzaConsegne("pickup")).toBe("Ritiro in laboratorio, con giorno e orario concordati");
+    expect(frequenzaConsegne("delivery")).toBe("Consegna a casa, con giorno e orario concordati");
+  });
+
+  it("il promemoria del calendario dice il periodo e che giorno e orario si concordano", () => {
     const abb = ordine({
       service: "abbonamento", status: "confirmed", fulfillment_date: "2026-10-05",
       subscription: { plan: "completo", tier: "plus", household: "singolo" },
@@ -376,7 +368,7 @@ describe("stato degli ordini", () => {
     const righe = descrizioneInizioAbbonamento(abb, "2026-09-30");
     expect(righe).toEqual([
       "Abbonamento Completo · Plus, dal 5 ottobre al 4 novembre.",
-      "Consegna o ritiro ogni 3 giorni.",
+      "Ritiro o consegna, con giorno e orario concordati.",
     ]);
     // Le formule non sono piu' "pranzi dal lunedi' al venerdi'".
     expect(righe.join(" ")).not.toMatch(/lunedì al venerdì/);

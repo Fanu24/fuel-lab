@@ -16,7 +16,6 @@ import {
   spostaGiorni,
   traduciErroreAuth,
 } from "@/lib/account";
-import { CONSEGNA_OGNI_GIORNI } from "@/lib/abbonamento";
 import { euro, type Ordine } from "@/lib/api";
 import { authClient } from "@/lib/auth-client";
 import { CASELLE_TOTALI, usePiano } from "@/lib/piano";
@@ -206,10 +205,10 @@ function ProssimaConsegna({ ordini, oggi }: Pick<PropsArea, "ordini" | "oggi">) 
 
   const ritiro = prossima.fulfillment === "pickup";
   const scheda = schedaAbbonamento(prossima);
-  // Per un abbonamento in corso conta la prossima consegna del periodo (una ogni 3 giorni), non il giorno d'inizio.
+  // Per un abbonamento conta l'inizio, se non e' passato: le consegne dopo si concordano con Matteo.
   const uscita = prossimaUscitaDi(prossima, oggi);
   const data = uscita ?? (scheda ? null : prossima.fulfillment_date);
-  const quando = !data ? (scheda && prossima.fulfillment_date ? "Consegne concluse" : "Giorno da definire")
+  const quando = !data ? (scheda && prossima.fulfillment_date ? "Giorno e orario da concordare con Matteo." : "Giorno da definire")
     : data === oggi ? `Oggi, ${formattaGiorno(data, oggi)}`
     : data === spostaGiorni(oggi, 1) ? `Domani, ${formattaGiorno(data, oggi)}`
     : formattaGiorno(data, oggi);
@@ -227,7 +226,7 @@ function ProssimaConsegna({ ordini, oggi }: Pick<PropsArea, "ordini" | "oggi">) 
       {scheda ? (
         <dl className="acc-fatti mt-6">
           <div><dt>Cosa ricevi</dt><dd>{scheda.cosaRicevi}</dd></div>
-          <div><dt>{ritiro ? "Ritiro" : "Consegna"}</dt><dd>Ogni {CONSEGNA_OGNI_GIORNI} giorni</dd></div>
+          <div><dt>{ritiro ? "Ritiro" : "Consegna"}</dt><dd>Con giorno e orario concordati</dd></div>
           {periodo ? <div><dt>Periodo</dt><dd>{periodo}</dd></div> : null}
           <div><dt>Chi si abbona</dt><dd>{scheda.nucleo}</dd></div>
           {prossima.price_cents !== null && prossima.price_cents !== undefined ? (

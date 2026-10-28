@@ -475,7 +475,7 @@ export const ARTICOLI_LOCALI = [
       {
         "titolo": "Pasto del giorno e abbonamento: chiarire il calendario",
         "paragrafi": [
-          "La cucina prepara fresco, ma produzione e consegna non sono la stessa cosa. Per gli abbonamenti FUEL LAB il sito indica consegna o ritiro ogni tre giorni. Prima di attivare una formula chiedi quali pasti copre, come sono distribuiti e quali istruzioni accompagnano ogni preparazione. Non dedurre una consegna quotidiana dal fatto che la cucina lavori ogni giorno.",
+          "La cucina prepara fresco, ma produzione e consegna non sono la stessa cosa. Per gli abbonamenti giorno e orario di ritiro o consegna si concordano con Matteo. Prima di attivare una formula chiedi quali pasti copre, come sono distribuiti e quali istruzioni accompagnano ogni preparazione. Non dedurre una consegna quotidiana dal fatto che la cucina lavori ogni giorno.",
           "Controlla poi lo spazio disponibile nel frigorifero e il numero di persone coinvolte. Se gli orari cambiano spesso, descrivilo nella richiesta iniziale. Un piano utile è quello che riesci a seguire senza continui spostamenti e senza acquistare pasti per occasioni già occupate. Per gli ingredienti dei singoli piatti consulta il [menu](/menu), mentre per il calendario concorda i dettagli direttamente con Matteo."
         ]
       },
@@ -497,8 +497,8 @@ export const ARTICOLI_LOCALI = [
         "risposta": "Puoi valutare il ritiro presso la sede in Via del Santuario 214, concordando disponibilità e orario con Matteo. Organizza anche il percorso successivo e segui le istruzioni ricevute per trasporto e conservazione."
       },
       {
-        "domanda": "L’abbonamento prevede una consegna ogni giorno?",
-        "risposta": "Il sito indica consegna o ritiro ogni tre giorni per gli abbonamenti. Il calendario effettivo e la distribuzione dei pasti vanno confermati con Matteo; cucina fresca quotidiana non significa consegna quotidiana."
+        "domanda": "L’abbonamento prevede consegne tutti i giorni?",
+        "risposta": "Per gli abbonamenti giorno e orario di ritiro o consegna si concordano con Matteo. La distribuzione dei pasti va confermata con lui; cucina fresca quotidiana non significa consegna quotidiana."
       },
       {
         "domanda": "Quali informazioni servono per chiedere una proposta?",
@@ -533,7 +533,7 @@ export const ARTICOLI_LOCALI = [
       "meal-prep-montesilvano-spoltore",
       "pasta-abruzzese-chitarra-mugnaia-sagne"
     ],
-    "introduzione": "Avere un cuoco nella propria cucina può servire a organizzare i pasti dei giorni successivi, a seguire preferenze precise o a portare un’ispirazione abruzzese nella tavola di casa. Per capire se è la soluzione giusta, però, bisogna partire dal lavoro da fare: quante persone mangeranno, quali preparazioni servono e come funziona la cucina disponibile. Questa guida spiega come formulare una richiesta concreta a Matteo a Pescara, distinguendo la preparazione domestica dei pasti dalla consegna di piatti già pronti e dai servizi per eventi.",
+    "introduzione": "Avere un cuoco nella propria cucina può servire a organizzare i pasti della settimana, a seguire preferenze precise o a portare un’ispirazione abruzzese nella tavola di casa. Per capire se è la soluzione giusta, però, bisogna partire dal lavoro da fare: quante persone mangeranno, quali preparazioni servono e come funziona la cucina disponibile. Questa guida spiega come formulare una richiesta concreta a Matteo a Pescara, distinguendo la preparazione domestica dei pasti dalla consegna di piatti già pronti e dai servizi per eventi.",
     "sezioni": [
       {
         "titolo": "Che cosa significa cucinare direttamente a casa tua",

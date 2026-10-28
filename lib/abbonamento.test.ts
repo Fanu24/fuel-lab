@@ -31,7 +31,7 @@ import {
   scontoApplicato,
   stessoGiornoMeseDopo,
 } from "./abbonamento";
-import { esempioConsegna, giorniAParole, giorniCopertiAParole, pastiAParole } from "../components/abbonamento/righe";
+import { CONSEGNA_A_PAROLE, esempioConsegna, giorniAParole, giorniCopertiAParole, pastiAParole } from "../components/abbonamento/righe";
 
 /* Ottobre 2026: giovedi' 1, venerdi' 2, sabato 3, domenica 4, lunedi' 5. */
 
@@ -306,13 +306,11 @@ describe("le frasi sulle formule", () => {
     expect(pastiAParole(getFormula("full6"))).toBe("Colazione, pranzo e cena");
   });
 
-  it("dicono cosa porta una consegna, e che nei giorni non coperti non c'è niente da portare", () => {
-    // in prosa il numero e' in lettere, da capo a fondo della frase ("ogni tre giorni ... dei tre giorni successivi")
-    expect(esempioConsegna(getFormula("completo"))).toMatch(/^Ogni tre giorni ricevi \(o ritiri\) i pasti dei tre giorni successivi/);
-    expect(esempioConsegna(getFormula("completo"))).toContain("tre pranzi e tre cene");
+  it("la scheda della consegna non fissa nessuna cadenza: giorno e orario si concordano con Matteo", () => {
+    expect(esempioConsegna(getFormula("completo"))).toMatch(/^Ritiro o consegna, con giorno e orario concordati\./);
     expect(esempioConsegna(getFormula("completo"))).not.toContain("non copre");
-    expect(esempioConsegna(getFormula("full7"))).toContain("tre colazioni, tre pranzi e tre cene");
-    expect(esempioConsegna(getFormula("pranzo"))).toContain("tre pranzi");
+    expect(esempioConsegna(getFormula("pranzo"))).toMatch(/^Ritiro o consegna, con giorno e orario concordati\./);
     expect(esempioConsegna(getFormula("pranzo"))).toContain("non copre");
+    expect(CONSEGNA_A_PAROLE).toBe("Con giorno e orario concordati, a casa o al ritiro");
   });
 });

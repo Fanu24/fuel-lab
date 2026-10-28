@@ -20,7 +20,6 @@ import {
   schedaAbbonamento,
   STATI_IN_CORSO,
 } from "@/lib/account";
-import { CONSEGNA_OGNI_GIORNI } from "@/lib/abbonamento";
 import {
   api,
   etichettaStato,
@@ -367,7 +366,7 @@ function SchedaRichiesta({
 
   // Il giorno confermato da Matteo si puo' mettere nel calendario del telefono (per l'abbonamento, l'inizio).
   const inCalendario = !!o.fulfillment_date && ["confirmed", "preparing", "ready"].includes(o.status);
-  // Per un abbonamento in corso, la prossima consegna o ritiro (una ogni 3 giorni dall'inizio).
+  // Per un abbonamento, l'inizio se non e' ancora passato (le consegne dopo si concordano con Matteo).
   const prossima = abbonamento && inCalendario ? prossimaUscitaDi(o, oggi) : null;
   function scaricaCalendario() {
     if (!o.fulfillment_date) return;
@@ -427,7 +426,7 @@ function SchedaRichiesta({
           <dt>Modalità</dt>
           <dd>
             {ritiro ? "Ritiro a Pescara" : `Consegna${o.comune ? ` a ${o.comune}` : ""}`}
-            {abbonamento ? `, ogni ${CONSEGNA_OGNI_GIORNI} giorni` : ""}
+            {abbonamento ? ", con giorno e orario concordati" : ""}
           </dd>
         </div>
         {scheda ? (

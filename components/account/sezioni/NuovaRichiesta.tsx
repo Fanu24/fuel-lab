@@ -23,7 +23,6 @@ import {
   type DatiRichiesta,
 } from "@/lib/account";
 import {
-  CONSEGNA_OGNI_GIORNI,
   etichettaFormula,
   FASCE,
   FORMULE,
@@ -147,13 +146,13 @@ const MODALITA: { id: Modalita; titolo: string; nota: string }[] = [
   { id: "delivery", titolo: "Consegna", nota: "A domicilio, da confermare con Matteo" },
 ];
 
-/* Per l'abbonamento le stesse due strade, con cio' che cambia: lo sconto del ritiro e la cadenza di ogni 3 giorni. */
+/* Per l'abbonamento le stesse due strade, con cio' che cambia: lo sconto del ritiro e il giorno e l'orario da concordare con Matteo. */
 const MODALITA_ABBONAMENTO: { id: Modalita; titolo: string; nota: string }[] = [
-  { id: "pickup", titolo: "Ritiro", nota: `In Via del Santuario 214, Pescara, ogni ${CONSEGNA_OGNI_GIORNI} giorni` },
+  { id: "pickup", titolo: "Ritiro", nota: "In Via del Santuario 214, Pescara, con giorno e orario concordati" },
   {
     id: "delivery",
     titolo: "Consegna",
-    nota: `A domicilio ogni ${CONSEGNA_OGNI_GIORNI} giorni, Pescara e dintorni fino a ${RAGGIO_CONSEGNA_KM} km: da confermare con Matteo`,
+    nota: `A domicilio, Pescara e dintorni fino a ${RAGGIO_CONSEGNA_KM} km: giorno e orario da confermare con Matteo`,
   },
 ];
 

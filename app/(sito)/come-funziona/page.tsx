@@ -3,7 +3,7 @@ import Faq from "@/components/come-funziona/Faq";
 import JsonLd from "@/components/seo/JsonLd";
 import { AGGIORNAMENTO, PAGINE, metadatiPagina } from "@/components/seo/pagine";
 import { nodiPagina, type DomandaTesto } from "@/components/seo/schema";
-import { CONSEGNA_OGNI_GIORNI, PREZZO_DA_TESTO } from "@/lib/abbonamento";
+import { PREZZO_DA_TESTO } from "@/lib/abbonamento";
 import { EMAIL, INDIRIZZO_RIGA, elencoZone } from "@/lib/sito";
 
 const PAGINA = PAGINE.comeFunziona;
@@ -27,7 +27,7 @@ const DOMANDE: DomandaTesto[] = [
   },
   {
     q: "Devo ordinare ogni settimana?",
-    a: `Il compositore è una bozza gratuita e non invia ordini automatici: per ordinare, chiedi disponibilità e condizioni a Matteo. Se non vuoi pensarci ogni settimana, ci sono gli abbonamenti: cinque formule da ${PREZZO_DA_TESTO} al mese, con il piano del tuo nutrizionista cucinato da Matteo e portato ogni ${CONSEGNA_OGNI_GIORNI} giorni.`,
+    a: `Il compositore è una bozza gratuita e non invia ordini automatici: per ordinare, chiedi disponibilità e condizioni a Matteo. Se non vuoi pensarci ogni settimana, ci sono gli abbonamenti: cinque formule da ${PREZZO_DA_TESTO} al mese, con il piano del tuo nutrizionista cucinato da Matteo e portato con giorno e orario concordati.`,
   },
   {
     q: "Ho un'allergia o un'intolleranza.",
@@ -77,7 +77,7 @@ export default function ComeFunziona() {
           {[
             ["1. Scegli", "Seleziona l’abbonamento o componi i pasti che vuoi."],
             ["2. Conferma con Matteo", "Concordate disponibilità, prezzo e giorno. Nessun pagamento online."],
-            ["3. Ritira o ricevi a casa", "I tuoi pasti arrivano pronti. Con l’abbonamento, ogni 3 giorni."],
+            ["3. Ritira o ricevi a casa", "I tuoi pasti arrivano pronti. Ritiro o consegna, con giorno e orario concordati."],
           ].map(([titolo, testo]) => <li key={titolo} className="border-t-2 border-ink pt-5"><h2 className="titolo-s">{titolo}</h2><p className="mt-3 text-muted">{testo}</p></li>)}
         </ol>
       </section>

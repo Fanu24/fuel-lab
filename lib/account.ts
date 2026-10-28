@@ -22,7 +22,7 @@ import {
   type StatoOrdine,
 } from "./api";
 import {
-  CONSEGNA_OGNI_GIORNI,
+  CONSEGNA_CONCORDATA,
   calcolaPrezzo,
   eFascia,
   eFormulaId,
@@ -36,7 +36,6 @@ import {
   getFormula,
   NOMI_NUCLEO,
   periodoAbbonamento,
-  prossimaConsegna as prossimaConsegnaAbbonamento,
   type Fascia,
   type FormulaId,
   type Nucleo,
@@ -546,14 +545,13 @@ export function passiOrdine(stato: StatoOrdine, modalita: Modalita = "delivery",
 
 /**
  * Il giorno in cui il cliente riceve (o ritira) qualcosa da un ordine: la data
- * di uscita; per un abbonamento in corso, la prossima consegna o ritiro (una
- * ogni 3 giorni dall'inizio, dentro il periodo di un mese), null a consegne
- * finite.
+ * di uscita. Per un abbonamento e' l'inizio, se non e' ancora passato: il giorno
+ * e l'orario delle consegne successive si concordano con Matteo, quindi null.
  */
 export function prossimaUscitaDi(o: Pick<Ordine, "service" | "fulfillment_date" | "subscription">, oggi: string): string | null {
   if (!o.fulfillment_date) return null;
   if (o.service === "abbonamento") {
-    return dataValida(o.fulfillment_date) ? prossimaConsegnaAbbonamento(formulaDi(o), o.fulfillment_date, oggi) : null;
+    return dataValida(o.fulfillment_date) && o.fulfillment_date >= oggi ? o.fulfillment_date : null;
   }
   return o.fulfillment_date;
 }
@@ -639,9 +637,9 @@ export function nomeServizioRichiesta(o: Pick<Ordine, "service" | "subscription"
   return scheda ? `Abbonamento ${scheda.etichetta}` : ETICHETTE_SERVIZIO[o.service];
 }
 
-/** "Consegna o ritiro ogni 3 giorni", detto per la modalita' scelta. */
+/** "Consegna a casa, con giorno e orario concordati", detto per la modalita' scelta. */
 export function frequenzaConsegne(modalita: Modalita): string {
-  return `${modalita === "pickup" ? "Ritiro in laboratorio" : "Consegna a casa"} ogni ${CONSEGNA_OGNI_GIORNI} giorni`;
+  return `${modalita === "pickup" ? "Ritiro in laboratorio" : "Consegna a casa"}, con giorno e orario concordati`;
 }
 
 /**
@@ -658,7 +656,7 @@ export function descrizioneInizioAbbonamento(
   const periodo = periodoRichiesta(o, riferimento);
   return [
     `Abbonamento ${scheda.etichetta}${periodo ? `, ${periodo}` : ""}.`,
-    `Consegna o ritiro ogni ${CONSEGNA_OGNI_GIORNI} giorni.`,
+    CONSEGNA_CONCORDATA,
   ];
 }
 

@@ -6,7 +6,7 @@ import Briciole from "@/components/seo/Briciole";
 import JsonLd from "@/components/seo/JsonLd";
 import { AGGIORNAMENTO, PAGINE, metadatiPagina } from "@/components/seo/pagine";
 import { nodiPagina, nodoAbbonamenti, type DomandaTesto } from "@/components/seo/schema";
-import { CONSEGNA_OGNI_GIORNI, PREZZO_DA_TESTO, RAGGIO_CONSEGNA_KM } from "@/lib/abbonamento";
+import { PREZZO_DA_TESTO, RAGGIO_CONSEGNA_KM } from "@/lib/abbonamento";
 import { INDIRIZZO_RIGA } from "@/lib/sito";
 
 const PAGINA = PAGINE.abbonamento;
@@ -23,7 +23,7 @@ const DOMANDE: DomandaTesto[] = [
   },
   {
     q: "Ritiro o consegna?",
-    a: `Ricevi i pasti ogni ${CONSEGNA_OGNI_GIORNI} giorni. Puoi ritirarli in ${INDIRIZZO_RIGA}, oppure richiedere la consegna a Pescara e dintorni, fino a ${RAGGIO_CONSEGNA_KM} km. Indirizzo, giorno e orario vengono confermati da Matteo.`,
+    a: `Ricevi i pasti con giorno e orario concordati. Puoi ritirarli in ${INDIRIZZO_RIGA}, oppure richiedere la consegna a Pescara e dintorni, fino a ${RAGGIO_CONSEGNA_KM} km. Indirizzo, giorno e orario vengono confermati da Matteo.`,
   },
   {
     q: "Come funzionano gli sconti?",
@@ -66,7 +66,7 @@ export default function AbbonamentoPage() {
             {[
               ["1. Scegli", "Trova la formula e invia la richiesta."],
               ["2. Concorda", "Matteo ti conferma piatti, prezzo e inizio."],
-              ["3. Ricevi", `Ritiri o ricevi i pasti ogni ${CONSEGNA_OGNI_GIORNI} giorni.`],
+              ["3. Ricevi", "Ritiri o ricevi i pasti con giorno e orario concordati."],
             ].map(([titolo, testo]) => <li key={titolo} className="border-t border-ink/20 pt-4"><h3 className="font-semibold">{titolo}</h3><p className="mt-2 text-muted">{testo}</p></li>)}
           </ol>
         </div>

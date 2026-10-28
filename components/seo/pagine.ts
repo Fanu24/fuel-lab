@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { NOME_ATTIVITA } from "@/lib/sito";
 import type { Piatto } from "@/lib/catalogo";
-import { CONSEGNA_OGNI_GIORNI, FORMULE, PREZZO_DA_TESTO, getFormula, percorsoFormula, type FormulaId } from "@/lib/abbonamento";
+import { FORMULE, PREZZO_DA_TESTO, getFormula, percorsoFormula, type FormulaId } from "@/lib/abbonamento";
 
 /* =========================================================================
    Titoli, descrizioni e canonical delle pagine pubbliche, in un posto solo.
@@ -118,7 +118,7 @@ export const PAGINE = {
   abbonamento: {
     percorso: "/abbonamento",
     titolo: `Abbonamenti meal prep a Pescara da ${PREZZO_DA_TESTO} al mese`,
-    descrizione: `Cinque abbonamenti meal prep a Pescara da ${PREZZO_DA_TESTO} al mese: Matteo cucina il piano del tuo nutrizionista e lo porta ogni ${CONSEGNA_OGNI_GIORNI} giorni, in Standard o Plus.`,
+    descrizione: `Cinque abbonamenti meal prep a Pescara da ${PREZZO_DA_TESTO} al mese: Matteo cucina il piano del tuo nutrizionista e concorda giorno e orario, in Standard o Plus.`,
     breve: "Abbonamenti",
     priorita: 0.9,
     frequenza: "monthly",
@@ -271,7 +271,7 @@ function descrizioneFormula(id: FormulaId): string {
   const f = getFormula(id);
   const testa = `Abbonamento ${f.nome} a Pescara: ${f.pastiSettimana} pasti a settimana, ${f.prezzo.standard} € al mese (Plus ${f.prezzo.plus} €).`;
   const candidate = [
-    `${testa} Matteo cucina il piano del tuo nutrizionista e lo porta ogni ${CONSEGNA_OGNI_GIORNI} giorni.`,
+    `${testa} Matteo cucina il piano del tuo nutrizionista e concorda giorno e orario.`,
     `${testa} Matteo cucina il piano del tuo nutrizionista.`,
   ];
   return (
