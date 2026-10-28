@@ -20,6 +20,10 @@ export interface Env {
   RESEND_API_KEY?: string;
   /** Dove arrivano gli avvisi per Matteo (nuove richieste, messaggi). Predefinito: info@fuelchef.it. */
   ADMIN_NOTIFY_EMAIL?: string;
+  /** Chiavi VAPID per le notifiche push (scripts/genera-vapid.mjs). Senza di loro le notifiche restano spente. */
+  VAPID_PUBLIC_KEY?: string;
+  VAPID_PRIVATE_KEY?: string;
+  VAPID_SUBJECT?: string;
 }
 
 export interface Context<P = Record<string, string>> {

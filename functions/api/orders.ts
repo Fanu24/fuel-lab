@@ -1,9 +1,11 @@
+import { ETICHETTE_SERVIZIO } from "../../lib/api";
 import { normalizzaCodice } from "../../lib/sconti";
 import { leggiSconto, preparaSconto } from "../../lib/server/sconti";
 import { currentUser, type Context } from "../_lib/auth";
 import { bodyJson, json, sameOrigin } from "../_lib/http";
 import { leggiImpostazioniDb } from "../_lib/impostazioni";
 import { accodaEmail, emailMatteo } from "../_lib/mail";
+import { accodaPush } from "../_lib/push";
 import { ORDER_SELECT } from "../_lib/ordini";
 import { oggiRoma } from "../../lib/server/date";
 import { emailNuovaRichiesta, emailRichiestaRicevuta } from "../../lib/server/email";
@@ -138,5 +140,10 @@ export const onRequestPost = async ({ env, request, waitUntil }: Context) => {
   await accodaEmail({ env, waitUntil }, { to: [emailMatteo(env)], replyTo: user.email, ...emailNuovaRichiesta(perEmail) });
   // La ricevuta al cliente: rispondere a quest'email scrive a Matteo, non a una casella che nessuno legge.
   await accodaEmail({ env, waitUntil }, { to: [user.email], replyTo: emailMatteo(env), ...emailRichiestaRicevuta(perEmail) });
+  await accodaPush({ env, waitUntil }, {
+    title: "Nuovo ordine dal sito",
+    body: `${o.name} · ${ETICHETTE_SERVIZIO[o.service]}${o.items.length ? ` · ${o.items.length} pasti` : ""}`,
+    url: "/admin?vista=nuovi",
+  });
   return json({ id, status: "requested" }, 201);
 };
