@@ -5,12 +5,20 @@ import type { D1Database } from "@cloudflare/workers-types";
 import type { Env } from "../../functions/_lib/auth";
 
 type Valore = string | number | null;
+type Riga = Record<string, unknown>;
+
+/** Esito di uno statement, nella stessa forma che restituisce D1 (anche dentro batch). */
+interface Esito {
+  success: true;
+  results: Riga[];
+  meta: { changes: number };
+}
 
 interface Statement {
   bind: (...values: unknown[]) => Statement;
-  first: () => Promise<Record<string, unknown> | null>;
-  run: () => Promise<{ meta: { changes: number } }>;
-  all: () => Promise<{ results: Record<string, unknown>[] }>;
+  first: () => Promise<Riga | null>;
+  run: () => Promise<Esito>;
+  all: () => Promise<Esito>;
 }
 
 /** Banco di prova D1 in memoria per i test: applica tutte le migrazioni e crea gli utenti di base. */
@@ -22,15 +30,27 @@ export function creaD1Prova(): { sqlite: DatabaseSync; env: Env; chiudi: () => v
   sqlite.exec("INSERT INTO user VALUES ('matteo','Matteo','info@fuelchef.it',1,NULL,'2026-10-01','2026-10-01'); INSERT INTO staff_roles(user_id,role) VALUES ('matteo','admin');");
   sqlite.exec("INSERT INTO user VALUES ('cliente1','Cliente Uno','cliente1@test.local',1,NULL,'2026-10-01','2026-10-01');");
 
+  const righeModificate = () => Number((sqlite.prepare("SELECT total_changes() AS n").get() as Riga).n);
+
+  /** Esegue lo statement: se restituisce colonne (SELECT, RETURNING) ne ritorna le righe; meta.changes e' il delta di total_changes. */
+  function esegui(sql: string, bindings: Valore[]): Esito {
+    const prima = righeModificate();
+    const stmt = sqlite.prepare(sql);
+    let results: Riga[] = [];
+    if (stmt.columns().length > 0) {
+      results = stmt.all(...bindings) as Riga[];
+    } else {
+      stmt.run(...bindings);
+    }
+    return { success: true, results, meta: { changes: righeModificate() - prima } };
+  }
+
   function statement(sql: string, bindings: Valore[] = []): Statement {
     return {
       bind: (...values: unknown[]) => statement(sql, values as Valore[]),
-      first: async () => (sqlite.prepare(sql).get(...bindings) as Record<string, unknown> | undefined) ?? null,
-      run: async () => {
-        const result = sqlite.prepare(sql).run(...bindings);
-        return { meta: { changes: Number(result.changes) } };
-      },
-      all: async () => ({ results: sqlite.prepare(sql).all(...bindings) as Record<string, unknown>[] }),
+      first: async () => esegui(sql, bindings).results[0] ?? null,
+      run: async () => esegui(sql, bindings),
+      all: async () => esegui(sql, bindings),
     };
   }
 
