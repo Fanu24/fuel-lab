@@ -521,6 +521,10 @@ describe("nuova richiesta", () => {
     const abb: DatiRichiesta = { ...buona, servizio: "abbonamento", formula: "full6", fascia: "plus", nucleo: "coppia" };
     const corpo = corpoRichiesta(abb, piano, { lun: "pesi" });
     expect(corpo.subscription).toEqual({ plan: "full6", tier: "plus", household: "coppia" });
+    // Niente campo della prova, ne' nella scelta ne' nella scheda che la legge.
+    expect(Object.keys(corpo.subscription!)).toEqual(["plan", "tier", "household"]);
+    expect(Object.keys(schedaAbbonamento(ordine({ service: "abbonamento", subscription: { plan: "full6", tier: "plus", household: "coppia" } }))!))
+      .toEqual(["etichetta", "cosaRicevi", "nucleo"]);
     // Il compositore non sceglie i pasti dell'abbonamento: il server scarterebbe i piatti, e non li mandiamo.
     expect(corpo.plan).toEqual({});
     expect(corpo.training).toEqual({ lun: "pesi" });

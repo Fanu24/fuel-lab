@@ -69,10 +69,10 @@ describe("formula e fascia dai link di contatto", () => {
 
   it("il modulo parte con la frase dell'abbonamento solo se c'e' una scelta e l'argomento e' l'abbonamento", () => {
     expect(messaggioInizialeModulo("abbonamento", { formula: "completo", fascia: "plus" })).toBe(
-      "Mi interessa l'abbonamento Completo (Plus) di FUEL LAB e vorrei prenotare la settimana di prova.",
+      "Mi interessa l'abbonamento Completo (Plus) di FUEL LAB.",
     );
     expect(messaggioInizialeModulo("abbonamento", { formula: "pranzo" })).toBe(
-      "Mi interessa l'abbonamento Pranzo di FUEL LAB e vorrei prenotare la settimana di prova.",
+      "Mi interessa l'abbonamento Pranzo di FUEL LAB.",
     );
     expect(messaggioInizialeModulo("abbonamento", { fascia: "plus" })).toContain("fascia Plus");
     expect(messaggioInizialeModulo("abbonamento", {})).toBe("");

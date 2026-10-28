@@ -15,7 +15,7 @@ export const metadata = metadatiPagina(PAGINA);
 const DOMANDE: DomandaTesto[] = [
   {
     q: "Come inizio?",
-    a: "Scegli la formula e invia la richiesta. Matteo ti contatta per confermare prezzo, data di inizio e pagamento. La prima settimana è di prova, senza impegno. Sul sito non paghi nulla.",
+    a: "Scegli la formula e invia la richiesta. Matteo ti contatta per confermare prezzo, data di inizio e pagamento. Sul sito non paghi nulla.",
   },
   {
     q: "Posso portare il piano del nutrizionista?",
@@ -49,7 +49,7 @@ export default function AbbonamentoPage() {
           <p className="occhiello mt-8">Abbonamenti pasti a Pescara</p>
           <h1 className="titolo mt-4">I tuoi pasti. Ci pensa Matteo.</h1>
           <p className="lead mt-4">Da {PREZZO_DA_TESTO} al mese. Scegli la formula, al resto pensiamo noi.</p>
-          <p className="mt-3 text-sm text-muted">Prima settimana di prova · Ritiro o consegna · Nessun pagamento online</p>
+          <p className="mt-3 text-sm text-muted">Ritiro o consegna · Nessun pagamento online</p>
         </div>
       </section>
 

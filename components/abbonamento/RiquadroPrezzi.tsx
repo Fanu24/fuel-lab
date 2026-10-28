@@ -52,7 +52,7 @@ export function RiquadroPrezzi({ formula, delay = 0 }: { formula: FormulaId; del
         href={linkRichiediAbbonamento({ formula, ritiro: false })}
         className="btn btn-lime mt-8 w-full justify-between whitespace-normal py-3 text-left"
       >
-        <span>Prenota la tua settimana di prova</span>
+        <span>Richiedi l&apos;abbonamento</span>
         <span aria-hidden="true" className="freccia">→</span>
       </Link>
       <p className="mt-5 text-sm text-steel">
@@ -85,7 +85,6 @@ export function RiquadroDa({ delay = 0 }: { delay?: number }) {
         {[
           `Cinque formule, da ${PASTI_SETTIMANA_MIN} a ${PASTI_SETTIMANA_MAX} pasti a settimana, in Standard o Plus`,
           `Consegna o ritiro ogni ${CONSEGNA_OGNI_GIORNI} giorni. ${ZONA_A_PAROLE}`,
-          "La prima settimana è di prova, senza impegno",
         ].map((voce) => (
           <li key={voce} className="flex gap-3">
             <span aria-hidden="true" className="mt-2.5 h-2 w-2 shrink-0 bg-lime" />
@@ -97,7 +96,7 @@ export function RiquadroDa({ delay = 0 }: { delay?: number }) {
         href={linkRichiediAbbonamento()}
         className="btn btn-lime mt-8 w-full justify-between whitespace-normal py-3 text-left"
       >
-        <span>Prenota la tua settimana di prova</span>
+        <span>Richiedi l&apos;abbonamento</span>
         <span aria-hidden="true" className="freccia">→</span>
       </Link>
       <p className="mt-5 text-sm text-steel">

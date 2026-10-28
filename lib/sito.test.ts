@@ -513,11 +513,11 @@ describe("public/llms.txt", () => {
     }
   });
 
-  it("dice degli abbonamenti quello che ha detto il committente: piano del nutrizionista, ogni 3 giorni, prova, sconti, diete, box", () => {
+  it("dice degli abbonamenti quello che ha detto il committente: piano del nutrizionista, ogni 3 giorni, sconti, diete, box", () => {
     expect(testo).toContain("piano scritto dal suo nutrizionista");
     expect(testo).toContain(`ogni ${CONSEGNA_OGNI_GIORNI} giorni`);
     expect(testo).toContain(`fino a ${RAGGIO_CONSEGNA_KM} km`);
-    expect(testo).toContain("prima settimana è di prova, senza impegno");
+    expect(testo).not.toMatch(/prova/i);
     expect(testo).toContain("Sconti solo con i codici creati da Matteo");
     expect(testo).toContain(BOX_DEL_GIORNO_TESTO);
     for (const d of DIETE) expect(testo).toContain(d);
@@ -554,6 +554,18 @@ describe("decisioni del committente", () => {
       // Anche nei commenti, dove i giorni si scrivono con l'apostrofo ("lunedi' e giovedi'").
       .filter((f) => /luned[iì]'? (e|o) (il )?gioved|lun · gio|due cotture/i.test(readFileSync(path.join(RADICE, f), "utf8")));
     expect(colpevoli).toEqual([]);
+  });
+
+  it("nessun testo pubblico parla piu' della settimana di prova: ne' pagine, ne' componenti, ne' llms.txt", () => {
+    // Il server rifiuta ancora trial=true di proposito (ordini.ts): quel messaggio di errore sta fuori dalla regola.
+    const PROVA = /settimana di prova|prima settimana[^.\n]*\bprova|\bla provi\b|prova, senza impegno/i;
+    const ESCLUSI = [path.join("lib", "server", "ordini.ts")];
+    const colpevoli = ["app", "components", "lib", "functions"]
+      .flatMap(sorgenti)
+      .filter((f) => !ESCLUSI.includes(f))
+      .filter((f) => PROVA.test(readFileSync(path.join(RADICE, f), "utf8")));
+    expect(colpevoli).toEqual([]);
+    expect(llms).not.toMatch(PROVA);
   });
 
   it("gli abbonamenti sono il secondo servizio, 'da' il prezzo piu' basso di lib/abbonamento.ts", () => {

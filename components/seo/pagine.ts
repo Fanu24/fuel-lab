@@ -118,7 +118,7 @@ export const PAGINE = {
   abbonamento: {
     percorso: "/abbonamento",
     titolo: `Abbonamenti meal prep a Pescara da ${PREZZO_DA_TESTO} al mese`,
-    descrizione: `Cinque abbonamenti meal prep a Pescara da ${PREZZO_DA_TESTO} al mese: Matteo cucina il piano del tuo nutrizionista e lo porta ogni ${CONSEGNA_OGNI_GIORNI} giorni. Prima settimana di prova.`,
+    descrizione: `Cinque abbonamenti meal prep a Pescara da ${PREZZO_DA_TESTO} al mese: Matteo cucina il piano del tuo nutrizionista e lo porta ogni ${CONSEGNA_OGNI_GIORNI} giorni, in Standard o Plus.`,
     breve: "Abbonamenti",
     priorita: 0.9,
     frequenza: "monthly",

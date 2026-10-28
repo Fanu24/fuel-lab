@@ -13,10 +13,10 @@ import { periodo } from "./impostazioni";
      Full 7    21 pasti/sett.   tre pasti al giorno, tutti i giorni
 
    Il cliente porta il piano scritto dal suo nutrizionista e Matteo lo cucina
-   ai grammi; consegna (o ritiro) ogni 3 giorni; la prima settimana e' di
-   prova, senza impegno. Gli sconti automatici sono rimossi: valgono solo i codici
-   creati da Matteo. Pagine (/abbonamento e le cinque schede), home, servizi,
-   dati strutturati, richiesta dall'area cliente, server e pannello di Matteo
+   ai grammi; consegna (o ritiro) ogni 3 giorni. Gli sconti automatici sono
+   rimossi: valgono solo i codici creati da Matteo. Pagine (/abbonamento e le
+   cinque schede), home, servizi, dati strutturati, richiesta dall'area cliente,
+   server e pannello di Matteo
    leggono tutti da qui: se cambia un prezzo o una regola, si cambia questo
    file e basta.
 

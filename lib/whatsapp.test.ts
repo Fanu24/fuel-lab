@@ -36,23 +36,31 @@ describe("whatsapp", () => {
     const b = messaggioServizio("home-cooking");
     expect(a).not.toBe(b);
     expect(a.length).toBeGreaterThan(20);
-    // l'abbonamento ha il suo: cinque formule, niente prezzo unico, si parte dalla settimana di prova
+    // l'abbonamento ha il suo: cinque formule, niente prezzo unico, niente prova
     const c = messaggioServizio("abbonamento");
     expect(new Set([a, b, c, messaggioServizio("sui-tuoi-macro")]).size).toBe(4);
-    expect(c).toBe("Ciao Matteo! Mi interessa un abbonamento FUEL LAB e vorrei prenotare la settimana di prova.");
+    expect(c).toBe("Ciao Matteo! Mi interessa un abbonamento FUEL LAB.");
     expect(c).not.toMatch(/239|al mese|lunedì al venerdì/);
+  });
+
+  it("il messaggio per l'abbonamento non nomina più la prova", () => {
+    for (const scelta of [{}, { formula: "completo" as const }, { fascia: "plus" as const }, { formula: "full7" as const, fascia: "standard" as const }]) {
+      expect(messaggioAbbonamento(scelta)).not.toMatch(/prova/i);
+    }
+    expect(messaggioAbbonamento({ formula: "completo", fascia: "standard" }))
+      .toBe("Ciao Matteo! Mi interessa l'abbonamento Completo (Standard) di FUEL LAB.");
   });
 
   it("l'abbonamento nomina la formula e la fascia se il visitatore le ha gia' scelte", () => {
     expect(messaggioAbbonamento({ formula: "completo", fascia: "plus" })).toBe(
-      "Ciao Matteo! Mi interessa l'abbonamento Completo (Plus) di FUEL LAB e vorrei prenotare la settimana di prova.",
+      "Ciao Matteo! Mi interessa l'abbonamento Completo (Plus) di FUEL LAB.",
     );
     expect(messaggioAbbonamento({ formula: "full6", fascia: "standard" })).toContain("l'abbonamento Full 6 (Standard)");
     expect(messaggioAbbonamento({ formula: "pranzo" })).toBe(
-      "Ciao Matteo! Mi interessa l'abbonamento Pranzo di FUEL LAB e vorrei prenotare la settimana di prova.",
+      "Ciao Matteo! Mi interessa l'abbonamento Pranzo di FUEL LAB.",
     );
     expect(messaggioAbbonamento({ fascia: "plus" })).toBe(
-      "Ciao Matteo! Mi interessa un abbonamento FUEL LAB in fascia Plus e vorrei prenotare la settimana di prova.",
+      "Ciao Matteo! Mi interessa un abbonamento FUEL LAB in fascia Plus.",
     );
     expect(messaggioAbbonamento({})).toBe(messaggioAbbonamento());
     // messaggioServizio passa la scelta solo all'abbonamento: per gli altri servizi non cambia nulla.
@@ -245,7 +253,7 @@ describe("componiMessaggio con l'abbonamento scelto sul sito", () => {
       abbonamento: { formula: "completo", fascia: "plus" },
     });
     expect(msg).toContain("l'abbonamento Completo (Plus)");
-    expect(msg).toContain("settimana di prova");
+    expect(msg).not.toMatch(/prova/i);
     expect(msg).toContain("Da lunedì 5 ottobre");
     expect(msg.startsWith("Ciao Matteo, sono Marco!")).toBe(true);
     expect(msg.split("Ciao Matteo").length - 1).toBe(1);

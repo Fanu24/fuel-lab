@@ -57,8 +57,7 @@ const DOMANDE_CONTATTI: { domanda: string; risposta: React.ReactNode }[] = [
         <Link href="/abbonamento" className="link">
           Abbonamenti
         </Link>{" "}
-        e poi scrivi qui, scegliendo “Abbonamento mensile” nel modulo, oppure chiedilo dall’account. La prima
-        settimana è di prova, senza impegno.
+        e poi scrivi qui, scegliendo “Abbonamento mensile” nel modulo, oppure chiedilo dall’account.
       </>
     ),
   },

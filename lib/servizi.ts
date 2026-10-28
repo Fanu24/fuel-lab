@@ -69,7 +69,7 @@ export const SERVIZI: Servizio[] = [
     id: "abbonamento",
     numero: "02",
     nome: "Gli abbonamenti",
-    descrizione: `Cinque abbonamenti mensili (${FORMULE.map((f) => f.nome).join(", ")}), in fascia Standard o Plus: Matteo cucina il piano del tuo nutrizionista e te lo porta ogni ${CONSEGNA_OGNI_GIORNI} giorni, a casa o al ritiro. La prima settimana è di prova, senza impegno.`,
+    descrizione: `Cinque abbonamenti mensili (${FORMULE.map((f) => f.nome).join(", ")}), in fascia Standard o Plus: Matteo cucina il piano del tuo nutrizionista e te lo porta ogni ${CONSEGNA_OGNI_GIORNI} giorni, a casa o al ritiro.`,
     prezzo: { tipo: "mese-da", valore: PREZZO_DA },
     img: "/foto/photo-1498837167922-ddd27525d352.webp",
     href: "/abbonamento",

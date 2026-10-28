@@ -140,7 +140,7 @@ export type ModificaOrdine = {
   /** Con un codice sconto, questo importo è la BASE prima dello sconto. */
   priceCents?: number | null;
   paid?: boolean;
-  /** Solo abbonamenti: cambia formula, fascia, nucleo o prova (tutti e quattro i campi). Il totale non si ricalcola da solo. */
+  /** Solo abbonamenti: cambia formula, fascia o nucleo (tutti e tre i campi). Il totale non si ricalcola da solo. */
   subscription?: SceltaAbbonamento;
   /** Se true e lo stato cambia (o cambia il messaggio), il server scrive al cliente via email. */
   notify?: boolean;

@@ -100,7 +100,7 @@ export default function Simulatore() {
           <p id={`${id}-codice-esito`} role={errore ? "alert" : "status"} className="mt-2 text-sm text-steel">{errore || (sconto ? `Codice applicato: sconto ${sconto.percent}%.` : "Facoltativo. Se Matteo ti ha dato un codice, inseriscilo qui.")}</p>
           {codice ? <button type="button" className="link mt-2 min-h-11 text-sm" onClick={() => { richiesta.current++; setCodice(""); setSconto(null); setErrore(""); setVerifica(false); }}>Rimuovi codice</button> : null}
         </div>
-        <p className="mt-5 text-sm text-steel">Prezzo da confermare con Matteo. La prima settimana è di prova, senza impegno.</p>
+        <p className="mt-5 text-sm text-steel">Prezzo da confermare con Matteo.</p>
         {daApplicare || verifica ? <button type="button" disabled className="btn btn-lime mt-7 w-full justify-between">{verifica ? "Verifico il codice…" : "Applica o rimuovi il codice"}</button> : <Link href={continua} className="btn btn-lime mt-7 w-full justify-between">Continua <span aria-hidden="true">→</span></Link>}
         <p className="mt-3 text-center text-sm text-steel">Accedi o crea l’account. Qui non paghi nulla.</p>
         <div className="mt-6 flex flex-wrap gap-x-6 gap-y-3 text-sm">

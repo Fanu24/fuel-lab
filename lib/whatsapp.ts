@@ -84,18 +84,16 @@ export type SceltaMessaggio = { formula?: FormulaId; fascia?: Fascia };
 
 /**
  * Il messaggio per l'abbonamento. Non ha piu' un prezzo unico: le formule sono
- * cinque, in due fasce, e il prezzo lo si legge sul sito. Il primo passo che
- * chiede il cliente e' la settimana di prova, quindi il messaggio la nomina.
- * Con la formula (e la fascia) scelte le scrive: "l'abbonamento Completo (Plus)".
+ * cinque, in due fasce, e il prezzo lo si legge sul sito. Con la formula (e la
+ * fascia) scelte le scrive: "l'abbonamento Completo (Plus)".
  */
 export function messaggioAbbonamento({ formula, fascia }: SceltaMessaggio = {}): string {
-  const prova = "e vorrei prenotare la settimana di prova";
   if (formula) {
     const nome = getFormula(formula).nome;
-    return `Ciao Matteo! Mi interessa l'abbonamento ${fascia ? `${nome} (${NOMI_FASCIA[fascia]})` : nome} di FUEL LAB ${prova}.`;
+    return `Ciao Matteo! Mi interessa l'abbonamento ${fascia ? `${nome} (${NOMI_FASCIA[fascia]})` : nome} di FUEL LAB.`;
   }
-  if (fascia) return `Ciao Matteo! Mi interessa un abbonamento FUEL LAB in fascia ${NOMI_FASCIA[fascia]} ${prova}.`;
-  return `Ciao Matteo! Mi interessa un abbonamento FUEL LAB ${prova}.`;
+  if (fascia) return `Ciao Matteo! Mi interessa un abbonamento FUEL LAB in fascia ${NOMI_FASCIA[fascia]}.`;
+  return "Ciao Matteo! Mi interessa un abbonamento FUEL LAB.";
 }
 
 /**

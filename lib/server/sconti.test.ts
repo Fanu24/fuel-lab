@@ -20,7 +20,7 @@ describe("codici sconto", () => {
     expect(preparaSconto("TEST", 10, null, null, "pickup")).toEqual({ discount: { code: "TEST", percent: 10, appliedPercent: 10, baseCents: null, roundEuro: false }, price: null });
   });
   it("applica solo la percentuale del codice anche con ritiro", () => {
-    const subscription = { plan: "pranzo" as const, tier: "standard" as const, household: "singolo" as const, trial: true };
+    const subscription = { plan: "pranzo" as const, tier: "standard" as const, household: "singolo" as const };
     const r = preparaSconto("TEST", 1, 123, subscription, "pickup");
     expect(r.discount!.baseCents).toBeGreaterThan(123);
     expect(r.discount!.appliedPercent).toBe(1);
@@ -28,7 +28,7 @@ describe("codici sconto", () => {
   });
   it("un codice dell’1% sconta il listino una sola volta", () => {
     for (const plan of ["leggero", "pranzo"] as const) {
-      const subscription = { plan, tier: "standard" as const, household: "singolo" as const, trial: false };
+      const subscription = { plan, tier: "standard" as const, household: "singolo" as const };
       const senza = calcolaPrezzo({ formula: plan, fascia: "standard", ritiro: true, nucleo: "singolo" });
       const r = preparaSconto("TEST", 1, senza.totaleCentesimi, subscription, "pickup");
       expect(r.price).toBe(totaleScontato(senza.listinoCentesimi, 1));
@@ -45,7 +45,7 @@ describe("codici sconto", () => {
     expect(await leggiSconto(fakeDb(null), "")).toEqual({ ok: true, code: null, percent: null });
   });
   it("il 20% su 173 euro dà 138,40 euro sia con ritiro sia con consegna", () => {
-    const subscription = { plan: "pranzo" as const, tier: "standard" as const, household: "famiglia" as const, trial: false };
+    const subscription = { plan: "pranzo" as const, tier: "standard" as const, household: "famiglia" as const };
     for (const fulfillment of ["pickup", "delivery"] as const) {
       const risultato = preparaSconto("MATTEO20", 20, 17300, subscription, fulfillment);
       expect(risultato.price).toBe(13840);
