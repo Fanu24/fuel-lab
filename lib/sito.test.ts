@@ -150,7 +150,7 @@ describe("metadata delle pagine", () => {
     const { titolo, descrizione } = PAGINE.abbonamento;
     expect(titolo).toContain(`da ${PREZZO_DA_TESTO} al mese`);
     expect(descrizione).toContain(`${PREZZO_DA_TESTO} al mese`);
-    expect(descrizione).toContain("concorda giorno e orario");
+    expect(descrizione).toContain("con giorno e orario concordati");
     expect(PAGINE.servizi.descrizione).toContain(`${PREZZO_DA_TESTO} al mese`);
   });
 
@@ -558,7 +558,7 @@ describe("decisioni del committente", () => {
   const DUE_GIORNI = /luned[iì] e (il )?gioved|lun · gio|due cotture/i;
   const llms = readFileSync(path.join(RADICE, "public/llms.txt"), "utf8");
 
-  it("si cucina e si consegna ogni giorno: nessun testo pubblico cita i due giorni fissi", () => {
+  it("si cucina ogni giorno: nessun testo pubblico cita i due giorni fissi", () => {
     expect(QUANDO_CUCINA).toMatch(/ogni giorno/);
     const testi = [
       DESCRIZIONE_ATTIVITA,

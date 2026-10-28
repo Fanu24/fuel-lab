@@ -10,7 +10,7 @@ const VANTAGGI = [
 
 /* Chi arriva per un abbonamento non compone niente: gli stessi vantaggi, senza piatti e settimana. */
 const VANTAGGI_ABBONAMENTO = [
-  { titolo: "Chiedi la formula", testo: "Scegli fra i cinque abbonamenti, in Standard o Plus, e inviane la richiesta." },
+  { titolo: "Chiedi la formula", testo: "Scegli fra i cinque abbonamenti, in Standard o Plus, e invia la richiesta." },
   { titolo: "Segui ogni passo", testo: "Confermata, in corso, conclusa: lo vedi qui, coi messaggi di Matteo." },
   { titolo: "Nessun pagamento online", testo: "Prezzo, inizio e consegna li concordi con Matteo prima di tutto." },
 ];
