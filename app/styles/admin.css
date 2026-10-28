@@ -431,6 +431,43 @@
 .pm-cs-porzioni > div { display: flex; align-items: center; gap: 8px; }
 .pm-cs-porzioni output { min-width: 40px; text-align: center; font-size: 22px; font-weight: 800; }
 
+/* Scheda "Ricevi gli ordini sul telefono" in cima alla schermata del giorno. */
+.pm-scheda-notifiche {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 56px;
+  padding: 14px 16px;
+  border: 0;
+  border-radius: 12px;
+  color: #fff;
+  background: #18352a;
+  font-size: 18px;
+  font-weight: 800;
+  text-align: left;
+}
+.pm-scheda-notifiche span:last-child { flex-shrink: 0; }
+
+/* Titolo di una vista (Altro, guida). */
+.pm-titolo-vista { font-family: var(--font-ui); font-size: 28px; font-weight: 800; line-height: 1.15; padding: 4px 4px 0; overflow-wrap: anywhere; }
+
+/* Guida all'installazione. */
+.pm-guida { display: grid; gap: 14px; }
+.pm-guida-blocco { display: grid; gap: 10px; }
+.pm-guida-indicazione { font-size: 19px; font-weight: 800; overflow-wrap: anywhere; }
+.pm-guida-attiva { width: 100%; min-height: 56px; font-size: 18px; }
+.pm-scheda-ok { display: grid; gap: 8px; padding: 16px; border-radius: 12px; background: #dcebdf; color: #18352a; font-size: 19px; font-weight: 750; }
+.pm-passi { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.pm-passo { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 12px; padding: 14px; border-radius: 12px; background: #fff; }
+.pm-passo-num { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; color: #fff; background: #18352a; font-size: 18px; font-weight: 800; }
+.pm-passo-corpo { display: grid; gap: 8px; min-width: 0; font-size: 17px; }
+.pm-passo-corpo b { font-size: 19px; font-weight: 800; overflow-wrap: anywhere; }
+.pm-passo-corpo p { color: #33473c; }
+.pm-passo-disegno { color: #18352a; }
+.pm-passo-disegno svg { display: block; }
+
 @media (prefers-reduced-motion: no-preference) {
   .pm-bottone, .pm-riga, .pm-giorno { transition: background-color .15s ease; }
 }

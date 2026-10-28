@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { dataCorta, etichetteDelGiorno, giorniDellaSettimana, lunediDi, nomeGiornoCorto, pastiDelGiorno, type RigaGiorno } from "@/lib/pannello";
 import type { Vista } from "@/lib/pannello-navigazione";
 import { giornoDelPiano, oggiRoma, spostaGiorni } from "@/lib/produzione";
 import { NOMI_GIORNO } from "@/lib/settimana";
+import { statoNotifiche, type StatoNotifiche } from "@/lib/push-client";
 import type { Condiviso } from "./PannelloMatteo";
 import { Avviso, Bottone, Errore } from "./ui";
 
@@ -23,6 +24,14 @@ export default function VistaGiorno({ pannello, sopra, senzaDati }: {
   /* Errore e link tengono il giorno a cui si riferiscono: cambiando giorno non compaiono più. */
   const [errore, setErrore] = useState<{ giorno: string; testo: string } | null>(null);
   const [linkPdf, setLinkPdf] = useState<{ giorno: string; url: string } | null>(null);
+  // Finché le notifiche non sono attive, in alto c'è la scheda che porta alla guida.
+  const [notifiche, setNotifiche] = useState<StatoNotifiche | null>(null);
+  useEffect(() => {
+    let vivo = true;
+    statoNotifiche().then((s) => { if (vivo) setNotifiche(s); }, () => {});
+    return () => { vivo = false; };
+  }, []);
+  const daAttivare = notifiche === "da-installare" || notifiche === "da-attivare";
 
   const giorni = giorniDellaSettimana(lunediDi(giorno));
   const pasti = dati ? pastiDelGiorno(dati.pasti, dati.clienti, giorno) : null;
@@ -57,6 +66,13 @@ export default function VistaGiorno({ pannello, sopra, senzaDati }: {
     <>
       <main className="pm-corpo">
         {sopra}
+
+        {daAttivare && (
+          <button type="button" className="pm-scheda-notifiche" onClick={() => vai({ tipo: "guida" })}>
+            <span>Ricevi gli ordini sul telefono</span>
+            <span>Come fare →</span>
+          </button>
+        )}
 
         <nav aria-label="Settimana" className="pm-settimana">
           <div className="pm-settimana-testa">
