@@ -52,7 +52,7 @@ describe("accesso dedicato al pannello", () => {
   });
 
   it("cookie Secure HttpOnly, token non leggibile dalle API cliente", () => {
-    expect(adminCookie(request(), TOKEN)).toContain("HttpOnly; SameSite=Strict; Max-Age=43200; Secure");
+    expect(adminCookie(request(), TOKEN)).toContain("HttpOnly; SameSite=Strict; Max-Age=7776000; Secure");
     expect(readAdminToken(request("GET", undefined, undefined, `__Host-fuelchef-admin=${TOKEN}`))).toBe(TOKEN);
     expect(readAdminToken(request("GET", undefined, undefined, "__Host-fuelchef-admin=token-inventato"))).toBeNull();
     expect(supportsAdminSession(request("GET", "/api/orders"))).toBe(true);

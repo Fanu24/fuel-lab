@@ -1,6 +1,6 @@
 import type { Env } from "./auth";
 
-export const ADMIN_SESSION_SECONDS = 12 * 60 * 60;
+export const ADMIN_SESSION_SECONDS = 90 * 24 * 60 * 60;
 export const ADMIN_ATTEMPT_WINDOW = 15 * 60;
 export const ADMIN_ATTEMPT_LIMIT = 8;
 const ITERATIONS = 100_000;
