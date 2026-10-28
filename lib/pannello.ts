@@ -250,12 +250,19 @@ export function etichetteDelGiorno(
    Telefono e link
    ========================================================================= */
 
-/** "+39 347 123 4567" -> "393471234567". Null se ci sono meno di sei cifre. */
+/**
+ * "+39 347 123 4567" -> "393471234567"; "085 4212345" -> "390854212345".
+ * Solo cifre, senza il "00" iniziale. Un numero che comincia con 0 (fisso) o con
+ * 3 e ha 9 o 10 cifre (cellulare) prende il 39 davanti; il resto e' gia' internazionale.
+ * Null se ci sono meno di sei cifre.
+ */
 export function numeroInternazionale(telefono: string): string | null {
   let cifre = telefono.replace(/\D/g, "");
   if (cifre.startsWith("00")) cifre = cifre.slice(2);
-  if (cifre.length === 10 && cifre.startsWith("3")) cifre = `39${cifre}`;
-  return cifre.length < 6 ? null : cifre;
+  if (cifre.length < 6) return null;
+  if (cifre.startsWith("0")) return `39${cifre}`;
+  if (cifre.startsWith("3") && (cifre.length === 9 || cifre.length === 10)) return `39${cifre}`;
+  return cifre;
 }
 
 export function linkChiama(telefono: string): string | null {

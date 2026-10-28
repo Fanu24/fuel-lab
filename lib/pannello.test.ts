@@ -103,6 +103,13 @@ it("i numeri di telefono diventano link giusti, o nessun link", () => {
   expect(numeroInternazionale("")).toBeNull();
   expect(numeroInternazionale("abc")).toBeNull();
   expect(linkChiama("347 1234567")).toBe("tel:+393471234567");
+  // numeri fissi (con lo 0 iniziale) e cellulari a 9 cifre
+  expect(numeroInternazionale("085 4212345")).toBe("390854212345");
+  expect(numeroInternazionale("347 123456")).toBe("39347123456");
+  expect(numeroInternazionale("393 1234567")).toBe("393931234567");
+  expect(numeroInternazionale("+39 085 4212345")).toBe("390854212345");
+  expect(numeroInternazionale("12345")).toBeNull();
+  expect(linkChiama("085 4212345")).toBe("tel:+390854212345");
   expect(linkWhatsAppCliente("347 1234567", "Paolo")).toBe(`https://wa.me/393471234567?text=${encodeURIComponent("Ciao Paolo, sono Matteo di FUEL LAB.")}`);
   expect(linkWhatsAppCliente("", "Paolo")).toBeNull();
 });
