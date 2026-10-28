@@ -41,7 +41,7 @@ export default function RichiestaPage() {
         <aside className="self-start bg-paper-2 p-6">
           <h2 className="font-disp text-xl font-bold uppercase">La cucina a Pescara</h2>
           <address className="mt-4 not-italic">{INDIRIZZO_RIGA}</address>
-          <p className="mt-3 text-sm text-muted">Ritiro: {ORARI_RITIRO.testo}. Concorda l’orario con Matteo.</p>
+          <p className="mt-3 text-sm text-muted">Laboratorio aperto {ORARI_RITIRO.testo}; ritiro o consegna con giorno e orario concordati con Matteo.</p>
           <a href={LINK_MAPPA} target="_blank" rel="noopener noreferrer" className="link mt-5 inline-block min-h-11">Apri le indicazioni</a>
           <p className="mt-2 break-words"><a href={`mailto:${EMAIL_CONTATTI}`} className="link">{EMAIL_CONTATTI}</a></p>
           <p className="mt-5 border-t border-ink/15 pt-5 text-sm text-muted">Piatti, prezzo, ritiro o consegna si confermano insieme. Nessun pagamento online.</p>

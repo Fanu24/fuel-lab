@@ -72,7 +72,7 @@ export default function Footer() {
                   {TELEFONO}
                 </a>
               ) : null}
-              <p className="py-1">Ritiro: {ORARI_RITIRO.testo}</p>
+              <p className="py-1">Laboratorio: {ORARI_RITIRO.testo}</p>
             </address>
             <WhatsAppCta className="mt-5" label="Scrivi su WhatsApp" buttonClassName="w-full justify-between !px-4 !text-sm" />
 
