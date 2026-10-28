@@ -11,8 +11,8 @@
    L'abbonamento mensile ha una data sola, l'inizio (scritta in entrambe le
    date dell'ordine), e il periodo di un mese che ne discende, con una consegna
    (o un ritiro) ogni 3 giorni. Il bottone grande lo conferma; a mese finito
-   propone di segnarlo concluso. Matteo puo' cambiare formula, fascia, nucleo e
-   settimana di prova: si salvano insieme agli altri campi (PATCH con
+   propone di segnarlo concluso. Matteo puo' cambiare formula, fascia e nucleo:
+   si salvano insieme agli altri campi (PATCH con
    `subscription`), e il totale non si ricalcola di nascosto, si propone.
 
    Il modulo avvolge anche le parti di sola lettura (`prima` e `dopo`), cosi'
@@ -50,7 +50,7 @@ type Campi = {
 
 /** La scelta salvata di un abbonamento. Uno di prima delle formule e' un Pranzo Standard da solo. */
 const sceltaSalvata = (o: Ordine): SceltaAbbonamento =>
-  o.subscription ?? { plan: formulaDi(o), tier: "standard", household: "singolo", trial: false };
+  o.subscription ?? { plan: formulaDi(o), tier: "standard", household: "singolo" };
 
 const daOrdine = (o: Ordine): Campi => {
   const scelta = sceltaSalvata(o);
@@ -65,7 +65,6 @@ const daOrdine = (o: Ordine): Campi => {
     formula: scelta.plan,
     fascia: scelta.tier,
     nucleo: scelta.household,
-    prova: scelta.trial,
   };
 };
 
@@ -83,8 +82,8 @@ function differenze(o: Ordine, c: Campi): ModificaOrdine {
   // La formula parte sempre intera (i quattro campi), ma solo se e' cambiata qualcosa.
   if (eAbbonamento(o)) {
     const s = sceltaSalvata(o);
-    if (c.formula !== s.plan || c.fascia !== s.tier || c.nucleo !== s.household || c.prova !== s.trial) {
-      m.subscription = { plan: c.formula, tier: c.fascia, household: c.nucleo, trial: c.prova };
+    if (c.formula !== s.plan || c.fascia !== s.tier || c.nucleo !== s.household) {
+      m.subscription = { plan: c.formula, tier: c.fascia, household: c.nucleo };
     }
   }
   return m;
@@ -233,7 +232,7 @@ export default function OrdineGestisci({
   const inizio = campi.uscita || campi.produzione;
   const inizioValido = abbonamento && isData(inizio) ? inizio : null;
   const salvata = sceltaSalvata(base);
-  // Il totale si propone solo se la scelta che pesa sul prezzo e' cambiata: la settimana di prova non lo tocca.
+  // Il totale si propone solo se la scelta che pesa sul prezzo e' cambiata.
   const sceltaCambiata = campi.formula !== salvata.plan || campi.fascia !== salvata.tier || campi.nucleo !== salvata.household;
 
   useEffect(() => onSporco(sporco), [sporco, onSporco]);

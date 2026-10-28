@@ -85,7 +85,7 @@ describe("nuova richiesta", () => {
     expect(leggiNuovoOrdine({ ...corpo, plan: {} }, "", "2026-09-27").ok).toBe(false);
   });
 
-  const abb = { plan: "completo", tier: "standard", household: "singolo", trial: false };
+  const abb = { plan: "completo", tier: "standard", household: "singolo" };
 
   it("l'abbonamento non vuole piatti e parte con il prezzo proposto per la formula", () => {
     const esito = leggiNuovoOrdine({ ...corpo, service: "abbonamento", plan: {}, subscription: abb, fulfillment: "delivery", address: "Via Roma 1" }, "Account", "2026-09-27");
@@ -93,7 +93,7 @@ describe("nuova richiesta", () => {
     if (!esito.ok) return;
     expect(esito.value).toMatchObject({
       service: "abbonamento", requestedDate: "2026-10-01", priceCents: 52000, items: [],
-      subscription: { plan: "completo", tier: "standard", household: "singolo", trial: false },
+      subscription: { plan: "completo", tier: "standard", household: "singolo" },
     });
     // gli altri servizi non partono con un prezzo ne' con una formula
     const normale = leggiNuovoOrdine({ ...corpo, subscription: abb }, "Account", "2026-09-27");
@@ -126,14 +126,27 @@ describe("nuova richiesta", () => {
     expect(errore({ plan: "full8" })).toMatch(/formula/);
     expect(errore({ plan: "pranzo", tier: "oro" })).toMatch(/Fascia/);
     expect(errore({ plan: "pranzo", household: "tribu" })).toMatch(/coppia/);
-    expect(errore({ plan: "pranzo", trial: "si" })).toMatch(/prova/);
   });
 
-  it("la formula ha valori di partenza: Standard, da solo, senza prova", () => {
+  it("la formula ha valori di partenza: Standard, da solo", () => {
     const e = leggiSceltaAbbonamento({ plan: "leggero" });
-    expect(e).toEqual({ ok: true, value: { plan: "leggero", tier: "standard", household: "singolo", trial: false } });
-    const p = leggiSceltaAbbonamento({ plan: "full6", tier: "plus", household: "famiglia", trial: true });
-    expect(p).toEqual({ ok: true, value: { plan: "full6", tier: "plus", household: "famiglia", trial: true } });
+    expect(e).toEqual({ ok: true, value: { plan: "leggero", tier: "standard", household: "singolo" } });
+    const p = leggiSceltaAbbonamento({ plan: "full6", tier: "plus", household: "famiglia" });
+    expect(p).toEqual({ ok: true, value: { plan: "full6", tier: "plus", household: "famiglia" } });
+  });
+
+  it("rifiuta la settimana di prova, che non esiste più", () => {
+    expect(leggiSceltaAbbonamento({ plan: "completo", trial: true }))
+      .toEqual({ ok: false, status: 400, error: "La settimana di prova non è più disponibile" });
+  });
+  it("la scelta dell'abbonamento non ha più il campo della prova", () => {
+    expect(leggiSceltaAbbonamento({ plan: "completo" }))
+      .toEqual({ ok: true, value: { plan: "completo", tier: "standard", household: "singolo" } });
+    expect(leggiSceltaAbbonamento({ plan: "completo", trial: false }).ok).toBe(true);
+  });
+  it("un abbonamento vecchio salvato con la prova si legge senza la prova", () => {
+    expect(sceltaDaRiga({ sub_plan: "completo", sub_tier: "plus", sub_household: "coppia", sub_trial: 1 }))
+      .toEqual({ plan: "completo", tier: "plus", household: "coppia" });
   });
 
   it("il piano allegato all'abbonamento tiene solo i pasti della formula", () => {
@@ -153,26 +166,26 @@ describe("nuova richiesta", () => {
   });
 
   it("la formula si legge dalle colonne sub_*; senza colonne e' il Pranzo di prima", () => {
-    expect(sceltaDaRiga({ sub_plan: "full6", sub_tier: "plus", sub_household: "coppia", sub_trial: 1 }))
-      .toEqual({ plan: "full6", tier: "plus", household: "coppia", trial: true });
-    expect(sceltaDaRiga({})).toEqual({ plan: "pranzo", tier: "standard", household: "singolo", trial: false });
+    expect(sceltaDaRiga({ sub_plan: "full6", sub_tier: "plus", sub_household: "coppia", sub_trial: 0 }))
+      .toEqual({ plan: "full6", tier: "plus", household: "coppia" });
+    expect(sceltaDaRiga({})).toEqual({ plan: "pranzo", tier: "standard", household: "singolo" });
     expect(sceltaDaRiga({ sub_plan: "boh", sub_tier: "oro", sub_household: "x", sub_trial: 9 }))
-      .toEqual({ plan: "pranzo", tier: "standard", household: "singolo", trial: false });
+      .toEqual({ plan: "pranzo", tier: "standard", household: "singolo" });
     // solo gli abbonamenti hanno una formula
     expect(ordineDaRiga({ ...riga, sub_plan: "full7" }, false).subscription).toBeNull();
     expect(ordineDaRiga({ ...riga, service: "abbonamento", sub_plan: "full7", sub_tier: "plus" }, false).subscription)
-      .toEqual({ plan: "full7", tier: "plus", household: "singolo", trial: false });
+      .toEqual({ plan: "full7", tier: "plus", household: "singolo" });
     expect(ordineDaRiga({ ...riga, service: "abbonamento" }, true).subscription?.plan).toBe("pranzo");
   });
 
   it("Matteo puo' cambiare la formula di un abbonamento, e la cronologia lo scrive", () => {
-    const attuale = stato({ subscription: { plan: "completo", tier: "standard", household: "singolo", trial: false } });
-    const cambio = leggiModificaAdmin({ subscription: { plan: "full6", tier: "plus", household: "coppia", trial: true } }, attuale, "pickup", "abbonamento");
+    const attuale = stato({ subscription: { plan: "completo", tier: "standard", household: "singolo" } });
+    const cambio = leggiModificaAdmin({ subscription: { plan: "full6", tier: "plus", household: "coppia" } }, attuale, "pickup", "abbonamento");
     expect(cambio.ok).toBe(true);
     if (!cambio.ok) return;
-    expect(cambio.value.next.subscription).toEqual({ plan: "full6", tier: "plus", household: "coppia", trial: true });
+    expect(cambio.value.next.subscription).toEqual({ plan: "full6", tier: "plus", household: "coppia" });
     expect(cambio.value.cambi).toEqual([
-      { type: "note", detail: "Formula: Full 6 · Plus, in coppia, con la settimana di prova", from_status: null, to_status: null },
+      { type: "note", detail: "Formula: Full 6 · Plus, in coppia", from_status: null, to_status: null },
     ]);
     // stessa scelta: nessun evento; altro servizio: rifiutata; scelta malformata: rifiutata
     const uguale = leggiModificaAdmin({ subscription: attuale.subscription }, attuale, "pickup", "abbonamento");

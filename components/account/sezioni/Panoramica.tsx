@@ -230,7 +230,6 @@ function ProssimaConsegna({ ordini, oggi }: Pick<PropsArea, "ordini" | "oggi">) 
           <div><dt>{ritiro ? "Ritiro" : "Consegna"}</dt><dd>Ogni {CONSEGNA_OGNI_GIORNI} giorni</dd></div>
           {periodo ? <div><dt>Periodo</dt><dd>{periodo}</dd></div> : null}
           <div><dt>Chi si abbona</dt><dd>{scheda.nucleo}</dd></div>
-          <div><dt>Settimana di prova</dt><dd>{scheda.prova ? "Sì" : "No"}</dd></div>
           {prossima.price_cents !== null && prossima.price_cents !== undefined ? (
             <div><dt>Totale concordato</dt><dd className="num">{euro(prossima.price_cents)}</dd></div>
           ) : null}

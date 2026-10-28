@@ -13,12 +13,12 @@ import { leggiNuovoOrdine, ordineDaRiga, type NuovoOrdineValido, type RigaOrdine
 /** La stessa richiesta, dello stesso cliente, partita negli ultimi 10 minuti e non annullata. */
 const GIA_INVIATA = `SELECT id,status FROM orders WHERE user_id=? AND source='web' AND status <> 'cancelled' AND created_at > datetime('now','-10 minutes')
   AND service=? AND fulfillment=? AND COALESCE(requested_date,'')=? AND customer_name=? AND phone=? AND comune=? AND address=? AND notes=? AND plan_json=?
-  AND COALESCE(sub_plan,'')=? AND COALESCE(sub_tier,'')=? AND COALESCE(sub_household,'')=? AND sub_trial=? AND COALESCE(discount_code,'')=?`;
+  AND COALESCE(sub_plan,'')=? AND COALESCE(sub_tier,'')=? AND COALESCE(sub_household,'')=? AND COALESCE(discount_code,'')=?`;
 
 /** I valori di GIA_INVIATA, nello stesso ordine dei segnaposto. */
 const legaUguale = (userId: string, o: NuovoOrdineValido, code: string | null) => [
   userId, o.service, o.fulfillment, o.requestedDate ?? "", o.name, o.phone, o.comune, o.address, o.notes, JSON.stringify(o.plan),
-  o.subscription?.plan ?? "", o.subscription?.tier ?? "", o.subscription?.household ?? "", o.subscription?.trial ? 1 : 0, code ?? "",
+  o.subscription?.plan ?? "", o.subscription?.tier ?? "", o.subscription?.household ?? "", code ?? "",
 ];
 
 export const onRequestGet = async ({ env, request }: Context) => {
@@ -82,14 +82,14 @@ export const onRequestPost = async ({ env, request, waitUntil }: Context) => {
     // price_cents: solo l'abbonamento parte con un prezzo, ed e' una proposta finche' Matteo non conferma.
     // sub_*: la formula scelta, solo per l'abbonamento (NULL per gli altri servizi).
     env.DB.prepare(`INSERT INTO orders (id,user_id,service,fulfillment,requested_date,customer_name,phone,comune,address,notes,plan_json,training_json,items_json,meals,price_cents,sub_plan,sub_tier,sub_household,sub_trial,discount_code,discount_percent,discount_applied_percent,discount_base_cents,discount_round_euro)
-      SELECT ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
+      SELECT ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,?,?,?,?,?
       WHERE (SELECT COUNT(*) FROM orders WHERE user_id=? AND source='web' AND created_at > datetime('now','-1 day')) < 5
         AND NOT EXISTS (${GIA_INVIATA})
         AND (? IS NULL OR EXISTS (SELECT 1 FROM discount_codes WHERE code=? AND percent=? AND active=1))`)
       .bind(
         id, user.id, o.service, o.fulfillment, o.requestedDate, o.name, o.phone, o.comune, o.address, o.notes,
         JSON.stringify(o.plan), JSON.stringify(o.training), JSON.stringify(o.items), o.items.length, o.priceCents,
-        o.subscription?.plan ?? null, o.subscription?.tier ?? null, o.subscription?.household ?? null, o.subscription?.trial ? 1 : 0,
+        o.subscription?.plan ?? null, o.subscription?.tier ?? null, o.subscription?.household ?? null,
         sconto.discount?.code ?? null, sconto.discount?.percent ?? null, sconto.discount?.appliedPercent ?? null, sconto.discount?.baseCents ?? null, sconto.discount?.roundEuro ? 1 : 0,
         user.id,
         ...uguale,

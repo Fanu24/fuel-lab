@@ -75,9 +75,9 @@ describe("email", () => {
     expect(msg.text).toContain("Rispondi a questa email per scrivere direttamente a luca@example.com.");
   });
 
-  it("per l'abbonamento dice formula, fascia, chi si abbona, la prova, il prezzo proposto e la scheda", () => {
+  it("per l'abbonamento dice formula, fascia, chi si abbona, il prezzo proposto e la scheda", () => {
     const abb: RichiestaPerEmail = { ...richiesta, service: "abbonamento", meals: 0, notes: "Pesi lun-mer-ven", price_cents: 60800,
-      subscription: { plan: "completo", tier: "plus", household: "coppia", trial: true }, items: [] };
+      subscription: { plan: "completo", tier: "plus", household: "coppia" }, items: [] };
     const mail = emailNuovaRichiesta(abb);
     expect(mail.subject).toBe("Nuova richiesta: Giulia <b>Rossi</b> · Abbonamento Completo · Plus");
     expect(mail.text).toContain("Nuova richiesta di abbonamento dal sito");
@@ -85,7 +85,8 @@ describe("email", () => {
     expect(mail.text).toContain("Formula: Completo · Plus");
     expect(mail.text).toContain("Cosa chiede: 15 pasti a settimana, pranzo e cena");
     expect(mail.text).toContain("Chi si abbona: In coppia");
-    expect(mail.text).toContain("Settimana di prova: Sì");
+    expect(mail.text).not.toMatch(/prova/i);
+    expect(mail.html).not.toMatch(/prova/i);
     expect(mail.text).toContain("Prezzo proposto: € 608,00 al mese");
     expect(mail.text).toContain("Inizio desiderato: giovedì 1 ottobre 2026");
     expect(mail.text).toContain("La scheda del cliente:");
@@ -99,37 +100,33 @@ describe("email", () => {
     expect(emailAnnullataDalCliente(abb).text).not.toContain("Cosa chiede");
   });
 
-  it("l'oggetto e le righe seguono la formula e la prova", () => {
+  it("l'oggetto e le righe seguono la formula", () => {
     const base: RichiestaPerEmail = { ...richiesta, service: "abbonamento", meals: 0, items: [], notes: "", price_cents: 17300 };
-    const pranzo = emailNuovaRichiesta({ ...base, subscription: { plan: "pranzo", tier: "standard", household: "singolo", trial: false } });
+    const pranzo = emailNuovaRichiesta({ ...base, subscription: { plan: "pranzo", tier: "standard", household: "singolo" } });
     expect(pranzo.subject).toBe("Nuova richiesta: Giulia <b>Rossi</b> · Abbonamento Pranzo · Standard");
     expect(pranzo.text).toContain("Cosa chiede: 5 pasti a settimana, solo il pranzo");
     expect(pranzo.text).toContain("Chi si abbona: Da solo");
-    expect(pranzo.text).toContain("Settimana di prova: No");
     expect(pranzo.text).toContain("Prezzo proposto: € 173,00 al mese");
-    const full = emailNuovaRichiesta({ ...base, price_cents: 72800, subscription: { plan: "full7", tier: "standard", household: "famiglia", trial: true } });
+    const full = emailNuovaRichiesta({ ...base, price_cents: 72800, subscription: { plan: "full7", tier: "standard", household: "famiglia" } });
     expect(full.subject).toContain("Abbonamento Full 7 · Standard");
     expect(full.text).toContain("Cosa chiede: 21 pasti a settimana, tre al giorno");
     expect(full.text).toContain("Chi si abbona: In famiglia");
-    // La prova e la formula arrivano anche nell'HTML.
     expect(full.html).toContain("Full 7 · Standard");
-    expect(full.html).toContain("Settimana di prova");
     // Nessun prezzo salvato: la riga non c'e' (non si inventa un numero).
-    expect(emailNuovaRichiesta({ ...base, price_cents: null, subscription: { plan: "full6", tier: "plus", household: "singolo", trial: true } }).text)
+    expect(emailNuovaRichiesta({ ...base, price_cents: null, subscription: { plan: "full6", tier: "plus", household: "singolo" } }).text)
       .not.toContain("Prezzo proposto");
     // Con dei piatti allegati (un altro client) la sezione resta, con il nome giusto.
-    const conPiatti = emailNuovaRichiesta({ ...base, subscription: { plan: "leggero", tier: "standard", household: "singolo", trial: true },
+    const conPiatti = emailNuovaRichiesta({ ...base, subscription: { plan: "leggero", tier: "standard", household: "singolo" },
       items: [{ id: "c", name: "Manzo", day: "lun", meal: "pranzo", extras: [] }] });
     expect(conPiatti.text).toContain("PIATTI INDICATI DAL CLIENTE");
     // Un abbonamento vecchio, senza scelta salvata, e' un Pranzo e non porta righe inventate.
     const vecchio = emailNuovaRichiesta({ ...base, subscription: null });
     expect(vecchio.text).toContain("Formula: Pranzo");
     expect(vecchio.text).not.toContain("Chi si abbona");
-    expect(vecchio.text).not.toContain("Settimana di prova");
   });
 
   it("al cliente dell'abbonamento nomina la formula, scrive il periodo e la consegna ogni 3 giorni, e chiama proposta il prezzo non ancora confermato", () => {
-    const sub = { plan: "completo", tier: "plus", household: "singolo", trial: true } as const;
+    const sub = { plan: "completo", tier: "plus", household: "singolo" } as const;
     const base = { service: "abbonamento" as const, subscription: sub, customer_name: "Giulia", fulfillment: "pickup" as const, fulfillment_date: null,
       address: "", comune: "", customer_message: "", price_cents: null, paid: 0 as const };
     const confermato = emailAggiornamentoCliente({
@@ -190,7 +187,7 @@ describe("email", () => {
   });
 
   it("ogni email ha l'anteprima nascosta, il tema scuro, niente variabili CSS ne' flex e nessun segnaposto", () => {
-    const abb = { plan: "completo", tier: "plus", household: "coppia", trial: true } as const;
+    const abb = { plan: "completo", tier: "plus", household: "coppia" } as const;
     const tutte = [
       emailVerificaEmail("Verifica la tua email FUEL LAB", "https://fuelchef.it/x"),
       emailReimpostaPassword("Reimposta la password FUEL LAB", "https://fuelchef.it/y"),
@@ -273,7 +270,7 @@ describe("email", () => {
     // I dati del cliente sono suoi, ma l'email non rilancia note e telefono: niente da ricordargli.
     expect(menu.text).not.toMatch(/3331234567|Niente <script>|Note del cliente/);
     const abb = emailRichiestaRicevuta({ ...richiesta, service: "abbonamento", meals: 0, items: [], price_cents: 60800, fulfillment: "pickup",
-      subscription: { plan: "completo", tier: "plus", household: "coppia", trial: true } });
+      subscription: { plan: "completo", tier: "plus", household: "coppia" } });
     expect(abb.text).toContain("La tua richiesta di abbonamento Completo · Plus è arrivata a Matteo");
     expect(abb.text).toContain("Finché Matteo non conferma non parte niente e non c'è niente da pagare");
     expect(abb.text).toContain("Prezzo proposto: € 608,00 al mese");
@@ -314,7 +311,7 @@ describe("email", () => {
     const ritiro = emailNuovaRichiesta({ ...richiesta, fulfillment: "pickup", comune: "Chieti" });
     expect(ritiro.text).toContain("Comune: Chieti");
     expect(ritiro.html).toContain("ritiro in laboratorio");
-    const abb = emailNuovaRichiesta({ ...richiesta, service: "abbonamento", meals: 0, items: [], subscription: { plan: "leggero", tier: "standard", household: "singolo", trial: false } });
+    const abb = emailNuovaRichiesta({ ...richiesta, service: "abbonamento", meals: 0, items: [], subscription: { plan: "leggero", tier: "standard", household: "singolo" } });
     expect(abb.html).toContain("inizio giovedì 1 ottobre 2026");
   });
 

@@ -160,7 +160,7 @@ describe("foglio di produzione", () => {
 
 describe("abbonamenti in cucina: una consegna ogni 3 giorni", () => {
   const scelta = (plan: SceltaAbbonamento["plan"], tier: SceltaAbbonamento["tier"] = "standard"): SceltaAbbonamento => ({
-    plan, tier, household: "singolo", trial: false,
+    plan, tier, household: "singolo",
   });
   const abb = (id: string, inizio: string | null, modifiche: Partial<Ordine> = {}): Ordine =>
     ordine(id, { service: "abbonamento", customer_name: id, production_date: inizio, fulfillment_date: inizio, items: [], meals: 0, ...modifiche });
@@ -419,8 +419,8 @@ describe("abbonamenti in cucina: una consegna ogni 3 giorni", () => {
   it("il nome dell'abbonamento e' la formula con la fascia; uno vecchio e' un Pranzo", () => {
     expect(nomeAbbonamento(giulia)).toBe("Completo · Plus");
     expect(nomeAbbonamento(anna)).toBe("Pranzo");
-    expect(dettaglioAbbonamento({ ...giulia, subscription: { plan: "completo", tier: "plus", household: "coppia", trial: true } })).toBe(
-      "Completo · Plus · in coppia · con la settimana di prova",
+    expect(dettaglioAbbonamento({ ...giulia, subscription: { plan: "completo", tier: "plus", household: "coppia" } })).toBe(
+      "Completo · Plus · in coppia",
     );
     expect(dettaglioAbbonamento(giulia)).toBe("Completo · Plus · da solo");
     expect(dettaglioAbbonamento(anna)).toBe("Pranzo");

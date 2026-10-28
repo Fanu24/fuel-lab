@@ -57,7 +57,6 @@ export function sceltaDaRiga(row: RigaOrdine): SceltaAbbonamento {
     plan: eFormulaId(row.sub_plan) ? row.sub_plan : "pranzo",
     tier: eFascia(row.sub_tier) ? row.sub_tier : "standard",
     household: eNucleo(row.sub_household) ? row.sub_household : "singolo",
-    trial: Number(row.sub_trial) === 1,
   };
 }
 
@@ -194,18 +193,19 @@ export function soloPastiDellaFormula(plan: Piano, formula: FormulaId): Piano {
 
 /**
  * La scelta dell'abbonamento dal corpo della richiesta: la formula e' obbligatoria,
- * fascia, nucleo e prova hanno un valore di partenza (Standard, da solo, senza
- * prova). Un valore che non esiste e' un errore, non un default silenzioso.
+ * fascia e nucleo hanno un valore di partenza (Standard, da solo). Un valore che
+ * non esiste e' un errore, non un default silenzioso. La settimana di prova non
+ * esiste piu': chi la chiede riceve un errore.
  */
 export function leggiSceltaAbbonamento(value: unknown): Esito<SceltaAbbonamento> {
   const v = value && typeof value === "object" ? value as Record<string, unknown> : {};
   if (!eFormulaId(v.plan)) return errore(400, "Scegli la formula dell'abbonamento");
   if (v.tier !== undefined && !eFascia(v.tier)) return errore(400, "Fascia non valida: Standard o Plus");
   if (v.household !== undefined && !eNucleo(v.household)) return errore(400, "Scegli se ti abboni da solo, in coppia o in famiglia");
-  if (v.trial !== undefined && typeof v.trial !== "boolean") return errore(400, "Scelta della settimana di prova non valida");
+  if (v.trial === true) return errore(400, "La settimana di prova non è più disponibile");
   return {
     ok: true,
-    value: { plan: v.plan, tier: v.tier ?? "standard", household: v.household ?? "singolo", trial: v.trial === true },
+    value: { plan: v.plan, tier: v.tier ?? "standard", household: v.household ?? "singolo" },
   };
 }
 
@@ -312,9 +312,9 @@ export function euroTesto(centesimi: number): string {
   return `${centesimi < 0 ? "-" : ""}€ ${euro},${cent}`;
 }
 
-/** La scelta a parole per la cronologia: "Formula: Completo · Plus, in coppia, con la settimana di prova". */
+/** La scelta a parole per la cronologia: "Formula: Completo · Plus, in coppia". */
 export function descriviFormula(scelta: SceltaAbbonamento): string {
-  return `Formula: ${etichettaFormula(scelta.plan, scelta.tier)}, ${NOMI_NUCLEO[scelta.household].toLowerCase()}${scelta.trial ? ", con la settimana di prova" : ""}`;
+  return `Formula: ${etichettaFormula(scelta.plan, scelta.tier)}, ${NOMI_NUCLEO[scelta.household].toLowerCase()}`;
 }
 
 /** L'evento delle date nella cronologia. Per l'abbonamento le date sono l'inizio, e si scrive fin quando vale. */

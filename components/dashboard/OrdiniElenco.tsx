@@ -42,7 +42,6 @@ export function RiepilogoOrdine({ ordine: o }: { ordine: Ordine }) {
         `${uscita} ogni 3 giorni`,
         pasti !== null ? `${pasti} pasti` : "",
         s && s.household !== "singolo" ? NOMI_NUCLEO[s.household].toLowerCase() : "",
-        s?.trial ? "con la settimana di prova" : "",
         o.comune,
       ]
         .filter(Boolean)

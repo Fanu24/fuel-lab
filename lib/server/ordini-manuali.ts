@@ -9,7 +9,7 @@
  * nelle etichette esattamente come una richiesta dal sito.
  *
  * L'abbonamento a mano non ha piatti (i pasti si compongono sulla scheda del
- * cliente, scritta nelle note), vuole la formula (con fascia, nucleo e prova)
+ * cliente, scritta nelle note), vuole la formula (con fascia e nucleo)
  * e, se Matteo non scrive un prezzo, prende quello proposto da
  * lib/abbonamento.ts per quella scelta. Le due date sono entrambe l'inizio.
  */

@@ -81,7 +81,7 @@ const abbonamento = (id: string, inizio: string | null, plan: FormulaId | null =
     fulfillment_date: inizio,
     meals: 0,
     items: [],
-    subscription: plan ? { plan, tier: "standard", household: "singolo", trial: false } : null,
+    subscription: plan ? { plan, tier: "standard", household: "singolo" } : null,
     ...modifiche,
   });
 
@@ -492,7 +492,7 @@ describe("filtri e ricerca", () => {
   });
 
   it("si trova un abbonamento anche scrivendo la formula o la fascia", () => {
-    const completo = abbonamento("abb", "2026-10-01", "completo", { subscription: { plan: "completo", tier: "plus", household: "coppia", trial: true } });
+    const completo = abbonamento("abb", "2026-10-01", "completo", { subscription: { plan: "completo", tier: "plus", household: "coppia" } });
     expect(corrisponde(completo, "completo")).toBe(true);
     expect(corrisponde(completo, "PLUS")).toBe(true);
     expect(corrisponde(completo, "full")).toBe(false);
@@ -555,7 +555,7 @@ describe("testi pronti", () => {
       fulfillment: "pickup" as const,
       fulfillment_date: "2026-10-05",
       service: "abbonamento" as const,
-      subscription: { plan: "completo" as const, tier: "plus" as const, household: "singolo" as const, trial: false },
+      subscription: { plan: "completo" as const, tier: "plus" as const, household: "singolo" as const },
     };
     expect(testoWhatsApp(abb)).toBe("Ciao Giulia, sono Matteo di FUEL LAB. Ti scrivo per il tuo abbonamento Completo Plus dal 5 ottobre al 4 novembre.");
     expect(testoWhatsApp({ ...abb, fulfillment_date: null })).toBe("Ciao Giulia, sono Matteo di FUEL LAB. Ti scrivo per il tuo abbonamento Completo Plus.");
@@ -582,12 +582,12 @@ describe("CSV per Excel", () => {
 
   it("scrive la formula dell'abbonamento in una colonna a parte", () => {
     const csv = ordiniCsv([
-      abbonamento("abb", "2026-10-05", "completo", { subscription: { plan: "completo", tier: "plus", household: "coppia", trial: true } }),
+      abbonamento("abb", "2026-10-05", "completo", { subscription: { plan: "completo", tier: "plus", household: "coppia" } }),
       ordine("x"),
     ]);
     const [intestazione, riga, altra] = csv.slice(1).split("\r\n");
     expect(intestazione).toContain(";Servizio;Formula;");
-    expect(riga).toContain(";Abbonamento mensile;Completo · Plus · in coppia · con la settimana di prova;");
+    expect(riga).toContain(";Abbonamento mensile;Completo · Plus · in coppia;");
     expect(altra).toContain(";Menu della settimana;;");
   });
 

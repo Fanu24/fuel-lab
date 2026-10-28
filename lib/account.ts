@@ -616,12 +616,10 @@ export type SchedaAbbonamento = {
   cosaRicevi: string;
   /** "Da solo", "In coppia" o "In famiglia". */
   nucleo: string;
-  /** Parte con la settimana di prova. */
-  prova: boolean;
 };
 
 /**
- * Formula, fascia, nucleo e prova di un abbonamento, gia' a parole; null per
+ * Formula, fascia e nucleo di un abbonamento, gia' a parole; null per
  * gli altri servizi. Un abbonamento senza `subscription` (nato prima delle
  * cinque formule) e' un Pranzo, come lo tratta il server.
  */
@@ -632,7 +630,6 @@ export function schedaAbbonamento(o: Pick<Ordine, "service" | "subscription">): 
     etichetta: etichettaFormula(formula, o.subscription?.tier),
     cosaRicevi: getFormula(formula).cosaRicevi,
     nucleo: NOMI_NUCLEO[o.subscription?.household ?? "singolo"],
-    prova: o.subscription?.trial ?? false,
   };
 }
 
@@ -802,8 +799,6 @@ export type DatiRichiesta = {
   formula: FormulaId;
   fascia: Fascia;
   nucleo: Nucleo;
-  /** Parte con la settimana di prova: la prima settimana e' di prova, senza impegno. */
-  prova: boolean;
 };
 
 export type CampoRichiesta = keyof DatiRichiesta | "piano";
@@ -883,7 +878,7 @@ export function corpoRichiesta(d: DatiRichiesta, piano: Piano, allenamenti: Alle
     notes: d.note.trim(),
     plan: abbonamento ? {} : piano,
     training: allenamenti,
-    ...(abbonamento ? { subscription: { plan: d.formula, tier: d.fascia, household: d.nucleo, trial: d.prova } } : {}),
+    ...(abbonamento ? { subscription: { plan: d.formula, tier: d.fascia, household: d.nucleo } } : {}),
   };
 }
 
@@ -958,7 +953,7 @@ export function leggiBozza(raw: string | null | undefined, utente: string, ricer
   const testo = (valore: unknown, max: number) => (typeof valore === "string" ? valore.slice(0, max) : "");
   if (typeof d.servizio !== "string" || !Object.prototype.hasOwnProperty.call(SERVIZIO_CON_PIATTI, d.servizio)) return null;
   if (d.modalita !== "pickup" && d.modalita !== "delivery") return null;
-  if (!eFormulaId(d.formula) || !eFascia(d.fascia) || !eNucleo(d.nucleo) || typeof d.prova !== "boolean") return null;
+  if (!eFormulaId(d.formula) || !eFascia(d.fascia) || !eNucleo(d.nucleo)) return null;
   const data = typeof d.data === "string" && dataValida(d.data) && d.data >= min ? d.data : "";
   return {
     servizio: d.servizio as Servizio,
@@ -972,7 +967,6 @@ export function leggiBozza(raw: string | null | undefined, utente: string, ricer
     formula: d.formula,
     fascia: d.fascia,
     nucleo: d.nucleo,
-    prova: d.prova,
   };
 }
 

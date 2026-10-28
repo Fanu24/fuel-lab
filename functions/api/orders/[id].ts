@@ -134,10 +134,10 @@ export const onRequestPatch = async ({ env, request, params, waitUntil }: Contex
     // UPDATE condizionato allo stato appena letto, eventi con la stessa condizione (vedi eventoSeInStato).
     const risultati = await env.DB.batch([
       ...cambi.map((cambio) => eventoSeInStato(env, id, "admin", cambio, current.status)),
-      env.DB.prepare("UPDATE orders SET status=?,production_date=?,fulfillment_date=?,internal_note=?,customer_message=?,price_cents=?,paid=?,sub_plan=?,sub_tier=?,sub_household=?,sub_trial=?,discount_base_cents=?,plan_json=?,items_json=?,meals=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND status=?")
+      env.DB.prepare("UPDATE orders SET status=?,production_date=?,fulfillment_date=?,internal_note=?,customer_message=?,price_cents=?,paid=?,sub_plan=?,sub_tier=?,sub_household=?,sub_trial=0,discount_base_cents=?,plan_json=?,items_json=?,meals=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND status=?")
         .bind(
           next.status, next.production_date, next.fulfillment_date, next.internal_note, next.customer_message, next.price_cents, next.paid,
-          next.subscription?.plan ?? null, next.subscription?.tier ?? null, next.subscription?.household ?? null, next.subscription?.trial ? 1 : 0,
+          next.subscription?.plan ?? null, next.subscription?.tier ?? null, next.subscription?.household ?? null,
           next.discount?.baseCents ?? null, piatti ? JSON.stringify(piatti.plan) : row.plan_json, piatti ? JSON.stringify(piatti.items) : row.items_json, piatti ? piatti.items.length : current.meals,
           id, current.status,
         ),

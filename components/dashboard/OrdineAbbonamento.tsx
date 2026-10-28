@@ -1,6 +1,6 @@
 /* Le parti di un abbonamento che la scheda ordine e il modulo "Nuovo ordine a
-   mano" hanno in comune: la scelta (formula, fascia, chi si abbona, settimana di
-   prova), il prezzo che ne discende e il calendario delle consegne.
+   mano" hanno in comune: la scelta (formula, fascia, chi si abbona), il prezzo che
+   ne discende e il calendario delle consegne.
 
    Il prezzo viene sempre da calcolaPrezzo (lib/abbonamento.ts): qui si propone
    soltanto, e il totale lo scrive Matteo. Il calendario e' una consegna (o un
@@ -28,7 +28,7 @@ import { calendarioAbbonamento, isData } from "@/lib/produzione";
 import { Scelte } from "./OrdineNuovoParti";
 import { giorno, giornoLungo } from "./ui";
 
-export type SceltaAbbonamentoCampi = { formula: FormulaId; fascia: Fascia; nucleo: Nucleo; prova: boolean };
+export type SceltaAbbonamentoCampi = { formula: FormulaId; fascia: Fascia; nucleo: Nucleo };
 
 /** Una pillola a due righe (nome e cosa copre): le cinque formule si riconoscono a colpo d'occhio. */
 const PILLOLA_DOPPIA = "pn-scelta-doppia has-[:checked]:bg-ink has-[:checked]:text-paper";
@@ -79,16 +79,6 @@ export function ScelteAbbonamento({
         opzioni={NUCLEI.map((n) => ({ id: n, label: `${NOMI_NUCLEO[n]}${SCONTO_NUCLEO[n] ? ` · −${SCONTO_NUCLEO[n]}%` : ""}` }))}
         onScegli={(nucleo) => onCambia({ nucleo })}
       />
-      <button
-        type="button"
-        role="switch"
-        aria-checked={valore.prova}
-        className="pn-switch justify-self-start"
-        onClick={() => onCambia({ prova: !valore.prova })}
-      >
-        <span className="pn-switch-binario" aria-hidden="true" />
-        Settimana di prova
-      </button>
     </div>
   );
 }

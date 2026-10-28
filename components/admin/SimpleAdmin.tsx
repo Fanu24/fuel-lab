@@ -232,7 +232,7 @@ function NewOrder({ day, unavailable, close, saved }: { day: string; unavailable
   const [cliente, setCliente] = useState(""); const [clienti, setClienti] = useState<ClienteAdmin[]>([]); const [erroreClienti, setErroreClienti] = useState("");
   const [servizio, setServizio] = useState<Servizio>("menu-settimana");
   const [formula, setFormula] = useState<FormulaId>("completo"); const [fascia, setFascia] = useState<"standard" | "plus">("standard");
-  const [nucleo, setNucleo] = useState<"singolo" | "coppia" | "famiglia">("singolo"); const [prova, setProva] = useState(false);
+  const [nucleo, setNucleo] = useState<"singolo" | "coppia" | "famiglia">("singolo");
   const [modalita, setModalita] = useState<"pickup" | "delivery">("pickup");
   const [comune, setComune] = useState("Pescara"); const [address, setAddress] = useState("");
   const [date, setDate] = useState(day); const [uscita, setUscita] = useState(day);
@@ -259,7 +259,7 @@ function NewOrder({ day, unavailable, close, saved }: { day: string; unavailable
       const corpo: NuovoOrdineManuale = { customerId: cliente || null, name, phone, comune, address, service: servizio, fulfillment: modalita,
         plan: servizio === "abbonamento" ? {} : pianoDaQuantita(righe, uscita || date), status: stato, productionDate: date || null,
         fulfillmentDate: (servizio === "abbonamento" ? date : uscita) || null, paid: pagato, notes,
-        ...(servizio === "abbonamento" ? { subscription: { plan: formula, tier: fascia, household: nucleo, trial: prova } } : {}),
+        ...(servizio === "abbonamento" ? { subscription: { plan: formula, tier: fascia, household: nucleo } } : {}),
         ...(servizio === "home-cooking" ? { meals: Number(porzioni) } : {}),
         ...(servizio !== "abbonamento" || cents !== null ? { priceCents: cents } : {}),
         ...(discountCode.trim() ? { discountCode: discountCode.trim() } : {}),
@@ -271,7 +271,7 @@ function NewOrder({ day, unavailable, close, saved }: { day: string; unavailable
     <details className="sa-extra"><summary>Cliente registrato / altro servizio</summary><div className="sa-extra-body">
     <label className="sa-field">Cliente<select value={cliente} disabled={busy} onChange={(e) => scegliCliente(e.target.value)}><option value="">Nuovo / senza account</option>{clienti.map((c) => <option key={c.id} value={c.id}>{c.name || c.email} · {c.email}</option>)}</select></label>{erroreClienti && <p className="sa-note">Elenco clienti non disponibile. Puoi comunque inserire nome e telefono.</p>}
     <label className="sa-field">Tipo di ordine<select value={servizio} disabled={busy} onChange={(e) => setServizio(e.target.value as Servizio)}>{Object.entries(ETICHETTE_SERVIZIO).map(([id, n]) => <option key={id} value={id}>{n}</option>)}</select></label>
-    {servizio === "abbonamento" && <><div className="sa-grid"><label className="sa-field">Formula<select value={formula} disabled={busy} onChange={(e) => setFormula(e.target.value as FormulaId)}>{FORMULE.map((f) => <option key={f.id} value={f.id}>{f.nome}</option>)}</select></label><label className="sa-field">Fascia<select value={fascia} disabled={busy} onChange={(e) => setFascia(e.target.value as "standard" | "plus")}><option value="standard">Standard</option><option value="plus">Plus</option></select></label></div><label className="sa-field">Per chi<select value={nucleo} disabled={busy} onChange={(e) => setNucleo(e.target.value as typeof nucleo)}><option value="singolo">Una persona</option><option value="coppia">Coppia</option><option value="famiglia">Famiglia</option></select></label><label className="sa-check"><input type="checkbox" checked={prova} disabled={busy} onChange={(e) => setProva(e.target.checked)} />Settimana di prova</label></>}
+    {servizio === "abbonamento" && <><div className="sa-grid"><label className="sa-field">Formula<select value={formula} disabled={busy} onChange={(e) => setFormula(e.target.value as FormulaId)}>{FORMULE.map((f) => <option key={f.id} value={f.id}>{f.nome}</option>)}</select></label><label className="sa-field">Fascia<select value={fascia} disabled={busy} onChange={(e) => setFascia(e.target.value as "standard" | "plus")}><option value="standard">Standard</option><option value="plus">Plus</option></select></label></div><label className="sa-field">Per chi<select value={nucleo} disabled={busy} onChange={(e) => setNucleo(e.target.value as typeof nucleo)}><option value="singolo">Una persona</option><option value="coppia">Coppia</option><option value="famiglia">Famiglia</option></select></label></>}
     </div></details>
     <div className="sa-grid"><label className="sa-field">Nome<input autoComplete="name" required maxLength={100} value={name} disabled={busy} onChange={(e) => setName(e.target.value)} /></label><label className="sa-field">Telefono<input type="tel" autoComplete="tel" required maxLength={40} value={phone} disabled={busy} onChange={(e) => setPhone(e.target.value)} /></label></div>
     {servizio !== "abbonamento" && <>

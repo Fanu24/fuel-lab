@@ -192,7 +192,7 @@ describe("ordine a mano visto dal pannello", () => {
 });
 
 describe("ordine a mano: abbonamento", () => {
-  const formula = { plan: "completo", tier: "plus", household: "singolo", trial: true };
+  const formula = { plan: "completo", tier: "plus", household: "singolo" };
   const abb = (changes: Record<string, unknown> = {}) => ({ service: "abbonamento", plan: {}, subscription: formula, ...changes });
 
   it("niente piatti, prezzo proposto per la formula se Matteo non lo scrive, le due date sono l'inizio", () => {
@@ -202,7 +202,7 @@ describe("ordine a mano: abbonamento", () => {
     // Completo Plus, ritiro (il corpo di base e' un ritiro): 676 euro di listino
     expect(e.value).toMatchObject({
       service: "abbonamento", items: [], meals: 0, priceCents: 67600, requestedDate: "2026-10-05",
-      subscription: { plan: "completo", tier: "plus", household: "singolo", trial: true },
+      subscription: { plan: "completo", tier: "plus", household: "singolo" },
     });
     expect(e.value.plan).toEqual({});
     // con la consegna a domicilio e' il listino

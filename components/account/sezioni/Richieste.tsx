@@ -444,10 +444,6 @@ function SchedaRichiesta({
               <dt>Chi si abbona</dt>
               <dd>{scheda.nucleo}</dd>
             </div>
-            <div>
-              <dt>Settimana di prova</dt>
-              <dd>{scheda.prova ? "Sì" : "No"}</dd>
-            </div>
             {prossima ? (
               <div>
                 <dt>{ritiro ? "Prossimo ritiro" : "Prossima consegna"}</dt>

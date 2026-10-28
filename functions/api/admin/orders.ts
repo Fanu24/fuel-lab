@@ -14,7 +14,7 @@ import { leggiOrdine } from "../../_lib/ordini";
 const GIA_INSERITO = `SELECT id FROM orders WHERE source='manual' AND user_id=? AND service=? AND customer_name=? AND phone=?
   AND fulfillment=? AND comune=? AND address=?
   AND COALESCE(requested_date,'')=? AND COALESCE(fulfillment_date,'')=? AND notes=? AND items_json=? AND COALESCE(discount_base_cents,price_cents,-1)=?
-  AND COALESCE(sub_plan,'')=? AND COALESCE(sub_tier,'')=? AND COALESCE(sub_household,'')=? AND sub_trial=? AND COALESCE(discount_code,'')=?
+  AND COALESCE(sub_plan,'')=? AND COALESCE(sub_tier,'')=? AND COALESCE(sub_household,'')=? AND COALESCE(discount_code,'')=?
   AND created_at > datetime('now','-2 minutes')`;
 
 /**
@@ -66,7 +66,7 @@ export const onRequestPost = async ({ env, request }: Context) => {
   const uguale = [
     proprietario, o.service, o.name, o.phone, o.fulfillment, o.comune, o.address,
     o.requestedDate ?? "", o.fulfillmentDate ?? "", o.notes, JSON.stringify(o.items), base ?? -1,
-    o.subscription?.plan ?? "", o.subscription?.tier ?? "", o.subscription?.household ?? "", o.subscription?.trial ? 1 : 0, codiceNormalizzato ?? "",
+    o.subscription?.plan ?? "", o.subscription?.tier ?? "", o.subscription?.household ?? "", codiceNormalizzato ?? "",
   ];
   // Restituisce un ordine già creato anche se il codice è stato disattivato nel frattempo.
   const gia = await env.DB.prepare(`${GIA_INSERITO} ORDER BY created_at DESC LIMIT 1`).bind(...uguale).first<{ id: string }>();
@@ -84,14 +84,14 @@ export const onRequestPost = async ({ env, request }: Context) => {
     env.DB.prepare(`INSERT INTO orders (id,user_id,status,service,fulfillment,requested_date,production_date,fulfillment_date,
         customer_name,phone,comune,address,notes,plan_json,training_json,items_json,meals,internal_note,price_cents,paid,source,
         sub_plan,sub_tier,sub_household,sub_trial,discount_code,discount_percent,discount_applied_percent,discount_base_cents,discount_round_euro)
-      SELECT ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'manual',?,?,?,?,?,?,?,?,?
+      SELECT ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'manual',?,?,?,0,?,?,?,?,?
       WHERE NOT EXISTS (${GIA_INSERITO})
         AND (? IS NULL OR EXISTS (SELECT 1 FROM discount_codes WHERE code=? AND percent=? AND active=1))`)
       .bind(
         id, o.customerId ?? user.id, o.status, o.service, o.fulfillment, o.requestedDate, o.productionDate, o.fulfillmentDate,
         o.name, o.phone, o.comune, o.address, o.notes, JSON.stringify(o.plan), "{}", JSON.stringify(o.items), o.meals,
         o.internalNote, o.priceCents, o.paid,
-        o.subscription?.plan ?? null, o.subscription?.tier ?? null, o.subscription?.household ?? null, o.subscription?.trial ? 1 : 0,
+        o.subscription?.plan ?? null, o.subscription?.tier ?? null, o.subscription?.household ?? null,
         sconto.discount?.code ?? null, sconto.discount?.percent ?? null, sconto.discount?.appliedPercent ?? null, sconto.discount?.baseCents ?? null, sconto.discount?.roundEuro ? 1 : 0,
         ...uguale,
         codice.code, codice.code, codice.percent,

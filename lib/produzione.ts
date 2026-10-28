@@ -350,11 +350,11 @@ export function nomeAbbonamento(o: Pick<Ordine, "subscription">): string {
   return etichettaFormula(formulaDi(o), o.subscription?.tier);
 }
 
-/** "Completo · Plus · in coppia · con la settimana di prova": tutta la scelta, per la scheda. */
+/** "Completo · Plus · in coppia": tutta la scelta, per la scheda. */
 export function dettaglioAbbonamento(o: Pick<Ordine, "subscription">): string {
   const s = o.subscription;
   if (!s) return nomeAbbonamento(o);
-  return [nomeAbbonamento(o), NOMI_NUCLEO[s.household].toLowerCase(), s.trial ? "con la settimana di prova" : ""].filter(Boolean).join(" · ");
+  return [nomeAbbonamento(o), NOMI_NUCLEO[s.household].toLowerCase()].join(" · ");
 }
 
 export type CalendarioAbbonamento = {

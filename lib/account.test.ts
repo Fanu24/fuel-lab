@@ -315,7 +315,7 @@ describe("stato degli ordini", () => {
   it("per l'abbonamento la prossima consegna e' una ogni 3 giorni dall'inizio, e il periodo si legge", () => {
     const abb = ordine({
       id: "abb", service: "abbonamento", status: "confirmed", fulfillment_date: "2026-09-14",
-      subscription: { plan: "completo", tier: "plus", household: "singolo", trial: true },
+      subscription: { plan: "completo", tier: "plus", household: "singolo" },
     });
     // dal 14 settembre al 13 ottobre, consegne il 14, 17, 20, 23, 26, 29 settembre, 2, 5, 8, 11 ottobre.
     expect(prossimaUscitaDi(abb, "2026-09-14")).toBe("2026-09-14");
@@ -335,7 +335,7 @@ describe("stato degli ordini", () => {
     // Completo (tutti i giorni) si'.
     const con = (plan: "pranzo" | "completo") => ordine({
       service: "abbonamento", status: "confirmed", fulfillment_date: "2026-10-01",
-      subscription: { plan, tier: "standard", household: "singolo", trial: false },
+      subscription: { plan, tier: "standard", household: "singolo" },
     });
     expect(prossimaUscitaDi(con("pranzo"), "2026-10-29")).toBeNull();
     expect(prossimaUscitaDi(con("completo"), "2026-10-29")).toBe("2026-10-31");
@@ -345,24 +345,22 @@ describe("stato degli ordini", () => {
     expect(prossimaUscitaDi(vecchio, "2026-10-28")).toBe("2026-10-28");
   });
 
-  it("legge un abbonamento a parole: formula e fascia, chi si abbona, prova, cosa ricevi", () => {
+  it("legge un abbonamento a parole: formula e fascia, chi si abbona, cosa ricevi", () => {
     const abb = ordine({
       service: "abbonamento",
-      subscription: { plan: "full6", tier: "plus", household: "coppia", trial: true },
+      subscription: { plan: "full6", tier: "plus", household: "coppia" },
     });
     expect(schedaAbbonamento(abb)).toEqual({
       etichetta: "Full 6 · Plus",
       cosaRicevi: "18 pasti a settimana, tre al giorno",
       nucleo: "In coppia",
-      prova: true,
     });
     expect(nomeServizioRichiesta(abb)).toBe("Abbonamento Full 6 · Plus");
-    // Senza scelta salvata: Pranzo, senza fascia, da solo, senza prova.
+    // Senza scelta salvata: Pranzo, senza fascia, da solo.
     expect(schedaAbbonamento(ordine({ service: "abbonamento" }))).toEqual({
       etichetta: "Pranzo",
       cosaRicevi: "5 pasti a settimana, solo il pranzo",
       nucleo: "Da solo",
-      prova: false,
     });
     expect(schedaAbbonamento(ordine({ service: "menu-settimana" }))).toBeNull();
     expect(nomeServizioRichiesta(ordine({ service: "menu-settimana" }))).toBe("Menu della settimana");
@@ -373,7 +371,7 @@ describe("stato degli ordini", () => {
     expect(frequenzaConsegne("delivery")).toBe("Consegna a casa ogni 3 giorni");
     const abb = ordine({
       service: "abbonamento", status: "confirmed", fulfillment_date: "2026-10-05",
-      subscription: { plan: "completo", tier: "plus", household: "singolo", trial: false },
+      subscription: { plan: "completo", tier: "plus", household: "singolo" },
     });
     const righe = descrizioneInizioAbbonamento(abb, "2026-09-30");
     expect(righe).toEqual([
@@ -457,7 +455,7 @@ describe("nuova richiesta", () => {
   const buona: DatiRichiesta = {
     servizio: "menu-settimana", nome: "Maria", telefono: "333 123 4567", comune: "Pescara",
     indirizzo: "", modalita: "pickup", data: "", note: "",
-    formula: "completo", fascia: "standard", nucleo: "singolo", prova: true,
+    formula: "completo", fascia: "standard", nucleo: "singolo",
   };
 
   it("passa quando e' completa", () => {
@@ -520,13 +518,12 @@ describe("nuova richiesta", () => {
 
   it("l'abbonamento parte con la sua scelta e senza piatti", () => {
     const piano: Piano = { lun: { pranzo: { piatto: "noodles-sesamo-maiale", extra: [] } } };
-    const abb: DatiRichiesta = { ...buona, servizio: "abbonamento", formula: "full6", fascia: "plus", nucleo: "coppia", prova: false };
+    const abb: DatiRichiesta = { ...buona, servizio: "abbonamento", formula: "full6", fascia: "plus", nucleo: "coppia" };
     const corpo = corpoRichiesta(abb, piano, { lun: "pesi" });
-    expect(corpo.subscription).toEqual({ plan: "full6", tier: "plus", household: "coppia", trial: false });
+    expect(corpo.subscription).toEqual({ plan: "full6", tier: "plus", household: "coppia" });
     // Il compositore non sceglie i pasti dell'abbonamento: il server scarterebbe i piatti, e non li mandiamo.
     expect(corpo.plan).toEqual({});
     expect(corpo.training).toEqual({ lun: "pesi" });
-    expect(corpoRichiesta({ ...abb, prova: true }, piano, {}).subscription?.trial).toBe(true);
     // Gli altri servizi non portano la scelta e tengono il loro piano.
     const menu = corpoRichiesta({ ...buona, formula: "full7", fascia: "plus" }, piano, {});
     expect(menu).not.toHaveProperty("subscription");
@@ -553,7 +550,7 @@ describe("nuova richiesta", () => {
           {
             name: "Giulia", phone: "333 123 4567", comune: "Pescara", address: "Via Roma 1", service: "abbonamento",
             fulfillment: modalita, notes: "", plan: {}, training: {},
-            subscription: { plan: formula, tier: fascia, household: nucleo, trial: true },
+            subscription: { plan: formula, tier: fascia, household: nucleo },
           },
           "Account",
           "2026-09-27",
@@ -572,7 +569,7 @@ describe("nuova richiesta", () => {
   describe("la bozza", () => {
     const min = "2026-09-28";
     const ricerca = "?sezione=richiesta&servizio=abbonamento";
-    const lunga: DatiRichiesta = { ...buona, servizio: "abbonamento", formula: "full6", fascia: "plus", nucleo: "coppia", prova: false, data: "2026-10-05", note: "Piano: 2200 kcal." };
+    const lunga: DatiRichiesta = { ...buona, servizio: "abbonamento", formula: "full6", fascia: "plus", nucleo: "coppia", data: "2026-10-05", note: "Piano: 2200 kcal." };
 
     it("si salva e si ritrova uguale, per lo stesso utente e lo stesso indirizzo", () => {
       const raw = serializzaBozza("u1", ricerca, lunga);
@@ -612,7 +609,6 @@ describe("nuova richiesta", () => {
       expect(rotta({ formula: "full8" })).toBeNull();
       expect(rotta({ fascia: "oro" })).toBeNull();
       expect(rotta({ nucleo: "branco" })).toBeNull();
-      expect(rotta({ prova: "si" })).toBeNull();
       // I testi si tengono ma dentro i limiti che il server accetta.
       expect(rotta({ note: "x".repeat(2000) })?.note).toHaveLength(1500);
       expect(rotta({ nome: 42 })?.nome).toBe("");

@@ -12,7 +12,7 @@
    le rifa' il server (POST /api/admin/orders).
 
    L'abbonamento mensile non ha piatti: al posto della griglia ci sono la
-   formula (una delle cinque, la fascia, chi si abbona, la settimana di prova)
+   formula (una delle cinque, la fascia, chi si abbona)
    e la data d'inizio, con le consegne che ne discendono (una ogni 3 giorni).
    Il prezzo parte da quello che calcolaPrezzo propone per la scelta, si
    riallinea quando la scelta cambia finche' Matteo non lo scrive lui, e resta
@@ -606,7 +606,7 @@ export default function OrdineNuovo({ onChiudi, onSalvato }: { onChiudi: () => v
                   <Riga etichetta="Formula">
                     {nomeFormula}
                     <span className="block text-[14px] text-muted">
-                      {[NOMI_NUCLEO[campi.nucleo], campi.prova ? "con la settimana di prova" : "senza settimana di prova"].join(" · ")}
+                      {NOMI_NUCLEO[campi.nucleo]}
                     </span>
                   </Riga>
                 ) : (

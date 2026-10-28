@@ -247,9 +247,9 @@ function righeRichiesta(o: RichiestaPerEmail): Array<[string, string]> {
       ["Formula", nomeAbbonamento(o)],
       ["Cosa chiede", getFormula(formulaDi(o)).cosaRicevi],
     ];
-    // Chi si abbona e la prova li porta la scelta salvata: senza (un abbonamento vecchio) non si inventano.
+    // Chi si abbona lo porta la scelta salvata: senza (un abbonamento vecchio) non si inventa.
     if (scelta) {
-      righe.push(["Chi si abbona", NOMI_NUCLEO[scelta.household]], ["Settimana di prova", scelta.trial ? "Sì" : "No"]);
+      righe.push(["Chi si abbona", NOMI_NUCLEO[scelta.household]]);
     }
     if (o.price_cents !== null && o.price_cents !== undefined) righe.push(["Prezzo proposto", `${euroTesto(o.price_cents)} al mese`]);
     righe.push(["Inizio desiderato", o.requested_date ? dataEstesa(o.requested_date) : "Da concordare"]);

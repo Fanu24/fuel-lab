@@ -60,10 +60,9 @@ export type ScontoOrdine = { code: string; percent: number; appliedPercent: numb
 
 /**
  * Cosa ha scelto chi si abbona: la formula, la fascia, con chi (da solo, in
- * coppia, in famiglia: per lo sconto) e se parte dalla settimana di prova.
- * Solo per il servizio "abbonamento".
+ * coppia, in famiglia: per lo sconto). Solo per il servizio "abbonamento".
  */
-export type SceltaAbbonamento = { plan: FormulaId; tier: Fascia; household: Nucleo; trial: boolean };
+export type SceltaAbbonamento = { plan: FormulaId; tier: Fascia; household: Nucleo };
 
 export type VoceOrdine = { id: string; name: string; day: string; meal: string; extras: string[] };
 

@@ -57,7 +57,7 @@ import type { Dati } from "./tipi";
 
    L'abbonamento mensile (?servizio=abbonamento) non vuole la settimana
    composta: chiede la formula (una delle cinque), la fascia (Standard o Plus),
-   con chi ci si abbona (per lo sconto) e se si parte dalla settimana di prova.
+   con chi ci si abbona (per lo sconto).
    La data diventa l'inizio desiderato e le note diventano la scheda: il piano
    del nutrizionista, gli allenamenti, le allergie. Il prezzo che si legge e' una
    stima (lib/account.ts, stimaAbbonamento): il server propone lo stesso numero,
@@ -210,8 +210,6 @@ function Modulo({
     formula: formulaIniziale,
     fascia: fasciaIniziale,
     nucleo: nucleoIniziale,
-    // La prima settimana e' di prova per tutti, "senza impegno": si parte da li' salvo che il cliente lo tolga.
-    prova: true,
   });
   /* Una richiesta lasciata a meta' (scheda ricaricata dal telefono, sessione scaduta e rientro) si ritrova com'era:
      la scheda dell'abbonamento e' mezza pagina da riscrivere. E' legata a questo utente e a questo indirizzo. */
@@ -459,7 +457,7 @@ function Modulo({
             <details className="acc-dettagli-piatti">
               <summary>
                 Personalizza l&apos;abbonamento
-                <span className="mt-1 block text-sm font-normal text-muted">{NOMI_FASCIA[dati.fascia]} · {NOMI_NUCLEO[dati.nucleo]} · {dati.prova ? "Settimana di prova" : "Senza prova"}</span>
+                <span className="mt-1 block text-sm font-normal text-muted">{NOMI_FASCIA[dati.fascia]} · {NOMI_NUCLEO[dati.nucleo]}</span>
               </summary>
               <div className="mt-5 grid gap-5">
                 <div className="campo">
@@ -476,13 +474,6 @@ function Modulo({
                   </select>
                   <p className="text-sm text-muted">{NOTE_NUCLEO[dati.nucleo]}. Lo conferma Matteo.</p>
                 </div>
-                <label className="acc-spunta">
-                  <input id="nr-prova" type="checkbox" checked={dati.prova} onChange={(e) => aggiorna("prova", e.target.checked)} aria-describedby="nr-prova-aiuto" />
-                  <span>
-                    <span className="font-semibold">Parto con la settimana di prova</span>
-                    <span id="nr-prova-aiuto" className="block text-sm text-muted">Modalità e prezzo si concordano con Matteo.</span>
-                  </span>
-                </label>
               </div>
             </details>
           </>
@@ -635,7 +626,6 @@ function Modulo({
                   </dd>
                 </div>
                 <div><dt>Chi si abbona</dt><dd>{NOMI_NUCLEO[dati.nucleo]}</dd></div>
-                <div><dt>Settimana di prova</dt><dd>{dati.prova ? "Sì, parto dalla prova" : "No"}</dd></div>
                 <div>
                   <dt>Ritiro o consegna</dt>
                   <dd>
