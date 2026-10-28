@@ -16,6 +16,7 @@ import {
   pastiDaOrdine,
   piattiRaggruppati,
   prezzoPastoProposto,
+  testoAccettazione,
 } from "./pannello";
 
 function cliente(id: string, nome: string): ClienteMatteo {
@@ -149,4 +150,24 @@ it("il cliente di un ordine si trova per account, o per nome e telefono se è in
   expect(clienteDelOrdine(clienti, { user_id: "u1", customer_name: "Altro nome", phone: "" })?.id).toBe("a");
   expect(clienteDelOrdine(clienti, { user_id: "staff", customer_name: "Davide Ferri", phone: "333 987 6543" })?.id).toBe("b");
   expect(clienteDelOrdine(clienti, { user_id: "staff", customer_name: "Nessuno", phone: "000" })).toBeUndefined();
+});
+
+it("il testo dopo un'accettazione dice dove è finito l'ordine e se il prezzo si è perso", () => {
+  expect(testoAccettazione("menu-settimana", "in-settimana", false)).toBe("Messo nella settimana: lo trovi qui.");
+  expect(testoAccettazione("menu-settimana", "in-settimana", true)).toBe("Messo nella settimana: lo trovi qui.");
+  expect(testoAccettazione("abbonamento", "in-settimana", true)).toBe("Accettato: ora riempi la sua settimana.");
+  expect(testoAccettazione("menu-settimana", "da-completare", false)).toBe("Accettato. Lo trovi nella settimana.");
+  expect(testoAccettazione("menu-settimana", "da-completare", true)).toBe(
+    "Accettato. Lo trovi nella settimana. Il prezzo non si è salvato: scrivilo in Altro → I miei clienti.",
+  );
+  expect(testoAccettazione("abbonamento", "da-completare", false)).toBe("Accettato: ora riempi la sua settimana.");
+  expect(testoAccettazione("abbonamento", "da-completare", true)).toBe(
+    "Accettato: ora riempi la sua settimana. Il prezzo non si è salvato: scrivilo in Altro → I miei clienti.",
+  );
+  expect(testoAccettazione("sui-tuoi-macro", "giorno-passato", false)).toBe(
+    "Accettato. Il giorno d'inizio era già passato: aggiungi i pasti dalla settimana del cliente.",
+  );
+  expect(testoAccettazione("sui-tuoi-macro", "giorno-passato", true)).toBe(
+    "Accettato. Il giorno d'inizio era già passato: aggiungi i pasti dalla settimana del cliente. Il prezzo non si è salvato: scrivilo in Altro → I miei clienti.",
+  );
 });

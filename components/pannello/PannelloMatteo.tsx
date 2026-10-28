@@ -22,6 +22,10 @@ export type Condiviso = {
   dati: DatiPannello | null;
   /** Gli ordini nuovi dell'ultima settimana caricata con successo; null finche' non ce n'e' stata una. */
   nuovi: Ordine[] | null;
+  /** L'errore dell'ultimo caricamento della settimana di `giorno`, se c'e'. */
+  erroreCaricamento: { messaggio: string; accesso: boolean } | null;
+  /** Toglie subito un ordine dagli ordini nuovi (accettato o rifiutato): nessuna ricarica lo fa tornare. */
+  togliNuovo: (id: string) => void;
   impostazioni: Impostazioni;
   /** Ricarica la settimana; risolve con i dati appena arrivati, o null se non sono arrivati. */
   ricarica: () => Promise<DatiPannello | null>;
@@ -83,11 +87,19 @@ export default function PannelloMatteo() {
   const [avviso, setAvviso] = useState<string | null>(null);
 
   // Di richieste ne conta solo l'ultima: una risposta vecchia non sovrascrive una nuova.
+  // Gli ordini già accettati o rifiutati da Matteo: una risposta del server che arriva dopo non li fa tornare.
+  const tolti = useRef(new Set<string>());
+  const togliNuovo = useCallback((id: string) => {
+    tolti.current.add(id);
+    setSettimana((s) => (s ? { ...s, dati: { ...s.dati, nuovi: s.dati.nuovi.filter((o) => o.id !== id) } } : s));
+  }, []);
+
   const carica = useCallback((lun: string): Promise<DatiPannello | null> => {
     const id = ++richiesta.current;
     return pannelloApi.pannello(lun, giorniDellaSettimana(lun)[6]).then(
-      (dati) => {
+      (ricevuti) => {
         if (id !== richiesta.current) return null;
+        const dati: DatiPannello = { ...ricevuti, nuovi: ricevuti.nuovi.filter((o) => !tolti.current.has(o.id)) };
         setSettimana({ lunedi: lun, dati });
         setErrore(null);
         return dati;
@@ -173,6 +185,8 @@ export default function PannelloMatteo() {
     giorno,
     dati: datiDelGiorno,
     nuovi: settimana ? settimana.dati.nuovi : null,
+    erroreCaricamento: erroreDelGiorno,
+    togliNuovo,
     impostazioni,
     ricarica,
     vai,

@@ -7,7 +7,7 @@
  */
 
 import { getFormula } from "@/lib/abbonamento";
-import type { Ordine, VoceOrdine } from "@/lib/api";
+import type { Ordine, Servizio, VoceOrdine } from "@/lib/api";
 import { giornoDelPiano, giornoSettimana, isData, spostaGiorni } from "@/lib/produzione";
 import { NOMI_GIORNO } from "@/lib/settimana";
 
@@ -215,6 +215,31 @@ export function piattiRaggruppati(voci: Pick<VoceOrdine, "name" | "extras">[]): 
     copie.set(nome, (copie.get(nome) ?? 0) + 1);
   }
   return [...copie].map(([nome, n]) => (n > 1 ? `${n}× ${nome}` : nome));
+}
+
+/**
+ * Come e' andata l'accettazione dopo il PATCH: "in-settimana" (i pasti ci sono), "da-completare"
+ * (il PATCH e' andato ma i pasti no, anche dopo un tentativo: la ricarica li mette senza prezzo),
+ * "giorno-passato" (il server ha rifiutato il giorno perche' nel frattempo e' passato).
+ */
+export type EsitoAccettazione = "in-settimana" | "da-completare" | "giorno-passato";
+
+const PREZZO_NON_SALVATO = " Il prezzo non si è salvato: scrivilo in Altro → I miei clienti.";
+
+/**
+ * Il testo che Matteo legge dopo aver accettato. Il prezzo, se l'ha scritto, va detto quando non
+ * si e' salvato: in tutti gli esiti tranne "in-settimana".
+ */
+export function testoAccettazione(servizio: Servizio, esito: EsitoAccettazione, prezzoScritto: boolean): string {
+  const abbonamento = servizio === "abbonamento";
+  const prezzoPerso = prezzoScritto && esito !== "in-settimana" ? PREZZO_NON_SALVATO : "";
+  if (esito === "giorno-passato") {
+    return `Accettato. Il giorno d'inizio era già passato: aggiungi i pasti dalla settimana del cliente.${prezzoPerso}`;
+  }
+  if (esito === "da-completare") {
+    return `${abbonamento ? "Accettato: ora riempi la sua settimana." : "Accettato. Lo trovi nella settimana."}${prezzoPerso}`;
+  }
+  return abbonamento ? "Accettato: ora riempi la sua settimana." : "Messo nella settimana: lo trovi qui.";
 }
 
 /**

@@ -271,7 +271,7 @@
 .pm-bottoni { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .pm-bottoni > :only-child { grid-column: 1 / -1; }
 .pm-bottoni .pm-bottone { width: 100%; }
-.pm-bottone-whatsapp { color: #fff; background: #25d366; }
+.pm-bottone-whatsapp { color: #0d3b24; background: #25d366; }
 .pm-bottone-rosso-chiaro { color: #c0392b; background: #fff; border-color: #c0392b; }
 .pm-ordine-form { display: grid; gap: 12px; }
 .pm-campo { display: grid; gap: 6px; font-size: 17px; font-weight: 750; }

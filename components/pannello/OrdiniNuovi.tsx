@@ -10,7 +10,8 @@ import {
   linkWhatsAppCliente,
   piattiRaggruppati,
   prezzoPastoProposto,
-  type PastoSettimana,
+  testoAccettazione,
+  type EsitoAccettazione,
 } from "@/lib/pannello";
 import { dataBreve, isData, oggiRoma } from "@/lib/produzione";
 import type { Condiviso } from "./PannelloMatteo";
@@ -21,8 +22,6 @@ import { Avviso, Bottone, Errore } from "./ui";
    e Accetta / Rifiuta. Accetta apre il modulo dentro la scheda: il giorno di inizio e il prezzo. */
 
 const MESSAGGIO_GIA_AGGIORNATO = "Questo ordine era già stato aggiornato.";
-const MESSAGGIO_ACCETTATO_IN_SETTIMANA = "Accettato. Lo trovi nella settimana.";
-const MESSAGGIO_MESSO_IN_SETTIMANA = "Messo nella settimana: lo trovi qui.";
 
 type Messaggio = { testo: string; errore: boolean };
 type ErroreScheda = { id: string; testo: string };
@@ -31,8 +30,22 @@ function messaggioDi(e: unknown): string {
   return e instanceof ApiError ? e.message : "Qualcosa non va. Riprova.";
 }
 
+/**
+ * Mette l'ordine nella settimana. Una rete che cade a metà si riprova una volta: la chiamata si
+ * può ripetere senza danni (il server non duplica i pasti e riempie i prezzi mancanti). Un 400
+ * (il giorno è passato) non si riprova: è una risposta, non un guasto.
+ */
+async function mettiNellaSettimana(id: string, inizio: string, centesimi: number | null): Promise<void> {
+  try {
+    await pannelloApi.mettiInSettimana(id, inizio, centesimi);
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 400) throw e;
+    await pannelloApi.mettiInSettimana(id, inizio, centesimi);
+  }
+}
+
 export default function OrdiniNuovi({ pannello }: { pannello: Condiviso }) {
-  const { nuovi, ricarica, vai, cambiaGiorno, avvisa } = pannello;
+  const { nuovi, erroreCaricamento, togliNuovo, ricarica, vai, cambiaGiorno, avvisa } = pannello;
   const [messaggio, setMessaggio] = useState<Messaggio | null>(null);
   const [erroreScheda, setErroreScheda] = useState<ErroreScheda | null>(null);
   const [occupato, setOccupato] = useState(false);
@@ -84,38 +97,33 @@ export default function OrdiniNuovi({ pannello }: { pannello: Condiviso }) {
         return;
       }
 
-      // Da qui l'ordine e' accettato: nessun errore deve invitare a riaccettarlo.
-      let pasti: PastoSettimana[] | null = null;
+      // Da qui l'ordine e' accettato: sparisce subito dalla lista, anche se la ricarica andasse male.
+      togliNuovo(o.id);
+      const prezzoScritto = centesimi !== null;
+      let esito: EsitoAccettazione = "in-settimana";
       try {
-        pasti = (await pannelloApi.mettiInSettimana(o.id, inizio, centesimi)).pasti;
+        await mettiNellaSettimana(o.id, inizio, centesimi);
       } catch (e) {
-        // Il server dice perche' (per esempio il giorno passato, nel frattempo): quel messaggio si mostra.
-        if (e instanceof ApiError && e.status === 400) {
-          await ricarica();
-          setMessaggio({ testo: messaggioDi(e), errore: true });
-          return;
-        }
-        // Altrimenti la ricarica la porta nella settimana (la conversione automatica).
+        esito = e instanceof ApiError && e.status === 400 ? "giorno-passato" : "da-completare";
       }
 
       const dati = await ricarica();
-      if (pasti === null) {
-        cambiaGiorno(inizio);
-        vai({ tipo: "giorno" });
-        avvisa(MESSAGGIO_ACCETTATO_IN_SETTIMANA);
+      const testo = testoAccettazione(o.service, esito, prezzoScritto);
+      if (esito === "giorno-passato") {
+        setMessaggio({ testo, errore: false });
         return;
       }
       if (o.service === "abbonamento") {
         const clienteId = clienteDelOrdine(dati?.clienti ?? [], o)?.id;
         if (clienteId) {
           vai({ tipo: "cliente", clienteId });
-          avvisa(MESSAGGIO_MESSO_IN_SETTIMANA);
+          avvisa(testo);
           return;
         }
       }
       cambiaGiorno(inizio);
       vai({ tipo: "giorno" });
-      avvisa(MESSAGGIO_MESSO_IN_SETTIMANA);
+      avvisa(testo);
     });
   }
 
@@ -132,6 +140,7 @@ export default function OrdiniNuovi({ pannello }: { pannello: Condiviso }) {
         }
         return;
       }
+      togliNuovo(o.id);
       await ricarica();
       setMessaggio({ testo: "Ordine rifiutato. Il cliente riceve un'email.", errore: false });
     });
@@ -141,7 +150,15 @@ export default function OrdiniNuovi({ pannello }: { pannello: Condiviso }) {
     return (
       <>
         <h1 className="pm-titolo">Ordini nuovi</h1>
-        <p className="pm-carico" role="status">Carico…</p>
+        {erroreCaricamento ? (
+          <Errore
+            messaggio={erroreCaricamento.messaggio}
+            riprova={erroreCaricamento.accesso ? undefined : () => void ricarica()}
+            accesso={erroreCaricamento.accesso}
+          />
+        ) : (
+          <p className="pm-carico" role="status">Carico…</p>
+        )}
       </>
     );
   }
