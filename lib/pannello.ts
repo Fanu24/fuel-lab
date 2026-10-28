@@ -122,7 +122,7 @@ function primaDataDelGiorno(inizio: string, giorno: string): string | null {
   return null;
 }
 
-function nomePiatto(v: VoceOrdine): string {
+function nomePiatto(v: Pick<VoceOrdine, "name" | "extras">): string {
   return v.extras.length > 0 ? `${v.name} + ${v.extras.join(", ")}` : v.name;
 }
 
@@ -193,6 +193,40 @@ export function prezzoPastoProposto(
   }
   if (typeof o.price_cents === "number" && o.meals > 0) return Math.round(o.price_cents / o.meals);
   return null;
+}
+
+/* =========================================================================
+   Ordini nuovi (il riquadro e la schermata "Ordini nuovi")
+   ========================================================================= */
+
+/**
+ * Il giorno in cui far partire un ordine: la data che ha chiesto il cliente, se c'e' e
+ * non e' passata; altrimenti oggi. Mai prima di `oggi`.
+ */
+export function giornoDiInizioProposto(richiesta: string | null, oggi: string): string {
+  return richiesta && richiesta >= oggi ? richiesta : oggi;
+}
+
+/** I piatti con le copie raggruppate: due "Pollo al curry" diventano "2× Pollo al curry". */
+export function piattiRaggruppati(voci: Pick<VoceOrdine, "name" | "extras">[]): string[] {
+  const copie = new Map<string, number>();
+  for (const v of voci) {
+    const nome = nomePiatto(v);
+    copie.set(nome, (copie.get(nome) ?? 0) + 1);
+  }
+  return [...copie].map(([nome, n]) => (n > 1 ? `${n}× ${nome}` : nome));
+}
+
+/**
+ * Il cliente della rubrica di un ordine: quello dell'account del cliente; per un ordine
+ * inserito a mano (senza account) quello con lo stesso nome e telefono.
+ */
+export function clienteDelOrdine(
+  clienti: ClienteMatteo[],
+  o: Pick<Ordine, "user_id" | "customer_name" | "phone">,
+): ClienteMatteo | undefined {
+  return clienti.find((c) => c.userId === o.user_id)
+    ?? clienti.find((c) => c.userId === null && c.nome === o.customer_name && c.telefono === o.phone);
 }
 
 /* =========================================================================

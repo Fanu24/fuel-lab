@@ -4,7 +4,7 @@ import { useEffect, useRef, type ButtonHTMLAttributes, type ReactNode } from "re
 
 /* Bottoni, fogli e avvisi del pannello di Matteo. Tutto da toccare: almeno 48 px di altezza. */
 
-export function Bottone({ variante = "tenue", className, type = "button", ...resto }: ButtonHTMLAttributes<HTMLButtonElement> & { variante?: "verde" | "chiaro" | "rosso" | "tenue" }) {
+export function Bottone({ variante = "tenue", className, type = "button", ...resto }: ButtonHTMLAttributes<HTMLButtonElement> & { variante?: "verde" | "chiaro" | "rosso" | "rosso-chiaro" | "tenue" }) {
   return <button type={type} className={`pm-bottone pm-bottone-${variante}${className ? ` ${className}` : ""}`} {...resto} />;
 }
 

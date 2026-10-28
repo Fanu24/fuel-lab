@@ -204,6 +204,91 @@
 .pm-foglio-testa h2 { font-family: var(--font-ui); font-size: 20px; font-weight: 800; line-height: 1.25; overflow-wrap: anywhere; }
 .pm-foglio-corpo { display: grid; gap: 14px; padding: 16px; }
 
+/* Avviso con un bottone per chiuderlo (per esempio "Messo nella settimana"). */
+.pm-avviso-fatto {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+  padding: 14px 16px;
+  border: 2px solid #18352a;
+  border-radius: 12px;
+  background: #fff;
+  font-size: 17px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.pm-avviso-fatto p { margin: 0; }
+
+/* Ordini nuovi: titolo con il numero, poi una scheda bianca per ordine. */
+.pm-titolo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0 4px;
+  font-family: var(--font-ui);
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -.01em;
+}
+.pm-numero {
+  display: inline-grid;
+  place-items: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 8px;
+  border-radius: 18px;
+  color: #fff;
+  background: #c0392b;
+  font-size: 18px;
+}
+.pm-ordine {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 14px;
+  background: #fff;
+}
+.pm-ordine h2 {
+  font-family: var(--font-ui);
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.pm-ordine-tel { font-size: 21px; font-weight: 750; }
+.pm-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.pm-chip {
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: #f3efe6;
+  font-size: 17px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.pm-ordine-piatti,
+.pm-ordine-nota { font-size: 17px; color: #33473c; overflow-wrap: anywhere; }
+.pm-bottoni { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.pm-bottoni > :only-child { grid-column: 1 / -1; }
+.pm-bottoni .pm-bottone { width: 100%; }
+.pm-bottone-whatsapp { color: #fff; background: #25d366; }
+.pm-bottone-rosso-chiaro { color: #c0392b; background: #fff; border-color: #c0392b; }
+.pm-ordine-form { display: grid; gap: 12px; }
+.pm-campo { display: grid; gap: 6px; font-size: 17px; font-weight: 750; }
+.pm-campo input {
+  width: 100%;
+  min-height: 52px;
+  padding: 10px 12px;
+  border: 2px solid #cfd6cc;
+  border-radius: 12px;
+  background: #fff;
+  color: #18352a;
+  font: inherit;
+  font-size: 19px;
+  font-weight: 700;
+}
+.pm-domanda { font-size: 19px; font-weight: 750; overflow-wrap: anywhere; }
+
 @media (prefers-reduced-motion: no-preference) {
   .pm-bottone, .pm-riga, .pm-giorno { transition: background-color .15s ease; }
 }

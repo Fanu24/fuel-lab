@@ -1,7 +1,9 @@
 import { expect, it } from "vitest";
 import type { ClienteMatteo, PastoSettimana } from "./pannello";
 import {
+  clienteDelOrdine,
   etichetteDelGiorno,
+  giornoDiInizioProposto,
   giorniDellaSettimana,
   linkChiama,
   linkWhatsAppCliente,
@@ -12,6 +14,7 @@ import {
   nomeGiornoCorto,
   numeroInternazionale,
   pastiDaOrdine,
+  piattiRaggruppati,
   prezzoPastoProposto,
 } from "./pannello";
 
@@ -119,4 +122,31 @@ it("i numeri di telefono diventano link giusti, o nessun link", () => {
 it("mesi", () => {
   expect(meseDi("2026-10-28")).toBe("2026-10");
   expect(mesePrima("2026-01")).toBe("2025-12");
+});
+
+it("il giorno proposto è la data richiesta se non è passata, altrimenti oggi", () => {
+  expect(giornoDiInizioProposto(null, "2026-10-28")).toBe("2026-10-28");
+  expect(giornoDiInizioProposto("2026-10-20", "2026-10-28")).toBe("2026-10-28");
+  expect(giornoDiInizioProposto("2026-10-28", "2026-10-28")).toBe("2026-10-28");
+  expect(giornoDiInizioProposto("2026-11-03", "2026-10-28")).toBe("2026-11-03");
+});
+
+it("i piatti uguali si raggruppano, con gli extra che fanno un piatto a sé", () => {
+  expect(piattiRaggruppati([
+    { name: "Pollo al curry", extras: [] },
+    { name: "Frittata di verdure", extras: [] },
+    { name: "Pollo al curry", extras: [] },
+    { name: "Pollo al curry", extras: ["riso extra"] },
+  ])).toEqual(["2× Pollo al curry", "Frittata di verdure", "Pollo al curry + riso extra"]);
+  expect(piattiRaggruppati([])).toEqual([]);
+});
+
+it("il cliente di un ordine si trova per account, o per nome e telefono se è inserito a mano", () => {
+  const clienti: ClienteMatteo[] = [
+    { id: "a", nome: "Francesca Rossi", telefono: "347 123 4567", indirizzo: "", prezzoPastoCents: null, userId: "u1", ultimoPasto: null },
+    { id: "b", nome: "Davide Ferri", telefono: "333 987 6543", indirizzo: "", prezzoPastoCents: null, userId: null, ultimoPasto: null },
+  ];
+  expect(clienteDelOrdine(clienti, { user_id: "u1", customer_name: "Altro nome", phone: "" })?.id).toBe("a");
+  expect(clienteDelOrdine(clienti, { user_id: "staff", customer_name: "Davide Ferri", phone: "333 987 6543" })?.id).toBe("b");
+  expect(clienteDelOrdine(clienti, { user_id: "staff", customer_name: "Nessuno", phone: "000" })).toBeUndefined();
 });

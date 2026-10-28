@@ -1,10 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { ApiError, api, impostazioniVuote, pannelloApi, type Impostazioni } from "@/lib/api";
+import { ApiError, api, impostazioniVuote, pannelloApi, type Impostazioni, type Ordine } from "@/lib/api";
 import { giorniDellaSettimana, lunediDi, type DatiPannello } from "@/lib/pannello";
 import { indietroDisponibile, profonditaDopoVai, urlDiVista, vistaDaUrl, type Vista } from "@/lib/pannello-navigazione";
 import { oggiRoma } from "@/lib/produzione";
+import OrdiniNuovi from "./OrdiniNuovi";
 import { Bottone, Errore, unFoglioAperto } from "./ui";
 import VistaGiorno from "./VistaGiorno";
 
@@ -19,10 +20,15 @@ export type { Vista } from "@/lib/pannello-navigazione";
 export type Condiviso = {
   giorno: string;
   dati: DatiPannello | null;
+  /** Gli ordini nuovi dell'ultima settimana caricata con successo; null finche' non ce n'e' stata una. */
+  nuovi: Ordine[] | null;
   impostazioni: Impostazioni;
-  ricarica: () => Promise<void>;
+  /** Ricarica la settimana; risolve con i dati appena arrivati, o null se non sono arrivati. */
+  ricarica: () => Promise<DatiPannello | null>;
   vai: (v: Vista) => void;
   cambiaGiorno: (giorno: string) => void;
+  /** Un avviso in cima alla schermata, che resta finche' Matteo non lo chiude. */
+  avvisa: (testo: string) => void;
 };
 
 /* L'indirizzo come archivio esterno: si legge con useSyncExternalStore; `vai` e `indietro`
@@ -72,27 +78,31 @@ export default function PannelloMatteo() {
   // Un errore vale solo per la settimana in cui è successo: non si mostra sopra i dati di un'altra.
   const erroreDelGiorno = errore && errore.lunedi === lunedi ? errore : null;
   const datiDelGiorno = settimana && settimana.lunedi === lunedi ? settimana.dati : null;
-  const nuovi = settimana?.dati.nuovi.length ?? 0;
+  const numeroNuovi = settimana?.dati.nuovi.length ?? 0;
+  // Un avviso (per esempio "Messo nella settimana") sta sopra la vista finche' non si chiude.
+  const [avviso, setAvviso] = useState<string | null>(null);
 
   // Di richieste ne conta solo l'ultima: una risposta vecchia non sovrascrive una nuova.
-  const carica = useCallback((lun: string) => {
+  const carica = useCallback((lun: string): Promise<DatiPannello | null> => {
     const id = ++richiesta.current;
     return pannelloApi.pannello(lun, giorniDellaSettimana(lun)[6]).then(
       (dati) => {
-        if (id !== richiesta.current) return;
+        if (id !== richiesta.current) return null;
         setSettimana({ lunedi: lun, dati });
         setErrore(null);
+        return dati;
       },
       (e: unknown) => {
-        if (id !== richiesta.current) return;
+        if (id !== richiesta.current) return null;
         setErrore(erroreDi(lun, e));
+        return null;
       },
     );
   }, []);
 
   // Un caricamento nuovo cancella l'errore di quello vecchio (la richiesta lo decide, non l'effetto).
-  const ricarica = useCallback(() => {
-    if (!lunedi) return Promise.resolve();
+  const ricarica = useCallback((): Promise<DatiPannello | null> => {
+    if (!lunedi) return Promise.resolve(null);
     setErrore(null);
     return carica(lunedi);
   }, [lunedi, carica]);
@@ -150,6 +160,26 @@ export default function PannelloMatteo() {
     setSceltoPerData(g);
   }, [lunedi]);
 
+  const avvisa = useCallback((testo: string) => setAvviso(testo), []);
+
+  const avvisoAperto = avviso && (
+    <div className="pm-avviso-fatto" role="status">
+      <p>{avviso}</p>
+      <Bottone onClick={() => setAvviso(null)}>Ho capito</Bottone>
+    </div>
+  );
+
+  const condiviso: Condiviso = {
+    giorno,
+    dati: datiDelGiorno,
+    nuovi: settimana ? settimana.dati.nuovi : null,
+    impostazioni,
+    ricarica,
+    vai,
+    cambiaGiorno,
+    avvisa,
+  };
+
   const testa = (
     <header className="pm-testa">
       <div>
@@ -160,6 +190,20 @@ export default function PannelloMatteo() {
     </header>
   );
 
+  if (vista.tipo === "nuovi") {
+    return (
+      <div className="pm-app">
+        <header className="pm-testa">
+          <Bottone onClick={indietro}>← Indietro</Bottone>
+        </header>
+        <main className="pm-corpo">
+          {avvisoAperto}
+          <OrdiniNuovi pannello={condiviso} />
+        </main>
+      </div>
+    );
+  }
+
   if (vista.tipo !== "giorno") {
     return (
       <div className="pm-app">
@@ -167,6 +211,7 @@ export default function PannelloMatteo() {
           <Bottone onClick={indietro}>← Indietro</Bottone>
         </header>
         <main className="pm-corpo">
+          {avvisoAperto}
           <p className="pm-carico">In arrivo.</p>
         </main>
       </div>
@@ -187,9 +232,10 @@ export default function PannelloMatteo() {
   // Sopra la settimana: il riquadro degli ordini nuovi e, se c'è, l'errore. Restano anche mentre si carica.
   const sopra = (
     <>
-      {nuovi > 0 && (
+      {avvisoAperto}
+      {numeroNuovi > 0 && (
         <button type="button" className="pm-nuovi" onClick={() => vai({ tipo: "nuovi" })}>
-          <span>{nuovi === 1 ? "1 ordine nuovo dal sito" : `${nuovi} ordini nuovi dal sito`}</span>
+          <span>{numeroNuovi === 1 ? "1 ordine nuovo dal sito" : `${numeroNuovi} ordini nuovi dal sito`}</span>
           <span>Apri →</span>
         </button>
       )}
@@ -203,7 +249,6 @@ export default function PannelloMatteo() {
     </>
   );
 
-  const condiviso: Condiviso = { giorno, dati: datiDelGiorno, impostazioni, ricarica, vai, cambiaGiorno };
   return (
     <div className="pm-app">
       {testa}
