@@ -288,6 +288,148 @@
   font-weight: 700;
 }
 .pm-domanda { font-size: 19px; font-weight: 750; overflow-wrap: anywhere; }
+.pm-salva { width: 100%; min-height: 56px; font-size: 18px; }
+
+/* Rubrica: la casella per cercare, i clienti con il telefono, "+ Cliente nuovo" tratteggiato. */
+.pm-cerca {
+  width: 100%;
+  min-height: 52px;
+  padding: 10px 12px;
+  border: 2px solid #849287;
+  border-radius: 12px;
+  background: #fff;
+  color: #18352a;
+  font: inherit;
+  font-size: 19px;
+  font-weight: 700;
+}
+.pm-elenco { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.pm-cliente {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 56px;
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 12px;
+  background: #fff;
+  text-align: left;
+}
+.pm-cliente b { font-size: 19px; font-weight: 800; overflow-wrap: anywhere; }
+.pm-cliente span { flex-shrink: 0; font-size: 17px; color: #53645a; white-space: nowrap; }
+.pm-nuovo-cliente {
+  display: block;
+  width: 100%;
+  min-height: 56px;
+  padding: 10px 14px;
+  border: 2px dashed #18352a;
+  border-radius: 12px;
+  background: transparent;
+  color: #18352a;
+  font-size: 19px;
+  font-weight: 800;
+  text-align: center;
+}
+
+/* La settimana del cliente: nome, telefono, azioni; poi la griglia 7 × pranzo/cena. */
+.pm-cs-testa { display: grid; gap: 6px; padding: 4px 0 2px; }
+.pm-cs-testa h1 { font-family: var(--font-ui); font-size: 28px; font-weight: 800; line-height: 1.15; overflow-wrap: anywhere; }
+.pm-cs-testa > p { font-size: 17px; font-weight: 700; color: #53645a; }
+.pm-cs-azioni { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.pm-cs-azioni .pm-bottone { flex: 1 1 120px; }
+.pm-cs-griglia {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr) minmax(0, 1fr);
+  gap: 6px;
+  align-items: stretch;
+}
+.pm-cs-intest { align-self: end; font-size: 13px; font-weight: 800; letter-spacing: .08em; text-align: center; color: #53645a; }
+.pm-cs-giorno {
+  display: grid;
+  align-content: center;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.15;
+}
+.pm-cs-giorno small { font-size: 13px; font-weight: 700; color: #53645a; }
+.pm-cs-casella {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 2px;
+  min-height: 56px;
+  padding: 6px;
+  border: 0;
+  border-radius: 10px;
+  background: #fff;
+  color: #18352a;
+  text-align: center;
+  line-height: 1.2;
+}
+.pm-cs-casella span {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 15px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.pm-cs-casella em { font-style: normal; font-size: 13px; font-weight: 800; color: #53645a; }
+.pm-cs-vuota { border: 2px dashed #b9b4a8; background: transparent; color: #8e897d; font-size: 24px; font-weight: 700; }
+
+.pm-cs-eventi { display: grid; gap: 8px; }
+.pm-cs-evento {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px 10px 14px;
+  border-radius: 12px;
+  background: #fff;
+}
+.pm-cs-evento span { font-size: 17px; overflow-wrap: anywhere; }
+.pm-cs-evento .pm-bottone { flex-shrink: 0; }
+
+/* Il foglio di una casella: il campo con OK, poi le liste dei piatti, poi le porzioni. */
+.pm-cs-campo { display: flex; gap: 8px; align-items: stretch; }
+.pm-cs-campo input {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 52px;
+  padding: 10px 12px;
+  border: 2px solid #18352a;
+  border-radius: 12px;
+  background: #fff;
+  color: #18352a;
+  font: inherit;
+  font-size: 19px;
+  font-weight: 700;
+}
+.pm-cs-campo .pm-bottone { min-width: 88px; }
+.pm-cs-gruppo { display: grid; gap: 8px; }
+.pm-cs-gruppo h3 { font-size: 17px; font-weight: 800; letter-spacing: .08em; color: #53645a; }
+.pm-cs-piatto {
+  display: block;
+  width: 100%;
+  min-height: 52px;
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 12px;
+  background: #fff;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.3;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.pm-cs-porzioni { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.pm-cs-porzioni > span { font-size: 19px; font-weight: 800; }
+.pm-cs-porzioni > div { display: flex; align-items: center; gap: 8px; }
+.pm-cs-porzioni output { min-width: 40px; text-align: center; font-size: 22px; font-weight: 800; }
 
 @media (prefers-reduced-motion: no-preference) {
   .pm-bottone, .pm-riga, .pm-giorno { transition: background-color .15s ease; }

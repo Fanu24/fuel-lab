@@ -1,8 +1,19 @@
 import { expect, it } from "vitest";
 import type { ClienteMatteo, PastoSettimana } from "./pannello";
 import {
+  cercaClienti,
+  chiaveRicerca,
   clienteDelOrdine,
+  conPasto,
+  dataCorta,
+  eventiSettimana,
   etichetteDelGiorno,
+  grigliaSettimana,
+  ordinaClienti,
+  piattiDisponibili,
+  piattoIdDelTesto,
+  prezzoPastoBreve,
+  testoCopia,
   giornoDiInizioProposto,
   giorniDellaSettimana,
   linkChiama,
@@ -170,4 +181,96 @@ it("il testo dopo un'accettazione dice dove è finito l'ordine e se il prezzo si
   expect(testoAccettazione("sui-tuoi-macro", "giorno-passato", true)).toBe(
     "Accettato. Il giorno d'inizio era già passato: aggiungi i pasti dalla settimana del cliente. Il prezzo non si è salvato: scrivilo in Altro → I miei clienti.",
   );
+});
+
+function clienteConUltimo(id: string, nome: string, ultimoPasto: string | null): ClienteMatteo {
+  return { ...cliente(id, nome), ultimoPasto };
+}
+
+it("i clienti: l'ultimo pasto più recente in cima, quelli senza pasti in fondo, poi per nome", () => {
+  const ordinati = ordinaClienti([
+    clienteConUltimo("a", "Sara", null),
+    clienteConUltimo("b", "Paolo", "2026-10-20"),
+    clienteConUltimo("c", "Giulia", "2026-10-27"),
+    clienteConUltimo("d", "Marco", null),
+    clienteConUltimo("e", "Anna", "2026-10-20"),
+  ]);
+  expect(ordinati.map((c) => c.nome)).toEqual(["Giulia", "Anna", "Paolo", "Marco", "Sara"]);
+});
+
+it("la ricerca ignora accenti e maiuscole, e il testo vuoto mostra tutti", () => {
+  const clienti = [cliente("a", "Àngela Ferri"), cliente("b", "Paolo"), cliente("c", "Pietro")];
+  expect(chiaveRicerca("  Àngela ")).toBe("angela");
+  expect(cercaClienti(clienti, "angel").map((c) => c.id)).toEqual(["a"]);
+  expect(cercaClienti(clienti, "PAO").map((c) => c.id)).toEqual(["b"]);
+  expect(cercaClienti(clienti, "  ").map((c) => c.id)).toEqual(["a", "b", "c"]);
+  expect(cercaClienti(clienti, "zzz")).toEqual([]);
+});
+
+it("il piatto del catalogo si collega solo se il testo è identico al suo nome", () => {
+  const piatti = [{ id: "pollo-curry", nome: "Pollo al curry" }];
+  expect(piattoIdDelTesto("Pollo al curry", piatti)).toBe("pollo-curry");
+  expect(piattoIdDelTesto("  Pollo al curry  ", piatti)).toBe("pollo-curry");
+  expect(piattoIdDelTesto("Pollo al curry con riso", piatti)).toBeNull();
+  expect(piattoIdDelTesto("pollo al curry", piatti)).toBeNull();
+});
+
+it("i piatti del menu tolgono quelli non disponibili", () => {
+  const piatti = [{ id: "a" }, { id: "b" }, { id: "c" }];
+  expect(piattiDisponibili(piatti, ["b", "non-esiste"])).toEqual([{ id: "a" }, { id: "c" }]);
+  expect(piattiDisponibili(piatti, [])).toEqual(piatti);
+});
+
+it("il prezzo a pasto si scrive come lo scrive Matteo", () => {
+  expect(prezzoPastoBreve(1000)).toBe("10 €");
+  expect(prezzoPastoBreve(850)).toBe("8,50 €");
+  expect(prezzoPastoBreve(1205)).toBe("12,05 €");
+  expect(prezzoPastoBreve(0)).toBe("0 €");
+});
+
+it("la data corta in italiano", () => {
+  expect(dataCorta("2026-10-26")).toBe("26 ott");
+  expect(dataCorta("2026-11-01")).toBe("1 nov");
+});
+
+it("la griglia: sette giorni dal lunedì, con pranzo e cena o null", () => {
+  const pasti = [
+    pasto("p1", "a", "2026-10-28", "pranzo", "Riso", 1),
+    pasto("p2", "a", "2026-10-29", "cena", "Frittata", 2),
+    pasto("p3", "a", "2026-10-29", "evento", "Cuoco a domicilio", 1),
+  ];
+  const griglia = grigliaSettimana("2026-10-26", pasti);
+  expect(griglia.map((c) => c.data)).toEqual([
+    "2026-10-26", "2026-10-27", "2026-10-28", "2026-10-29", "2026-10-30", "2026-10-31", "2026-11-01",
+  ]);
+  expect(griglia[0]).toMatchObject({ sigla: "Lun", numero: "26", pranzo: null, cena: null });
+  expect(griglia[2].pranzo?.piatto).toBe("Riso");
+  expect(griglia[2].cena).toBeNull();
+  expect(griglia[3].pranzo).toBeNull();
+  expect(griglia[3].cena?.piatto).toBe("Frittata");
+});
+
+it("gli eventi sono i pasti di tipo evento, in ordine di data", () => {
+  const pasti = [
+    pasto("e2", "a", "2026-10-30", "evento", "Cuoco", 1),
+    pasto("p1", "a", "2026-10-28", "pranzo", "Riso", 1),
+    pasto("e1", "a", "2026-10-27", "evento", "Cuoco", 1),
+  ];
+  expect(eventiSettimana(pasti).map((p) => p.id)).toEqual(["e1", "e2"]);
+});
+
+it("un pasto messo in una casella sostituisce quello che c'era, senza toccare gli altri", () => {
+  const pasti = [pasto("p1", "a", "2026-10-28", "pranzo", "Riso", 1), pasto("p2", "a", "2026-10-28", "cena", "Frittata", 1)];
+  const nuovo = pasto("p3", "a", "2026-10-28", "pranzo", "Pollo", 2);
+  const risultato = conPasto(pasti, nuovo);
+  expect(risultato).toHaveLength(2);
+  expect(risultato.find((p) => p.pasto === "pranzo")).toEqual(nuovo);
+  expect(risultato.find((p) => p.pasto === "cena")?.piatto).toBe("Frittata");
+});
+
+it("il testo dopo la copia", () => {
+  expect(testoCopia(1, false)).toBe("Copiato 1 pasto.");
+  expect(testoCopia(4, false)).toBe("Copiati 4 pasti.");
+  expect(testoCopia(0, false)).toBe("La settimana scorsa era vuota.");
+  expect(testoCopia(0, true)).toBe("Tutte le caselle sono già piene.");
 });

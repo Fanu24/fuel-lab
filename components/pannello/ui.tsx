@@ -1,8 +1,14 @@
 "use client";
 
 import { useEffect, useRef, type ButtonHTMLAttributes, type ReactNode } from "react";
+import { ApiError } from "@/lib/api";
 
 /* Bottoni, fogli e avvisi del pannello di Matteo. Tutto da toccare: almeno 48 px di altezza. */
+
+/** Il testo da mostrare per un errore di rete o del server. */
+export function messaggioDiErrore(e: unknown): string {
+  return e instanceof ApiError ? e.message : "Qualcosa non va. Riprova.";
+}
 
 export function Bottone({ variante = "tenue", className, type = "button", ...resto }: ButtonHTMLAttributes<HTMLButtonElement> & { variante?: "verde" | "chiaro" | "rosso" | "rosso-chiaro" | "tenue" }) {
   return <button type={type} className={`pm-bottone pm-bottone-${variante}${className ? ` ${className}` : ""}`} {...resto} />;

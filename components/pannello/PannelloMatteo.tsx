@@ -5,7 +5,10 @@ import { ApiError, api, impostazioniVuote, pannelloApi, type Impostazioni, type 
 import { giorniDellaSettimana, lunediDi, type DatiPannello } from "@/lib/pannello";
 import { indietroDisponibile, profonditaDopoVai, urlDiVista, vistaDaUrl, type Vista } from "@/lib/pannello-navigazione";
 import { oggiRoma } from "@/lib/produzione";
+import ModuloCliente from "./ModuloCliente";
 import OrdiniNuovi from "./OrdiniNuovi";
+import SceltaCliente from "./SceltaCliente";
+import SettimanaCliente from "./SettimanaCliente";
 import { Bottone, Errore, unFoglioAperto } from "./ui";
 import VistaGiorno from "./VistaGiorno";
 
@@ -204,6 +207,15 @@ export default function PannelloMatteo() {
     </header>
   );
 
+  // L'errore della settimana, dove c'è una settimana da mostrare (la schermata del giorno e le viste del cliente).
+  const erroreBox = erroreDelGiorno && (
+    <Errore
+      messaggio={erroreDelGiorno.messaggio}
+      riprova={erroreDelGiorno.accesso ? undefined : () => void ricarica()}
+      accesso={erroreDelGiorno.accesso}
+    />
+  );
+
   if (vista.tipo === "nuovi") {
     return (
       <div className="pm-app">
@@ -213,6 +225,39 @@ export default function PannelloMatteo() {
         <main className="pm-corpo">
           {avvisoAperto}
           <OrdiniNuovi pannello={condiviso} />
+        </main>
+      </div>
+    );
+  }
+
+  if (vista.tipo === "scegli-cliente" || vista.tipo === "nuovo-cliente" || vista.tipo === "cliente") {
+    const sopraCliente = (
+      <>
+        {avvisoAperto}
+        {erroreBox}
+      </>
+    );
+    // La settimana del cliente ha il suo piè di pagina fisso: fa la sua <main> da sola.
+    if (vista.tipo === "cliente" && !vista.modifica) {
+      return (
+        <div className="pm-app">
+          <header className="pm-testa">
+            <Bottone onClick={indietro}>← Indietro</Bottone>
+          </header>
+          <SettimanaCliente key={vista.clienteId} pannello={condiviso} clienteId={vista.clienteId} sopra={sopraCliente} />
+        </div>
+      );
+    }
+    return (
+      <div className="pm-app">
+        <header className="pm-testa">
+          <Bottone onClick={indietro}>← Indietro</Bottone>
+        </header>
+        <main className="pm-corpo">
+          {sopraCliente}
+          {vista.tipo === "scegli-cliente" && <SceltaCliente pannello={condiviso} />}
+          {vista.tipo === "nuovo-cliente" && <ModuloCliente pannello={condiviso} />}
+          {vista.tipo === "cliente" && <ModuloCliente pannello={condiviso} clienteId={vista.clienteId} />}
         </main>
       </div>
     );
@@ -253,13 +298,7 @@ export default function PannelloMatteo() {
           <span>Apri →</span>
         </button>
       )}
-      {erroreDelGiorno && (
-        <Errore
-          messaggio={erroreDelGiorno.messaggio}
-          riprova={erroreDelGiorno.accesso ? undefined : () => void ricarica()}
-          accesso={erroreDelGiorno.accesso}
-        />
-      )}
+      {erroreBox}
     </>
   );
 

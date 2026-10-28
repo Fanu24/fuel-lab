@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { etichetteDelGiorno, giorniDellaSettimana, lunediDi, nomeGiorno, nomeGiornoCorto, pastiDelGiorno, type RigaGiorno } from "@/lib/pannello";
+import { dataCorta, etichetteDelGiorno, giorniDellaSettimana, lunediDi, nomeGiorno, nomeGiornoCorto, pastiDelGiorno, type RigaGiorno } from "@/lib/pannello";
 import type { Vista } from "@/lib/pannello-navigazione";
 import { giornoDelPiano, spostaGiorni } from "@/lib/produzione";
 import { NOMI_GIORNO } from "@/lib/settimana";
@@ -11,14 +11,6 @@ import { Avviso, Bottone, Foglio } from "./ui";
 /* La schermata del giorno (mockup A): la settimana, i pasti del giorno scelto a pranzo e a cena,
    e in fondo le due azioni da fare. Il riquadro degli ordini nuovi e l'errore arrivano da fuori
    (`sopra`), così restano visibili anche mentre una settimana si carica o fallisce. */
-
-/** "2026-10-26" -> "26 ott". */
-function dataCorta(data: string): string {
-  const [anno, mese, giorno] = data.split("-").map(Number);
-  return new Intl.DateTimeFormat("it-IT", { day: "numeric", month: "short", timeZone: "UTC" })
-    .format(new Date(Date.UTC(anno, mese - 1, giorno, 12)))
-    .replace(/\.$/, "");
-}
 
 export default function VistaGiorno({ pannello, sopra, senzaDati }: {
   pannello: Condiviso;

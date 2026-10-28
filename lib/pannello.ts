@@ -337,3 +337,92 @@ export function linkWhatsAppCliente(telefono: string, nome: string): string | nu
   if (!n) return null;
   return `https://wa.me/${n}?text=${encodeURIComponent(`Ciao ${nome}, sono Matteo di FUEL LAB.`)}`;
 }
+
+/* =========================================================================
+   Rubrica e settimana del cliente
+   ========================================================================= */
+
+/** "2026-10-26" -> "26 ott" (il mese in italiano, senza il punto). */
+export function dataCorta(data: string): string {
+  const [anno, mese, giorno] = data.split("-").map(Number);
+  return new Intl.DateTimeFormat("it-IT", { day: "numeric", month: "short", timeZone: "UTC" })
+    .format(new Date(Date.UTC(anno, mese - 1, giorno, 12)))
+    .replace(/\.$/, "");
+}
+
+/** I clienti per ultimo pasto, il più recente in cima; quelli senza pasti in fondo. A parità, per nome. */
+export function ordinaClienti(clienti: ClienteMatteo[]): ClienteMatteo[] {
+  return [...clienti].sort((a, b) => {
+    if (a.ultimoPasto !== b.ultimoPasto) {
+      if (a.ultimoPasto === null) return 1;
+      if (b.ultimoPasto === null) return -1;
+      return a.ultimoPasto < b.ultimoPasto ? 1 : -1;
+    }
+    return a.nome.localeCompare(b.nome, "it");
+  });
+}
+
+/** Il testo da confrontare: minuscolo, senza accenti, senza spazi ai lati. "  Àlvaro " -> "alvaro". */
+export function chiaveRicerca(testo: string): string {
+  return testo.normalize("NFD").replace(/[̀-ͯ]/g, "").toLocaleLowerCase("it-IT").trim();
+}
+
+/** I clienti il cui nome contiene il testo cercato, senza badare ad accenti e maiuscole. Testo vuoto: tutti. */
+export function cercaClienti(clienti: ClienteMatteo[], testo: string): ClienteMatteo[] {
+  const cerca = chiaveRicerca(testo);
+  if (!cerca) return clienti;
+  return clienti.filter((c) => chiaveRicerca(c.nome).includes(cerca));
+}
+
+/** L'id del piatto del catalogo il cui nome e' identico al testo (spazi ai lati esclusi); altrimenti null. */
+export function piattoIdDelTesto(testo: string, piatti: { id: string; nome: string }[]): string | null {
+  const t = testo.trim();
+  return piatti.find((p) => p.nome === t)?.id ?? null;
+}
+
+/** I piatti del catalogo, tolti quelli che Matteo ha segnato come non disponibili. */
+export function piattiDisponibili<T extends { id: string }>(piatti: T[], nonDisponibili: string[]): T[] {
+  const tolti = new Set(nonDisponibili);
+  return piatti.filter((p) => !tolti.has(p.id));
+}
+
+/** Il prezzo a pasto come lo scrive Matteo: "10 €", "8,50 €". */
+export function prezzoPastoBreve(centesimi: number): string {
+  const euro = Math.floor(centesimi / 100);
+  const cent = centesimi % 100;
+  return cent === 0 ? `${euro} €` : `${euro},${String(cent).padStart(2, "0")} €`;
+}
+
+/** Una riga della griglia: il giorno, e il pasto di pranzo e quello di cena (null se la casella è vuota). */
+export type CasellaSettimana = {
+  data: string;
+  sigla: string;
+  numero: string;
+  pranzo: PastoSettimana | null;
+  cena: PastoSettimana | null;
+};
+
+/** La settimana del cliente come griglia: sette giorni a partire dal lunedì, ognuno con pranzo e cena. */
+export function grigliaSettimana(lunedi: string, pasti: PastoSettimana[]): CasellaSettimana[] {
+  return giorniDellaSettimana(lunedi).map((data) => {
+    const trova = (pasto: "pranzo" | "cena") => pasti.find((p) => p.data === data && p.pasto === pasto) ?? null;
+    return { data, ...nomeGiornoCorto(data), pranzo: trova("pranzo"), cena: trova("cena") };
+  });
+}
+
+/** Gli eventi (cucina a casa) dei pasti, in ordine di data. */
+export function eventiSettimana(pasti: PastoSettimana[]): PastoSettimana[] {
+  return pasti.filter((p) => p.pasto === "evento").sort((a, b) => (a.data < b.data ? -1 : a.data > b.data ? 1 : 0));
+}
+
+/** I pasti dopo aver messo `nuovo` nella sua casella (data e pranzo o cena), al posto di quello che c'era. */
+export function conPasto(pasti: PastoSettimana[], nuovo: PastoSettimana): PastoSettimana[] {
+  return [...pasti.filter((p) => !(p.data === nuovo.data && p.pasto === nuovo.pasto)), nuovo];
+}
+
+/** Il testo che compare dopo "Copia la settimana scorsa". */
+export function testoCopia(copiati: number, settimanaPiena: boolean): string {
+  if (copiati === 1) return "Copiato 1 pasto.";
+  if (copiati > 1) return `Copiati ${copiati} pasti.`;
+  return settimanaPiena ? "Tutte le caselle sono già piene." : "La settimana scorsa era vuota.";
+}
