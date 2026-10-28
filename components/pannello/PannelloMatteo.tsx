@@ -5,6 +5,8 @@ import { ApiError, api, impostazioniVuote, pannelloApi, type Impostazioni, type 
 import { giorniDellaSettimana, lunediDi, type ClienteMatteo, type DatiPannello } from "@/lib/pannello";
 import { indietroDisponibile, statoDopoVai, urlDiVista, vistaDaUrl, type Vista } from "@/lib/pannello-navigazione";
 import { oggiRoma } from "@/lib/produzione";
+import Altro from "./Altro";
+import GuidaInstallazione from "./GuidaInstallazione";
 import ModuloCliente from "./ModuloCliente";
 import OrdiniNuovi from "./OrdiniNuovi";
 import SceltaCliente from "./SceltaCliente";
@@ -273,6 +275,20 @@ export default function PannelloMatteo() {
           {vista.tipo === "scegli-cliente" && <SceltaCliente pannello={condiviso} />}
           {vista.tipo === "nuovo-cliente" && <ModuloCliente pannello={condiviso} />}
           {vista.tipo === "cliente" && <ModuloCliente pannello={condiviso} clienteId={vista.clienteId} />}
+        </main>
+      </div>
+    );
+  }
+
+  if (vista.tipo === "altro" || vista.tipo === "guida") {
+    return (
+      <div className="pm-app">
+        <header className="pm-testa">
+          <Bottone onClick={indietro}>← Indietro</Bottone>
+        </header>
+        <main className="pm-corpo">
+          {avvisoAperto}
+          {vista.tipo === "altro" ? <Altro pannello={condiviso} /> : <GuidaInstallazione />}
         </main>
       </div>
     );

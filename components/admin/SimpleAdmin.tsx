@@ -9,6 +9,7 @@ import { leggiEuro, centesimiInTesto } from "@/lib/operazioni";
 import { FORMULE, type FormulaId } from "@/lib/abbonamento";
 import { AdminLogout } from "./AdminAccess";
 import Sconti from "./Sconti";
+import PiattiSulSito from "@/components/pannello/PiattiSulSito";
 import { MAX_PIATTI_ORDINE, pianoDaQuantita, type PiattoQuantita } from "./admin-model";
 import { GIORNI, PASTI, NOMI_GIORNO, conCasella, type Piano } from "@/lib/settimana";
 
@@ -130,7 +131,7 @@ export default function SimpleAdmin() {
               <div className="sa-order-list">{elenco.map((o) => <OrderCard key={o.id} o={o} busy={salva} edit={() => setModifica(o)} action={(s) => azione(o, s)} />)}</div>{!elenco.length && <p className="sa-empty">Nessun ordine trovato.</p>}
             </>}
             {sezione === "sconti" && <Sconti />}
-            {sezione === "menu" && impostazioni && <SimpleMenu settings={impostazioni} onSaved={(s) => { setImpostazioni(s); setAvviso("Menu aggiornato sul sito."); }} />}
+            {sezione === "menu" && <PiattiSulSito onSalvato={(s) => { setImpostazioni(s); setAvviso("Menu aggiornato sul sito."); }} />}
           </>}
         </main>
         {modifica && <EditOrder key={modifica.id} o={modifica} close={() => setModifica(null)} saved={(o) => { sostituisci(o); setModifica(null); setAvviso("Ordine salvato."); }} print={() => stampaOra("ordini", [modifica])} />}
@@ -289,12 +290,6 @@ function NewOrder({ day, unavailable, close, saved }: { day: string; unavailable
     </div></details>
     {errore && <p role="alert" className="sa-error">{errore}</p>}<button type="submit" className="sa-button sa-button-primary" disabled={busy}>{busy ? "Aggiungo…" : "Aggiungi ordine"}</button>
   </form></Sheet>;
-}
-
-function SimpleMenu({ settings, onSaved }: { settings: Impostazioni; onSaved: (s: Impostazioni) => void }) {
-  const [busy, setBusy] = useState(""); const [errore, setErrore] = useState(""); const [cerca, setCerca] = useState("");
-  async function toggle(id: string) { if (busy) return; setBusy(id); setErrore(""); try { const ids = settings.piattiNonDisponibili.includes(id) ? settings.piattiNonDisponibili.filter((v) => v !== id) : [...settings.piattiNonDisponibili, id]; const r = await adminApi.salvaImpostazioni({ piattiNonDisponibili: ids }); onSaved(r.settings); } catch (e) { setErrore(messaggioErrore(e)); } finally { setBusy(""); } }
-  return <section className="sa-card"><h2>Piatti sul sito</h2><p className="sa-muted">Togli un piatto quando non puoi prepararlo. Puoi riaggiungerlo con un tocco.</p><label className="sa-field">Cerca piatto<input type="search" value={cerca} onChange={(e) => setCerca(e.target.value)} placeholder="Nome del piatto" /></label>{errore && <p className="sa-error" role="alert">{errore}</p>}<ul className="sa-list">{PIATTI.filter((p) => p.nome.toLocaleLowerCase("it").includes(cerca.toLocaleLowerCase("it"))).map((p) => { const disponibile = !settings.piattiNonDisponibili.includes(p.id); return <li key={p.id} className="sa-row"><div><b>{p.nome}</b><small>{disponibile ? "Disponibile" : "Tolto dal menu"}</small></div><button type="button" className={`sa-button ${disponibile ? "" : "sa-button-primary"}`} disabled={!!busy} onClick={() => toggle(p.id)} aria-label={`${disponibile ? "Togli" : "Aggiungi"} ${p.nome} dal menu`}>{busy === p.id ? "Salvo…" : disponibile ? "Togli" : "Aggiungi"}</button></li>; })}</ul></section>;
 }
 
 function PrintArea({ tipo, giorno, produzione, normali, abbonamenti, ordini, scadenza, salta }: { tipo: Exclude<Stampa, null>; giorno: string; produzione: Ordine[]; normali: Ordine[]; abbonamenti: Ordine[]; ordini: Ordine[]; scadenza: number; salta: number }) {

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { adminApi, type CodiceSconto } from "@/lib/api";
 import { generaCodice, normalizzaCodice } from "@/lib/sconti";
 
+/* I codici sconto, nel pannello di Matteo (dentro Altro): classi pm-, testi grandi, bottoni alti almeno 48 px. */
 export default function Sconti() {
   const [codici, setCodici] = useState<CodiceSconto[] | null>(null);
   const [codice, setCodice] = useState("");
@@ -44,23 +45,23 @@ export default function Sconti() {
     finally { inVolo.current = false; setAttesa(false); }
   }
 
-  return <section className="grid gap-6" aria-labelledby="sconti-titolo">
-    <div><h2 id="sconti-titolo" className="text-2xl font-bold">Codici sconto</h2><p className="sa-note mt-2">Scegli la percentuale, crea il codice e mandalo al cliente.</p></div>
-    <form onSubmit={(e) => void crea(e)} className="sa-form grid gap-4">
-      <label className="sa-field grid gap-2" htmlFor="sconto-percentuale">Sconto %<input id="sconto-percentuale" className="min-h-11 w-full rounded-lg border p-3 text-base" type="number" min="1" max="100" step="1" required value={percentuale} onChange={(e) => setPercentuale(e.target.value)} /></label>
-      <label className="sa-field grid gap-2" htmlFor="sconto-codice">Codice (facoltativo)<input id="sconto-codice" className="min-h-11 w-full rounded-lg border p-3 text-base uppercase" autoCapitalize="characters" autoComplete="off" maxLength={32} pattern="[A-Za-z0-9][A-Za-z0-9_-]{2,31}" placeholder="Es. MATTEO10" value={codice} onChange={(e) => setCodice(e.target.value)} /></label>
-      <p className="sa-note">Se lasci il campo vuoto, lo generiamo noi. Da 3 a 32 lettere, numeri, - o _.</p>
-      <div className="sa-actions flex flex-wrap gap-2"><button className="sa-button min-h-11 rounded-lg border px-4" type="button" disabled={attesa} onClick={() => setCodice(generaCodice())}>Genera nome</button><button className="sa-button sa-button-primary min-h-11 rounded-lg px-4" disabled={attesa} type="submit">{attesa ? "Salvo…" : "Crea codice"}</button></div>
+  return <section className="pm-box" aria-labelledby="sconti-titolo">
+    <div className="pm-box-testa"><h2 id="sconti-titolo" className="pm-box-titolo">Codici sconto</h2><p className="pm-muto">Scegli la percentuale, crea il codice e mandalo al cliente.</p></div>
+    <form onSubmit={(e) => void crea(e)} className="pm-form">
+      <label className="pm-campo" htmlFor="sconto-percentuale">Sconto %<input id="sconto-percentuale" type="number" inputMode="numeric" min="1" max="100" step="1" required value={percentuale} onChange={(e) => setPercentuale(e.target.value)} /></label>
+      <label className="pm-campo" htmlFor="sconto-codice">Codice (facoltativo)<input id="sconto-codice" className="pm-maiuscolo" autoCapitalize="characters" autoComplete="off" maxLength={32} pattern="[A-Za-z0-9][A-Za-z0-9_-]{2,31}" placeholder="Es. MATTEO10" value={codice} onChange={(e) => setCodice(e.target.value)} /></label>
+      <p className="pm-muto">Se lasci il campo vuoto, lo generiamo noi. Da 3 a 32 lettere, numeri, - o _.</p>
+      <div className="pm-azioni"><button className="pm-bottone pm-bottone-tenue" type="button" disabled={attesa} onClick={() => setCodice(generaCodice())}>Genera nome</button><button className="pm-bottone pm-bottone-verde" disabled={attesa} type="submit">{attesa ? "Salvo…" : "Crea codice"}</button></div>
     </form>
-    {errore ? <p className="sa-error" role="alert">{errore}</p> : null}
-    {conferma ? <p className="sa-note" role="status">{conferma}</p> : null}
-    <div className="grid gap-3">
-      {codici === null ? <p>Carico i codici…</p> : codici.length === 0 ? <p>Non hai ancora codici sconto.</p> : codici.map((c) => <article key={c.code} className="sa-card grid gap-3 rounded-xl border p-4">
-        <div className="flex flex-wrap items-center justify-between gap-2"><strong className="break-all text-lg">{normalizzaCodice(c.code) ?? c.code}</strong><strong className="text-xl">−{c.percent}%</strong></div>
-        <p className="sa-note">{c.active ? "Attivo" : "Disattivato"} · {c.uses} {c.uses === 1 ? "ordine" : "ordini"}</p>
-        <div className="sa-actions flex flex-wrap gap-2"><button className="sa-button min-h-11 rounded-lg border px-4" type="button" onClick={() => void navigator.clipboard.writeText(c.code).then(() => setConferma(`${c.code} copiato.`)).catch(() => setErrore("Copia il codice selezionando il testo."))}>Copia codice</button><button className="sa-button min-h-11 rounded-lg border px-4" type="button" disabled={attesa} onClick={() => void attiva(c)}>{c.active ? "Disattiva" : "Riattiva"}</button></div>
+    {errore ? <p className="pm-errore" role="alert">{errore}</p> : null}
+    {conferma ? <p className="pm-conferma" role="status">{conferma}</p> : null}
+    <div className="pm-sconti">
+      {codici === null ? <p>Carico i codici…</p> : codici.length === 0 ? <p>Non hai ancora codici sconto.</p> : codici.map((c) => <article key={c.code} className="pm-sconto">
+        <div className="pm-sconto-testa"><strong className="pm-sconto-codice">{normalizzaCodice(c.code) ?? c.code}</strong><strong className="pm-sconto-percento">−{c.percent}%</strong></div>
+        <p className="pm-muto">{c.active ? "Attivo" : "Disattivato"} · {c.uses} {c.uses === 1 ? "ordine" : "ordini"}</p>
+        <div className="pm-azioni"><button className="pm-bottone pm-bottone-tenue" type="button" onClick={() => void navigator.clipboard.writeText(c.code).then(() => setConferma(`${c.code} copiato.`)).catch(() => setErrore("Copia il codice selezionando il testo."))}>Copia codice</button><button className="pm-bottone pm-bottone-tenue" type="button" disabled={attesa} onClick={() => void attiva(c)}>{c.active ? "Disattiva" : "Riattiva"}</button></div>
       </article>)}
     </div>
-    <p className="sa-note">Lo sconto si applica una sola volta al totale. Il cliente può applicarlo già nella scelta dell’abbonamento. Disattivare un codice ferma i nuovi usi e conserva lo storico degli ordini.</p>
+    <p className="pm-muto">Lo sconto si applica una sola volta al totale. Il cliente può applicarlo già nella scelta dell’abbonamento. Disattivare un codice ferma i nuovi usi e conserva lo storico degli ordini.</p>
   </section>;
 }

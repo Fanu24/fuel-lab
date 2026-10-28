@@ -468,6 +468,36 @@
 .pm-passo-disegno { color: #18352a; }
 .pm-passo-disegno svg { display: block; }
 
+/* Altro: una scheda bianca per parte (guadagni, sconti, clienti, piatti, etichette, telefono). */
+.pm-altro { display: grid; gap: 14px; }
+.pm-box { display: grid; gap: 12px; padding: 16px; border-radius: 14px; background: #fff; }
+.pm-box-testa { display: grid; gap: 6px; }
+.pm-box-titolo { font-family: var(--font-ui); font-size: 22px; font-weight: 800; line-height: 1.2; overflow-wrap: anywhere; }
+.pm-box .pm-errore { margin: 0; }
+.pm-muto { font-size: 17px; color: #53645a; overflow-wrap: anywhere; }
+.pm-soldi { font-size: 36px; font-weight: 800; line-height: 1.1; }
+.pm-pieno { width: 100%; min-height: 56px; font-size: 18px; }
+.pm-lista { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.pm-lista-riga { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 12px; background: #f7f5ef; }
+.pm-lista-riga > div { display: grid; gap: 2px; min-width: 0; }
+.pm-lista-riga b { font-size: 18px; font-weight: 800; overflow-wrap: anywhere; }
+.pm-lista-riga small { font-size: 17px; color: #53645a; }
+.pm-lista-riga .pm-bottone { flex-shrink: 0; min-width: 112px; }
+.pm-voce { display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 12px 16px; border: 0; border-radius: 12px; background: #f7f5ef; color: #18352a; font-size: 18px; font-weight: 800; text-align: left; }
+.pm-voce span:last-child { flex-shrink: 0; }
+.pm-spostamenti { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.pm-spostamenti .pm-bottone { width: 100%; min-height: 56px; font-size: 18px; }
+.pm-form { display: grid; gap: 14px; }
+.pm-maiuscolo { text-transform: uppercase; }
+.pm-conferma { padding: 14px; border-radius: 12px; background: #dcebdf; color: #18352a; font-size: 17px; font-weight: 700; overflow-wrap: anywhere; }
+.pm-sconti { display: grid; gap: 10px; }
+.pm-sconto { display: grid; gap: 10px; padding: 14px; border: 2px solid #e3e8e0; border-radius: 12px; }
+.pm-sconto-testa { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+.pm-sconto-codice { font-size: 19px; font-weight: 800; overflow-wrap: anywhere; }
+.pm-sconto-percento { font-size: 22px; font-weight: 800; }
+.pm-altro-fondo { display: grid; gap: 10px; }
+.pm-altro-fondo .pm-bottone-tenue { width: 100%; }
+
 @media (prefers-reduced-motion: no-preference) {
   .pm-bottone, .pm-riga, .pm-giorno { transition: background-color .15s ease; }
 }
