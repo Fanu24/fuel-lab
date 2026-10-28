@@ -10,7 +10,7 @@
 import type { D1Database, D1PreparedStatement } from "@cloudflare/workers-types";
 import type { Ordine } from "../api";
 import { getPiatto } from "../catalogo";
-import { pastiDaOrdine, type ClienteMatteo, type DatiCliente, type NuovoPasto, type PastoPannello, type PastoSettimana } from "../pannello";
+import { pastiDaOrdine, type ClienteMatteo, type DatiCliente, type Guadagni, type NuovoPasto, type PastoPannello, type PastoSettimana } from "../pannello";
 import { ORDER_SELECT } from "../../functions/_lib/ordini";
 import { dataValida, oggiRoma, spostaGiorno } from "./date";
 import { ordineDaRiga, type Esito, type RigaOrdine } from "./ordini";
@@ -191,6 +191,25 @@ export async function leggiPannello(db: D1Database, da: string, a: string) {
 export async function leggiNuovi(db: D1Database): Promise<Ordine[]> {
   const { results } = await db.prepare(`${ORDER_SELECT} WHERE o.status = 'requested' ORDER BY o.created_at, o.id`).all<RigaOrdine>();
   return results.map((r) => ordineDaRiga(r, true));
+}
+
+/**
+ * I guadagni di un mese ("YYYY-MM"): centesimi dei pasti con un prezzo (prezzo x porzioni),
+ * pranzi e cene in porzioni (con o senza prezzo), clienti distinti con almeno una riga.
+ */
+export async function guadagniDelMese(db: D1Database, mese: string): Promise<Guadagni> {
+  const anno = Number(mese.slice(0, 4));
+  const m = Number(mese.slice(5, 7));
+  // Date.UTC con il mese 1-based dà il primo giorno del mese dopo, dicembre compreso.
+  const inizio = `${mese}-01`;
+  const fine = new Date(Date.UTC(anno, m, 1)).toISOString().slice(0, 10);
+  const r = await db.prepare(`SELECT COALESCE(SUM(prezzo_cents * porzioni), 0) AS cents,
+      COALESCE(SUM(CASE WHEN pasto IN ('pranzo', 'cena') THEN porzioni END), 0) AS pasti,
+      COUNT(DISTINCT cliente_id) AS clienti
+    FROM pasti WHERE data >= ? AND data < ?`)
+    .bind(inizio, fine)
+    .first<{ cents: number; pasti: number; clienti: number }>();
+  return { cents: Number(r?.cents ?? 0), pasti: Number(r?.pasti ?? 0), clienti: Number(r?.clienti ?? 0) };
 }
 
 /* =========================================================================

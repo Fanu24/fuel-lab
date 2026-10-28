@@ -7,6 +7,7 @@ import { onRequestPost as rubricaPost, onRequestPatch as rubricaPatch } from "..
 import { onRequestPut as pastiPut, onRequestDelete as pastiDelete } from "../../functions/api/admin/pasti";
 import { onRequestPost as copiaPost } from "../../functions/api/admin/pasti/copia";
 import { onRequestPost as accettaPost } from "../../functions/api/admin/in-settimana/[id]";
+import { onRequestGet as onRequestGuadagniGet } from "../../functions/api/admin/guadagni";
 
 vi.mock("../../functions/_lib/auth", () => ({
   currentUser: async () => ({ id: "matteo", role: "admin" }),
@@ -190,5 +191,23 @@ describe("POST /api/admin/in-settimana/:id", () => {
     expect((await corpoJson(accettato)).pasti).toEqual([expect.objectContaining({ piatto: "Pollo al curry", prezzoCents: 800 })]);
     expect(bench.sqlite.prepare("SELECT prezzo_cents FROM pasti WHERE ordine_id = 'c2'").get()).toEqual({ prezzo_cents: 800 });
     expect(bench.sqlite.prepare("SELECT prezzo_pasto_cents FROM clienti_matteo").get()).toEqual({ prezzo_pasto_cents: 800 });
+  });
+});
+
+describe("GET /api/admin/guadagni", () => {
+  it("risponde con il mese e il mese prima, 400 se il mese non è AAAA-MM", async () => {
+    const paolo = await creaClienteRubrica("Paolo", 1000);
+    bench.sqlite.prepare("INSERT INTO pasti (id,cliente_id,data,pasto,piatto,porzioni,prezzo_cents) VALUES ('g1',?,'2026-10-05','pranzo','Riso',2,1000)").run(paolo.id);
+    const get = (mese: string) => onRequestGuadagniGet({ env: env(), request: richiesta("GET", `/api/admin/guadagni?mese=${mese}`), params: {} });
+
+    const ottobre = await get("2026-10");
+    expect(ottobre.status).toBe(200);
+    expect(await corpoJson(ottobre)).toEqual({ mese: { cents: 2000, pasti: 2, clienti: 1 }, precedente: { cents: 0, pasti: 0, clienti: 0 } });
+    expect(await corpoJson(await get("2026-11"))).toEqual({ mese: { cents: 0, pasti: 0, clienti: 0 }, precedente: { cents: 2000, pasti: 2, clienti: 1 } });
+
+    for (const sbagliato of ["2026-13", "2026-00", "2026-1", "ottobre", ""]) {
+      expect((await get(sbagliato)).status).toBe(400);
+    }
+    expect((await onRequestGuadagniGet({ env: env(), request: richiesta("GET", "/api/admin/guadagni"), params: {} })).status).toBe(400);
   });
 });

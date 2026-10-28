@@ -6,6 +6,7 @@ import {
   copiaSettimanaPrecedente,
   creaCliente,
   errorIntervallo,
+  guadagniDelMese,
   leggiDatiCliente,
   leggiNuovoPasto,
   leggiPannello,
@@ -320,5 +321,36 @@ describe("ordini accettati nella settimana", () => {
 
     expect(bench.sqlite.prepare("SELECT COUNT(*) AS n FROM pasti").get()?.n).toBe(0);
     expect(bench.sqlite.prepare("SELECT COUNT(*) AS n FROM clienti_matteo WHERE user_id = 'cliente1'").get()?.n).toBe(1);
+  });
+});
+
+describe("guadagni del mese", () => {
+  it("i guadagni contano solo i pasti con un prezzo, moltiplicato per le porzioni", async () => {
+    const paolo = await creaCliente(bench.env.DB, { nome: "Paolo", telefono: "", indirizzo: "", prezzoPastoCents: 1000 });
+    const giulia = await creaCliente(bench.env.DB, { nome: "Giulia", telefono: "", indirizzo: "", prezzoPastoCents: null });
+    const inserisci = bench.sqlite.prepare("INSERT INTO pasti (id,cliente_id,data,pasto,piatto,porzioni,prezzo_cents) VALUES (?,?,?,?,?,?,?)");
+    // ottobre: Paolo 2 pasti a 1000 (uno con porzioni 2), Giulia 1 pasto senza prezzo e un suo evento da 10000; settembre: 1 pasto di Paolo a 900
+    inserisci.run("p1", paolo.id, "2026-10-05", "pranzo", "Riso", 1, 1000);
+    inserisci.run("p2", paolo.id, "2026-10-06", "cena", "Pesce", 2, 1000);
+    inserisci.run("g1", giulia.id, "2026-10-07", "pranzo", "Pasta", 1, null);
+    inserisci.run("g2", giulia.id, "2026-10-20", "evento", "Cuoco a domicilio", 1, 10000);
+    inserisci.run("p3", paolo.id, "2026-09-15", "cena", "Riso", 1, 900);
+
+    expect(await guadagniDelMese(bench.env.DB, "2026-10")).toEqual({ cents: 1000 * 1 + 1000 * 2 + 10000, pasti: 4, clienti: 2 });
+    expect(await guadagniDelMese(bench.env.DB, "2026-09")).toEqual({ cents: 900, pasti: 1, clienti: 1 });
+    expect(await guadagniDelMese(bench.env.DB, "2026-08")).toEqual({ cents: 0, pasti: 0, clienti: 0 });
+  });
+
+  it("il mese va dal primo all'ultimo giorno compresi: il primo del mese dopo non conta, dicembre passa all'anno dopo", async () => {
+    const paolo = await creaCliente(bench.env.DB, { nome: "Paolo", telefono: "", indirizzo: "", prezzoPastoCents: 500 });
+    const inserisci = bench.sqlite.prepare("INSERT INTO pasti (id,cliente_id,data,pasto,piatto,porzioni,prezzo_cents) VALUES (?,?,?,?,?,?,?)");
+    inserisci.run("u1", paolo.id, "2026-09-30", "pranzo", "Riso", 1, 500);
+    inserisci.run("u2", paolo.id, "2026-10-31", "pranzo", "Riso", 1, 500);
+    inserisci.run("u3", paolo.id, "2026-11-01", "pranzo", "Riso", 1, 500);
+    inserisci.run("u4", paolo.id, "2026-12-31", "cena", "Riso", 1, 500);
+    inserisci.run("u5", paolo.id, "2027-01-01", "cena", "Riso", 1, 500);
+
+    expect(await guadagniDelMese(bench.env.DB, "2026-10")).toEqual({ cents: 500, pasti: 1, clienti: 1 });
+    expect(await guadagniDelMese(bench.env.DB, "2026-12")).toEqual({ cents: 500, pasti: 1, clienti: 1 });
   });
 });
