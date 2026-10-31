@@ -12,9 +12,6 @@ const PAGINA_PX = { larghezza: 2480, altezza: 3508 };
 /* A4 in punti PDF. */
 const PAGINA_PT = { larghezza: 595.28, altezza: 841.89 };
 const PER_FOGLIO = 21;
-/* Quanto resta valido il PDF in una scheda aperta e quanto il link "Apri il PDF" (nessuna scheda). */
-const ATTESA_SCHEDA_MS = 60_000;
-const ATTESA_LINK_MS = 10 * 60_000;
 
 /* Le proporzioni del mockup approvato (etichetta-a-e-altro.html). */
 const INTERLINEA_TESTATA = 1.3;
@@ -66,40 +63,6 @@ export async function creaPdfEtichette(
   const bytes = await pdf.save();
   // Una copia su un ArrayBuffer semplice: il Blob non accetta un Uint8Array su ArrayBufferLike.
   return new Blob([new Uint8Array(bytes)], { type: "application/pdf" });
-}
-
-/**
- * Consegna il PDF, nell'ordine: il foglio di condivisione (su iPhone c'è "Stampa"); altrimenti la
- * scheda segnaposto `finestra` (aperta dal chiamante nel gesto del tocco); se manca anche quella,
- * restituisce un URL da aprire con un tocco. Annullare la condivisione non è un errore. Non cambia mai la pagina del pannello.
- */
-export async function consegnaPdf(blob: Blob, nomeFile: string, finestra: Window | null): Promise<string | null> {
-  const file = new File([blob], nomeFile, { type: "application/pdf" });
-  if (navigator.canShare?.({ files: [file] })) {
-    try {
-      await navigator.share({ files: [file], title: nomeFile });
-      finestra?.close();
-      return null;
-    } catch (e) {
-      if (e instanceof DOMException && e.name === "AbortError") {
-        finestra?.close();
-        return null;
-      }
-      // Condivisione non riuscita (su iPhone il gesto è scaduto durante la generazione): si va avanti.
-    }
-  }
-  const url = URL.createObjectURL(blob);
-  if (finestra) {
-    try {
-      finestra.location.href = url;
-      setTimeout(() => URL.revokeObjectURL(url), ATTESA_SCHEDA_MS);
-      return null;
-    } catch {
-      // La scheda è stata chiusa o non risponde: si passa al link.
-    }
-  }
-  setTimeout(() => URL.revokeObjectURL(url), ATTESA_LINK_MS);
-  return url;
 }
 
 /** La correzione di stampa salvata sul telefono. Senza storage (modalità privata) è zero. */

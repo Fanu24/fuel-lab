@@ -7,6 +7,7 @@ import { giornoDelPiano, oggiRoma, spostaGiorni } from "@/lib/produzione";
 import { NOMI_GIORNO } from "@/lib/settimana";
 import { statoNotifiche, type StatoNotifiche } from "@/lib/push-client";
 import type { Condiviso } from "./PannelloMatteo";
+import { usePdfPronto } from "./usePdfPronto";
 import { Avviso, Bottone, Errore } from "./ui";
 
 /* La schermata del giorno (mockup A): la settimana, i pasti del giorno scelto a pranzo e a cena,
@@ -20,10 +21,6 @@ export default function VistaGiorno({ pannello, sopra, senzaDati }: {
   senzaDati: ReactNode;
 }) {
   const { giorno, dati, vai, cambiaGiorno } = pannello;
-  const [lavoro, setLavoro] = useState(false);
-  /* Errore e link tengono il giorno a cui si riferiscono: cambiando giorno non compaiono più. */
-  const [errore, setErrore] = useState<{ giorno: string; testo: string } | null>(null);
-  const [linkPdf, setLinkPdf] = useState<{ giorno: string; url: string } | null>(null);
   // Finché le notifiche non sono attive, in alto c'è la scheda che porta alla guida.
   const [notifiche, setNotifiche] = useState<StatoNotifiche | null>(null);
   useEffect(() => {
@@ -38,28 +35,17 @@ export default function VistaGiorno({ pannello, sopra, senzaDati }: {
   const etichette = dati ? etichetteDelGiorno(dati.pasti, dati.clienti, giorno) : [];
   const nomeDelGiorno = NOMI_GIORNO[giornoDelPiano(giorno)].toLowerCase();
 
-  /* Il PDF si prepara solo quando serve: il codice per le etichette si carica al primo click.
-     La scheda per il PDF si apre prima di ogni `await`, nel gesto del tocco: su iPhone e in molti
-     browser una scheda aperta dopo viene bloccata. Il pannello non cambia pagina in nessun caso. */
-  async function stampaEtichette() {
-    if (!dati || lavoro) return;
-    setLavoro(true);
-    setErrore(null);
-    setLinkPdf(null);
-    // Scheda segnaposto: null se il browser la blocca comunque (si ricade sul link "Apri il PDF").
-    const finestra = window.open("", "_blank");
-    try {
-      const { creaPdfEtichette, consegnaPdf, leggiSposta } = await import("@/lib/etichette-pdf");
-      const pdf = await creaPdfEtichette(etichette, { preparatoIl: oggiRoma(), sposta: leggiSposta() });
-      const url = await consegnaPdf(pdf, `etichette-${giorno}.pdf`, finestra);
-      if (url) setLinkPdf({ giorno, url });
-    } catch (e) {
-      finestra?.close();
-      console.error("Etichette in PDF: preparazione o consegna non riuscita", e);
-      setErrore({ giorno, testo: "Non riesco a preparare le etichette. Riprova." });
-    } finally {
-      setLavoro(false);
-    }
+  /* Il PDF si prepara in due tocchi: "Stampa etichette" lo crea (il codice per le etichette si carica a quel
+     punto), poi "Apri le etichette" lo condivide o lo apre con un tocco nuovo. Il PDF vale per questo giorno e
+     queste etichette (e per la data di stampa): se cambiano, sparisce. Il pannello non cambia pagina in nessun caso. */
+  const chiavePdf = `${giorno}|${oggiRoma()}|${JSON.stringify(etichette.map((e) => [e.chiave, e.cliente, e.piatto, e.pasto]))}`;
+  const pdf = usePdfPronto(chiavePdf);
+  function stampaEtichette() {
+    if (!dati || pdf.lavoro) return;
+    void pdf.prepara(async () => {
+      const { creaPdfEtichette, leggiSposta } = await import("@/lib/etichette-pdf");
+      return creaPdfEtichette(etichette, { preparatoIl: oggiRoma(), sposta: leggiSposta() });
+    }, `etichette-${giorno}.pdf`, "Non riesco a preparare le etichette. Riprova.");
   }
 
   return (
@@ -108,14 +94,19 @@ export default function VistaGiorno({ pannello, sopra, senzaDati }: {
       </main>
 
       <footer className="pm-basso">
-        {errore?.giorno === giorno && <Errore messaggio={errore.testo} riprova={stampaEtichette} />}
-        {linkPdf?.giorno === giorno && (
-          <a className="pm-bottone pm-bottone-verde" href={linkPdf.url} target="_blank" rel="noopener">Apri il PDF</a>
+        {pdf.errore && <Errore messaggio={pdf.errore} riprova={stampaEtichette} />}
+        {pdf.pronto && <p className="pm-stato" role="status">Le etichette sono pronte.</p>}
+        {pdf.mostraLink && pdf.pronto && (
+          <a className="pm-bottone pm-bottone-chiaro" href={pdf.pronto.url} target="_blank" rel="noopener" download={pdf.pronto.file.name}>Apri il PDF</a>
         )}
-        <Bottone variante="verde" onClick={() => vai({ tipo: "scegli-cliente" })}>+ Aggiungi</Bottone>
-        <Bottone variante="chiaro" disabled={etichette.length === 0 || lavoro} onClick={stampaEtichette}>
-          {lavoro ? "Preparo le etichette…" : `Stampa etichette di ${nomeDelGiorno}`}
-        </Bottone>
+        <Bottone variante={pdf.pronto ? "chiaro" : "verde"} onClick={() => vai({ tipo: "scegli-cliente" })}>+ Aggiungi</Bottone>
+        {pdf.pronto ? (
+          <Bottone variante="verde" onClick={() => void pdf.apri()}>Apri le etichette</Bottone>
+        ) : (
+          <Bottone variante="chiaro" disabled={etichette.length === 0 || pdf.lavoro} onClick={stampaEtichette}>
+            {pdf.lavoro ? "Preparo le etichette…" : `Stampa etichette di ${nomeDelGiorno}`}
+          </Bottone>
+        )}
       </footer>
     </>
   );
