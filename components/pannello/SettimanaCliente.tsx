@@ -34,7 +34,7 @@ export default function SettimanaCliente({ pannello, clienteId, sopra }: {
   /** L'avviso e l'errore della pagina, sopra la griglia. */
   sopra: ReactNode;
 }) {
-  const { giorno, dati, erroreCaricamento, impostazioni, vai, cambiaGiorno, ricarica } = pannello;
+  const { giorno, dati, erroreCaricamento, impostazioni, vai, ricarica } = pannello;
   const lunedi = giorno ? lunediDi(giorno) : "";
   const chiave = `${clienteId}|${lunedi}`;
 
@@ -86,6 +86,11 @@ export default function SettimanaCliente({ pannello, clienteId, sopra }: {
   function cambiaPasti(modifica: (pasti: PastoSettimana[]) => PastoSettimana[]) {
     setRitocco((r) => ({ chiave, dati: settimana, pasti: modifica(r && r.chiave === chiave && r.dati === settimana ? r.pasti : pastiServer) }));
     void ricarica();
+  }
+
+  // Cambiare settimana sostituisce la voce della storia: "Indietro" non ripercorre ogni settimana guardata.
+  function vaiSettimana(nuovoLunedi: string) {
+    vai({ tipo: "cliente", clienteId, settimana: nuovoLunedi }, { sostituisci: true });
   }
 
   function salvatoNelFoglio(p: PastoSettimana) {
@@ -142,15 +147,15 @@ export default function SettimanaCliente({ pannello, clienteId, sopra }: {
           <div className="pm-cs-azioni">
             {waHref && <a className="pm-bottone pm-bottone-whatsapp" href={waHref} target="_blank" rel="noopener noreferrer">WhatsApp</a>}
             {chiamaHref && <a className="pm-bottone pm-bottone-chiaro" href={chiamaHref}>Chiama</a>}
-            <Bottone variante="tenue" onClick={() => vai({ tipo: "cliente", clienteId, modifica: true })}>Modifica</Bottone>
+            <Bottone variante="tenue" onClick={() => vai({ tipo: "cliente", clienteId, modifica: true, settimana: lunedi })}>Modifica</Bottone>
           </div>
         </header>
 
         <nav aria-label="Settimana" className="pm-settimana">
           <div className="pm-settimana-testa">
-            <Bottone className="pm-icona" aria-label="Settimana precedente" onClick={() => cambiaGiorno(spostaGiorni(giorno, -7))}>‹</Bottone>
+            <Bottone className="pm-icona" aria-label="Settimana precedente" onClick={() => vaiSettimana(spostaGiorni(lunedi, -7))}>‹</Bottone>
             <p>{dataCorta(griglia[0].data)} – {dataCorta(griglia[6].data)}</p>
-            <Bottone className="pm-icona" aria-label="Settimana successiva" onClick={() => cambiaGiorno(spostaGiorni(giorno, 7))}>›</Bottone>
+            <Bottone className="pm-icona" aria-label="Settimana successiva" onClick={() => vaiSettimana(spostaGiorni(lunedi, 7))}>›</Bottone>
           </div>
         </nav>
 

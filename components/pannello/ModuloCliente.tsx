@@ -3,7 +3,7 @@
 import { useRef, useState, type FormEvent } from "react";
 import { pannelloApi } from "@/lib/api";
 import { centesimiInTesto, leggiEuro } from "@/lib/operazioni";
-import type { ClienteMatteo } from "@/lib/pannello";
+import { lunediDi, type ClienteMatteo } from "@/lib/pannello";
 import type { Condiviso } from "./PannelloMatteo";
 import { Avviso, Bottone, Errore, messaggioDiErrore } from "./ui";
 
@@ -56,7 +56,7 @@ function Modulo({ pannello, cliente }: { pannello: Condiviso; cliente?: ClienteM
       ricordaCliente(salvato);
       await ricarica();
       // Sostituisce il modulo nella storia: "Indietro" dalla settimana non torna al modulo.
-      vai({ tipo: "cliente", clienteId: salvato.id }, { sostituisci: true });
+      vai({ tipo: "cliente", clienteId: salvato.id, settimana: lunediDi(pannello.giorno) }, { sostituisci: true });
     } catch (err) {
       setErrore(messaggioDiErrore(err));
     } finally {

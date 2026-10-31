@@ -8,6 +8,7 @@ import {
   giornoDiInizioProposto,
   linkChiama,
   linkWhatsAppCliente,
+  lunediDi,
   piattiRaggruppati,
   prezzoPastoProposto,
   testoAccettazione,
@@ -116,7 +117,8 @@ export default function OrdiniNuovi({ pannello }: { pannello: Condiviso }) {
       if (o.service === "abbonamento") {
         const clienteId = clienteDelOrdine(dati?.clienti ?? [], o)?.id;
         if (clienteId) {
-          vai({ tipo: "cliente", clienteId });
+          // Si apre la settimana in cui parte l'abbonamento (il giorno d'inizio scelto), non quella di oggi.
+          vai({ tipo: "cliente", clienteId, settimana: lunediDi(inizio) });
           avvisa(testo);
           return;
         }

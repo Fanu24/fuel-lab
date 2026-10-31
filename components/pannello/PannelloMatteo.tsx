@@ -75,9 +75,10 @@ export default function PannelloMatteo() {
   // e all'idratazione React passa da sola al valore vero.
   const oggi = useSyncExternalStore(nessunAscolto, oggiRoma, () => "");
   const [sceltoPerData, setSceltoPerData] = useState<string | null>(null);
-  const giorno = sceltoPerData ?? oggi;
   const search = useSyncExternalStore(ascoltaIndirizzo, () => window.location.search, () => "");
   const vista = vistaDaUrl(search);
+  // La settimana di un cliente può venire dall'indirizzo (per esempio quella in cui parte il suo abbonamento): vale più del giorno scelto.
+  const giorno = vista.tipo === "cliente" && vista.settimana ? vista.settimana : (sceltoPerData ?? oggi);
 
   // L'ultima settimana caricata con successo: resta mostrata (e con lei gli ordini nuovi) mentre
   // se ne carica un'altra o se il caricamento fallisce.
