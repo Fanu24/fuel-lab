@@ -104,7 +104,7 @@ export default function GuidaInstallazione() {
                 </Passo>
                 <Passo numero={2} titolo="Aggiungi alla schermata Home" />
                 <Passo numero={3} titolo="Apri l'icona Matteo">
-                  <p>Chiudi Safari e apri l'icona Matteo sulla schermata Home.</p>
+                  <p>Chiudi Safari e apri l&apos;icona Matteo sulla schermata Home.</p>
                 </Passo>
               </>
             ) : (
@@ -116,7 +116,7 @@ export default function GuidaInstallazione() {
                   <p>Se non c&apos;è, tocca Aggiungi a schermata Home.</p>
                 </Passo>
                 <Passo numero={3} titolo="Apri l'icona Matteo">
-                  <p>Apri l'icona Matteo sulla schermata Home.</p>
+                  <p>Apri l&apos;icona Matteo sulla schermata Home.</p>
                 </Passo>
               </>
             )}
