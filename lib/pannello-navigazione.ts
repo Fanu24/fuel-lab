@@ -1,3 +1,6 @@
+import { lunediDi } from "@/lib/pannello";
+import { isData } from "@/lib/produzione";
+
 /**
  * La navigazione del pannello di Matteo: le viste, l'indirizzo che le rappresenta e
  * la profondità nella storia del browser. Solo funzioni pure, senza DOM: le usa il
@@ -14,10 +17,16 @@ export type Vista =
   | { tipo: "giorno" }
   | { tipo: "nuovi" }
   | { tipo: "scegli-cliente" }
-  | { tipo: "cliente"; clienteId: string; modifica?: boolean }
+  /** `settimana`: il lunedì della settimana da mostrare; senza, quella del giorno scelto (di solito oggi). */
+  | { tipo: "cliente"; clienteId: string; modifica?: boolean; settimana?: string }
   | { tipo: "nuovo-cliente" }
   | { tipo: "altro" }
   | { tipo: "guida" };
+
+/** Un lunedì scritto nell'indirizzo; altrimenti null (si mostra la settimana di oggi). */
+function lunediValido(s: string | null): string | null {
+  return isData(s) && lunediDi(s) === s ? s : null;
+}
 
 /** La vista scritta nell'indirizzo; un indirizzo sconosciuto o incompleto è la schermata del giorno. */
 export function vistaDaUrl(search: string): Vista {
@@ -31,7 +40,14 @@ export function vistaDaUrl(search: string): Vista {
     case "cliente": {
       const clienteId = p.get("cliente");
       if (!clienteId) return { tipo: "giorno" };
-      return p.get("modifica") === "1" ? { tipo: "cliente", clienteId, modifica: true } : { tipo: "cliente", clienteId };
+      const modifica = p.get("modifica") === "1";
+      const settimana = lunediValido(p.get("settimana"));
+      return {
+        tipo: "cliente",
+        clienteId,
+        ...(modifica ? { modifica: true } : {}),
+        ...(settimana ? { settimana } : {}),
+      };
     }
     default: return { tipo: "giorno" };
   }
@@ -43,6 +59,7 @@ export function urlDiVista(v: Vista, pathname: string): string {
   if (v.tipo === "cliente") {
     p.set("cliente", v.clienteId);
     if (v.modifica) p.set("modifica", "1");
+    if (v.settimana) p.set("settimana", v.settimana);
   }
   return `${pathname}?${p.toString()}`;
 }

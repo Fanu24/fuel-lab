@@ -24,6 +24,31 @@ describe("vistaDaUrl e urlDiVista", () => {
     }
     expect(urlDiVista({ tipo: "nuovi" }, "/admin")).toBe("/admin?vista=nuovi");
   });
+
+  it("la settimana del cliente sta nell'indirizzo e si rilegge uguale, con o senza modifica", () => {
+    // 2026-11-02 è un lunedì
+    const conSettimana = { tipo: "cliente", clienteId: "c1", settimana: "2026-11-02" } as const;
+    expect(urlDiVista(conSettimana, "/admin")).toBe("/admin?vista=cliente&cliente=c1&settimana=2026-11-02");
+    expect(vistaDaUrl("?vista=cliente&cliente=c1&settimana=2026-11-02")).toEqual(conSettimana);
+
+    const conModifica = { tipo: "cliente", clienteId: "c1", modifica: true, settimana: "2026-11-02" } as const;
+    expect(urlDiVista(conModifica, "/admin")).toBe("/admin?vista=cliente&cliente=c1&modifica=1&settimana=2026-11-02");
+    expect(vistaDaUrl(urlDiVista(conModifica, "/admin").slice("/admin".length))).toEqual(conModifica);
+  });
+
+  it("senza settimana l'indirizzo del cliente non cambia, e la lettura non inventa una settimana", () => {
+    expect(urlDiVista({ tipo: "cliente", clienteId: "c1" }, "/admin")).toBe("/admin?vista=cliente&cliente=c1");
+    expect(vistaDaUrl("?vista=cliente&cliente=c1")).toEqual({ tipo: "cliente", clienteId: "c1" });
+    expect(vistaDaUrl("?vista=cliente&cliente=c1")).not.toHaveProperty("settimana");
+  });
+
+  it("una settimana che non è un lunedì vero viene scartata: si mostra la settimana di oggi", () => {
+    const soloCliente = { tipo: "cliente", clienteId: "c1" };
+    expect(vistaDaUrl("?vista=cliente&cliente=c1&settimana=2026-11-03")).toEqual(soloCliente); // martedì
+    expect(vistaDaUrl("?vista=cliente&cliente=c1&settimana=2026-02-30")).toEqual(soloCliente); // non esiste
+    expect(vistaDaUrl("?vista=cliente&cliente=c1&settimana=domani")).toEqual(soloCliente);
+    expect(vistaDaUrl("?vista=cliente&cliente=c1&settimana=")).toEqual(soloCliente);
+  });
 });
 
 describe("profondità nella storia", () => {
