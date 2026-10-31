@@ -48,7 +48,8 @@ export type NuovoPasto = {
 
 export type RigaDaOrdine = Omit<PastoSettimana, "id" | "clienteId">;
 
-export type Guadagni = { cents: number; pasti: number; clienti: number };
+/** `senzaPrezzo`: quanti dei `pasti` non hanno un prezzo e quindi non sono nei `cents`. */
+export type Guadagni = { cents: number; pasti: number; senzaPrezzo: number; clienti: number };
 
 export type DatiPannello = {
   clienti: ClienteMatteo[];

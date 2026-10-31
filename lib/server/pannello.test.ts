@@ -377,6 +377,68 @@ describe("ordini accettati nella settimana", () => {
   });
 });
 
+describe("prezzo scritto dopo i pasti", () => {
+  const inserisci = () => bench.sqlite.prepare("INSERT INTO pasti (id,cliente_id,data,pasto,piatto,porzioni,prezzo_cents) VALUES (?,?,?,?,?,?,?)");
+  const prezzoDi = (id: string) => bench.sqlite.prepare("SELECT prezzo_cents FROM pasti WHERE id = ?").get(id)?.prezzo_cents;
+
+  it("modificare il cliente con un prezzo lo da' ai pasti senza prezzo dal primo del mese in poi, e a nessun altro", async () => {
+    const paolo = await creaCliente(bench.env.DB, cliente("Paolo"));
+    const altro = await creaCliente(bench.env.DB, cliente("Altro"));
+    inserisci().run("mese-scorso", paolo.id, "2026-09-30", "pranzo", "Riso", 1, null);
+    inserisci().run("primo", paolo.id, "2026-10-01", "pranzo", "Riso", 1, null);
+    inserisci().run("futuro", paolo.id, "2026-11-04", "cena", "Pesce", 2, null);
+    inserisci().run("gia-pagato", paolo.id, "2026-10-12", "cena", "Pollo", 1, 700);
+    inserisci().run("evento", paolo.id, "2026-10-20", "evento", "Cuoco a domicilio", 1, null);
+    inserisci().run("di-altri", altro.id, "2026-10-05", "pranzo", "Riso", 1, null);
+
+    const aggiornato = await modificaCliente(bench.env.DB, paolo.id, cliente("Paolo", 1000), "2026-10-15");
+
+    expect(aggiornato?.prezzoPastoCents).toBe(1000);
+    expect(prezzoDi("mese-scorso")).toBeNull();
+    expect(prezzoDi("primo")).toBe(1000);
+    expect(prezzoDi("futuro")).toBe(1000);
+    expect(prezzoDi("gia-pagato")).toBe(700);
+    expect(prezzoDi("evento")).toBeNull();
+    expect(prezzoDi("di-altri")).toBeNull();
+  });
+
+  it("senza un prezzo nuovo i pasti restano come sono, e un prezzo oltre il tetto del CHECK si ferma al tetto", async () => {
+    const paolo = await creaCliente(bench.env.DB, cliente("Paolo", 500));
+    inserisci().run("p1", paolo.id, "2026-10-05", "pranzo", "Riso", 1, null);
+
+    await modificaCliente(bench.env.DB, paolo.id, cliente("Paolo", null), "2026-10-15");
+    expect(prezzoDi("p1")).toBeNull();
+
+    await modificaCliente(bench.env.DB, paolo.id, cliente("Paolo", 100000), "2026-10-15");
+    expect(prezzoDi("p1")).toBe(100000);
+  });
+
+  it("accettare un ordine di un cliente gia' in rubrica con un prezzo da' il prezzo anche ai suoi altri pasti del mese senza", async () => {
+    const { env } = bench;
+    inserisciOrdine({ id: "c4", uscita: lunedi, voci: [voce("lun", "pranzo", "Pollo")] });
+    await convertiOrdiniAperti(env.DB, oggi);
+    const [paolo] = (await leggiPannello(env.DB, lunedi, domenica)).clienti;
+    inserisci().run("vecchio", paolo.id, `${oggi.slice(0, 8)}01`, "cena", "Zuppa", 1, null);
+
+    await mettiInSettimana(env.DB, await ordineDelDatabase("c4"), lunedi, 900, oggi);
+
+    expect(prezzoDi("vecchio")).toBe(900);
+  });
+
+  it("i guadagni dicono quanti pasti del mese non hanno prezzo, e scendono a zero quando il prezzo arriva", async () => {
+    const paolo = await creaCliente(bench.env.DB, cliente("Paolo"));
+    inserisci().run("a", paolo.id, "2026-10-05", "pranzo", "Riso", 1, null);
+    inserisci().run("b", paolo.id, "2026-10-06", "cena", "Pesce", 2, null);
+    inserisci().run("c", paolo.id, "2026-10-07", "cena", "Pollo", 1, 800);
+
+    expect(await guadagniDelMese(bench.env.DB, "2026-10")).toEqual({ cents: 800, pasti: 4, senzaPrezzo: 3, clienti: 1 });
+
+    await modificaCliente(bench.env.DB, paolo.id, cliente("Paolo", 1000), "2026-10-15");
+
+    expect(await guadagniDelMese(bench.env.DB, "2026-10")).toEqual({ cents: 800 + 1000 + 2000, pasti: 4, senzaPrezzo: 0, clienti: 1 });
+  });
+});
+
 describe("guadagni del mese", () => {
   it("i guadagni contano solo i pasti con un prezzo, moltiplicato per le porzioni", async () => {
     const paolo = await creaCliente(bench.env.DB, { nome: "Paolo", telefono: "", indirizzo: "", prezzoPastoCents: 1000 });
@@ -389,9 +451,9 @@ describe("guadagni del mese", () => {
     inserisci.run("g2", giulia.id, "2026-10-20", "evento", "Cuoco a domicilio", 1, 10000);
     inserisci.run("p3", paolo.id, "2026-09-15", "cena", "Riso", 1, 900);
 
-    expect(await guadagniDelMese(bench.env.DB, "2026-10")).toEqual({ cents: 1000 * 1 + 1000 * 2 + 10000, pasti: 4, clienti: 2 });
-    expect(await guadagniDelMese(bench.env.DB, "2026-09")).toEqual({ cents: 900, pasti: 1, clienti: 1 });
-    expect(await guadagniDelMese(bench.env.DB, "2026-08")).toEqual({ cents: 0, pasti: 0, clienti: 0 });
+    expect(await guadagniDelMese(bench.env.DB, "2026-10")).toEqual({ cents: 1000 * 1 + 1000 * 2 + 10000, pasti: 4, senzaPrezzo: 1, clienti: 2 });
+    expect(await guadagniDelMese(bench.env.DB, "2026-09")).toEqual({ cents: 900, pasti: 1, senzaPrezzo: 0, clienti: 1 });
+    expect(await guadagniDelMese(bench.env.DB, "2026-08")).toEqual({ cents: 0, pasti: 0, senzaPrezzo: 0, clienti: 0 });
   });
 
   it("il mese va dal primo all'ultimo giorno compresi: il primo del mese dopo non conta, dicembre passa all'anno dopo", async () => {
@@ -403,7 +465,7 @@ describe("guadagni del mese", () => {
     inserisci.run("u4", paolo.id, "2026-12-31", "cena", "Riso", 1, 500);
     inserisci.run("u5", paolo.id, "2027-01-01", "cena", "Riso", 1, 500);
 
-    expect(await guadagniDelMese(bench.env.DB, "2026-10")).toEqual({ cents: 500, pasti: 1, clienti: 1 });
-    expect(await guadagniDelMese(bench.env.DB, "2026-12")).toEqual({ cents: 500, pasti: 1, clienti: 1 });
+    expect(await guadagniDelMese(bench.env.DB, "2026-10")).toEqual({ cents: 500, pasti: 1, senzaPrezzo: 0, clienti: 1 });
+    expect(await guadagniDelMese(bench.env.DB, "2026-12")).toEqual({ cents: 500, pasti: 1, senzaPrezzo: 0, clienti: 1 });
   });
 });

@@ -195,7 +195,8 @@ export async function leggiNuovi(db: D1Database): Promise<Ordine[]> {
 
 /**
  * I guadagni di un mese ("YYYY-MM"): centesimi dei pasti con un prezzo (prezzo x porzioni),
- * pranzi e cene in porzioni (con o senza prezzo), clienti distinti con almeno una riga.
+ * pranzi e cene in porzioni (con o senza prezzo), quanti di questi senza prezzo (non contano nei
+ * centesimi), clienti distinti con almeno una riga.
  */
 export async function guadagniDelMese(db: D1Database, mese: string): Promise<Guadagni> {
   const anno = Number(mese.slice(0, 4));
@@ -205,11 +206,12 @@ export async function guadagniDelMese(db: D1Database, mese: string): Promise<Gua
   const fine = new Date(Date.UTC(anno, m, 1)).toISOString().slice(0, 10);
   const r = await db.prepare(`SELECT COALESCE(SUM(prezzo_cents * porzioni), 0) AS cents,
       COALESCE(SUM(CASE WHEN pasto IN ('pranzo', 'cena') THEN porzioni END), 0) AS pasti,
+      COALESCE(SUM(CASE WHEN pasto IN ('pranzo', 'cena') AND prezzo_cents IS NULL THEN porzioni END), 0) AS senza_prezzo,
       COUNT(DISTINCT cliente_id) AS clienti
     FROM pasti WHERE data >= ? AND data < ?`)
     .bind(inizio, fine)
-    .first<{ cents: number; pasti: number; clienti: number }>();
-  return { cents: Number(r?.cents ?? 0), pasti: Number(r?.pasti ?? 0), clienti: Number(r?.clienti ?? 0) };
+    .first<{ cents: number; pasti: number; senza_prezzo: number; clienti: number }>();
+  return { cents: Number(r?.cents ?? 0), pasti: Number(r?.pasti ?? 0), senzaPrezzo: Number(r?.senza_prezzo ?? 0), clienti: Number(r?.clienti ?? 0) };
 }
 
 /* =========================================================================
@@ -226,10 +228,22 @@ export async function creaCliente(db: D1Database, d: DatiCliente): Promise<Clien
   return cliente;
 }
 
-export async function modificaCliente(db: D1Database, id: string, d: DatiCliente): Promise<ClienteMatteo | null> {
-  const r = await db.prepare("UPDATE clienti_matteo SET nome = ?, telefono = ?, indirizzo = ?, prezzo_pasto_cents = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
-    .bind(d.nome, d.telefono, d.indirizzo, d.prezzoPastoCents, id)
-    .run();
+/**
+ * Il prezzo scritto dopo i pasti: lo statement che lo da' ai pranzi e alle cene del cliente rimasti senza
+ * prezzo, dal primo giorno del mese di `oggi` in poi. Un pasto che ha gia' un prezzo non si tocca mai (il
+ * prezzo e' quello di quando e' entrato) e i mesi passati restano come sono. Gli eventi hanno il loro prezzo.
+ */
+function prezzoAiPastiSenza(db: D1Database, clienteId: string, prezzoPastoCents: number, oggi: string): D1PreparedStatement {
+  return db.prepare("UPDATE pasti SET prezzo_cents = ? WHERE cliente_id = ? AND prezzo_cents IS NULL AND pasto IN ('pranzo', 'cena') AND data >= ?")
+    .bind(prezzoRiga(prezzoPastoCents), clienteId, `${oggi.slice(0, 8)}01`);
+}
+
+/** Cambia i dati del cliente; se ora c'e' un prezzo, lo prendono anche i pasti del mese rimasti senza. */
+export async function modificaCliente(db: D1Database, id: string, d: DatiCliente, oggi: string = oggiRoma()): Promise<ClienteMatteo | null> {
+  const statements = [db.prepare("UPDATE clienti_matteo SET nome = ?, telefono = ?, indirizzo = ?, prezzo_pasto_cents = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+    .bind(d.nome, d.telefono, d.indirizzo, d.prezzoPastoCents, id)];
+  if (d.prezzoPastoCents !== null) statements.push(prezzoAiPastiSenza(db, id, d.prezzoPastoCents, oggi));
+  const [r] = await db.batch(statements);
   if (!r.meta.changes) return null;
   return leggiCliente(db, id);
 }
@@ -336,6 +350,7 @@ async function portaInSettimana(db: D1Database, ordine: Ordine, inizio: string, 
       .bind(clienteId, nome, telefono, indirizzo, prezzoPastoCents, staff ? null : ordine.user_id, ...perOrdine));
   } else if (prezzoPastoCents !== null) {
     statements.push(db.prepare("UPDATE clienti_matteo SET prezzo_pasto_cents = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").bind(prezzoPastoCents, clienteId));
+    statements.push(prezzoAiPastiSenza(db, clienteId, prezzoPastoCents, oggi));
   }
 
   for (const p of pastiDaOrdine(ordine, inizio, prezzoPastoCents, oggi)) {

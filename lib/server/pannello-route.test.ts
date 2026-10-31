@@ -202,8 +202,8 @@ describe("GET /api/admin/guadagni", () => {
 
     const ottobre = await get("2026-10");
     expect(ottobre.status).toBe(200);
-    expect(await corpoJson(ottobre)).toEqual({ mese: { cents: 2000, pasti: 2, clienti: 1 }, precedente: { cents: 0, pasti: 0, clienti: 0 } });
-    expect(await corpoJson(await get("2026-11"))).toEqual({ mese: { cents: 0, pasti: 0, clienti: 0 }, precedente: { cents: 2000, pasti: 2, clienti: 1 } });
+    expect(await corpoJson(ottobre)).toEqual({ mese: { cents: 2000, pasti: 2, senzaPrezzo: 0, clienti: 1 }, precedente: { cents: 0, pasti: 0, senzaPrezzo: 0, clienti: 0 } });
+    expect(await corpoJson(await get("2026-11"))).toEqual({ mese: { cents: 0, pasti: 0, senzaPrezzo: 0, clienti: 0 }, precedente: { cents: 2000, pasti: 2, senzaPrezzo: 0, clienti: 1 } });
 
     for (const sbagliato of ["2026-13", "2026-00", "2026-1", "ottobre", ""]) {
       expect((await get(sbagliato)).status).toBe(400);

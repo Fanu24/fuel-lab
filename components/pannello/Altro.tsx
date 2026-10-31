@@ -47,6 +47,9 @@ export default function Altro({ pannello }: { pannello: Condiviso }) {
           <>
             <p className="pm-soldi">{euro(guadagni.mese.cents)}</p>
             <p className="pm-muto">{nomeMese(mese)} · {guadagni.mese.pasti} pasti · {guadagni.mese.clienti} clienti</p>
+            {guadagni.mese.senzaPrezzo > 0 && (
+              <p className="pm-muto">{guadagni.mese.senzaPrezzo === 1 ? "1 pasto senza prezzo" : `${guadagni.mese.senzaPrezzo} pasti senza prezzo`}: non {guadagni.mese.senzaPrezzo === 1 ? "è contato" : "sono contati"}</p>
+            )}
             <p className="pm-muto">{nomeMese(precedente)}: {euro(guadagni.precedente.cents)}</p>
           </>
         ) : !errore ? (
