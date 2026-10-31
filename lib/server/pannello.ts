@@ -296,16 +296,24 @@ function prezzoDelPasto(o: Pick<Ordine, "service" | "meals">, prezzo: number | n
   return o.service === "home-cooking" ? prezzo * o.meals : prezzo;
 }
 
+/** Gli ordini che il caricamento del pannello porta nella settimana in una sola richiesta: il resto arriva al giro dopo. */
+const MAX_ORDINI_PER_CARICAMENTO = 8;
+
 /**
- * Porta un ordine accettato nella settimana: trova o crea il cliente nella rubrica,
- * salva il prezzo a pasto se Matteo l'ha scritto, mette i pasti dell'ordine e segna
- * l'ordine come entrato. Tutto in un batch: o entra tutto, o niente.
+ * Porta un ordine nella settimana: trova o crea il cliente nella rubrica, salva il prezzo a pasto
+ * se Matteo l'ha scritto, mette i pasti dell'ordine e segna l'ordine come entrato. Tutto in un batch:
+ * o entra tutto, o niente.
+ *
+ * Con `soloSeNuovo` (la conversione automatica) il batch non fa niente se l'ordine e' gia' entrato: cliente e
+ * pasti si inseriscono solo mentre `in_settimana` e' ancora 0, e l'ultimo statement lo porta a 1. D1 esegue i batch
+ * uno alla volta, quindi due caricamenti insieme non raddoppiano mai cliente e pasti. Risponde false se l'ordine
+ * c'era gia'. L'accettazione di Matteo no: deve sempre poter salvare il prezzo, anche su un ordine gia' entrato.
  *
  * Il proprietario dell'ordine e' lo staff (cliente senza account, scritto da Matteo)
  * quando ha un ruolo in staff_roles: in quel caso il cliente della rubrica non ha user_id
  * e si cerca per nome e telefono. Altrimenti si cerca per user_id.
  */
-export async function mettiInSettimana(db: D1Database, ordine: Ordine, inizio: string, prezzoPastoCents: number | null, oggi: string): Promise<PastoSettimana[]> {
+async function portaInSettimana(db: D1Database, ordine: Ordine, inizio: string, prezzoPastoCents: number | null, oggi: string, soloSeNuovo: boolean): Promise<boolean> {
   const staff = await db.prepare("SELECT 1 FROM staff_roles WHERE user_id = ?").bind(ordine.user_id).first();
   const nome = riga(ordine.customer_name, 100) || "Senza nome";
   const telefono = riga(ordine.phone, 40);
@@ -317,19 +325,24 @@ export async function mettiInSettimana(db: D1Database, ordine: Ordine, inizio: s
     : await db.prepare("SELECT id FROM clienti_matteo WHERE user_id = ?").bind(ordine.user_id).first<{ id: string }>();
   const clienteId = trovato?.id ?? crypto.randomUUID();
 
+  // Le righe da inserire passano per un SELECT con una condizione: sempre vera, oppure "l'ordine non e' ancora entrato".
+  const se = soloSeNuovo ? "WHERE EXISTS (SELECT 1 FROM orders WHERE id = ? AND in_settimana = 0)" : "WHERE 1";
+  const perOrdine = soloSeNuovo ? [ordine.id] : [];
+
   const statements: D1PreparedStatement[] = [];
   if (!trovato) {
-    statements.push(db.prepare("INSERT INTO clienti_matteo (id, nome, telefono, indirizzo, prezzo_pasto_cents, user_id) VALUES (?, ?, ?, ?, ?, ?)")
-      .bind(clienteId, nome, telefono, indirizzo, prezzoPastoCents, staff ? null : ordine.user_id));
+    statements.push(db.prepare(`INSERT INTO clienti_matteo (id, nome, telefono, indirizzo, prezzo_pasto_cents, user_id)
+        SELECT ?, ?, ?, ?, ?, ? ${se}`)
+      .bind(clienteId, nome, telefono, indirizzo, prezzoPastoCents, staff ? null : ordine.user_id, ...perOrdine));
   } else if (prezzoPastoCents !== null) {
     statements.push(db.prepare("UPDATE clienti_matteo SET prezzo_pasto_cents = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").bind(prezzoPastoCents, clienteId));
   }
 
   for (const p of pastiDaOrdine(ordine, inizio, prezzoPastoCents, oggi)) {
     statements.push(db.prepare(`INSERT INTO pasti (id, cliente_id, data, pasto, piatto, piatto_id, porzioni, prezzo_cents, ordine_id)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        SELECT ?, ?, ?, ?, ?, ?, ?, ?, ? ${se}
         ON CONFLICT(cliente_id, data, pasto) DO NOTHING`)
-      .bind(crypto.randomUUID(), clienteId, p.data, p.pasto, piattoRiga(p.piatto), p.piattoId, p.porzioni, prezzoRiga(p.prezzoCents), ordine.id));
+      .bind(crypto.randomUUID(), clienteId, p.data, p.pasto, piattoRiga(p.piatto), p.piattoId, p.porzioni, prezzoRiga(p.prezzoCents), ordine.id, ...perOrdine));
   }
 
   // I pasti gia' entrati senza prezzo (convertiti dal caricamento) prendono il prezzo accettato.
@@ -337,21 +350,28 @@ export async function mettiInSettimana(db: D1Database, ordine: Ordine, inizio: s
     statements.push(db.prepare("UPDATE pasti SET prezzo_cents = ? WHERE ordine_id = ? AND prezzo_cents IS NULL")
       .bind(prezzoRiga(prezzoDelPasto(ordine, prezzoPastoCents)), ordine.id));
   }
-  statements.push(db.prepare("UPDATE orders SET in_settimana = 1 WHERE id = ?").bind(ordine.id));
+  statements.push(db.prepare(`UPDATE orders SET in_settimana = 1 WHERE id = ?${soloSeNuovo ? " AND in_settimana = 0" : ""}`).bind(ordine.id));
 
-  await db.batch(statements);
+  const risultati = await db.batch(statements);
+  return !soloSeNuovo || risultati[risultati.length - 1].meta.changes === 1;
+}
 
+/** L'accettazione di Matteo: porta l'ordine nella settimana e risponde con i suoi pasti. */
+export async function mettiInSettimana(db: D1Database, ordine: Ordine, inizio: string, prezzoPastoCents: number | null, oggi: string): Promise<PastoSettimana[]> {
+  await portaInSettimana(db, ordine, inizio, prezzoPastoCents, oggi, false);
   const { results } = await db.prepare(`${SELECT_PASTO} WHERE ordine_id = ? ORDER BY data, ${ORDINE_TIPO_PASTO}`).bind(ordine.id).all<RigaSql>();
   return results.map(pastoDaRiga);
 }
 
 /**
  * Porta nella settimana gli ordini gia' accettati (confermati, in preparazione o pronti)
- * che non ci sono ancora. Il giorno e' la data di consegna, altrimenti quella di produzione,
+ * che non ci sono ancora, al massimo 8 per volta (il resto al caricamento dopo: ogni query costa
+ * nel limite di D1 per richiesta). Il giorno e' la data di consegna, altrimenti quella di produzione,
  * altrimenti quella richiesta, altrimenti oggi. Restituisce quanti ne ha portati.
  */
 export async function convertiOrdiniAperti(db: D1Database, oggi: string): Promise<number> {
-  const { results } = await db.prepare(`${ORDER_SELECT} WHERE o.status IN ('confirmed', 'preparing', 'ready') AND o.in_settimana = 0 ORDER BY o.created_at, o.id`)
+  const { results } = await db.prepare(`${ORDER_SELECT} WHERE o.status IN ('confirmed', 'preparing', 'ready') AND o.in_settimana = 0 ORDER BY o.created_at, o.id LIMIT ?`)
+    .bind(MAX_ORDINI_PER_CARICAMENTO)
     .all<RigaOrdine>();
   let convertiti = 0;
   // Un ordine che non si converte non deve fermare il pannello: si registra e si va avanti.
@@ -359,8 +379,7 @@ export async function convertiOrdiniAperti(db: D1Database, oggi: string): Promis
     try {
       const ordine = ordineDaRiga(row, true);
       const inizio = ordine.fulfillment_date ?? ordine.production_date ?? ordine.requested_date ?? oggi;
-      await mettiInSettimana(db, ordine, inizio, null, oggi);
-      convertiti++;
+      if (await portaInSettimana(db, ordine, inizio, null, oggi, true)) convertiti++;
     } catch (error) {
       console.error(`Ordine ${String(row.id)} non convertito nella settimana`, error);
     }

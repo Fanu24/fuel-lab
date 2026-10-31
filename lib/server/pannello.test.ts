@@ -291,6 +291,45 @@ describe("ordini accettati nella settimana", () => {
     expect(bench.sqlite.prepare("SELECT in_settimana FROM orders WHERE id = 'r1'").get()?.in_settimana).toBe(0);
   });
 
+  it("due conversioni insieme non raddoppiano: un ordine manuale entra con un solo cliente e i suoi pasti una volta sola", async () => {
+    const { env } = bench;
+    inserisciOrdine({ id: "m1", utente: "matteo", origine: "manual", nome: "Anna Verdi", telefono: "3331112222", uscita: lunedi, voci: [voce("lun", "pranzo", "Riso"), voce("mer", "cena", "Pollo")] });
+
+    const convertiti = await Promise.all([convertiOrdiniAperti(env.DB, oggi), convertiOrdiniAperti(env.DB, oggi)]);
+
+    expect(convertiti.reduce((a, b) => a + b, 0)).toBe(1);
+    expect(bench.sqlite.prepare("SELECT COUNT(*) AS n FROM clienti_matteo").get()?.n).toBe(1);
+    expect(bench.sqlite.prepare("SELECT COUNT(*) AS n FROM pasti WHERE ordine_id = 'm1'").get()?.n).toBe(2);
+    expect(bench.sqlite.prepare("SELECT in_settimana FROM orders WHERE id = 'm1'").get()?.in_settimana).toBe(1);
+  });
+
+  it("accettare a metà: l'accettazione di Matteo salva il prezzo anche se la conversione aveva già portato l'ordine nella settimana", async () => {
+    const { env } = bench;
+    inserisciOrdine({ id: "c3", uscita: lunedi, voci: [voce("lun", "pranzo", "Pollo al curry")] });
+    const [, ordine] = await Promise.all([convertiOrdiniAperti(env.DB, oggi), ordineDelDatabase("c3")]);
+
+    const pasti = await mettiInSettimana(env.DB, ordine, lunedi, 900, oggi);
+
+    expect(pasti.map((p) => p.prezzoCents)).toEqual([900]);
+    expect(bench.sqlite.prepare("SELECT COUNT(*) AS n FROM pasti WHERE ordine_id = 'c3'").get()?.n).toBe(1);
+    expect(bench.sqlite.prepare("SELECT COUNT(*) AS n FROM clienti_matteo").get()?.n).toBe(1);
+  });
+
+  it("un caricamento converte al massimo 8 ordini; gli altri entrano al caricamento dopo", async () => {
+    const { env } = bench;
+    // Ogni ordine ha il suo giorno e pasto, così i dieci ordini dello stesso cliente non si pestano le caselle.
+    const giorni = ["lun", "mar", "mer", "gio", "ven"];
+    for (let i = 0; i < 10; i++) {
+      inserisciOrdine({ id: `o${i}`, uscita: lunedi, creato: `2026-10-01 10:00:0${i}`, voci: [voce(giorni[i % 5], i < 5 ? "pranzo" : "cena", `Piatto ${i}`)] });
+    }
+
+    expect(await convertiOrdiniAperti(env.DB, oggi)).toBe(8);
+    expect(bench.sqlite.prepare("SELECT COUNT(*) AS n FROM orders WHERE in_settimana = 1").get()?.n).toBe(8);
+    expect(await convertiOrdiniAperti(env.DB, oggi)).toBe(2);
+    expect(await convertiOrdiniAperti(env.DB, oggi)).toBe(0);
+    expect(bench.sqlite.prepare("SELECT COUNT(*) AS n FROM pasti").get()?.n).toBe(10);
+  });
+
   it("accettare con il prezzo lo salva sul cliente e sui pasti già convertiti senza prezzo", async () => {
     const { env } = bench;
     inserisciOrdine({ id: "c2", uscita: lunedi, voci: [voce("lun", "pranzo", "Pollo al curry")] });

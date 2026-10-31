@@ -54,20 +54,27 @@ export function creaD1Prova(): { sqlite: DatabaseSync; env: Env; chiudi: () => v
     };
   }
 
+  // D1 esegue un batch alla volta: due batch lanciati insieme non si intrecciano.
+  let codaBatch: Promise<unknown> = Promise.resolve();
+
   const env = {
     DB: {
       prepare: (sql: string) => statement(sql),
-      batch: async (statements: Statement[]) => {
-        sqlite.exec("BEGIN");
-        try {
-          const results = [];
-          for (const item of statements) results.push(await item.run());
-          sqlite.exec("COMMIT");
-          return results;
-        } catch (error) {
-          sqlite.exec("ROLLBACK");
-          throw error;
-        }
+      batch: (statements: Statement[]) => {
+        const turno = codaBatch.then(async () => {
+          sqlite.exec("BEGIN");
+          try {
+            const results = [];
+            for (const item of statements) results.push(await item.run());
+            sqlite.exec("COMMIT");
+            return results;
+          } catch (error) {
+            sqlite.exec("ROLLBACK");
+            throw error;
+          }
+        });
+        codaBatch = turno.catch(() => {});
+        return turno;
       },
     } as unknown as D1Database,
     BETTER_AUTH_SECRET: "test-only-secret",
