@@ -13,7 +13,7 @@ import {
   testoAccettazione,
   type EsitoAccettazione,
 } from "@/lib/pannello";
-import { dataBreve, isData, oggiRoma } from "@/lib/produzione";
+import { dataBreve, isData, nomeAbbonamento, oggiRoma } from "@/lib/produzione";
 import type { Condiviso } from "./PannelloMatteo";
 import { Avviso, Bottone, Errore } from "./ui";
 
@@ -205,7 +205,8 @@ function Scheda({ ordine: o, occupato, errore, accetta, rifiuta }: {
   const luogo = [o.address, o.comune].filter(Boolean).join(", ");
 
   const pillole = [
-    ETICHETTE_SERVIZIO[o.service],
+    // Dell'abbonamento Matteo deve sapere la formula (e la fascia) per cucinare: "Abbonamento mensile · Completo · Plus".
+    o.service === "abbonamento" ? `${ETICHETTE_SERVIZIO[o.service]} · ${nomeAbbonamento(o)}` : ETICHETTE_SERVIZIO[o.service],
     o.meals > 0 ? (o.meals === 1 ? "1 pasto" : `${o.meals} pasti`) : null,
     o.fulfillment === "delivery" ? (luogo ? `Consegna · ${luogo}` : "Consegna") : "Ritiro",
     o.requested_date ? `da ${dataBreve(o.requested_date)}` : "data da decidere",
