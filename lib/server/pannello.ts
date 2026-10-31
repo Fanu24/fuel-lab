@@ -187,9 +187,9 @@ export async function leggiPannello(db: D1Database, da: string, a: string) {
   return { clienti, pasti, recenti };
 }
 
-/** Gli ordini che aspettano una risposta di Matteo, dal più vecchio. */
+/** Gli ordini che aspettano una risposta di Matteo, dal più recente: l'ordine appena arrivato è in cima. */
 export async function leggiNuovi(db: D1Database): Promise<Ordine[]> {
-  const { results } = await db.prepare(`${ORDER_SELECT} WHERE o.status = 'requested' ORDER BY o.created_at, o.id`).all<RigaOrdine>();
+  const { results } = await db.prepare(`${ORDER_SELECT} WHERE o.status = 'requested' ORDER BY o.created_at DESC, o.id DESC`).all<RigaOrdine>();
   return results.map((r) => ordineDaRiga(r, true));
 }
 
