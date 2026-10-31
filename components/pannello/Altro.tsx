@@ -17,6 +17,8 @@ import { Bottone, messaggioDiErrore } from "./ui";
 
 const MESI = ["gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno", "luglio", "agosto", "settembre", "ottobre", "novembre", "dicembre"];
 const nomeMese = (mese: string) => MESI[Number(mese.slice(5, 7)) - 1] ?? mese;
+/** "1 pasto", "2 pasti": il numero e la parola al singolare o al plurale. */
+const conta = (n: number, singolare: string, plurale: string) => `${n} ${n === 1 ? singolare : plurale}`;
 
 export default function Altro({ pannello }: { pannello: Condiviso }) {
   const { vai, dati } = pannello;
@@ -46,7 +48,7 @@ export default function Altro({ pannello }: { pannello: Condiviso }) {
         {guadagni ? (
           <>
             <p className="pm-soldi">{euro(guadagni.mese.cents)}</p>
-            <p className="pm-muto">{nomeMese(mese)} · {guadagni.mese.pasti} pasti · {guadagni.mese.clienti} clienti</p>
+            <p className="pm-muto">{nomeMese(mese)} · {conta(guadagni.mese.pasti, "pasto", "pasti")} · {conta(guadagni.mese.clienti, "cliente", "clienti")}</p>
             {guadagni.mese.senzaPrezzo > 0 && (
               <p className="pm-muto">{guadagni.mese.senzaPrezzo === 1 ? "1 pasto senza prezzo" : `${guadagni.mese.senzaPrezzo} pasti senza prezzo`}: non {guadagni.mese.senzaPrezzo === 1 ? "è contato" : "sono contati"}</p>
             )}
