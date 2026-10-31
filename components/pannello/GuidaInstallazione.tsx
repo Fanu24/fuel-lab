@@ -89,9 +89,9 @@ export default function GuidaInstallazione() {
         <div className="pm-guida-blocco">
           <p>Le notifiche sono bloccate. Sbloccale così:</p>
           {tipo === "iphone" ? (
-            <p className="pm-guida-indicazione">Impostazioni → Notifiche → FUEL LAB → Consenti notifiche</p>
+            <p className="pm-guida-indicazione">Impostazioni → Notifiche → Matteo → Consenti notifiche</p>
           ) : (
-            <p className="pm-guida-indicazione">Tieni premuta l&apos;icona di FUEL LAB → Info app → Notifiche</p>
+            <p className="pm-guida-indicazione">Tieni premuta l&apos;icona Matteo → Info app → Notifiche</p>
           )}
         </div>
       ) : (
@@ -103,8 +103,8 @@ export default function GuidaInstallazione() {
                   <p>È l&apos;icona con la freccia in su, in fondo allo schermo di Safari.</p>
                 </Passo>
                 <Passo numero={2} titolo="Aggiungi alla schermata Home" />
-                <Passo numero={3} titolo="Apri FUEL LAB dall'icona">
-                  <p>Chiudi Safari e apri il pannello dalla nuova icona sulla schermata Home.</p>
+                <Passo numero={3} titolo="Apri l'icona Matteo">
+                  <p>Chiudi Safari e apri l'icona Matteo sulla schermata Home.</p>
                 </Passo>
               </>
             ) : (
@@ -115,8 +115,8 @@ export default function GuidaInstallazione() {
                 <Passo numero={2} titolo="Tocca Installa app" disegno={ICONA_AGGIUNGI}>
                   <p>Se non c&apos;è, tocca Aggiungi a schermata Home.</p>
                 </Passo>
-                <Passo numero={3} titolo="Apri dall'icona">
-                  <p>Apri il pannello dalla nuova icona sulla schermata Home.</p>
+                <Passo numero={3} titolo="Apri l'icona Matteo">
+                  <p>Apri l'icona Matteo sulla schermata Home.</p>
                 </Passo>
               </>
             )}
@@ -126,7 +126,7 @@ export default function GuidaInstallazione() {
                   {occupato ? "Attivo…" : "Attiva notifiche"}
                 </Bottone>
               ) : (
-                <p>Quando il pannello è aperto dall&apos;icona, qui compare il bottone Attiva notifiche.</p>
+                <p>Quando il pannello è aperto dall&apos;icona Matteo, qui compare il bottone Attiva notifiche.</p>
               )}
             </Passo>
             <Passo numero={5} titolo="Consenti">
