@@ -93,6 +93,24 @@ describe("accodaPush", () => {
     expect(fetchFinto).toHaveBeenCalledTimes(2);
     expect(righeIscrizioni()).toEqual([ENDPOINT_B]);
   });
+
+  it("una risposta 401 o 403 (chiavi VAPID non piu' accettate) cancella l'iscrizione", async () => {
+    const ENDPOINT_C = "https://updates.push.services.mozilla.com/cccccccccc";
+    iscrivi(ENDPOINT_A);
+    iscrivi(ENDPOINT_B);
+    iscrivi(ENDPOINT_C);
+    fetchFinto.mockImplementation(async (richiestaInviata: Request) =>
+      new Response(null, { status: richiestaInviata.url === ENDPOINT_A ? 401 : richiestaInviata.url === ENDPOINT_B ? 403 : 201 }));
+    await accodaPush({ env: conVapid() }, MESSAGGIO);
+    expect(righeIscrizioni()).toEqual([ENDPOINT_C]);
+  });
+
+  it("un errore del servizio push (500) non cancella l'iscrizione", async () => {
+    iscrivi(ENDPOINT_A);
+    fetchFinto.mockImplementation(async () => new Response(null, { status: 500 }));
+    await accodaPush({ env: conVapid() }, MESSAGGIO);
+    expect(righeIscrizioni()).toEqual([ENDPOINT_A]);
+  });
 });
 
 describe("POST, GET e DELETE /api/admin/push", () => {

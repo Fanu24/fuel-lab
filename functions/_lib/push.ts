@@ -17,14 +17,20 @@ function chiaviDa(env: Context["env"]): ChiaviVapid | null {
   return publicKey && privateKey && subject ? { publicKey, privateKey, subject } : null;
 }
 
-/** Manda il messaggio a ogni iscrizione. Il browser che risponde 404 o 410 non e' piu' iscritto: la riga va via. */
+const STATI_ISCRIZIONE_PERSA = new Set([401, 403, 404, 410]);
+
+/**
+ * Manda il messaggio a ogni iscrizione. Il browser che risponde 404 o 410 non e' piu' iscritto; 401 e 403 vogliono dire
+ * che il servizio non accetta piu' le nostre chiavi (VAPID cambiate): in tutti i casi la riga va via, e il telefono
+ * di Matteo la rimanda da solo alla prossima apertura del pannello se l'iscrizione nel browser e' ancora valida.
+ */
 async function inviaATutti(db: D1Database, chiavi: ChiaviVapid, testo: string) {
   const righe = await db.prepare("SELECT endpoint, p256dh, auth FROM push_iscrizioni").all<IscrizionePush>();
   const adesso = Math.floor(Date.now() / 1000);
   await Promise.all(righe.results.map(async (iscrizione) => {
     try {
       const risposta = await fetch(await richiestaPush(iscrizione, testo, chiavi, adesso));
-      if (risposta.status === 404 || risposta.status === 410) {
+      if (STATI_ISCRIZIONE_PERSA.has(risposta.status)) {
         await db.prepare("DELETE FROM push_iscrizioni WHERE endpoint = ?").bind(iscrizione.endpoint).run();
       } else if (!risposta.ok) {
         console.error(`Notifica push rifiutata (${risposta.status})`);
