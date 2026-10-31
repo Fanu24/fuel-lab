@@ -97,11 +97,11 @@ describe("GET /api/admin/pannello", () => {
     expect(secondo.clienti).toHaveLength(1);
   });
 
-  it("nuovi sono gli ordini da confermare, dal più vecchio", async () => {
+  it("nuovi sono gli ordini da confermare, dal più recente", async () => {
     inserisciOrdine({ id: "nuovo", stato: "requested", creato: "2026-10-05 09:00:00" });
     inserisciOrdine({ id: "vecchio", stato: "requested", creato: "2026-10-02 09:00:00" });
     const dati = await corpoJson<{ nuovi: { id: string }[] }>(await onRequestGet({ env: env(), request: richiesta("GET", `/api/admin/pannello?da=${lunedi}&a=${domenica}`), params: {} }));
-    expect(dati.nuovi.map((o) => o.id)).toEqual(["vecchio", "nuovo"]);
+    expect(dati.nuovi.map((o) => o.id)).toEqual(["nuovo", "vecchio"]);
   });
 });
 
