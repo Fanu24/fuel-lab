@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   /* Un manifest tutto suo: "Aggiungi alla schermata Home" dal pannello crea
      l'app "Pannello", che si apre direttamente su /dashboard. */
   manifest: "/pannello.webmanifest",
-  appleWebApp: { capable: true, title: "Pannello", statusBarStyle: "black" },
+  appleWebApp: { capable: true, title: "Matteo", statusBarStyle: "black" },
 };
 
 /* viewport-fit=cover: sul telefono la barra in basso scende fino al bordo e

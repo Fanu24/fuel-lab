@@ -3,8 +3,9 @@ import { isData } from "@/lib/produzione";
 
 /**
  * La navigazione del pannello di Matteo: le viste, l'indirizzo che le rappresenta e
- * la profondità nella storia del browser. Solo funzioni pure, senza DOM: le usa il
- * componente (components/pannello) e le verifica lib/pannello-navigazione.test.ts.
+ * la profondità nella storia del browser. Funzioni pure, senza DOM: importano solo
+ * lib/pannello e lib/produzione. Le usa il componente (components/pannello) e le
+ * verifica lib/pannello-navigazione.test.ts.
  *
  * La profondità sta nello stato di ogni voce della storia che il pannello crea
  * (`{ pannello: true, profondita }`): è il numero di voci del pannello che stanno
