@@ -86,7 +86,7 @@ export default function DoveSiamo() {
             La cucina è a Pescara.
           </h2>
           <address className="mt-6 text-lg leading-snug not-italic">
-            <strong className="font-semibold">FUEL LAB · Matteo Pattanè</strong>
+            <strong className="font-semibold">FUEL LAB · Matteo Patanè</strong>
             <br />
             {INDIRIZZO.via}
             <br />

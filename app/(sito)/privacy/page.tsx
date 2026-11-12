@@ -64,7 +64,7 @@ export default function PrivacyPage() {
           <section id="titolare" className="mt-10">
             <h2 className="titolo-s text-ink">Titolare del trattamento</h2>
             <p className="mt-4">
-              Il titolare è <strong className="text-ink">Matteo Pattanè</strong>, contattabile presso{" "}
+              Il titolare è <strong className="text-ink">Matteo Patanè</strong>, contattabile presso{" "}
               {INDIRIZZO_TITOLARE}, Italia. Per le richieste relative ai dati personali puoi scrivere a{" "}
               <a className="link" href={`mailto:${EMAIL_PRIVACY}`}>{EMAIL_PRIVACY}</a>.
             </p>
@@ -183,7 +183,7 @@ export default function PrivacyPage() {
               Puoi chiedere accesso, rettifica o cancellazione dei dati personali che Matteo ha ricevuto, limitarne il
               trattamento, opporti o chiedere la portabilità quando applicabile. Puoi revocare il consenso Analytics senza
               pregiudicare i trattamenti svolti prima della revoca e presentare reclamo al Garante per la protezione dei
-              dati personali. Per esercitare i diritti, scrivi a {EMAIL_PRIVACY} o a Matteo Pattanè presso {INDIRIZZO_TITOLARE}.
+              dati personali. Per esercitare i diritti, scrivi a {EMAIL_PRIVACY} o a Matteo Patanè presso {INDIRIZZO_TITOLARE}.
             </p>
           </section>
         </div>

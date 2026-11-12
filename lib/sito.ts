@@ -22,7 +22,7 @@ export const URL_SITO = (process.env.NEXT_PUBLIC_SITE_URL || "https://fuelchef.i
 
 export const NOME_ATTIVITA = "FUEL LAB";
 
-export const TITOLARE = { nome: "Matteo Pattanè", ruolo: "Cuoco" } as const;
+export const TITOLARE = { nome: "Matteo Patanè", ruolo: "Cuoco" } as const;
 
 export const EMAIL = "info@fuelchef.it";
 export const EMAIL_PRIVACY = "privacy@fuelchef.it";
@@ -104,4 +104,4 @@ export function elencoZone(zone: Zona[] = ZONE_SERVITE): string {
 
 /** La descrizione di una riga: la stessa per footer, dati strutturati e anteprime. */
 export const DESCRIZIONE_ATTIVITA =
-  "Meal prep fresco a Pescara: abbonamenti e menu settimanali cucinati da Matteo Pattanè, con ritiro in sede o consegna in zona.";
+  "Meal prep fresco a Pescara: abbonamenti e menu settimanali cucinati da Matteo Patanè, con ritiro in sede o consegna in zona.";

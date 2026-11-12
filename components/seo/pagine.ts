@@ -144,9 +144,9 @@ export const PAGINE = {
   chiSiamo: {
     percorso: "/chi-siamo",
     aggiornamento: "2026-10-08",
-    titolo: "Chi siamo: la cucina di Matteo Pattanè a Pescara",
+    titolo: "Chi siamo: la cucina di Matteo Patanè a Pescara",
     descrizione:
-      "Conosci Matteo Pattanè, cuoco diplomato ALMA e fondatore di FUEL LAB. Meal prep e abbonamenti a Pescara, in Via del Santuario 214. Ritiro o consegna.",
+      "Conosci Matteo Patanè, cuoco diplomato ALMA e fondatore di FUEL LAB. Meal prep e abbonamenti a Pescara, in Via del Santuario 214. Ritiro o consegna.",
     breve: "Chi siamo",
     priorita: 0.6,
     frequenza: "monthly",

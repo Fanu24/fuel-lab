@@ -186,7 +186,7 @@ export default async function ArticoloPage({ params }: Props) {
             <p className="mt-2 text-sm text-muted">
               A cura di FUEL LAB, la cucina di{" "}
               <Link href="/chi-siamo" className="font-semibold text-ink underline decoration-2 underline-offset-4 hover:decoration-lime">
-                Matteo Pattanè
+                Matteo Patanè
               </Link>
               , cuoco a Pescara.
             </p>

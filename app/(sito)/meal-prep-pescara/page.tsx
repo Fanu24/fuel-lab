@@ -141,7 +141,7 @@ export default function MealPrepPescara() {
             percorso: PAGINA.percorso,
             nome: "Meal prep a Pescara",
             descrizione:
-              "Piatti freschi, mai surgelati, cucinati ogni giorno da Matteo Pattanè per chi si allena, con ingredienti, allergeni e macro su ogni porzione. Ritiro in sede o consegna in zona.",
+              "Piatti freschi, mai surgelati, cucinati ogni giorno da Matteo Patanè per chi si allena, con ingredienti, allergeni e macro su ogni porzione. Ritiro in sede o consegna in zona.",
             tipoServizio: "Meal prep",
             prezzoDa: SOGLIA_PREZZO,
           }),
@@ -154,7 +154,7 @@ export default function MealPrepPescara() {
           <p className="occhiello mt-10">Pescara · Via del Santuario 214</p>
           <h1 className="titolo-pagina mt-6 max-w-[13ch]">Meal prep a Pescara, cucinato da Matteo.</h1>
           <p className="lead mt-6">
-            FUEL LAB è il meal prep fresco di Matteo Pattanè a Pescara: piatti già composti, mai surgelati, con
+            FUEL LAB è il meal prep fresco di Matteo Patanè a Pescara: piatti già composti, mai surgelati, con
             ingredienti e macro scritti su ogni porzione. Matteo cucina ogni giorno: tu scegli, ritiri in sede o
             chiedi la consegna in zona.
           </p>

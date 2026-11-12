@@ -47,12 +47,12 @@ export const FOTO = {
   },
   cuoco: {
     src: "/foto/matteo-pattane-in-cucina.webp",
-    alt: "Matteo Pattanè in divisa da cuoco mentre versa una preparazione nelle ciotole",
+    alt: "Matteo Patanè in divisa da cuoco mentre versa una preparazione nelle ciotole",
     fuoco: "75% 15%",
   },
   cuocoNitido: {
     src: "/foto/matteo-in-cucina-nitida.webp",
-    alt: "Matteo Pattanè in cucina mentre prepara le porzioni",
+    alt: "Matteo Patanè in cucina mentre prepara le porzioni",
     fuoco: "70% 24%",
   },
   preparazioniMatteo: {
@@ -122,6 +122,6 @@ export const VIDEO_HERO: { src: string; poster: ChiaveFoto } | null = null;
 /** Ritratto originale fornito da Matteo; il taglio conserva volto e divisa. */
 export const RITRATTO_MATTEO: Foto = {
   src: "/foto/matteo-pattane-ritratto.webp",
-  alt: "Matteo Pattanè, cuoco e fondatore di FUEL LAB, in divisa bianca",
+  alt: "Matteo Patanè, cuoco e fondatore di FUEL LAB, in divisa bianca",
   fuoco: "55% 35%",
 };

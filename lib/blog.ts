@@ -86,7 +86,7 @@ export const SLUG_IN_EVIDENZA = "cucina-pescarese-piatti-tipici";
 
 /* Foto originali e di repertorio in /public/foto, con didascalie esplicite. */
 export const FOTO_BLOG = {
-  matteoCucina: { src: "/foto/matteo-pattane-in-cucina.webp", alt: "Matteo Pattanè in divisa mentre versa una preparazione nelle ciotole", larghezza: 960, altezza: 1350, didascalia: "Matteo Pattanè in cucina", fuoco: "75% 15%" },
+  matteoCucina: { src: "/foto/matteo-pattane-in-cucina.webp", alt: "Matteo Patanè in divisa mentre versa una preparazione nelle ciotole", larghezza: 960, altezza: 1350, didascalia: "Matteo Patanè in cucina", fuoco: "75% 15%" },
   matteoPreparazioni: { src: "/foto/matteo-preparazioni.webp", alt: "Teglie di verdure e porzioni in preparazione nella cucina di Matteo", larghezza: 1080, altezza: 1352, didascalia: "Preparazioni di Matteo", fuoco: "50% 35%" },
   pesi: { src: "/foto/photo-1574680096145-d05b474e2155.webp", alt: "Atleta di spalle con il bilanciere appoggiato sulle spalle", larghezza: 1200, altezza: 801 },
   presa: { src: "/foto/photo-1549060279-7e168fcee0c2.webp", alt: "Mano che stringe il bilanciere carico, in primo piano", larghezza: 1200, altezza: 800 },

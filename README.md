@@ -1,6 +1,6 @@
 # FUEL LAB
 
-Sito e area clienti di Matteo Pattanè, Via del Santuario 214, 65124 Pescara. Produzione: <https://fuelchef.it/>.
+Sito e area clienti di Matteo Patanè, Via del Santuario 214, 65124 Pescara. Produzione: <https://fuelchef.it/>.
 
 Next.js 16 genera le pagine statiche; Cloudflare Pages Functions gestisce autenticazione e API; Cloudflare D1 conserva account, menu salvati, richieste e statistiche aggregate. Il progetto Pages si chiama `fuelchef` nell'account Cloudflare `dotatv24`.
 
