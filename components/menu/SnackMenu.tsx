@@ -28,7 +28,7 @@ export default function SnackMenu() {
     </article>)}
     <details className="mt-8 border-y border-ink/15 py-3">
       <summary className="min-h-11 cursor-pointer content-center font-semibold">Altri snack e aggiunte</summary>
-      <p className="mb-3 text-sm text-muted">Puoi sceglierli da “Aggiunte” nella tua settimana: {snack.filter((e) => !e.novita).map((e) => e.nome.toLowerCase()).join(", ")}. Disponibilità e supplementi si confermano con Matteo.</p>
+      <p className="mb-3 text-sm text-muted">Puoi sceglierli da “Aggiunte” nella tua settimana: {snack.filter((e) => !e.novita).map((e) => e.nome.toLowerCase()).join("; ")}. Disponibilità e supplementi si confermano con Matteo.</p>
     </details>
   </section>;
 }

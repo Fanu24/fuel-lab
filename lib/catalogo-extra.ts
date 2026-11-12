@@ -302,8 +302,8 @@ export const EXTRA: Extra[] = [
   }),
   extra({
     id: "snack-tiramisu",
-    nome: "Tiramisu fit",
-    descrizione: "Tiramisu fit, snack della box.",
+    nome: "Tiramisù fit",
+    descrizione: "Tiramisù fit, snack della box.",
     grammi: 110, proteine: 12, carboidrati: 20, grassi: 8, allergeni: ["uova", "latte", "glutine"],
     img: "/foto/photo-1571877227200-a0d98ea607e9.webp",
     reparto: "snack", prezzoEuro: null, prezzoNota: "su-richiesta",
